@@ -74,6 +74,34 @@ build/
 # Built Visual Studio Code Extensions
 *.vsix
 
+### Flutter/Dart/Pub related
+*.class
+*.pyc
+*.swp
+.atom/
+.buildlog/
+.svn/
+.swiftpm/
+migrate_working_dir/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
 ### 사용자
-# 레퍼런스 이미지
-image/ref/
+# 레퍼런스 자료
+참고자료/
