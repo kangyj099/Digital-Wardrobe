@@ -177,17 +177,21 @@ Brand Guide
 ↓
 UX Principles
 ↓
-Design Principles
+Interaction Principles
+↓
+Layout Principles
+↓
+High-Fidelity Sample (3–5 representative screens)
+↓
+Visual Review
+↓
+Design Tokens
 ↓
 Design System
 ↓
 Component Library
 ↓
-User Flow
-↓
-Wireframe
-↓
-High Fidelity
+Remaining High-Fidelity Screens
 ↓
 Review
 ↓
@@ -214,12 +218,11 @@ Each screen should contain only its unique characteristics.
 
 # 5. Design Freeze
 
-Once the Wireframe is approved, the structure must not be changed.
+The representative High-Fidelity Sample is the visual baseline of the project.
 
-If structural changes are required, return to the Wireframe stage.
+After the Design Tokens are finalized, changes to layout structure or visual language should be avoided.
 
-High Fidelity designs must be created based on the approved Wireframe.
-
+If structural changes are required after Design Tokens are approved, the representative High-Fidelity Sample must be reviewed and updated first.
 ---
 
 # 6. Design Review
@@ -237,6 +240,23 @@ Review is not the stage for making the design more visually appealing—it is th
 * Material 3
 * Flutter implementation feasibility
 
+## Visual Review
+
+Visual Review is performed after the representative High-Fidelity Sample.
+
+Its purpose is to validate the overall visual direction before creating Design Tokens.
+
+Review Areas
+
+- Typography scale
+- Color harmony
+- Spacing rhythm
+- Corner radius
+- Icon size
+- Visual hierarchy
+- Overall consistency
+
+No new features or interaction changes should be introduced during this review.
 ---
 
 # 7. Design Audit
@@ -257,8 +277,9 @@ Audit does not make direct modifications. It creates tasks for the PM.
 
 # 8. Design System Updates
 
-Whenever Design Tokens or shared design rules change, update the Design System.
+The Design System is established after Design Tokens are finalized.
 
+Whenever shared visual rules or Tokens change, update the Design System accordingly.
 ---
 
 # 9. Component Library Updates
