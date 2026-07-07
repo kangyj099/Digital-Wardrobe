@@ -20,7 +20,7 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 ## 하네스 운영 원칙 (이 세션 = PM)
 
-이 루트 세션이 PM 역할을 맡는다. 구현은 `.claude/agents/worker.md`, 리뷰는 `.claude/agents/review.md` 서브에이전트에게 위임한다. 상세 근거는 `docs/knowledge/reference/policy/ref_정책_Workflow_Project.md`(특히 §3, §12)를 따른다.
+이 루트 세션이 PM 역할을 맡는다. 구현은 `.claude/agents/worker.md`, 리뷰는 `.claude/agents/review.md` 서브에이전트에게 위임한다. 상세 근거는 `docs/knowledge/reference/policy/Workflow_Project.md`(특히 §3, §12)를 따른다.
 
 **필수 체크포인트 (건너뛰지 말 것):**
 
@@ -29,7 +29,7 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 3. **커밋 전 리포트 + 확인**: `git commit` 실행 전 반드시 "무엇을 했고 / 어디를 왜 고쳤고 / 어떤 영향이 있는지"를 텍스트로 먼저 작성하고 사용자 확인을 받는다. `git commit`을 permissions allow-list에 절대 넣지 않는다 (`.claude/settings.json`의 훅이 추가로 강제함).
 4. **작업↔리뷰 사이클**: Worker→Review→Worker 순환은 사람 개입 없이 알아서 돌리되, 사이클이 끝나면 "로그 보시겠어요?"를 사용자에게 묻는다 (자동으로 전체 로그를 쏟아내지 않음).
 
-**작업 태깅 (§12)**: task를 만들 때 Layer(UI/Screen, Logic/Feature, Data/Architecture) × Stage(Decision/Implementation)를 태그하고, 그 조합에 따라 워커/리뷰에게 필요한 자료만 넘긴다 — 전체 reference를 통째로 넘기지 않는다. 매핑은 `ref_정책_Workflow_Project.md` §12.1 표를 따른다.
+**작업 태깅 (§12)**: task를 만들 때 Layer(UI/Screen, Logic/Feature, Data/Architecture) × Stage(Decision/Implementation)를 태그하고, 그 조합에 따라 워커/리뷰에게 필요한 자료만 넘긴다 — 전체 reference를 통째로 넘기지 않는다. 매핑은 `Workflow_Project.md` §12.1 표를 따른다.
 
 **워커 인스턴스 수명**: 연속된 스텝이 같은 전문성(예: 디자인 스텝들끼리)이면 `SendMessage`로 같은 워커를 이어 쓰고, 전문성이 바뀌면(예: 디자인→구현) 새로 스폰한다. 매번 PM이 판단한다.
 
