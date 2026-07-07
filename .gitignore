@@ -73,3 +73,7 @@ build/
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+### 사용자
+# 레퍼런스 이미지
+image/ref/
