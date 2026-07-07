@@ -110,11 +110,13 @@ Combines multiple Review results into a single consolidated report and delivers 
 
 # 3. Information Handoff Between Sessions
 
-## Sessions are independent. (Important)
+## Sessions are independent, handoff is orchestrated. (Important)
 
-**Worker → (Human summarizes) → Review**
+**Worker → (Orchestrator relays summary) → Review**
 
-All handoffs are performed by a human. Claude sessions do not share information with one another.
+Claude Code (the PM/orchestrator agent) performs handoffs directly between sessions/subagents. Sessions still do not share information with one another except through this relayed summary; a worker never has direct visibility into another session's raw context.
+
+Certain handoff points remain mandatory human checkpoints regardless of automation (e.g., PM task distribution visibility, decision-doc diffs, pre-commit confirmation) — see the harness checkpoint config for the current list.
 
 ---
 
@@ -260,8 +262,8 @@ When a task is completed, always verify the following:
 Always remember:
 
 1. The Source of Truth is the Git repository and the Reference documents.
-2. Sessions do not share memory.
-3. All handoffs are performed by a human.
+2. Sessions do not share memory except through an orchestrated handoff summary.
+3. Handoffs are orchestrated by the PM agent; mandatory checkpoints require human confirmation.
 4. Each session has only one purpose.
 5. Use the pipeline appropriate for the task size.
 6. Review identifies problems.
@@ -269,3 +271,34 @@ Always remember:
 8. Reference documents are always kept up to date.
 9. History documents are never deleted.
 10. Always evaluate the Change Impact before making changes.
+
+---
+
+# 12. Role Information Access
+
+Defines what materials each role sees for a given task, based on the task's **Layer** and **Stage** — not on job title. This generalizes across any future pipeline (frontend, backend, infra, etc.) instead of hardcoding per-role exceptions.
+
+## 12.1 Layer × Stage Determines Scope
+
+Every task is tagged with the Layer(s) it touches and the Stage (Decision or Implementation) within that layer. This tagging happens during the existing Impact Scope evaluation (§7) — no separate step is added.
+
+| Layer | Stage | Required Review | Required Materials |
+| --- | --- | --- | --- |
+| UI/Screen | Decision (Design) | Design Review | Raw references (`참고자료/`), Design reference docs, Plan reference docs (IA/UX spec), Brand docs, `Decision.md` |
+| UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy |
+| Logic/Feature | Decision (Planning) | Usually none (PM scope) | Plan reference docs |
+| Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs |
+| Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy |
+| Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema |
+
+## 12.2 Worker vs. Review Materials
+
+Worker and Review do not receive identical materials for the same task.
+
+- **Shared**: judgment-criteria documents — the Reference documents for that Layer/Stage, **and** `Decision.md` / `TechnicalDebt.md`. History documents count as judgment criteria the same way Reference documents do, since Review checks policy compliance and consistency against past decisions.
+- **Worker-only**: raw/exploratory material behind a Decision-stage task (e.g. raw design references, brand voice docs). Review does not need the exploration process, only the result and whether it complies.
+- **Review-only**: the Worker's output (modified files, change summary, impact scope) — the artifact being judged, which the Worker produces rather than consumes.
+
+## 12.3 Scope Escalation
+
+If Review needs material outside its granted scope to reach a judgment, Review does not expand its own access. Review requests a scope expansion from PM, who re-evaluates Impact Scope (§7) and grants the minimum additional material needed. This preserves the Minimal Handoff Principle (§3) while allowing legitimate exceptions.
