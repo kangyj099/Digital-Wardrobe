@@ -115,7 +115,8 @@ Interaction Principles I7(AI 처리 → 재시도 → 실패 팝업 계약)이 �
 - 다크모드 UI 실제 연결/검증 (토큰만 준비)
 - Brand Guide Pass 3 정식 확정 (여기 값은 전부 임시)
 
-## 후속 조치 필요
+## 후속 조치 필요 (구현 착수 전 사용자 준비 필요)
 
-- Pretendard, KoPub돋움 실제 폰트 파일을 구현 착수 전에 확보해 `assets/fonts/`에 배치.
-- 사용자가 옷/코디 샘플 사진을 `assets/images/mock/`에 제공.
+- **사용자**가 Pretendard, KoPub돋움 실제 폰트 파일(.ttf)을 확보해 `assets/fonts/`에 배치 — PM/Worker는 라이선스 파일 위치(`assets/fonts/license/`)만 참고하고 폰트 바이너리 자체를 대신 내려받지 않음(라이선스 조건 준수 확인은 사용자가 이미 완료했으므로 실제 파일 배치도 사용자 쪽에서 진행).
+- **사용자**가 옷/코디 샘플 사진을 `assets/images/mock/`에 제공.
+- 위 두 가지가 준비되기 전까지 구현 플랜의 폰트/이미지 의존 태스크는 착수 보류.
