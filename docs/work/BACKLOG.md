@@ -24,7 +24,7 @@ Brand Guide Pass 2 확정 — Colors (T1~T3 실값)
 
 # Current
 
-하네스(PM/Worker/Review 서브에이전트 + 훅) 구축 — 진행 상황은 `docs/work/하네스_구축_체크리스트.md`에서 별도 추적
+Git-flow 커밋/PR 정책 도입 (main/dev/feature 3단계 브랜치, hook 교체) — 진행 상황은 `docs/superpowers/plans/2026-07-08-git-flow-commit-policy.md`에서 별도 추적
 
 ---
 
