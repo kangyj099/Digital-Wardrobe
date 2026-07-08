@@ -15,7 +15,7 @@ import sys
 COMMIT_RE = re.compile(r"\bgit\s+commit\b")
 PR_CREATE_RE = re.compile(r"\bgh\s+pr\s+create\b")
 PUSH_RE = re.compile(r"\bgit\s+push\b")
-MAIN_TOKEN_RE = re.compile(r"\bmain\b")
+MAIN_TOKEN_RE = re.compile(r"(?<![\w-])main(?![\w-])")
 
 
 def get_current_branch():
@@ -65,6 +65,17 @@ def main() -> int:
 
     if COMMIT_RE.search(command):
         branch = get_current_branch()
+        if branch is None:
+            print(
+                "STOP: could not determine the current git branch, so this "
+                "project's harness cannot verify it is safe to commit here. "
+                "Before committing: (1) write a report covering what was "
+                "done, what changed and why, and the impact, (2) show it to "
+                "the user and get explicit confirmation. Only after that, "
+                "retry the commit.",
+                file=sys.stderr,
+            )
+            return 2
         if branch in ("dev", "main"):
             print(
                 f"STOP: direct `git commit` on `{branch}` is gated by this "
