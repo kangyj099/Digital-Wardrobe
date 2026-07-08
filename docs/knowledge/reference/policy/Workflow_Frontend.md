@@ -71,12 +71,14 @@ Worker/Review 모두 Layer=UI/Screen × Stage=Implementation(Frontend) 태스크
 - 화면/시각적 구성 요소 = `flutter run`으로 직접 실행해 눈으로 확인한다 (위젯 단위 TDD를 강제하지 않는다 — 시각 작업은 완성 여부를 코드로 판단하기 어렵다).
 - 순수 로직(필터링, 정렬, 데이터 변환 함수 등 위젯이 아닌 것) = `flutter test` 단위 테스트를 작성한다.
 - 접근성 계약(Semantics label 등)을 구현하는 재사용 컴포넌트는 최소 1개 위젯 테스트로 Semantics 출력을 검증한다 — 접근성 정보는 눈으로 확인 안 되는 부분이라 별도 검증이 필요하다.
+- `Semantics(label: ...)`로 감싼 위젯의 자식이 자체적으로 접근성 정보를 노출하는 위젯(`Text` 등)이면 `excludeSemantics: true`를 함께 지정한다 — 안 그러면 스크린 리더가 부모 label과 자식 label을 이어붙여 중복 발화한다(`StatusBadge`/`SelectableGalleryTile`에서 위젯 테스트로 실제 발견함: `"미완성 상태\n미완성"`처럼 겹쳐 읽힘).
 
 ## AI Constraints
 
 - 화면/위젯 코드에 대해 불필요하게 전면적인 widget-test suite를 요구하지 않는다(시간 낭비, 이 프로젝트의 명시적 방침 아님).
 - 순수 로직 함수를 작성하고 대응하는 단위 테스트 없이 넘어가지 않는다.
 - Semantics label을 정의한 컴포넌트를 검증 없이 넘어가지 않는다.
+- `Semantics(label: ...)`의 자식이 텍스트/이미지처럼 자체 접근성 정보를 갖는 위젯이면 `excludeSemantics: true` 없이 넘어가지 않는다.
 
 ---
 
