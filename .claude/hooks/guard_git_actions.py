@@ -17,6 +17,11 @@ prefixes) — not a substring search over the whole raw command text. This
 avoids false-triggering on commands that merely *mention* a trigger phrase
 inside a quoted argument (e.g. a commit message, a grep pattern, or PR body
 text containing the words "gh pr merge") rather than actually invoking it.
+Common wrapper commands (`sudo`, `env`, `exec`, `command`, `time`, `nice`,
+`nohup`) and `VAR=val` prefixes are stripped before matching, so wrapped
+invocations are still caught — but this is not exhaustive (e.g. `ssh host
+git commit`, `bash -c "git commit"`, or wrappers outside this list are not
+unwrapped and can still bypass the gate).
 It does not handle every shell construct (e.g. a heredoc body that itself
 contains literal `&&`/`;`/`|` characters may still split oddly) — see
 TechnicalDebt.md for the residual raw-text-matching limitation.
@@ -28,6 +33,7 @@ import sys
 
 SEGMENT_SPLIT_RE = re.compile(r"&&|\|\||[;|]")
 LEADING_ENV_RE = re.compile(r"^(?:\w+=\S*\s+)+")
+LEADING_WRAPPER_RE = re.compile(r"^(?:sudo|env|exec|command|time|nice|nohup)\s+")
 
 COMMIT_RE = re.compile(r"^git\s+commit\b")
 PR_CREATE_RE = re.compile(r"^gh\s+pr\s+create\b")
@@ -40,7 +46,19 @@ MAIN_TOKEN_RE = re.compile(r"(?<![\w-])main(?![\w-])")
 def command_segments(command):
     segments = []
     for raw_segment in SEGMENT_SPLIT_RE.split(command):
-        segment = LEADING_ENV_RE.sub("", raw_segment.strip(), count=1)
+        segment = raw_segment.strip()
+        changed = True
+        while changed:
+            changed = False
+            stripped = LEADING_ENV_RE.sub("", segment, count=1)
+            if stripped != segment:
+                segment = stripped
+                changed = True
+                continue
+            stripped = LEADING_WRAPPER_RE.sub("", segment, count=1)
+            if stripped != segment:
+                segment = stripped
+                changed = True
         segments.append(segment)
     return segments
 
