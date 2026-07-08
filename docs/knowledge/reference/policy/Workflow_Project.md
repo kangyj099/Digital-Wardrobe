@@ -302,3 +302,29 @@ Worker and Review do not receive identical materials for the same task.
 ## 12.3 Scope Escalation
 
 If Review needs material outside its granted scope to reach a judgment, Review does not expand its own access. Review requests a scope expansion from PM, who re-evaluates Impact Scope (§7) and grants the minimum additional material needed. This preserves the Minimal Handoff Principle (§3) while allowing legitimate exceptions.
+
+---
+
+# 13. Branch Strategy & PR Policy
+
+## 13.1 Branch Structure
+
+```text
+main  ─ release only
+ └─ dev  ─ default working branch. No direct commits (human-only exception), merges only via PR
+     └─ feature/<backlog-item-slug>  ─ branched from dev when PM starts a BACKLOG.md item. Worker/PM commit freely here
+```
+
+## 13.2 Commit Gate
+
+- `feature/*`: free commit, no report/confirmation gate.
+- `dev` / `main`: direct commit blocked by hook; requires report + human confirmation (same procedure as Core Operating Principles checkpoint 3).
+- `gh pr create` (either direction): always blocked by hook; requires PR draft + report + human confirmation.
+- `git push` targeting `main`: always blocked by hook; requires report + human confirmation.
+
+## 13.3 PR Triggers
+
+- **feature → dev**: triggered when a BACKLOG.md checklist item is complete (Worker→Review cycle done). PM drafts the PR title/description plus a completion report, gets human confirmation, then runs `gh pr create`. The human merges on GitHub — PM never merges.
+- **dev → main**: triggered when every item intended for the next patch/release has landed on dev. The human decides, or PM proposes and the human approves; same draft + confirm + `gh pr create` flow. The report doubles as release notes.
+
+GitHub Branch protection on `main`/`dev` (require PR before merge, disallow force-push/deletion) is configured by the human directly in the GitHub web UI — independent of the local hook, as a second safety net.
