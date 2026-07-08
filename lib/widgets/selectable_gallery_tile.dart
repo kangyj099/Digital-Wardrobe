@@ -22,6 +22,7 @@ class SelectableGalleryTile extends StatelessWidget {
       button: true,
       label: '${item.name}, ${item.color}, 착용 ${item.wearCount}회'
           '${item.isIncomplete ? ", 미완성" : ""}',
+      excludeSemantics: true,
       child: GestureDetector(
         onTap: item.isIncomplete ? null : onTap,
         child: Container(

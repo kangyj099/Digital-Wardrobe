@@ -12,6 +12,7 @@ class StatusBadge extends StatelessWidget {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     return Semantics(
       label: '$label 상태',
+      excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
         decoration: BoxDecoration(
