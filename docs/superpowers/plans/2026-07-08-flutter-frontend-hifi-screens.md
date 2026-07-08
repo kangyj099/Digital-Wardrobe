@@ -43,15 +43,17 @@ flutter pub add flutter_riverpod go_router
 
 Expected: `pubspec.yaml`의 `dependencies`에 `flutter_riverpod`, `go_router`가 자동으로 추가됨 (버전은 pub.dev 최신 호환 버전으로 자동 선택).
 
-- [ ] **Step 2: 에셋 폴더 확인**
+- [ ] **Step 2: 폰트 에셋 확인 (이미지는 아직 확인하지 않음 — 사용자가 나중에 제공 예정)**
 
 ```bash
-ls "assets/fonts/Pretendard/" "assets/fonts/KoPub/" assets/images/mock/
+ls "assets/fonts/Pretendard/" "assets/fonts/KoPub/"
 ```
 
-Expected: `assets/fonts/Pretendard/`에 `Pretendard-Regular.otf`, `Pretendard-Medium.otf`, `Pretendard-SemiBold.otf`, `Pretendard-Bold.otf` 포함(그 외 굵기도 있을 수 있음, 무시). `assets/fonts/KoPub/`에 `KoPubWorld Dotum_Pro Medium.otf`, `KoPubWorld Dotum_Pro Bold.otf` 포함. `assets/images/mock/`에 `item_01.jpg` ~ `item_12.jpg`.
+Expected: `assets/fonts/Pretendard/`에 `Pretendard-Regular.otf`, `Pretendard-Medium.otf`, `Pretendard-SemiBold.otf`, `Pretendard-Bold.otf` 포함(그 외 굵기도 있을 수 있음, 무시). `assets/fonts/KoPub/`에 `KoPubWorld Dotum_Pro Medium.otf`, `KoPubWorld Dotum_Pro Bold.otf` 포함.
 
-**만약 파일이 없다면**: 이 Task를 여기서 멈추고 PM에게 보고한다 — Global Constraints에 명시된 대로 사용자가 직접 배치해야 하는 파일이라 Worker가 대신 만들 수 없다.
+**만약 폰트 파일이 없다면**: 이 Task를 여기서 멈추고 PM에게 보고한다 — 사용자가 직접 배치해야 하는 파일이라 Worker가 대신 만들 수 없다.
+
+**옷/코디 샘플 이미지(`assets/images/mock/item_01.jpg` ~ `item_12.jpg`)는 이 Task에서 확인하지 않는다** — 사용자가 나중에 제공하기로 함. `assets/images/mock/` 폴더 자체는 비어 있어도 되며, Task 7(옷장 메인, 처음으로 이미지를 렌더링하는 화면)을 시작하기 **전에** PM이 이미지 도착 여부를 확인한다.
 
 - [ ] **Step 3: `pubspec.yaml`의 `flutter:` 섹션에 assets/fonts 등록**
 
