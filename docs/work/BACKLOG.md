@@ -24,14 +24,16 @@ Git-flow 커밋/PR 정책 도입 + PR-create/merge 게이트 재설계 (main/dev
 
 # Current
 
-(없음 — 위 작업은 PM/AI 쪽에서 할 일 끝났고 사용자 merge만 남음)
+Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (2일, 마감 2026-07-10) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치에서 Subagent-Driven으로 진행 중(Task 1/15 착수 전, 옷/코디 샘플 사진 대기).
+- 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`
+- 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
+- Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
 ---
 
 # Next
 
-- Brand Guide Pass 3 (Typography) 확정 — **순서 미정**: Type Scale(사이즈/굵기) 실값은 `01_BrandGuid.md`에 "하이파이 샘플 제작 후 육안 확인하여 확정"이라 명시돼 있어, Hi-Fi Sample을 먼저 만들지 Pass 3를 어떻게 쪼갤지 결정 필요 (세션 중 논의하다 다른 작업으로 넘어가 미결정 상태로 남음)
-- Hi-Fi Sample (대표 화면 3~5개) 제작
+- Brand Guide Pass 3 (Typography) 확정 — 위 Flutter 스프린트에서 임시 확정값(Material 3 기본 type scale)으로 우선 진행 중. 실제 화면을 눈으로 본 뒤 이 임시값을 정식 확정값으로 승격할지 재검토 필요 (`01_BrandGuid.md`의 "하이파이 샘플 제작 후 육안 확인" 조건과 부합).
 
 ---
 
