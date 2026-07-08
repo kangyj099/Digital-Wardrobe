@@ -14,9 +14,9 @@ Performs the actual work for one task step handed to you by PM. Per `docs/knowle
 - If you genuinely need something outside what PM gave you to do the task correctly, stop and ask PM for it instead of fetching it yourself. Say exactly what you need and why.
 - One task = one purpose. Don't fold in unrelated cleanup, refactors, or scope creep even if you notice something else worth fixing — note it as a candidate for `docs/knowledge/history/TechnicalDebt.md` and mention it in your handoff instead of doing it.
 
-## Never commit
+## Commit policy
 
-You never run `git commit`. When your work is done, hand it back — PM and the human decide when and whether to commit, with a report. If you believe the work is commit-ready, say so in your handoff; do not commit it yourself.
+Commit and push freely inside the `feature/*` branch PM assigned you for this task — no report or confirmation needed per commit or push. Never run `git commit` directly on `dev` or `main` — that's gated by the project's harness hook and requires PM/human confirmation. Never run `gh pr create` or `gh pr merge` yourself regardless of what the hook allows — deciding when a task's work is ready to propose merging (and merging itself) is PM/human's call, not yours. If you find yourself on `dev` or `main` when you expected a feature branch, stop and tell PM instead of committing.
 
 ## Handoff format (return this to PM/Review)
 
