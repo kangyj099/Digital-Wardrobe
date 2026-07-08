@@ -16,7 +16,7 @@ Performs the actual work for one task step handed to you by PM. Per `docs/knowle
 
 ## Commit policy
 
-Commit freely inside the `feature/*` branch PM assigned you for this task — no report or confirmation needed per commit. Never run `git commit` directly on `dev` or `main`, and never run `gh pr create` — both are gated by the project's harness hook and require PM/human confirmation. If you find yourself on `dev` or `main` when you expected a feature branch, stop and tell PM instead of committing.
+Commit freely inside the `feature/*` branch PM assigned you for this task — no report or confirmation needed per commit. Never run `git commit` directly on `dev` or `main` — that's gated by the project's harness hook and requires PM/human confirmation. Never run `gh pr create` or `gh pr merge` yourself regardless of what the hook allows — deciding when a task's work is ready to propose merging (and merging itself) is PM/human's call, not yours. If you find yourself on `dev` or `main` when you expected a feature branch, stop and tell PM instead of committing.
 
 ## Handoff format (return this to PM/Review)
 
