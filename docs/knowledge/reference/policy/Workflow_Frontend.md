@@ -13,7 +13,7 @@
 - `Workflow_Design.md`: 디자인 시스템 거버넌스(UX/Interaction/Layout/Token/Component 레이어 경계).
 - **`Workflow_Frontend.md`(이 문서)**: 위 두 문서가 다루지 않는, Flutter/Dart 구현 그 자체의 반복적 함정과 원칙.
 
-Worker/Review 모두 Layer=UI/Screen(Decision 또는 Implementation) 태스크를 맡을 때 이 문서를 참조한다 (`Workflow_Project.md` §12.1 Required Materials에 반영).
+Worker/Review 모두 Layer=UI/Screen × Stage=Implementation(Frontend) 태스크를 맡을 때 이 문서를 참조한다 (`Workflow_Project.md` §12.1 Required Materials에 반영됨).
 
 ---
 
@@ -39,7 +39,7 @@ Worker/Review 모두 Layer=UI/Screen(Decision 또는 Implementation) 태스크�
 - `build()`(렌더링 메서드) 안에서는 `ref.watch()`만 사용한다. 콜백(`onPressed`, `onTap` 등) 안에서는 `ref.read()`를 사용한다.
   - `ref.read()`를 `build()`에서 쓰면 상태가 바뀌어도 화면이 갱신되지 않는다.
   - `ref.watch()`를 콜백 안에서 쓰는 것은 의미가 없다(구독은 위젯 리빌드 시점에만 유효).
-- `StateNotifier`가 들고 있는 리스트/컬렉션 상태는 항상 **새 리스트로 교체**해서 `state = ...`에 대입한다. 기존 리스트를 in-place로 `add`/`remove`하지 않는다 — 그래야 리스너가 변경을 감지한다.
+- `StateNotifier`가 들고 있는 리스트/컬렉션 상태는 항상 **새 리스트로 교체**해서 `state = ...`에 대입한다. 기존 리스트를 in-place로 `add`/`remove`하지 않는다 — 그래야 이 상태를 `watch`하는 화면들이 변경을 감지한다. (여기서 "감지하는 쪽"은 §4의 "리스너/구독"과는 별개 개념이다 — §4는 직접 만들고 직접 해제해야 하는 `Timer`/`StreamSubscription`/`FocusNode` 등을 가리킨다.)
 - Provider끼리 순환 `watch`(A가 B를 watch, B가 A를 watch)를 만들지 않는다.
 - 로컬 위젯 상태(텍스트 컨트롤러, 폼 입력값 등)가 필요한 화면만 `ConsumerStatefulWidget`을 쓴다. 필요 없으면 `ConsumerWidget`으로 충분하다.
 
