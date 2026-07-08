@@ -25,6 +25,7 @@
   - `assets/fonts/KoPub/KoPub 폰트 사용 목적 설문 제출 필요(출시전에).txt`: 사용자의 개인 메모(출시 전 라이선스 설문 제출 필요, https://forms.gle/aQU7b3EoaF53zMKaA) — 에셋 등록 대상 아님, 이번 스프린트 스코프 밖.
 - 옷/코디 샘플 이미지는 사용자가 `assets/images/mock/`에 배치한다. 파일명 규칙: `item_01.jpg` ~ `item_12.jpg` (Task 3의 mock 데이터가 이 이름을 참조).
 - 테스트 방침: 화면/위젯은 `flutter run`으로 직접 확인(위젯 단위 TDD 아님). 순수 로직(필터/정렬 함수)에는 `flutter test`로 단위 테스트 작성.
+- **`docs/knowledge/reference/policy/Workflow_Frontend.md` 전체를 따른다** (Task 2 진행 중 신설됨) — 특히: 드릴다운/크로스레퍼런스 네비게이션은 `context.push()`만 사용(`context.go()` 금지, 상위 카테고리 전환에만 허용), 컨트롤러/리스너는 `dispose()` 필수, `ref.watch()`는 `build()`에서만·`ref.read()`는 콜백에서만, 필터링 대상 리스트 아이템에는 `key: ValueKey(id)` 필수.
 
 ---
 
@@ -1031,7 +1032,7 @@ class GroupedGalleryGrid extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return SelectableGalleryTile(item: item, onTap: () => onItemTap(item));
+        return SelectableGalleryTile(key: ValueKey(item.id), item: item, onTap: () => onItemTap(item));
       },
     );
   }
@@ -1169,13 +1170,13 @@ class ClosetMainScreen extends ConsumerWidget {
             child: GroupedGalleryGrid(
               items: items,
               density: density,
-              onItemTap: (item) => context.go(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
+              onItemTap: (item) => context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go(AppRoute.closetAdd),
+        onPressed: () => context.push(AppRoute.closetAdd),
         child: const Icon(Icons.add),
       ),
     );
@@ -1528,14 +1529,14 @@ class ClosetItemDetailScreen extends ConsumerWidget {
                 for (final composition in compositions)
                   ListTile(
                     title: Text(composition.name),
-                    onTap: () => context.go(AppRoute.compositionDetail.replaceFirst(':id', composition.id)),
+                    onTap: () => context.push(AppRoute.compositionDetail.replaceFirst(':id', composition.id)),
                   ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('이 옷이 담긴 스타일일지', style: Theme.of(context).textTheme.titleMedium),
                 for (final log in styleLogs)
                   ListTile(
                     title: Text('${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'),
-                    onTap: () => context.go(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+                    onTap: () => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
                   ),
               ],
             ),
@@ -1597,7 +1598,7 @@ class CompositionDetailScreen extends ConsumerWidget {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
                             child: GestureDetector(
-                              onTap: () => context.go(AppRoute.closetItemDetail.replaceFirst(':id', placement.clothingItemId)),
+                              onTap: () => context.push(AppRoute.closetItemDetail.replaceFirst(':id', placement.clothingItemId)),
                               child: SizedBox(width: 70, child: Image.asset(itemsById[placement.clothingItemId]!.imagePath)),
                             ),
                           ),
@@ -1611,7 +1612,7 @@ class CompositionDetailScreen extends ConsumerWidget {
                 for (final log in linkedLogs)
                   ListTile(
                     title: Text('${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'),
-                    onTap: () => context.go(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+                    onTap: () => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
                   ),
               ],
             ),
@@ -1738,6 +1739,12 @@ class _ClosetAddScreenState extends ConsumerState<ClosetAddScreen> {
   final _nameController = TextEditingController(text: '새 아이템');
   String _category = 'top';
   String _season = '사계절';
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2041,7 +2048,7 @@ class CompositionMainScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final composition = compositions[index];
                 return GestureDetector(
-                  onTap: () => context.go(AppRoute.compositionDetail.replaceFirst(':id', composition.id)),
+                  onTap: () => context.push(AppRoute.compositionDetail.replaceFirst(':id', composition.id)),
                   child: Container(
                     color: Theme.of(context).colorScheme.secondary,
                     child: Center(child: Text(composition.name, textAlign: TextAlign.center)),
@@ -2053,7 +2060,7 @@ class CompositionMainScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go(AppRoute.compositionEditor),
+        onPressed: () => context.push(AppRoute.compositionEditor),
         child: const Icon(Icons.add),
       ),
     );
@@ -2127,7 +2134,7 @@ class StyleLogMainScreen extends ConsumerWidget {
                     leading: Image.asset(log.coverImagePath, width: 48, height: 48, fit: BoxFit.cover),
                     title: Text('${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'),
                     subtitle: Text(log.location),
-                    onTap: () => context.go(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+                    onTap: () => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
                   ),
               ],
             ),
@@ -2135,7 +2142,7 @@ class StyleLogMainScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go(AppRoute.styleLogAdd),
+        onPressed: () => context.push(AppRoute.styleLogAdd),
         child: const Icon(Icons.add),
       ),
     );
@@ -2332,6 +2339,6 @@ git commit -m "feat(screen): implement 스타일일지 추가 with BindingSelect
 
 - **Spec coverage**: 스펙의 화면 10개 전부 Task 7~15에 매핑됨(설정/휴지통에 Trash+Settings 통합, 00_MVP.md §7 스크린 리스트와 동일한 통합 방식). 토큰(Task 2), 데이터/상태(Task 3~4), 라우팅(Task 5) 전부 커버.
 - **Placeholder scan**: 없음 — 모든 코드 블록은 실행 가능한 완전한 코드. `AiProcessingStatus`는 `success` 고정이 스펙에서 의도한 제약(placeholder 아님).
-- **Type/signature 일관성**: `ClothingItem`, `Composition`, `CompositionItemPlacement`, `StyleLog`(Task 3)의 필드명이 Task 4 provider, Task 6~15 화면/위젯 전체에서 동일하게 사용됨(`imagePath`, `wearCount`, `isIncomplete`, `linkedCompositionId` 등 재확인 완료). `AppRoute.*` 상수와 실제 `context.go()` 호출 전부 Task 5에서 정의한 경로 패턴과 일치.
+- **Type/signature 일관성**: `ClothingItem`, `Composition`, `CompositionItemPlacement`, `StyleLog`(Task 3)의 필드명이 Task 4 provider, Task 6~15 화면/위젯 전체에서 동일하게 사용됨(`imagePath`, `wearCount`, `isIncomplete`, `linkedCompositionId` 등 재확인 완료). `AppRoute.*` 상수와 실제 `context.push()` 호출 전부 Task 5에서 정의한 경로 패턴과 일치 (`Workflow_Frontend.md` §2 원칙에 따라 드릴다운/크로스레퍼런스 네비게이션은 전부 `push` 사용 — 최초 작성 시 `go`였던 것을 이 문서 작성 과정에서 발견해 수정함).
 - **컴포넌트 재사용 확인**: `GroupedGalleryGrid`(Task 6)는 Task 7(옷장 메인)과 Task 15(스타일일지 추가의 BindingSelectionModal)에서 재사용. `FlatFilterGallery`(Task 12)는 Task 14(스타일일지 메인)에서 재사용. `OverlayHeader`(Task 6)는 전 화면 공통 사용.
 - **회귀 위험**: Task 5의 자리표시 라우트가 Task 7~15에서 순차적으로 실제 화면으로 교체되므로, 각 Task 완료 시점마다 `flutter run`으로 전체 네비게이션이 여전히 동작하는지 확인 필요(각 Task의 Step "실행 확인"에 이미 포함됨).
