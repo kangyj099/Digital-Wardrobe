@@ -18,9 +18,11 @@
 - 색상(Dark): Primary `#93B5CC`/OnPrimary `#232B31`, Secondary `#8FA890`/OnSecondary `#232B31`, Surface `#2C3841`/OnSurface `#EDE9E1`, Background `#1D262D`/OnBackground `#EDE9E1`, Error `#D98A8E`/OnError `#1D262D`. Warning `#D9A05C`, Success `#93B5CC`.
 - 코디 에디터 화면(Task 8)은 드래그/회전/크기조절/z-index 로직을 구현하지 않는다 — 정적 배치만 표시.
 - `옷 추가하기`(Task 10)의 AI 처리 단계는 실제 API 호출 없이 고정된 성공 상태만 표시한다.
-- 폰트 파일은 사용자가 아래 정확한 파일명으로 `assets/fonts/`에 직접 배치한다 (PM/Worker가 대신 다운로드하지 않음):
-  - `assets/fonts/Pretendard-Regular.otf`, `Pretendard-Medium.otf`, `Pretendard-SemiBold.otf`, `Pretendard-Bold.otf`
-  - `assets/fonts/KoPubDotum-Medium.ttf`, `KoPubDotum-Bold.ttf`
+- 폰트 파일은 사용자가 이미 아래 경로에 배치 완료 (PM/Worker가 대신 다운로드하지 않음). 실제 배치된 파일명 기준:
+  - `assets/fonts/Pretendard/Pretendard-Regular.otf`, `Pretendard-Medium.otf`, `Pretendard-SemiBold.otf`, `Pretendard-Bold.otf` (그 외 Black/ExtraBold/ExtraLight/Light/Thin도 있으나 이번 스코프에서는 미사용)
+  - `assets/fonts/KoPub/KoPubWorld Dotum_Pro Medium.otf`(weight 500 취급 — Regular/400 실물이 없어 Body 기본 굵기로 사용), `KoPubWorld Dotum_Pro Bold.otf`(weight 700). `KoPubWorld Dotum_Pro Light.otf`도 있으나 이번 스코프 미사용.
+  - 앱 내부 폰트 패밀리 이름은 실제 파일명과 무관하게 `Pretendard`/`KoPubDotum`으로 별칭 부여(아래 pubspec 등록 참고).
+  - `assets/fonts/KoPub/KoPub 폰트 사용 목적 설문 제출 필요(출시전에).txt`: 사용자의 개인 메모(출시 전 라이선스 설문 제출 필요, https://forms.gle/aQU7b3EoaF53zMKaA) — 에셋 등록 대상 아님, 이번 스프린트 스코프 밖.
 - 옷/코디 샘플 이미지는 사용자가 `assets/images/mock/`에 배치한다. 파일명 규칙: `item_01.jpg` ~ `item_12.jpg` (Task 3의 mock 데이터가 이 이름을 참조).
 - 테스트 방침: 화면/위젯은 `flutter run`으로 직접 확인(위젯 단위 TDD 아님). 순수 로직(필터/정렬 함수)에는 `flutter test`로 단위 테스트 작성.
 
@@ -44,16 +46,16 @@ Expected: `pubspec.yaml`의 `dependencies`에 `flutter_riverpod`, `go_router`가
 - [ ] **Step 2: 에셋 폴더 확인**
 
 ```bash
-ls assets/fonts/ assets/images/mock/
+ls "assets/fonts/Pretendard/" "assets/fonts/KoPub/" assets/images/mock/
 ```
 
-Expected: `assets/fonts/`에 `Pretendard-Regular.otf`, `Pretendard-Medium.otf`, `Pretendard-SemiBold.otf`, `Pretendard-Bold.otf`, `KoPubDotum-Medium.ttf`, `KoPubDotum-Bold.ttf` 6개 파일. `assets/images/mock/`에 `item_01.jpg` ~ `item_12.jpg`.
+Expected: `assets/fonts/Pretendard/`에 `Pretendard-Regular.otf`, `Pretendard-Medium.otf`, `Pretendard-SemiBold.otf`, `Pretendard-Bold.otf` 포함(그 외 굵기도 있을 수 있음, 무시). `assets/fonts/KoPub/`에 `KoPubWorld Dotum_Pro Medium.otf`, `KoPubWorld Dotum_Pro Bold.otf` 포함. `assets/images/mock/`에 `item_01.jpg` ~ `item_12.jpg`.
 
 **만약 파일이 없다면**: 이 Task를 여기서 멈추고 PM에게 보고한다 — Global Constraints에 명시된 대로 사용자가 직접 배치해야 하는 파일이라 Worker가 대신 만들 수 없다.
 
 - [ ] **Step 3: `pubspec.yaml`의 `flutter:` 섹션에 assets/fonts 등록**
 
-`pubspec.yaml`의 `flutter:` 섹션(현재 `uses-material-design: true`만 있는 상태)을 다음으로 교체:
+`pubspec.yaml`의 `flutter:` 섹션(현재 `uses-material-design: true`만 있는 상태)을 다음으로 교체. 파일명에 공백이 있는 항목(`KoPubWorld Dotum_Pro ...`)도 따옴표로 감싸면 정상 동작함:
 
 ```yaml
 flutter:
@@ -65,19 +67,22 @@ flutter:
   fonts:
     - family: Pretendard
       fonts:
-        - asset: assets/fonts/Pretendard-Regular.otf
-        - asset: assets/fonts/Pretendard-Medium.otf
+        - asset: assets/fonts/Pretendard/Pretendard-Regular.otf
+        - asset: assets/fonts/Pretendard/Pretendard-Medium.otf
           weight: 500
-        - asset: assets/fonts/Pretendard-SemiBold.otf
+        - asset: assets/fonts/Pretendard/Pretendard-SemiBold.otf
           weight: 600
-        - asset: assets/fonts/Pretendard-Bold.otf
+        - asset: assets/fonts/Pretendard/Pretendard-Bold.otf
           weight: 700
     - family: KoPubDotum
       fonts:
-        - asset: assets/fonts/KoPubDotum-Medium.ttf
-        - asset: assets/fonts/KoPubDotum-Bold.ttf
+        - asset: "assets/fonts/KoPub/KoPubWorld Dotum_Pro Medium.otf"
+          weight: 500
+        - asset: "assets/fonts/KoPub/KoPubWorld Dotum_Pro Bold.otf"
           weight: 700
 ```
+
+**참고**: KoPubWorld Dotum_Pro에는 Regular(400) 실물 파일이 없어서 Medium(500)을 Body 기본 굵기로 쓴다 — Task 2의 `app_typography.dart`도 이에 맞춰 Body 텍스트 굵기를 `FontWeight.w500`으로 지정한다(아래 Task 2 참고).
 
 - [ ] **Step 4: 빌드 확인**
 
@@ -318,9 +323,10 @@ class AppTypography {
       titleLarge: style(pretendard, 22, FontWeight.w600),
       titleMedium: style(pretendard, 16, FontWeight.w600),
       titleSmall: style(pretendard, 14, FontWeight.w600),
-      bodyLarge: style(koPub, 16, FontWeight.w400),
-      bodyMedium: style(koPub, 14, FontWeight.w400),
-      bodySmall: style(koPub, 12, FontWeight.w400),
+      // KoPubWorld Dotum_Pro에 Regular(400) 실물이 없어 Medium(500)을 기본 Body 굵기로 사용.
+      bodyLarge: style(koPub, 16, FontWeight.w500),
+      bodyMedium: style(koPub, 14, FontWeight.w500),
+      bodySmall: style(koPub, 12, FontWeight.w500),
       labelLarge: style(pretendard, 14, FontWeight.w500),
       labelMedium: style(pretendard, 12, FontWeight.w500),
       labelSmall: style(pretendard, 11, FontWeight.w500),
