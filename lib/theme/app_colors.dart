@@ -46,6 +46,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     required this.gray900,
     required this.warning,
     required this.success,
+    required this.background,
+    required this.onBackground,
   });
 
   final Color gray50;
@@ -60,6 +62,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   final Color gray900;
   final Color warning;
   final Color success;
+  final Color background;
+  final Color onBackground;
 
   static const light = AppSemanticColors(
     gray50: Color(0xFFF7F6F3),
@@ -74,6 +78,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     gray900: Color(0xFF1D262D),
     warning: Color(0xFFB98A3D),
     success: Color(0xFF394550),
+    background: Color(0xFFF7F6F3),
+    onBackground: Color(0xFF2B2D30),
   );
 
   static const dark = AppSemanticColors(
@@ -89,6 +95,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     gray900: Color(0xFF1D262D),
     warning: Color(0xFFD9A05C),
     success: Color(0xFF93B5CC),
+    background: Color(0xFF1D262D),
+    onBackground: Color(0xFFEDE9E1),
   );
 
   @override
@@ -105,6 +113,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     Color? gray900,
     Color? warning,
     Color? success,
+    Color? background,
+    Color? onBackground,
   }) {
     return AppSemanticColors(
       gray50: gray50 ?? this.gray50,
@@ -119,6 +129,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       gray900: gray900 ?? this.gray900,
       warning: warning ?? this.warning,
       success: success ?? this.success,
+      background: background ?? this.background,
+      onBackground: onBackground ?? this.onBackground,
     );
   }
 
@@ -138,6 +150,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       gray900: Color.lerp(gray900, other.gray900, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
       success: Color.lerp(success, other.success, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      onBackground: Color.lerp(onBackground, other.onBackground, t)!,
     );
   }
 }

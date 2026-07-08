@@ -12,7 +12,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: semantic.background,
       textTheme: AppTypography.textTheme(colorScheme.onSurface),
       extensions: [semantic],
     );
