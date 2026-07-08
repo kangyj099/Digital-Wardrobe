@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/block-git-commit.sh"
+            "command": "python .claude/hooks/guard_git_actions.py"
           }
         ]
       }
