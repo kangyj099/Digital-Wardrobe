@@ -18,19 +18,19 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-Brand Guide Pass 2 확정 — Colors (T1~T3 실값)
+Git-flow 커밋/PR 정책 도입 + PR-create/merge 게이트 재설계 (main/dev/feature 3단계 브랜치, `guard_git_actions.py` 훅, feature→dev PR 자유/dev→main PR만 게이트, `gh pr merge` 하드 블록) — 구현/리뷰 완료, PR #2 오픈 후 병합 대기 (https://github.com/kangyj099/Digital-Wardrobe/pull/2). 상세 기록은 `docs/superpowers/plans/2026-07-08-git-flow-commit-policy.md`, `docs/knowledge/history/Decision.md` 참고.
 
 ---
 
 # Current
 
-Git-flow 커밋/PR 정책 도입 (main/dev/feature 3단계 브랜치, hook 교체) — 진행 상황은 `docs/superpowers/plans/2026-07-08-git-flow-commit-policy.md`에서 별도 추적
+(없음 — 위 작업은 PM/AI 쪽에서 할 일 끝났고 사용자 merge만 남음)
 
 ---
 
 # Next
 
-- Brand Guide Pass 3 (Typography) 확정
+- Brand Guide Pass 3 (Typography) 확정 — **순서 미정**: Type Scale(사이즈/굵기) 실값은 `01_BrandGuid.md`에 "하이파이 샘플 제작 후 육안 확인하여 확정"이라 명시돼 있어, Hi-Fi Sample을 먼저 만들지 Pass 3를 어떻게 쪼갤지 결정 필요 (세션 중 논의하다 다른 작업으로 넘어가 미결정 상태로 남음)
 - Hi-Fi Sample (대표 화면 3~5개) 제작
 
 ---
