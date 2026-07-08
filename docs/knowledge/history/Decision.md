@@ -1,5 +1,45 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] PR-create 게이트를 main-base 전용으로 좁히고 gh pr merge 하드 블록 추가
+
+결정:
+- `gh pr create`는 base가 `main`일 때(또는 `--base` 미지정 시, 기본값이 `main`이므로)만 계속 게이트. feature→dev(`--base dev`) 등 non-main 대상은 자유롭게 허용.
+- `gh pr merge`는 방향 무관 항상 하드 블록 — 확인 후 재시도 모델이 아니라 애초에 AI가 절대 실행하지 않는 액션.
+
+사유:
+PR #2(feature→dev) 오픈 후 검토하며, "PR 생성 시 확인받기"와 "merge 전 사람이 GitHub에서 다시 검토하기"가 같은 질문("이 내용을 반영해도 되는가")을 두 번 묻는 중복임을 발견. 실제 반영(dev/main 내용 변경)은 merge 시점에만 일어나므로, feature→dev처럼 merge 시 사람이 어차피 검토하는 경우는 생성 단계 게이트가 불필요. 반면 dev→main은 "지금 릴리즈할지"라는 타이밍 결정이 걸려있어 생성 단계에서도 확인이 의미 있음. 별개로, `gh pr merge`가 애초에 훅의 정규식 검사 대상이 아니어서 "사람만 merge한다"는 §13.3 원칙이 순수 서면 규칙에 불과했던 것도 이번에 기술적으로 막음.
+
+Impact:
+- `.claude/hooks/guard_git_actions.py` PR-create 로직 변경, `gh pr merge` 룰 추가
+- `Workflow_Project.md` §13.2/13.3 갱신
+- `CLAUDE.md` 체크포인트 3 갱신
+- `worker.md` 문구 정확성 수정 (워커는 여전히 PR 생성/merge 안 함, 훅 스코프와 무관)
+
+Follow-up (재검토 조건):
+이 결정("feature→dev PR 생성은 자유")은 "PR 생성 자체는 아무 자동 동작도 촉발하지 않는다"는 전제에 의존한다. 나중에 PR이 열리기만 해도 자동으로 실행되는 CI/자동배포/자동병합 같은 자동화(예: `.github/workflows/`에 `on: pull_request`로 반응하는 워크플로 추가)를 도입할 때는, 그 작업이 이 전제를 깨는지 반드시 먼저 확인할 것. 깨진다면 feature→dev PR 생성도 다시 게이트가 필요한지 재검토해야 함.
+
+---
+
+[Decision] Git-flow 기반 브랜치/커밋/PR 정책 도입
+
+결정:
+- main(릴리즈 전용) ← dev(기본 작업 브랜치, PR 병합만) ← feature/<backlog-slug>(자유 커밋) 3단계 브랜치 구조 도입
+- Worker도 feature 브랜치 안에서는 자유 커밋 가능 (기존 "Worker는 절대 커밋 안 함" 규칙 완화)
+- dev/main 직접 커밋, gh pr create(feature→dev/dev→main 모두), main으로의 git push는 계속 리포트+사용자 확인 게이트
+- `.claude/hooks/block-git-commit.sh`(정규식 기반 — 실측으로 확인된 버그: 커맨드 안에 `git commit`보다 앞서 따옴표가 나오면 매칭이 끊겨 차단이 뚫림)를 브랜치 인지형 Python 훅 `guard_git_actions.py`로 교체
+
+사유:
+매 커밋마다 리포트+확인을 받는 기존 방식은 작업량이 늘면서 확인 비용이 커짐. feature 브랜치 안에서의 저위험 커밋은 자유롭게 허용하고, 실제로 공유 상태(dev/main)에 반영되거나 외부에 보이는 행위(PR 생성, main push)에만 확인 게이트를 남기는 것으로 절충. 겸사겸사 기존 훅의 정규식 매칭 버그(따옴표 포함 커맨드에서 차단 실패)도 이번에 해소함.
+
+Impact:
+- Workflow_Project.md §13 신설
+- CLAUDE.md 체크포인트 3 갱신
+- worker.md 커밋 정책 갱신
+- `.claude/hooks/block-git-commit.sh` → `guard_git_actions.py` 교체, settings.json 훅 커맨드 갱신
+- GitHub Branch protection(main/dev)은 사용자가 별도로 웹 UI에서 설정 (이번 작업 범위 밖)
+
+---
+
 [Decision] 역할별 자료 접근권 원칙 추가 (Layer × Stage 기준)
 
 결정:
