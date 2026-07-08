@@ -16,7 +16,7 @@
 Task 2 리뷰(원래 문제 발견) → Task 9 fix round 1(세그먼트 매칭으로 해결 시도) → 리뷰에서 `sudo`/`env`/`exec`/`command`/`time` 래퍼 우회 회귀 발견 → fix round 2에서 래퍼 스트리핑 추가로 해결. 이 과정에서 리뷰어가 heredoc 기반 진단 커맨드가 여전히 오탐될 수 있음을 재확인함.
 
 영향:
-- 우회(래퍼) 쪽은 fix round 2로 닫혔으니 보안상 중요한 부분은 해소됨.
+- 지정된 7개 래퍼(`sudo`/`env`/`exec`/`command`/`time`/`nice`/`nohup`)로 인한 우회는 fix round 2로 닫혔으나, 그 외 래퍼(`ssh host git commit`, `bash -c "git commit"`, `xargs` 등)로 인한 우회는 여전히 가능함.
 - 남은 오탐 한계는 이 하네스로 훅 자체를 다루는 문서/테스트 작성 시(특히 heredoc 사용 시) 여전히 마주칠 수 있음 — 불편함 수준.
 
 조치 방향(착수 조건):
