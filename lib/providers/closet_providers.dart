@@ -9,22 +9,7 @@ class ClosetItemsNotifier extends StateNotifier<List<ClothingItem>> {
   void softDelete(String id) {
     state = [
       for (final item in state)
-        if (item.id == id)
-          ClothingItem(
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            color: item.color,
-            season: item.season,
-            imagePath: item.imagePath,
-            location: item.location,
-            memo: item.memo,
-            wearCount: item.wearCount,
-            isIncomplete: item.isIncomplete,
-            isDeleted: true,
-          )
-        else
-          item,
+        if (item.id == id) item.copyWith(isDeleted: true) else item,
     ];
   }
 }

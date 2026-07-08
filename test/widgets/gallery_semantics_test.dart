@@ -23,6 +23,7 @@ void main() {
       category: 'outer',
       color: 'navy',
       season: '겨울',
+      material: '패딩',
       imagePath: '',
       wearCount: 5,
     );
@@ -41,6 +42,7 @@ void main() {
       category: 'bottom',
       color: 'gray',
       season: '겨울',
+      material: '플리스',
       imagePath: '',
       isIncomplete: true,
     );

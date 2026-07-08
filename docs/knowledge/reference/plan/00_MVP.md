@@ -69,6 +69,7 @@ Clothing type (tops/bottoms/outerwear/shoes/accessories, detailed categories)
 Color (1–2 dominant colors)
 Presence of graphics (plain/pattern/print)
 Mood (minimal/casual/formal, etc.) — may have low accuracy; requires validation in Phase 1.5
+Material (perception-based fabric feel, closed set of ~18 values — e.g. cotton/denim/knit/leather, not fiber-composition percentages; added to support future outfit-recommendation analysis of frequently-worn combinations) — same low-accuracy caveat as Mood; requires validation in Phase 1.5. Full value list: see `ClothingItem.material` / `kClothingMaterials` in the app's data model.
 
 Additional rules
 
@@ -121,6 +122,7 @@ ClothingItem
 - color (primary tag, user-editable)
 - has_graphic (primary tag, user-editable)
 - mood_tags (primary tag, user-editable)
+- material (primary tag, user-editable, closed vocabulary of ~18 perception-based values — see §4.1 Auto-tagging fields)
 - internal_tags (private metadata for algorithms)
 - size, season, location, memo
 - brand, purchase_place, price (optional, shown via [Add Info])

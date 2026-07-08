@@ -35,7 +35,7 @@ class SelectableGalleryTile extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: item.imagePath.isNotEmpty
-                    ? Image.asset(item.imagePath, fit: BoxFit.cover)
+                    ? Image.asset(item.imagePath, fit: BoxFit.contain)
                     : const SizedBox.shrink(),
               ),
               if (item.isIncomplete)

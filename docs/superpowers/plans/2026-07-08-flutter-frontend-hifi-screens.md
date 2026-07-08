@@ -23,9 +23,10 @@
   - `assets/fonts/KoPub/KoPubWorld Dotum_Pro Medium.otf`(weight 500 취급 — Regular/400 실물이 없어 Body 기본 굵기로 사용), `KoPubWorld Dotum_Pro Bold.otf`(weight 700). `KoPubWorld Dotum_Pro Light.otf`도 있으나 이번 스코프 미사용.
   - 앱 내부 폰트 패밀리 이름은 실제 파일명과 무관하게 `Pretendard`/`KoPubDotum`으로 별칭 부여(아래 pubspec 등록 참고).
   - `assets/fonts/KoPub/KoPub 폰트 사용 목적 설문 제출 필요(출시전에).txt`: 사용자의 개인 메모(출시 전 라이선스 설문 제출 필요, https://forms.gle/aQU7b3EoaF53zMKaA) — 에셋 등록 대상 아님, 이번 스프린트 스코프 밖.
-- 옷/코디 샘플 이미지는 사용자가 `assets/images/mock/`에 배치한다. 파일명 규칙: `item_01.jpg` ~ `item_12.jpg` (Task 3의 mock 데이터가 이 이름을 참조).
-- 테스트 방침: 화면/위젯은 `flutter run`으로 직접 확인(위젯 단위 TDD 아님). 순수 로직(필터/정렬 함수)에는 `flutter test`로 단위 테스트 작성.
-- **`docs/knowledge/reference/policy/Workflow_Frontend.md` 전체를 따른다** (Task 2 진행 중 신설됨) — 특히: 드릴다운/크로스레퍼런스 네비게이션은 `context.push()`만 사용(`context.go()` 금지, 상위 카테고리 전환에만 허용), 컨트롤러/리스너는 `dispose()` 필수, `ref.watch()`는 `build()`에서만·`ref.read()`는 콜백에서만, 필터링 대상 리스트 아이템에는 `key: ValueKey(id)` 필수.
+- 옷/코디 샘플 이미지는 사용자가 `assets/images/mock/`에 배치했다. **실제 파일명은 `item_01.jpg` 규칙이 아니라 `IMG_XXXX_preview_rev_1.png`/`IMG_XXXX.PNG`/`IMG_XXXX-removebg-preview.png` 형태다 — Task 3 진행 후 mock_data.dart를 실제 파일명에 맞게 재작성했다(아래 addendum 참고). 앞으로 이 Task를 다시 열어볼 일이 있다면 이 문단이 최신 상태다.**
+- 테스트 방침: 화면/위젯은 `flutter run`으로 직접 확인(위젯 단위 TDD 아님). 순수 로직(필터/정렬 함수)에는 `flutter test`로 단위 테스트 작성. Semantics label을 가진 재사용 컴포넌트는 위젯 테스트 1개 이상 필수(Workflow_Frontend.md §5).
+- **`docs/knowledge/reference/policy/Workflow_Frontend.md` 전체를 따른다** (Task 2 진행 중 신설됨) — 특히: 드릴다운/크로스레퍼런스 네비게이션은 `context.push()`만 사용(`context.go()` 금지, 상위 카테고리 전환에만 허용), 컨트롤러/리스너는 `dispose()` 필수, `ref.watch()`는 `build()`에서만·`ref.read()`는 콜백에서만, 필터링 대상 리스트 아이템에는 `key: ValueKey(id)` 필수, `Semantics(label:...)`의 자식이 자체 접근성 정보를 가지면 `excludeSemantics: true` 필수.
+- **`ClothingItem`에 `material` 필드가 추가됐다** (Task 7 착수 전 addendum, Decision.md 참고) — 필수 `String`, 값은 `lib/models/clothing_item.dart`의 `kClothingMaterials`(18개 폐쇄형 어휘) 중 하나. `ClothingItem`을 생성하는 모든 코드(신규 Task 포함)는 이 필드를 채워야 한다. `ClothingItem`을 부분 수정할 땐 전체 필드를 손으로 나열하지 말고 `copyWith()`를 사용한다.
 
 ---
 
@@ -1521,7 +1522,7 @@ class ClosetItemDetailScreen extends ConsumerWidget {
               children: [
                 AspectRatio(aspectRatio: 1, child: Image.asset(item.imagePath, fit: BoxFit.cover)),
                 const SizedBox(height: AppSpacing.md),
-                Text('${item.category} · ${item.color} · ${item.season}'),
+                Text('${item.category} · ${item.color} · ${item.season} · ${item.material}'),
                 Text('위치: ${item.location.isEmpty ? "미지정" : item.location}'),
                 Text('착용 ${item.wearCount}회'),
                 const SizedBox(height: AppSpacing.lg),
