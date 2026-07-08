@@ -4,7 +4,11 @@
 See docs/knowledge/reference/policy/Workflow_Project.md §13.
 - `git commit` on a `feature/*` branch: allowed, no gate.
 - `git commit` directly on `dev` or `main`: blocked, needs report + human confirmation.
-- `gh pr create` (any direction): blocked, needs PR draft + report + human confirmation.
+- `gh pr create` targeting `dev` (or any non-`main` base): allowed, no gate.
+- `gh pr create` targeting `main` (or with no `--base`, which defaults to the
+  repo's default branch `main`): blocked, needs PR draft + report + human confirmation.
+- `gh pr merge` (any direction): always blocked. Not a confirm-and-retry gate —
+  the human merges directly, the AI never runs this command.
 - `git push` targeting `main`: blocked, needs report + human confirmation.
 """
 import json
@@ -14,6 +18,8 @@ import sys
 
 COMMIT_RE = re.compile(r"\bgit\s+commit\b")
 PR_CREATE_RE = re.compile(r"\bgh\s+pr\s+create\b")
+PR_MERGE_RE = re.compile(r"\bgh\s+pr\s+merge\b")
+PR_BASE_RE = re.compile(r"--base[=\s]+(\S+)")
 PUSH_RE = re.compile(r"\bgit\s+push\b")
 MAIN_TOKEN_RE = re.compile(r"(?<![\w-])main(?![\w-])")
 
@@ -42,16 +48,32 @@ def main() -> int:
     if not command:
         return 0
 
-    if PR_CREATE_RE.search(command):
+    if PR_MERGE_RE.search(command):
         print(
-            "STOP: `gh pr create` is gated by this project's harness. "
-            "Before creating the PR: (1) write a PR draft (title, description, "
-            "summary of changes) and a report covering what was done, why, and "
-            "the impact, (2) show it to the user and get explicit confirmation. "
-            "Only after that, retry.",
+            "STOP: `gh pr merge` is never run by AI agents in this project's "
+            "harness (Workflow_Project.md §13.3: the human always merges, "
+            "directly on GitHub or by running this command themselves). This "
+            "is not a confirm-and-retry gate — do not retry this command.",
             file=sys.stderr,
         )
         return 2
+
+    if PR_CREATE_RE.search(command):
+        base_match = PR_BASE_RE.search(command)
+        base = base_match.group(1).strip("'\"") if base_match else None
+        if base is None or MAIN_TOKEN_RE.search(base):
+            print(
+                "STOP: `gh pr create` targeting `main` (or with no `--base` "
+                "given, which defaults to this repo's default branch, `main`) "
+                "is gated by this project's harness (main is release-only). "
+                "Before creating the PR: (1) write a PR draft (title, "
+                "description, summary of changes) and a report covering what "
+                "is being released and why, (2) show it to the user and get "
+                "explicit confirmation. Only after that, retry.",
+                file=sys.stderr,
+            )
+            return 2
+        return 0
 
     if PUSH_RE.search(command) and MAIN_TOKEN_RE.search(command):
         print(
