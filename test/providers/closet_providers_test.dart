@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 
 void main() {
@@ -8,11 +9,11 @@ void main() {
     addTearDown(container.dispose);
 
     final before = container.read(filteredClosetItemsProvider).length;
-    container.read(selectedSeasonFilterProvider.notifier).state = '사계절';
+    container.read(selectedSeasonFilterProvider.notifier).state = Season.allSeason;
     final after = container.read(filteredClosetItemsProvider);
 
     expect(after.length, lessThan(before));
-    expect(after.every((item) => item.season == '사계절'), isTrue);
+    expect(after.every((item) => item.season == Season.allSeason), isTrue);
   });
 
   test('softDelete한 아이템은 filteredClosetItemsProvider에서 제외된다', () {

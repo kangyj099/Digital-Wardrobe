@@ -1,26 +1,4 @@
-/// Allowed values for [ClothingItem.material] — a closed, perception-based
-/// vocabulary (how a person would describe the fabric at a glance), not a
-/// fiber-composition breakdown. See Decision.md for the taxonomy decision.
-const List<String> kClothingMaterials = [
-  '면',
-  '스판',
-  '데님',
-  '니트',
-  '플리스',
-  '리넨',
-  '모달·레이온',
-  '실크·새틴',
-  '시어서커',
-  '코듀로이',
-  '벨벳',
-  '패딩',
-  '나일론(바스락)',
-  '가죽',
-  '퍼·무스탕',
-  '캔버스·패브릭',
-  '스웨이드',
-  '고무·러버',
-];
+import 'enums.dart';
 
 class ClothingItem {
   const ClothingItem({
@@ -40,12 +18,10 @@ class ClothingItem {
 
   final String id;
   final String name;
-  final String category;
+  final ClothingCategory category;
   final String color;
-  final String season;
-
-  /// One of [kClothingMaterials].
-  final String material;
+  final Season season;
+  final ClothingMaterial material;
   final String imagePath;
   final String location;
   final String memo;
@@ -56,10 +32,10 @@ class ClothingItem {
   ClothingItem copyWith({
     String? id,
     String? name,
-    String? category,
+    ClothingCategory? category,
     String? color,
-    String? season,
-    String? material,
+    Season? season,
+    ClothingMaterial? material,
     String? imagePath,
     String? location,
     String? memo,

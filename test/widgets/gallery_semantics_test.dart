@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:digittal_wardrobe/models/clothing_item.dart';
+import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
@@ -20,10 +21,10 @@ void main() {
     const item = ClothingItem(
       id: 'c01',
       name: 'padding jacket',
-      category: 'outer',
+      category: ClothingCategory.outer,
       color: 'navy',
-      season: '겨울',
-      material: '패딩',
+      season: Season.winter,
+      material: ClothingMaterial.padding,
       imagePath: '',
       wearCount: 5,
     );
@@ -39,10 +40,10 @@ void main() {
     const item = ClothingItem(
       id: 'c06',
       name: 'fleece pants',
-      category: 'bottom',
+      category: ClothingCategory.bottom,
       color: 'gray',
-      season: '겨울',
-      material: '플리스',
+      season: Season.winter,
+      material: ClothingMaterial.fleece,
       imagePath: '',
       isIncomplete: true,
     );

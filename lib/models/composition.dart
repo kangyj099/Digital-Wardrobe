@@ -1,3 +1,5 @@
+import 'enums.dart';
+
 class CompositionItemPlacement {
   const CompositionItemPlacement({
     required this.clothingItemId,
@@ -21,13 +23,13 @@ class Composition {
     required this.id,
     required this.name,
     required this.items,
-    this.season = '',
+    this.season,
     this.isDeleted = false,
   });
 
   final String id;
   final String name;
   final List<CompositionItemPlacement> items;
-  final String season;
+  final Season? season;
   final bool isDeleted;
 }

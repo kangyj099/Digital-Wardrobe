@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/clothing_item.dart';
+import '../models/enums.dart';
 import '../mock/mock_data.dart';
 
 class ClosetItemsNotifier extends StateNotifier<List<ClothingItem>> {
@@ -19,7 +20,7 @@ final closetItemsProvider =
         (ref) => ClosetItemsNotifier());
 
 /// null = 전체 시즌.
-final selectedSeasonFilterProvider = StateProvider<String?>((ref) => null);
+final selectedSeasonFilterProvider = StateProvider<Season?>((ref) => null);
 
 /// 삭제되지 않았고, 선택된 시즌 필터에 맞는 아이템만.
 final filteredClosetItemsProvider = Provider<List<ClothingItem>>((ref) {

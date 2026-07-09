@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정 — enum화 대상
+
+결정:
+- `ClothingItem.category` 8종(착용순서 정렬): 모자 / 상의 / 아우터 / 하의 / 원피스 / 양말 / 신발 / 가방·액세서리. `03_화면별UX명세서.md` §옷 종류의 예시 순서(모자→상의→아우터→하의→양말→신발→가방/액세서리 "등")를 근거로 하되, 그 목록이 "등"으로 비어있던 원피스를 현재 mock 데이터 실사용값 기준으로 추가해 확정.
+- `ClothingItem.season` / `Composition.season` 4종: 여름 / 겨울 / 간절기 / 사계절. **`03_화면별UX명세서.md` §계절 정렬 기준("봄→여름→가을→겨울")과 다른 체계로, 이번 결정으로 대체함** — 봄/가을을 별도 계절로 구분하지 않고 "간절기"로 통합. 기존 mock 데이터의 '봄'/'가을' 값은 모두 '간절기'로 재매핑.
+- 두 필드 모두 `docs/work/BACKLOG.md`에 기록된 하드코딩 원칙(위 항목 참고)에 따라 bare `String`이 아닌 실제 Dart `enum` 타입으로 구현(Step 3).
+
+사유:
+Step 2(하드코딩 원칙 문서화) 완료 후 Step 3(실제 enum화 구현) 착수 전, 폐쇄형 어휘 자체가 한 번도 명문화된 적이 없어(`category`는 예시 순서만, `season`은 이미 커밋된 테스트가 기획 문서와 다른 '사계절' 값을 사실상 확정값처럼 쓰고 있었음) PM이 사용자에게 직접 확인. 계절 체계는 사용자가 실제 옷장 태깅 관점에서 봄/가을 구분이 실익이 적다고 판단해 "간절기"로 통합하는 실용적 4종 체계를 선택.
+
+Impact:
+- `docs/work/BACKLOG.md` Step 3 항목에 확정값 기록
+- `03_화면별UX명세서.md` §계절 정렬 기준 수정(사용지 직접)
+- 실제 코드 구현(`lib/models/`, `lib/mock/mock_data.dart`, `lib/providers/`, 관련 테스트)은 이 결정 직후 별도 Worker 작업으로 진행
+
+---
+
 [Decision] 하드코딩 방지 원칙 확정 — Workflow_Development.md §1에 반영
 
 결정:
