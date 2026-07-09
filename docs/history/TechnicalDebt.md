@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `pubspec.yaml`이 선언한 asset 경로(`assets/images/mock/`, `assets/fonts/...`)가 이 브랜치 계보엔 실제 파일로 존재하지 않음
+
+상태: 미해결
+
+내용:
+`pubspec.yaml`에 asset 경로를 등록한 커밋(`29609b3`, "register fonts and mock image assets...")은 `.gitignore`/`pubspec.lock`/`pubspec.yaml`만 수정했고, 실제 이미지/폰트 파일은 커밋하지 않았다. 해당 mock 이미지 파일들은 이후 별도의 형제 브랜치(`feature/flutter-hifi-screens`, 커밋 `b38e162`)에만 추가돼 있고, 이 브랜치(및 `29609b3` 이후 `flutter-hifi-screens` 병합 전 상태로 갈라져 나온 다른 형제 브랜치들)의 조상 커밋에는 포함되어 있지 않다. `dev`/`main`의 `pubspec.yaml`은 애초에 asset/font 섹션 자체가 없는 템플릿 그대로라, "dev엔 있는데 이 브랜치엔 없다"가 아니라 "이 계보 자체가 asset을 실제로 커밋하기 전 단계에서 갈라졌다"가 정확한 원인이다. `assets/fonts/`는 모든 브랜치에서 `.gitignore`로 항상 제외됨(의도적, 라이선스 문제로 추정).
+
+발견 경위:
+2026-07-09, '설정' 화면 구현(Layer=UI/Screen, Implementation) 중 Worker가 `flutter test`/`flutter analyze` 실행 시 asset 번들링 실패를 겪고, 다른 체크아웃에서 `assets/`를 로컬로 복사해 우회(커밋하지 않음). Development Review가 `git log -p -- pubspec.yaml`로 근본 원인을 재확인.
+
+영향:
+`29609b3` 이후 `flutter-hifi-screens`의 asset 커밋을 아직 병합받지 않은 브랜치를 새로 체크아웃하면 동일하게 `flutter test`/빌드의 asset 번들링이 실패한다.
+
+조치 방향(착수 조건):
+`feature/flutter-hifi-screens`가 `dev`에 병합되어 asset 커밋이 공통 조상에 편입되면 자연히 해소됨. 그 전에 이 계보의 다른 브랜치에서 로컬 테스트/빌드가 필요하면 해당 브랜치에 asset을 임시로 복사(커밋 금지)하거나, `flutter-hifi-screens`에서 asset 커밋만 cherry-pick하는 방법을 검토.
+
+---
+
 [TechDebt] `documentation-conventions`/`uiux-design-conventions` 스킬 채택 보류 — 파일럿 초안만 존재, 정식 검토 필요
 
 상태: 미해결
