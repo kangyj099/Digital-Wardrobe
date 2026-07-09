@@ -51,13 +51,23 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 이 원칙 위반으로 확인된 필드: `ClothingItem.category`, `ClothingItem.season`, `Composition.season`, `ClothingItem.material` (모두 enum화 필요). 위반 아닌 필드(자유 텍스트라 String이 맞음): `name`, `color`, `location`, `memo`, `imagePath`.
 
-**다음 할 일 (Step 2) — 배치 방식 재검토 필요, 아래 "병행 실험" 결과 먼저 확인할 것**: 원래 계획은 `docs/knowledge/reference/policy/Workflow_Development.md` §1 Core Principles에 위 하드코딩 원칙을 하위 섹션으로 직접 추가하는 것이었음(기존 번호 체계 유지, 새 top-level 섹션 만들지 말 것). 그런데 2026-07-09에 "Workflow 문서엔 흐름/역할만 남기고 재사용 가능한 원칙은 Claude Code Skill로 분리하자"는 대안이 논의되어, 별도 worktree(`C:\Users\User\Documents\Projects\Digital-Wardrobe-testbed`, 브랜치 `feature/skill-extraction-testbed`, `localTestbed/` 안에서 PM/Worker/Review/Audit 팀으로 진행 중, 이 하드코딩 원칙이 첫 시험 대상)에서 파일럿이 진행 중임. **Step 2 착수 전, 그 파일럿 결과(`localTestbed/REPORT.md`, 별도 세션)가 나왔는지 먼저 확인 — 나왔으면 "인라인 추가" 대신 "스킬로 분리 + `Workflow_Project.md` §12.1에 등재" 방식을 검토.** 파일럿이 아직이거나 반려되면 원래 계획(인라인 추가)대로 진행: `Workflow_Frontend.md`에 그 섹션을 가리키는 한 줄 cross-reference만 추가. **`Workflow_Project.md` §4 Task Size 기준 XL로 취급**하고, 개발 리뷰 2회(review ×2) dispatch 후 가장 사소한 지적을 제외한 모든 피드백을 반영할 것.
+**Step 2 완료 (2026-07-09)**: 파일럿(skill-extraction-testbed) 결과 확인 없이 원래 계획(인라인 추가)대로 진행하기로 사용자 지시(테스트베드는 별도 세션 범위, 이 세션에서 무시). Worker 1회 + Development Review 2회(review×2) 사이클로 완료.
+- `Workflow_Development.md` §1 Core Principles에 `## Hardcoding Policy (No Magic Values)` 하위 섹션 신설(기존 번호 체계 유지, 새 top-level 섹션 없음).
+- `Workflow_Frontend.md`에 그 섹션을 가리키는 cross-reference 한 줄 추가.
+- `Decision.md`에 결정 기록 추가(위반/비위반 필드 리스트 포함).
+- Review 1차 P2 3건 중 2건 반영(비위반 필드 리스트 누락 보완, Reference 문서에서 시점성 감사 상태 제거해 History로만 유지), 1건("등" 생략으로 인한 clause (c) open→closed list화)은 PM이 가장 사소하다고 판단해 명시적으로 skip. Review 2차 통과(P2 1건은 PM 프롬프트 오기로 인한 false positive로 판정, 실제 문서는 정확).
 
-**다음 할 일 (Step 3)**: Step 2 완료 후, Tasks 1-6 + material 추가 커밋(08750b0)에서 같은 bare-String 패턴 전수 감사. `category`/`season`/`material`(ClothingItem), `season`(Composition)을 enum화. 각 enum에 향후 JSON 외부화 예정이라는 `// TODO:` 코멘트 추가. `mock_data.dart`와 관련 테스트(`mock_data_test.dart`, `closet_providers_test.dart`, `gallery_semantics_test.dart`) 갱신. `flutter analyze` + `flutter test` 클린 확인 후 보고.
+**⚠️ 커밋 `03a9da5`("docs(policy): add hardcoding principle to Workflow_Development.md §1")는 Step 3(enum화) 완료 시점에 반드시 revert할 것.** 사용자가 2026-07-09에 판단 미스로 이 커밋을 reset했다가 다시 체리픽으로 복구함 — 그 과정에서 이 파일(BACKLOG.md)의 Step 2 완료 기록이 유실됐던 적이 있어(현재 재작성분), git 이력이 다시 꼬일 수 있으니 주의. revert 사유/후속 조치는 아직 미정 — Step 3 완료 시점에 사용자에게 다시 확인할 것(자동으로 revert 실행하지 말 것, 항상 확인 후).
 
-재개 지점: `git stash pop` 후 Step 2 배치 방식부터 확인 (사용자가 원칙 내용 자체는 이미 확정했으니 재질문 불필요, 배치 방식만 파일럿 결과에 따라 판단).
+**다음 할 일 (Step 3, 진행 중 — 설계 확인 완료, 구현 미착수)**: Tasks 1-6 + material 추가 커밋(08750b0)에서 같은 bare-String 패턴 전수 감사. `category`/`season`/`material`(ClothingItem), `season`(Composition)을 Dart `enum`으로 전환(단순 상수 리스트가 아니라 실제 타입). `mock_data.dart`와 관련 테스트(`mock_data_test.dart`, `closet_providers_test.dart`, `gallery_semantics_test.dart`) 갱신. `flutter analyze` + `flutter test` 클린 확인 후 보고.
 
-**병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: 위 skill-extraction 파일럿은 별도 세션이 별도 worktree에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
+**Category enum 값 확정 (사용자 확정, 2026-07-09)**: 8종 — 모자·상의·아우터·하의·원피스·양말·신발·가방/액세서리 (착용순서로 정렬, 03_화면별UX명세서.md §옷 종류 예시 순서 + 현재 mock 데이터의 원피스 포함).
+
+**Season enum 값 확정 (사용자 확정, 2026-07-09)**: 4종 — 여름·겨울·간절기·사계절 (봄/가을 구분 없이 "간절기"로 통합). `03_화면별UX명세서.md`의 "봄→여름→가을→겨울" 정렬 기준과 다른 체계로, 이 결정이 그 문서 기준을 대체함(상세: `Decision.md` 최상단). **그 문서 자체의 갱신은 별도 미착수 — 필요 시 후속 작업.** 기존 mock 데이터의 '봄'/'가을' 값은 '간절기'로 재매핑.
+
+**Step 3 완료 절차 — 사용자 지시(2026-07-09)**: enum화 구현이 끝나도 바로 다음 작업(Task 7 재개 등)으로 넘어가지 말 것. 반드시 Development Review를 거친 뒤 결과를 사용자에게 보고하고 나서 다음 단계로 이동.
+
+**병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: skill-extraction 파일럿은 별도 세션이 별도 worktree(`Digital-Wardrobe-testbed`)에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
 
 ---
 
