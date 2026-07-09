@@ -18,6 +18,12 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
+**Task 7(옷장 메인 화면) 구현 — 완료.** 하네스 신설 후 첫 Worker→Review→Tester 실사용 사이클, 실제로 Review/Tester 각각 실동작 버그를 1건씩 잡아냄(둘 다 수정·재검증 완료):
+- `lib/screens/closet_main_screen.dart` 신설(계절 필터는 `Season.values`/`.label` enum 순회로 구현, 플랜 원문의 하드코딩 문자열 예시를 의도적으로 벗어남), `lib/router/app_router.dart`의 `closetMain` 라우트를 실제 화면으로 교체 — 커밋 `58a22fe`.
+- **Review가 P0 발견**: `app_router.dart`의 정적 라우트(`/closet/add` 등)가 동적 `:id` 라우트보다 뒤에 선언돼 있어 go_router가 선언 순서상 `:id`를 먼저 매칭 — FAB "옷 추가하기"가 실제로 망가져 있었음(go_router 소스코드로 직접 확인). 같은 패턴이던 `composition`/`style-log` 그룹도 예방적으로 함께 정리. 커밋 `8145d3f`.
+- **Tester가 실동작 버그 발견**: 밀도 토글 아이콘 `onPressed`가 build 시점 지역 변수를 참조하는 stale-closure 버그 — 리빌드 전 빠른 연속 탭 시 순환이 멈춤. 커밋 `10d3643`으로 수정(`ref.read`로 콜백 시점 최신값 재조회). `integration_test/closet_main_screen_test.dart`(Tester 소유, 9개 시나리오)로 회귀 고정 — 커밋 `f8e4f61`/`bc5a2f3`.
+- 최종 9/9 통합테스트 Pass, `flutter analyze` 클린. PR 오픈 예정(dev로).
+
 **하네스 확장: Tester 역할 신설 — 완료.** Worker→Review 2단계 사이클에 Tester(런타임 동작 검증, Flutter `integration_test` 기반)를 추가. 상세는 `docs/history/Decision.md` 최신 항목 참고.
 - `.claude/agents/tester.md` 신설, `Workflow_Development.md`/`Workflow_Project.md`/`CLAUDE.md` 3종 문서 갱신(역할 정의, 파이프라인 M/L/XL에 Tester 삽입, handoff 템플릿, Definition of Done, Layer×Stage 자료 매핑).
 - `integration_test` 패키지 도입 + smoke test 작성, Windows desktop에서 실제 실행 검증 완료(`flutter test integration_test/app_smoke_test.dart -d windows` → "All tests passed!") — 커밋 `39a2958`, `feature/flutter-hifi-screens` 브랜치.
@@ -44,7 +50,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 - 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
 - Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
-**다음 할 일: Task 7(옷장 메인 화면) 재개.** Task 1~6은 완료·병합됐고, git stash 등 별도 복구 절차 불필요(작업 트리 깨끗함). Tester 하네스가 갖춰졌으니 Task 7부터 Worker→Review→Tester 사이클 적용. 다만 **Task 7 플랜 원문(`docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`)의 계절 드롭다운 예시 코드가 `'겨울'`/`'사계절'` 같은 하드코딩된 한글 문자열을 그대로 쓰고 있음 — 이제 `category`/`season`/`material`이 enum이므로, 실제 구현 시 그 리터럴을 그대로 베끼면 새 하드코딩 위반이 생긴다.** `Season.values`/`ClothingCategory.values`를 순회하며 각 `.label`로 드롭다운을 구성할 것. 또한 `selectedSeasonFilterProvider`가 이미 `Season?` 타입이라 플랜의 `DropdownButton<String?>` 예시 코드는 그대로 못 쓰고 `DropdownButton<Season?>`으로 바꿔야 함(2026-07-10 사전 점검에서 확인).
+**다음 할 일: Task 8(공용 컴포넌트 C10 + 화면 — 스타일일지 열람) 착수.** Task 7까지 완료·Worker→Review→Tester 사이클 실전 검증 끝남. Task 8부터는 `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언)이 이미 Task 7에서 확립됐으니, 새 라우트 추가 시 이 순서 유의.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
