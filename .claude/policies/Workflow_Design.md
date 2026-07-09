@@ -1,172 +1,13 @@
 # Design Workflow
 
-> Version 1.0
+> Version 2.0
 >
 > Purpose: A design workflow policy for efficiently collaborating with AI on Flutter-based mobile app design.
 
 ---
 
 # 1. Core Principles
-
-Design is the process of building a consistent Design System.
-
-All screens follow the structure below.
-
-```text
-Design Principles
-↓
-Design System
-↓
-Component Library
-```
-
-## Layer Boundary Rule (Design System Governance Rule)
-
-> Scope: Applies to ALL Design Sessions
-> Type: System-level governance rule (non-optional)
-
----
-
-## 1. Purpose
-
-This rule prevents overlap between design layers and ensures
-each layer maintains a single responsibility.
-
-All design decisions MUST be assigned to exactly one layer.
-
----
-
-## 2. Core Principle
-
-Each concept belongs to ONE layer only.
-
-Duplicate definitions across layers are NOT allowed.
-
----
-
-## 3. Layer Responsibilities
-
-### 3.1 UX Principles (Decision Layer)
-
-#### Role
-Defines *why* design decisions exist.
-
-#### Includes
-- Experience philosophy
-- Behavioral principles
-- Trade-off guidelines
-- User decision reasoning
-
-#### Must NOT include
-- UI structure
-- Layout rules
-- Gestures
-- Component design
-
----
-
-### 3.2 Layout Principles (Structure Layer)
-
-#### Role
-Defines spatial structure and visual organization.
-
-#### Includes
-- Screen structure
-- Section hierarchy
-- Content flow
-- Spatial relationships
-
-#### Must NOT include
-- Gestures
-- State changes
-- Animations
-- Component behavior
-- Data rules
-
----
-
-### 3.3 Interaction Principles (Behavior Layer)
-
-#### Role
-Defines how users interact with the system.
-
-#### Includes
-- Gestures and input meaning
-- State transitions
-- Feedback rules
-- Undo / Redo behavior
-
-#### Must NOT include
-- Layout structure
-- UI spacing / color rules
-- Component definitions
-- Page structure
-
----
-
-### 3.4 Component System (UI Unit Layer)
-
-#### Role
-Defines reusable UI building blocks.
-
-#### Includes
-- Buttons, Cards, Inputs, etc.
-- Internal component states
-- Reusable UI behavior
-
-#### Must NOT include
-- Page structure
-- UX philosophy
-- Layout rules
-- Navigation flow
-
----
-
-## 4. Rule Enforcement
-
-### R4.1 Single Ownership Rule
-
-Each concept MUST belong to only one layer.
-
-Example:
-- Undo behavior → Interaction ONLY
-- Card structure → Component ONLY
-- Screen layout → Layout ONLY
-
----
-
-### R4.2 Decision Rule (Critical)
-
-If uncertain, classify using this rule:
-
-- Does it define HOW the UI behaves? → Interaction
-- Does it define HOW UI is arranged? → Layout
-- Does it define a reusable UI unit? → Component
-- Otherwise → UX Principles
-
----
-
-## 5. Golden Question
-
-When classifying any rule:
-
-> "If this rule did not exist, would the UI behavior be undefined?"
-
-- YES → Interaction
-- YES (structural) → Layout
-- YES (UI unit) → Component
-- NO → UX Principles
-
----
-
-## 6. Enforcement Priority
-
-This rule overrides all ambiguous classification cases.
-
-If conflict occurs between layers:
-→ This rule has higher priority than local definitions.
-
----
+→ .claude\policies\workflow_design\01_core principles.md
 
 # 2. Design Process
 
@@ -198,13 +39,9 @@ Review
 Developer Handoff
 ```
 
----
-
 # 3. Unit of Work
 
 Each session performs only one design task.
-
----
 
 # 4. Page Type First
 
@@ -214,8 +51,6 @@ Define shared rules in the Page Type specification, and document only screen-spe
 
 Each screen should contain only its unique characteristics.
 
----
-
 # 5. Design Freeze
 
 The representative High-Fidelity Sample is the visual baseline of the project.
@@ -223,41 +58,9 @@ The representative High-Fidelity Sample is the visual baseline of the project.
 After the Design Tokens are finalized, changes to layout structure or visual language should be avoided.
 
 If structural changes are required after Design Tokens are approved, the representative High-Fidelity Sample must be reviewed and updated first.
----
 
 # 6. Design Review
-
-Review is not the stage for making the design more visually appealing—it is the stage for identifying problems.
-
-**Review Areas**
-
-* UX
-* Visual Hierarchy
-* Accessibility
-* Consistency
-* Design System
-* Component Reuse
-* Material 3
-* Flutter implementation feasibility
-
-## Visual Review
-
-Visual Review is performed after the representative High-Fidelity Sample.
-
-Its purpose is to validate the overall visual direction before creating Design Tokens.
-
-Review Areas
-
-- Typography scale
-- Color harmony
-- Spacing rhythm
-- Corner radius
-- Icon size
-- Visual hierarchy
-- Overall consistency
-
-No new features or interaction changes should be introduced during this review.
----
+→ .claude\policies\workflow_design\06_design review.md
 
 # 7. Design Audit
 
@@ -273,26 +76,19 @@ Audit does not make direct modifications. It creates tasks for the PM.
 * UX flow
 * Accessibility
 
----
-
 # 8. Design System Updates
 
 The Design System is established after Design Tokens are finalized.
 
 Whenever shared visual rules or Tokens change, update the Design System accordingly.
----
 
 # 9. Component Library Updates
 
 Whenever reusable shared components are added or modified, update the Component Library.
 
----
-
 # 10. Change Impact
 
 Evaluate the Change Impact before making any design changes.
-
----
 
 # 11. Definition of Done
 
@@ -309,8 +105,6 @@ Evaluate the Change Impact before making any design changes.
 □ Decision has been documented
 
 □ Design Debt has been documented
-
----
 
 # 12. Core Operating Principles
 
