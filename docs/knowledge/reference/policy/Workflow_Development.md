@@ -21,20 +21,6 @@ AI sessions are not the project's source of truth.
 * AI is not a code repository.
 * Chat is a discussion space.
 
-## Hardcoding Policy (No Magic Values)
-
-Every value used in code must have one of the following as its Source of Truth:
-
-* (a) Dynamic data supplied externally at runtime (user input, API response, DB query result, system info, etc.)
-* (b) A data file or resource (JSON, XML, CSV, etc.)
-* (c) A const, enum, or design token defined elsewhere in code by prior agreement
-
-Using a magic literal value directly in code with no such backing source is not allowed.
-
-There are exactly three exceptions: one-off test code slated for deletion; explicitly-marked temporary placeholders (used when a data pipeline has not yet been built); and emergency debug logging.
-
-This principle overrides all other project principles and applies to the entire codebase, including existing code.
-
 ---
 
 # 2. Information Handoff Between Sessions

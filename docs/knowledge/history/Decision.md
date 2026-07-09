@@ -17,24 +17,6 @@ Impact:
 
 ---
 
-[Decision] 하드코딩 방지 원칙 확정 — Workflow_Development.md §1에 반영
-
-결정:
-- 모든 코드 내 값은 (a) 런타임 외부 공급 동적 데이터(사용자 입력, API 응답, DB 조회 결과, 시스템 정보 등) (b) 데이터 파일/리소스(JSON/XML/CSV 등) (c) 코드 내 사전 정의된 const/enum/design token 중 하나를 Source of Truth로 가져야 하며, 근거 없는 magic value 직접 사용은 금지한다.
-- 예외는 다음 세 가지뿐이다: 삭제될 일회성 테스트 코드 / 명시적으로 표시된 임시 placeholder(데이터 파이프라인 미구축 시) / 긴급 디버그 로깅.
-- 이 원칙은 다른 모든 프로젝트 원칙에 우선하며, 기존 코드를 포함한 전체 코드베이스에 적용한다.
-- 위반으로 확인된 필드: `ClothingItem.category`/`season`/`material`, `Composition.season` (전부 enum화 필요, 후속 Step에서 처리 예정). 위반 아닌 필드(자유 텍스트라 `String`이 맞음): `name`, `color`, `location`, `memo`, `imagePath`.
-
-사유:
-Task 7(옷장 메인 화면) 착수 전 addendum으로 `ClothingItem.material` 필드를 bare `String` + 상수 리스트(`kClothingMaterials`)로 추가했는데, 폐쇄형 어휘임에도 컴파일타임 강제가 없다는 점을 사용자가 지적. 런타임 `assert`로 때우는 절충안은 근본 해결이 아니라며 기각하고, 위 원칙을 명문화하기로 함.
-
-Impact:
-- `Workflow_Development.md` §1에 "Hardcoding Policy" 하위 섹션 신설
-- `Workflow_Frontend.md`에 cross-reference 한 줄 추가
-- 위반 필드 4개의 실제 enum화는 후속 Step(Step 3)에서 별도 진행
-
----
-
 [Decision] BACKLOG.md 갱신을 "태스크 완료 시 후속조치"에서 "각 스텝 완료의 일부"로 승격
 
 결정:
