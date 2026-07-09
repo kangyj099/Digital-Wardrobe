@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] feature 브랜치의 dev 동기화 주기 신설 (Task/Plan 완료 시점마다 pull)
+
+결정:
+- `Workflow_Project.md` §13.4 "Sync Cadence (feature ← dev)" 신설: Task 하나가 완료될 때(Worker→Review→Tester 사이클이 Complete에 도달)와, 여러 Task로 구성된 Plan 전체가 끝날 때, 각각 `git fetch origin && git merge origin/dev`로 feature 브랜치에 dev를 받아들인다.
+- 이 merge 실행 자체는 feature 브랜치 안의 안전한 작업이라 사전 확인 불필요(§13.2 커밋 게이트와 동일 근거). 충돌이 나면 PM이 직접 해결(맥락을 아는 쪽이 처리)하고, 결과 diff를 사용자에게 보여준 뒤 확인받는다 — 결정문서/정책 문서가 충돌에 걸리면 특히.
+- `CLAUDE.md` 필수 체크포인트에 5번으로 추가.
+
+사유:
+Tester 하네스 확장 작업 중, `feature/flutter-hifi-screens` 브랜치가 dev를 오래 안 당겨받은 사이 dev에 병합된 별도 PR(#6, 정책/레퍼런스 문서 폴더구조 개편 — `docs/knowledge/**` → `.claude/policies/`+`docs/history/`+`docs/reference/`)과 크게 갈라져, 실제로 4개 파일(`CLAUDE.md`, `Workflow_Project.md`, `Decision.md`, `BACKLOG.md`)에서 병합 충돌이 발생함(2026-07-10). 사용자가 이 사고를 계기로 "Task 완료 혹은 Plan 완료 시점마다 pull"을 명시적 프로세스로 만들 것을 지시 — 갈라짐을 작은 상태로 자주 해소해 충돌 규모를 최소화하는 것이 목적.
+
+Impact:
+- `Workflow_Project.md` §13.4 신설
+- `CLAUDE.md` 체크포인트 5 추가
+- 이번 사고 자체의 충돌 해결(4개 파일)은 PM이 직접 수행, 사용자가 최종 확인
+
+---
+
 [Decision] BACKLOG.md 커밋 승인을 포맷 수정 vs. 진행 기록 수정으로 차등화
 
 결정:

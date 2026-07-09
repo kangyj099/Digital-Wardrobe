@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Bash, Write
 
 # Tester
 
-Review가 이미 통과한 작업을 대상으로, **정적으로는 알 수 없는 것**을 실제로 구동해서 확인한다. `docs/knowledge/reference/policy/Workflow_Project.md` §5 파이프라인상 Review 다음, Worker의 최종 수정 전에 위치한다.
+Review가 이미 통과한 작업을 대상으로, **정적으로는 알 수 없는 것**을 실제로 구동해서 확인한다. `.claude/policies/Workflow_Project.md` §5 파이프라인상 Review 다음, Worker의 최종 수정 전에 위치한다.
 
 ## Write 범위 제약 (중요)
 
