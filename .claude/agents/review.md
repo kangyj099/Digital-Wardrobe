@@ -6,11 +6,11 @@ tools: Read, Glob, Grep, Bash
 
 # Review
 
-Reviews only the current task step per `docs/knowledge/reference/policy/Workflow_Project.md` §2 — not the whole project (that's Feature Audit's job). You check; you never fix.
+Reviews only the current task step per `.claude/policies/Workflow_Project.md` §2 — not the whole project (that's Feature Audit's job). You check; you never fix.
 
 ## What you receive
 
-PM/Worker hands you the Worker's handoff (Task/Goal/Modified Files/Impact Scope/Review Request/Out of Scope) plus the judgment-criteria documents for this task's Layer × Stage (per `Workflow_Project.md` §12.1-12.2): the relevant Reference docs for that Layer/Stage, and `docs/knowledge/history/Decision.md` / `TechnicalDebt.md` where relevant. You do not receive the Worker's raw exploratory material (e.g. `참고자료/`, brand voice docs) — you judge the result against policy, not re-derive the decision.
+PM/Worker hands you the Worker's handoff (Task/Goal/Modified Files/Impact Scope/Review Request/Out of Scope) plus the judgment-criteria documents for this task's Layer × Stage (per `Workflow_Project.md` §12.1-12.2): the relevant Reference docs for that Layer/Stage, and `docs/history/Decision.md` / `TechnicalDebt.md` where relevant. You do not receive the Worker's raw exploratory material (e.g. `참고자료/`, brand voice docs) — you judge the result against policy, not re-derive the decision.
 
 ## What you check
 

@@ -12,15 +12,13 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current Milestone
 
-디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `docs/knowledge/reference/policy/Workflow_Design.md` §2)
+디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `.claude/policies/Workflow_Design.md` §2)
 
 ---
 
 # Last Completed
 
-세션 인계(핸드오프) 브릿지 규칙 신설 — PR #4 병합 완료(2026-07-09, https://github.com/kangyj099/Digital-Wardrobe/pull/4). 3회 반복된 "세션 간 작업 맥락 인계 실패"의 구조적 수정: (1) `Workflow_Project.md` §3 "Skill-Internal Ledgers vs. Official Handoff" — gitignore된 스킬 내부 장부(`.superpowers/sdd/*`)는 세션 내부 캐시일 뿐 공식 인계 수단 아님, BACKLOG.md Current 갱신이 각 작업 스텝 완료의 일부(§10 Definition of Done 갱신도 동반)로 승격됨. (2) `Workflow_Project.md` §1.5 Concise Writing — Reference 문서는 간결하게, History 문서는 예외, §3 재현 가능성과 충돌 시 재현 가능성 우선. (3) Stop 훅(`.claude/hooks/check_backlog_freshness.py`) — BACKLOG.md가 HEAD보다 5커밋 이상 뒤처지면 비차단 경고(백스톱용, 1차 방어선 아님). 상세: `docs/knowledge/history/Decision.md` 상단 3개 항목.
-
-(참고) Git-flow 커밋/PR 정책 도입 — PR #2도 병합 완료(2026-07-08).
+Git-flow 커밋/PR 정책 도입 + PR-create/merge 게이트 재설계 (main/dev/feature 3단계 브랜치, `guard_git_actions.py` 훅, feature→dev PR 자유/dev→main PR만 게이트, `gh pr merge` 하드 블록) — 구현/리뷰 완료, PR #2 오픈 후 병합 대기 (https://github.com/kangyj099/Digital-Wardrobe/pull/2). 상세 기록은 `docs/superpowers/plans/2026-07-08-git-flow-commit-policy.md`, `docs/history/Decision.md` 참고.
 
 ---
 
@@ -63,7 +61,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **커밋 `03a9da5` revert 완료 (2026-07-10, 커밋 `9e8b66d`)**: 사용자 확인 후 실행. `Workflow_Development.md`의 "Hardcoding Policy" 하위 섹션, `Workflow_Frontend.md`의 cross-reference 한 줄, `Decision.md`의 "하드코딩 방지 원칙 확정" 항목이 제거됨. Decision.md는 그사이 `724c1cb`가 그 위에 새 항목(category/season 엔텀 확정)을 추가해 conflict 발생 — 03a9da5가 추가한 부분만 정확히 제거하고 이후 항목은 보존하도록 수동 해결.
 
-**참고**: 위 revert로 인해 하드코딩 원칙 자체의 정식 문서화(Workflow_Development.md §1)는 현재 되돌려진 상태. `docs/work/BACKLOG.md`(이 문서) 상단의 "하드코딩 원칙 최종 정의" 텍스트가 유일하게 남은 명문화된 기록. 정책 문서 재반영 여부는 별도 판단 필요(이 세션 범위 밖).
+**참고**: 위 revert로 인해 하드코딩 원칙의 인라인 문서화(Workflow_Development.md §1)는 되돌려진 상태였음. 이후 별도 파일럿(skill-extraction-testbed) 검증을 거쳐, 인라인 서술 대신 `.claude/skills/`로 분리하는 방식으로 정식 재반영 결정 — 아래 "정책 채택" 항목 및 `docs/history/Decision.md` 최상단 참고.
 
 **Category enum 값 확정 (사용자 확정, 2026-07-09)**: 8종 — 모자·상의·아우터·하의·원피스·양말·신발·가방/액세서리 (착용순서로 정렬, 03_화면별UX명세서.md §옷 종류 예시 순서 + 현재 mock 데이터의 원피스 포함).
 
@@ -71,7 +69,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **Step 3 완료 절차 — 사용자 지시(2026-07-09)**: enum화 구현이 끝나도 바로 다음 작업(Task 7 재개 등)으로 넘어가지 말 것. 반드시 Development Review를 거친 뒤 결과를 사용자에게 보고하고 나서 다음 단계로 이동.
 
-**병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: skill-extraction 파일럿은 별도 세션이 별도 worktree(`Digital-Wardrobe-testbed`)에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
+**(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
+
+**정책 채택**: Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `Workflow_*.md` 인라인 서술 대신 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리하는 정책 채택 — `Workflow_Project.md` §1.6(Version Numbering 신설) §12.1(스킬 등재) 갱신 포함. Review×2 + Audit 완료, PR 오픈 후 병합 대기. 상세: `docs/history/Decision.md` 최상단 항목들.
 
 ---
 
@@ -83,7 +83,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 # MVP Progress
 
-`docs/knowledge/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
+`docs/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
 
 - [ ] Clothing archiving (AI 배경제거 + 자동태깅)
 - [ ] View/filter by tags
