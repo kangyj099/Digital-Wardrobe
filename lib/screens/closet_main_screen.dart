@@ -50,7 +50,8 @@ class ClosetMainScreen extends ConsumerWidget {
                   icon: const Icon(Icons.grid_view),
                   tooltip: '그리드 밀도 전환',
                   onPressed: () {
-                    final currentIndex = AppDensity.levels.indexOf(density);
+                    final current = ref.read(closetDensityProvider);
+                    final currentIndex = AppDensity.levels.indexOf(current);
                     final next =
                         AppDensity.levels[(currentIndex + 1) % AppDensity.levels.length];
                     ref.read(closetDensityProvider.notifier).state = next;
