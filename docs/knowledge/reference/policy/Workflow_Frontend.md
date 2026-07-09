@@ -1,5 +1,5 @@
-> Version 1.1
-> Purpose: Flutter/Dart 구현 단계에서 반복적으로 발생하는 문제(하드코딩, 잘못된 네비게이션 방식, 리소스 누수, 상태관리 오용)를 미리 방지하기 위한 프론트엔드 구현 원칙. `Workflow_Development.md`(역할/프로세스, 기술 스택 무관)를 대체하지 않고 보완한다. 재사용 가능한 구현 원칙 본문은 `flutter-implementation-conventions` 스킬로 이전됨 — 이 문서는 스코프/흐름만 남김.
+> Version 2.0
+> Purpose: `Workflow_Project.md` §12.1 "UI/Screen | Implementation (Frontend)" 행이 가리키는 단일 안정 앵커 문서. Frontend Implementation 단계에 적용되는 스킬 목록을 이 문서가 인덱스로 관리한다 — 스킬이 늘거나 더 세분화돼도 §12.1 표 셀은 이 문서 하나만 계속 가리키면 된다. 재사용 가능한 구현 원칙 본문 자체는 각 스킬(`engineering-principles`, `flutter-implementation-conventions`)에 있다.
 
 ---
 
@@ -14,6 +14,8 @@
 - **`Workflow_Frontend.md`(이 문서)**: 위 두 문서가 다루지 않는, Flutter/Dart 구현 그 자체의 반복적 함정과 원칙.
 
 Worker/Review 모두 Layer=UI/Screen × Stage=Implementation(Frontend) 태스크를 맡을 때 이 문서를 참조한다 (`Workflow_Project.md` §12.1 Required Materials에 반영됨).
+
+**이 문서는 Frontend Implementation 단계의 §12.1 앵커 문서다** — 이 단계에 적용되는 스킬 목록을 여기서 관리한다. 현재: `engineering-principles`, `flutter-implementation-conventions`. 앞으로 Frontend 관련 스킬이 늘거나 더 세분화되어도 §12.1 표는 이 문서 하나만 가리키면 된다.
 
 Flutter/Dart 구현을 작성하거나 리뷰하기 전, `flutter-implementation-conventions` 스킬(`.claude/skills/flutter-implementation-conventions/SKILL.md`)을 호출한다 — 네비게이션·상태관리·위젯 생명주기·테스트 깊이 원칙과 Flutter 전용 Review 체크리스트가 이 스킬에 있다.
 

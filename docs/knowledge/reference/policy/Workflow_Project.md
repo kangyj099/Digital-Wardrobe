@@ -317,7 +317,7 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 | Layer | Stage | Required Review | Required Materials |
 | --- | --- | --- | --- |
 | UI/Screen | Decision (Design) | Design Review | Raw references (`참고자료/`), Design reference docs, Plan reference docs (IA/UX spec), Brand docs, `Decision.md` |
-| UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy, Frontend workflow policy (`Workflow_Frontend.md`), **Skill: `engineering-principles`** (invoke first), **Skill: `flutter-implementation-conventions`** (invoke first) |
+| UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy, Frontend workflow policy (`Workflow_Frontend.md` — stage-index anchor doc, lists the Frontend-specific skills to invoke) |
 | Logic/Feature | Decision (Planning) | Usually none (PM scope) | Plan reference docs |
 | Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs, **Skill: `engineering-principles`** (invoke first) |
 | Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy |
