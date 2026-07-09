@@ -106,15 +106,18 @@ void main() {
   });
 
   testWidgets(
-    '[알려진 결함] 밀도 아이콘을 프레임 반영 없이 2번 연속 탭하면 3→5→1이 아니라 5에 멈춘다',
+    '[회귀 고정] 밀도 아이콘을 프레임 반영 없이 2번 연속 탭해도 3→5→1 순환이 깨지지 않는다 '
+    '(stale-closure race, fixed in 10d3643)',
     (tester) async {
       final container = await pumpClosetMain(tester);
 
       // 비정형 사용 흐름: 탭 사이에 pump()를 넣지 않아, 실제 프레임 렌더링(위젯 리빌드)이
       // 반영되기 전에 연속으로 탭하는 상황(예: 프레임 드랍 중 빠른 연타)을 재현한다.
-      // onPressed 클로저가 build() 시점에 캡처된 density 지역 변수를 참조하기 때문에,
-      // 리빌드가 끼어들지 않는 한 각 탭이 매번 "같은 이전 값 기준"으로 next를 계산해
-      // 3→5→1로 순환하지 않고 첫 탭이 계산한 값(5)에 멈춘다.
+      // 과거에는 onPressed 클로저가 build() 시점에 캡처된 density 지역 변수를 참조해,
+      // 리빌드가 끼어들지 않으면 각 탭이 매번 "같은 이전 값 기준"으로 next를 계산해
+      // 3→5→1로 순환하지 않고 첫 탭이 계산한 값(5)에 멈추는 결함이 있었다(commit 10d3643에서
+      // onPressed 내부에서 ref.read로 최신값을 다시 조회하도록 수정되어 해결됨). 이 테스트는
+      // 그 수정이 회귀하지 않는지를 고정한다.
       await tester.tap(find.byTooltip('그리드 밀도 전환'));
       await tester.tap(find.byTooltip('그리드 밀도 전환'));
       await tester.pumpAndSettle();
@@ -123,15 +126,14 @@ void main() {
       expect(
         container.read(closetDensityProvider),
         1,
-        reason: '프레임 반영 없이 연속 탭해도 순환 로직(3→5→1)대로 진행되어야 하는데, '
-            '실제로는 첫 탭이 계산한 값(5)에 멈춰 있다.',
+        reason: '프레임 반영 없이 연속 탭해도 순환 로직(3→5→1)대로 진행되어야 한다.',
       );
     },
-    skip: false,
   );
 
   testWidgets(
-    '[알려진 결함] 밀도 아이콘을 프레임 반영 없이 5번 연속 탭해도 순환 로직과 다르게 5에 멈춘다',
+    '[회귀 고정] 밀도 아이콘을 프레임 반영 없이 5번 연속 탭해도 순환 로직대로 수렴한다 '
+    '(stale-closure race, fixed in 10d3643)',
     (tester) async {
       final container = await pumpClosetMain(tester);
 
@@ -140,14 +142,13 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      // 3→5→1→3→5→1 순환대로라면 5회 후 1이어야 하지만, 위와 같은 이유로 5에 멈춘다.
+      // 3→5→1→3→5→1 순환대로 5회 후 1이어야 한다.
       expect(
         container.read(closetDensityProvider),
         1,
-        reason: '순환 로직대로면 5회 탭 후 1이어야 하는데, 클로저 캡처 문제로 첫 탭 결과(5)에 멈춰 있다.',
+        reason: '순환 로직대로면 5회 탭 후 1이어야 한다.',
       );
     },
-    skip: false,
   );
 
   testWidgets('FAB 탭 시 /closet/add 로 정확히 이동한다', (tester) async {
