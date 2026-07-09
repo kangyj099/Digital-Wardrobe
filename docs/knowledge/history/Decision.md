@@ -1,5 +1,38 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Reference 문서 작성 원칙에 "간결성"(§1.5) 추가
+
+결정:
+- `Workflow_Project.md` §1.5 신설: Reference 문서는 정확한 의미를 해치지 않는 선에서 중복 없이 간결하게 작성.
+- History 문서(`Decision.md`/`TechnicalDebt.md`)는 예외 — §1.3(대화 맥락을 대체해야 함)에 따라 Reference 문서보다 상세함이 허용되고, 이 원칙은 이미 기록된 History 항목에 소급 적용하지 않음(§6 append-only 원칙 유지).
+- §3 "Skill-Internal Ledgers vs. Official Handoff"의 재현 가능성(self-containment) 요구와 충돌할 땐 재현 가능성이 우선 — 간결함을 이유로 필요한 내용을 링크로 대체하지 않음.
+
+사유:
+문서/지침 텍스트가 누적되면서 "지켜야 할 텍스트가 너무 많으면 오히려 안 지켜진다"는 우려가 제기됨. 다만 History 문서는 §1.3에 따라 의도적으로 상세해야 하는 반대 방향 원칙이 이미 있고, 오늘 신설한 §3 재현 가능성 요구와도 무차별 적용 시 충돌할 수 있어 예외/우선순위를 명시해 도입.
+
+Impact:
+- `Workflow_Project.md` §1.5 신설
+
+---
+
+[Decision] 세션 인계 브릿지 규칙 신설 — SDD 장부는 세션 내부용, BACKLOG.md가 공식 인계처
+
+결정:
+- 스킬이 쓰는 gitignore된 임시 작업 장부(예: `.superpowers/sdd/*`)는 세션 내부 복구용 캐시일 뿐, 세션 간 공식 인계 수단이 아님을 명문화. 그 안의 "완료 태스크→커밋" 매핑만 `git log`로 재구성 가능해 신뢰할 수 있고, 결정/사유/다음 계획 같은 프로즈는 별도로 tracked 문서에 옮겨적지 않으면 다음 세션에서 사라짐.
+- 태스크가 완료되지 못한 채 일시중단되거나 세션이 끝날 때는, 그 시점까지의 핵심 결정과 다음 계획을 반드시 `docs/work/BACKLOG.md`(필요시 `Decision.md`)에 직접 옮겨 적어야 함. 기존 §10 Definition of Done의 "결정이 문서화되었는가" 체크는 태스크 완료 시점에만 발동하므로, 이 규칙은 그 체크가 커버 못 하는 "미완료 중단" 케이스를 메움.
+- "기록해서 다음 세션이 이어갈 수 있게 했다"고 답하기 전에는, 실제로 새 세션이 `CLAUDE.md`→`BACKLOG.md` 경로만 따라가서 그 내용에 도달하는지 확인해야 함 — 내용 존재+정확성만으로는 부족.
+
+사유:
+2026-07-09, 동일 패턴의 세션 인계 실패가 3번째로 반복 확인됨. `.superpowers/sdd/progress-flutter-hifi-screens.md`에 정확한 일시중단 노트가 있었으나 gitignore돼 있고 BACKLOG.md에서 링크되지 않아 새 세션이 발견 불가능했음. 앞선 2회는 문제가 매번 그때그때의 특정 산출물만 패치되고 일반 규칙으로 기록되지 않아 재발함.
+
+Impact:
+- `Workflow_Project.md` §3 갱신 (신규 하위 섹션 "Skill-Internal Ledgers vs. Official Handoff")
+- `CLAUDE.md` "진행 중 작업 상태" 항목에 행동 지침 + cross-reference 추가
+- `TechnicalDebt.md`에 관련 항목 추가 (`.superpowers/sdd/` 플랫 파일명 충돌 건, 해당 파일 참고)
+- Flutter Hi-Fi 스프린트 Task 7 일시중단 상세는 그 코드가 실제로 존재하는 `feature/flutter-hifi-screens` 브랜치의 `docs/work/BACKLOG.md`에 별도 커밋으로 반영 (dev 기반 브랜치에 넣으면 아직 dev에 없는 코드를 가리키는 참조가 생겨, 이번에 고치려는 것과 같은 종류의 실패를 재현할 위험이 있어 분리)
+
+---
+
 [Decision] PR-create 게이트를 main-base 전용으로 좁히고 gh pr merge 하드 블록 추가
 
 결정:

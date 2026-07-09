@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `.superpowers/sdd/`의 플랫(non-namespaced) 파일명이 서로 다른 plan 간 충돌
+
+상태: 미해결
+
+내용:
+`task-N-brief.md`, `task-N-report.md` 같은 파일명이 plan별로 구분되지 않고 공유됨. 서로 다른 plan(예: git-flow-commit-policy plan과 flutter-frontend-hifi-screens plan)이 둘 다 Task 7을 가지면, 나중 plan의 Task 7 산출물이 앞선 plan의 Task 7 파일을 덮어씀.
+
+발견 경위:
+2026-07-09 세션 인계 실패 조사 중 발견.
+
+영향:
+같은 세션 내에서 여러 plan을 순차 실행할 때 이전 plan의 task 브리핑/리포트가 유실될 수 있음.
+
+조치 방향(착수 조건):
+`.superpowers/sdd/` 하위에 plan-slug 기반 서브디렉토리 또는 파일명 prefix 도입 검토. superpowers 스킬 자체(외부 플러그인)의 스크립트(`scripts/task-brief`, `scripts/sdd-workspace`)를 건드리는 문제라 이 프로젝트 단독으로 고치기 애매함 — 필요시 플러그인 쪽에 이슈 제기 검토.
+
+---
+
 [TechDebt] `guard_git_actions.py`의 세그먼트 분리 매칭 — heredoc 등 일부 셸 구문은 여전히 오탐/누락 가능
 
 상태: 부분 해결 (원래 문제는 고쳐짐, 더 좁은 범위의 한계가 남음)

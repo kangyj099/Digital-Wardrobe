@@ -37,6 +37,16 @@ Do not create copies such as Version2, Final, or Final_Final.
 
 ---
 
+## 1.5 Concise Writing
+
+Reference documents are written as concisely as possible, without duplication, as long as doing so does not compromise exact meaning.
+
+- This applies to newly authored or edited content. It does not retroactively shorten existing History document entries (`Decision.md` / `TechnicalDebt.md`) — those are append-only per §6.
+- History document entries are held to a different standard: per §1.3 (Source of Truth), they must carry enough context to stand in for a lost conversation, so more detail is expected there than in Reference documents.
+- When conciseness would conflict with the reachability requirement in §3 "Skill-Internal Ledgers vs. Official Handoff" (transcribing content directly so a fresh session can find it), reachability wins — do not replace necessary inline detail with a link just to shorten a document.
+
+---
+
 # 2. Roles
 
 ## PM (Project Manager)
@@ -136,6 +146,16 @@ Never resend the entire project.
 * Impact scope
 * Review request
 * Out of scope
+
+---
+
+## Skill-Internal Ledgers vs. Official Handoff
+
+Some skills (e.g. superpowers subagent-driven-development) maintain gitignored progress ledgers (e.g. `.superpowers/sdd/*`) so a single session can recover its own context after compaction. These ledgers are **session-internal caches, not official cross-session handoff.**
+
+- Only the "completed task → commit" mapping in such a ledger is trustworthy from a fresh session — and only because it can be independently reconstructed from `git log`. Prose in the ledger (decisions, rationale, next steps) does not survive into a new session unless it is copied into a tracked document.
+- If a task is paused incomplete, or a session ends, before a task finishes, the key decisions and next steps made so far must be transcribed directly into `docs/work/BACKLOG.md` (and `Decision.md` where applicable). This complements §10's Definition of Done check ("decisions have been documented"), which only fires on task **completion** — this rule covers the **incomplete-pause** case that check does not reach.
+- Before reporting "recorded so a future session can continue," verify that a fresh session would actually reach the content by following the real `CLAUDE.md` → `BACKLOG.md` path. Existence and accuracy of the content alone is not sufficient.
 
 ---
 
