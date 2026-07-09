@@ -102,8 +102,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+### JetBrains IDE
+*.iml
+
 ### 사용자
 # 레퍼런스 자료
 참고자료/
 # 로컬 전용 테스트, 임시작업 폴더
 localTestbed/
+# 리소스
+/assets/fonts
