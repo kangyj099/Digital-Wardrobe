@@ -17,7 +17,7 @@ Worker/Review 모두 Layer=UI/Screen × Stage=Implementation(Frontend) 태스크
 
 Flutter/Dart 구현을 작성하거나 리뷰하기 전, `flutter-implementation-conventions` 스킬(`.claude/skills/flutter-implementation-conventions/SKILL.md`)을 호출한다 — 네비게이션·상태관리·위젯 생명주기·테스트 깊이 원칙과 Flutter 전용 Review 체크리스트가 이 스킬에 있다.
 
-이 프로젝트의 하드코딩 위반 사례(`ClothingItem.category`/`season`/`material`, `Composition.season`)가 최초로 발견된 지점도 프론트엔드 구현이다 — `engineering-principles` 스킬(`.claude/skills/engineering-principles/SKILL.md`)도 함께 호출한다.
+이 프로젝트의 하드코딩 위반 사례가 최초로 발견된 지점도 프론트엔드 구현이다 — `engineering-principles` 스킬(`.claude/skills/engineering-principles/SKILL.md`)도 함께 호출한다.
 
 ---
 
@@ -53,7 +53,7 @@ Flutter/Dart 구현을 작성하거나 리뷰하기 전, `flutter-implementation
 
 # 7. 참고: 커뮤니티에서 검증된 보조 도구
 
-아래는 이 문서의 원칙을 강제/보조하기 위해 나중에 도입을 검토할 수 있는 도구들이다 (이번 스프린트 범위 밖, 착수 조건이 갖춰지면 별도 태스크로):
+아래는 `flutter-implementation-conventions` 스킬의 원칙을 강제/보조하기 위해 나중에 도입을 검토할 수 있는 도구들이다 (이번 스프린트 범위 밖, 착수 조건이 갖춰지면 별도 태스크로):
 
 - `very_good_analysis` 린트 프리셋 — `flutter_lints`보다 엄격, 구조적으로 지저분한 위젯 트리 패턴을 자동 검출.
 - `.claude/commands/design-review` 커스텀 슬래시 커맨드 — 완성된 화면 위젯 트리 + 디자인 시스템 + 레퍼런스 스크린샷을 대조해 자체 비판하는 리뷰 스텝.

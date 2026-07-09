@@ -3,7 +3,7 @@ name: engineering-principles
 description: Prevents magic-value hardcoding in implementation code. Invoke before or while writing or reviewing any implementation code (frontend or backend/data) to verify every literal value has a traceable Source of Truth.
 ---
 
-# Hardcoding Prevention
+# Engineering Principles
 
 ## 이 스킬을 언제 쓰나
 

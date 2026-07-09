@@ -54,6 +54,7 @@ Reference documents carrying a `> Version X.Y` header follow semantic-ish versio
 - A chapter-level addition or modification bumps the number after the dot (minor): X.Y → X.(Y+1).
 - A change to the document's usage pattern or overall framework/structure bumps the number before the dot (major): X.Y → (X+1).0.
 - One revision pass gets one bump, even if it contains multiple chapter-level changes.
+- Cosmetic edits that don't change meaning (renames, cross-reference updates, typo/wording fixes) do not count as a modification for this purpose — same exclusion as §1.5's Decision.md logging rule.
 
 ---
 

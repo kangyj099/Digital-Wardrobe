@@ -135,7 +135,7 @@ Manages the entire project (not limited to development).
 * Change product planning
 * Manage the project
 
-Before writing or reviewing implementation code, invoke the `engineering-principles` skill (`.claude/skills/engineering-principles/SKILL.md`).
+Before writing or reviewing implementation code, invoke the `engineering-principles` skill (`.claude/skills/engineering-principles/SKILL.md`) — this applies to Review as well as Worker, per §12.1 Required Materials.
 
 ---
 
