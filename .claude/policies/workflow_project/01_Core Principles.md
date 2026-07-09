@@ -22,21 +22,8 @@ Chat conversations are for discussion only. AI sessions are not the project's st
 
 ---
 
-## 1.4 Living Documents
-
-Reference documents must always have only a single up-to-date version.
-
-Do not create copies such as Version2, Final, or Final_Final.
-
----
-
-## 1.5 Concise Writing
-
-Reference documents are written as concisely as possible, without duplication, as long as doing so does not compromise exact meaning.
-
-- This applies to newly authored or edited content. It does not retroactively shorten existing History document entries (`Decision.md` / `TechnicalDebt.md`) — those are append-only per §6.
-- History document entries are held to a different standard: per §1.3 (Source of Truth), they must carry enough context to stand in for a lost conversation, so more detail is expected there than in Reference documents.
-- When conciseness would conflict with the reachability requirement in §3 "Skill-Internal Ledgers vs. Official Handoff" (transcribing content directly so a fresh session can find it), reachability wins — do not replace necessary inline detail with a link just to shorten a document.
+## 1.4 Living Documents / 1.5 Concise Writing
+→ Skill: `documentation-conventions` (`.claude/skills/documentation-conventions/SKILL.md`) — invoke before writing to or editing any `docs/reference/**` file.
 
 ---
 

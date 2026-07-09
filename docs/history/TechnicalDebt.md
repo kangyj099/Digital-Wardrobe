@@ -2,12 +2,12 @@
 
 [TechDebt] `documentation-conventions`/`uiux-design-conventions` 스킬 채택 보류 — 파일럿 초안만 존재, 정식 검토 필요
 
-상태: 미해결
+상태: 해결됨 (2026-07-10) — 실채택 완료. 상세: `Decision.md` 최상단 항목 참고.
 
 내용:
 `Digital-Wardrobe-testbed/localTestbed`(브랜치 `feature/skill-extraction-testbed`) 파일럿에서 `hardcoding-prevention`(현 `engineering-principles`)/`flutter-implementation-conventions`와 함께 시험됐으나, 실제 채택 패스(`engineering-principles`/`flutter-implementation-conventions` 채택 Decision 참고)에서는 제외됨. `documentation-conventions`(`Workflow_Project.md` §1.4/§1.5 대상)와 `uiux-design-conventions`(`Workflow_Design.md`의 Layer Boundary Rule + Design/Visual Review 체크리스트 대상)는 아직 파일럿 초안 상태로만 존재. 채택 여부/타이밍 재검토 필요.
 
-참고: `Digital-Wardrobe-testbed/localTestbed/REPORT.md`
+참고: 파일럿 원본(`Digital-Wardrobe-testbed/localTestbed/REPORT.md`)은 이후 해당 worktree 삭제로 더 이상 존재하지 않음 — 내용은 채택 Decision 항목에 요약됨.
 
 ---
 

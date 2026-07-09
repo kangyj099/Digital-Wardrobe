@@ -46,9 +46,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
-**정책 채택**: Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `Workflow_*.md` 인라인 서술 대신 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리하는 정책 채택 — `Workflow_Project.md` §1.6(Version Numbering 신설) §12.1(스킬 등재) 갱신 포함. Review×2 + Audit 완료, PR 오픈 후 병합 대기. 상세: `docs/history/Decision.md` 최상단 항목들.
+**정책 채택 (완료, PR #6/#8 병합됨)**: Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리 + `docs/knowledge/` 재배치·앵커 구조 정리 + §12.4 Task Manifest 신설 — 전부 `dev`에 반영 완료. 상세: `docs/history/Decision.md` 참고.
 
-**후속 (2026-07-10)**: 프로젝트 오너가 `docs/knowledge/` 하위를 `.claude/policies/`(정책)·`docs/reference/`·`docs/history/`로 재배치 + 6개 문서를 "앵커"(20줄 이상 항목을 별도 파일로 분리하고 `→ 경로` 포인터로 연결) 방식으로 재정리. 그 과정에서 생긴 회귀(계절 정렬값 오염, 깨진 앵커 경로, `Workflow_Project.md` §7~§11 헤딩/본문 밀림, 헤딩 중복, 고아 파일 등) 전수 점검 후 수정, Review 완료(P0 없음). §12.4 "Task Manifest" 신설로 PM→Worker 자료 전달 시 Read/Edit/Write 접근모드 명시 규약도 추가. 상세: `docs/history/Decision.md` 최상단.
+**후속 (2026-07-10)**: 남아있던 TechDebt(`documentation-conventions`/`uiux-design-conventions` 스킬 채택 보류) 재검토 후 실채택 — `Workflow_Project.md` §1.4/§1.5, `Workflow_Design.md` Layer Boundary Rule + Design/Visual Review 체크리스트를 두 스킬로 이전, §12.1 등재, Version 범프(Project 2.2/Design 2.1). `feature/skill-conventions-adoption` 브랜치, PR 오픈 예정. 상세: `docs/history/Decision.md` 최상단.
 
 ---
 

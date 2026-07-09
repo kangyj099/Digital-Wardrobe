@@ -1,6 +1,6 @@
 # Design Workflow
 
-> Version 2.0
+> Version 2.1
 >
 > Purpose: A design workflow policy for efficiently collaborating with AI on Flutter-based mobile app design.
 
