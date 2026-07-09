@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../screens/closet_main_screen.dart';
 
 class AppRoute {
   AppRoute._();
@@ -25,7 +26,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoute.closetMain,
-        builder: (context, state) => _placeholder('옷장 메인'),
+        builder: (context, state) => const ClosetMainScreen(),
       ),
       GoRoute(
         path: AppRoute.closetItemDetail,
