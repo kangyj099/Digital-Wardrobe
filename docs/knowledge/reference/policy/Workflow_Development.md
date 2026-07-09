@@ -32,7 +32,7 @@ AI sessions are not the project's source of truth.
 | PM         | Worker                | Task objective, scope                        |
 | Worker     | Review                | Modified files, change summary, impact scope |
 | Review     | Tester                | **Only when Review passes**: modified files, impact scope |
-| Tester     | Worker                | **Only when Tester fails**: fail list + reproduction steps (if Tester passes, no handoff — task completes) |
+| Tester     | Worker                | **Only when Tester fails**: fail list + reproduction steps — Worker fixes, then goes back to Review, not straight back to Tester (full Review→Tester cycle repeats until both pass). If Tester passes, no handoff — task completes. |
 | Review     | Integrator (or Human) | Revision list (P0–P3)                        |
 | Integrator | Worker                | Final revision list                          |
 | Worker     | PM                    | Completion summary                           |
