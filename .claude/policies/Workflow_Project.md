@@ -103,6 +103,29 @@ Review does not make direct modifications.
 
 ---
 
+## Tester
+
+Runs after Review passes on the current task. Drives the actual running app (Flutter `integration_test`) to check runtime behavior that static review can't see — never modifies product code.
+
+**Checks**
+
+* Actual behavior results (not code)
+* Realistic non-standard flows, not just the happy path
+* Regressions in connected existing features
+* All implemented states (success/loading/empty/error/retry/cancel)
+* Cross-screen data consistency
+* Data persistence across navigation/re-entry
+* Duplicate data from repeated input or duplicate requests
+* Compliance with Reference documents and policy
+
+**Does not**
+
+* Implement or fix
+* Propose refactors
+* Evaluate code style
+
+---
+
 ## Feature Audit
 
 Reviews the project as a whole.
@@ -194,21 +217,31 @@ Once work is completed, return it to the PM.
 Worker → Complete
 ```
 
+Exception: if the single modification changes runtime-observable behavior (not just text/style/docs), Tester still runs — treat it as the M pipeline for that step.
+
 ---
 
 ## M (Medium)
 
 ```text
-Worker → Review → Worker → Complete
+Worker → Review → (Fail) Worker(fix) → Review          [반복: Review 통과할 때까지]
+              → (Pass) Tester → (Pass) Complete
+                             → (Fail) Worker(fix) → Review   [처음 단계로 회귀, 전체 사이클 재수행]
 ```
+
+Review 실패 시엔 Worker가 고치고 Review로만 돌아간다(Tester는 아직 볼 필요 없는 코드니까). 하지만 **Tester가 실패하면 Worker가 수정한 뒤 처음 단계인 Review로 돌아가 Review→Tester 사이클을 처음부터 다시 밟는다** — 수정이 새 코드 결함을 만들지 않았는지, 그리고 실제로 동작이 고쳐졌는지 둘 다 다시 확인하기 위함. 이 재검증 루프는 Review와 Tester가 모두 통과할 때까지 반복된다.
 
 ---
 
 ## L (Large)
 
 ```text
-PM → Worker → Review → Integrator (or Human) → Worker → Feature Audit → Complete
+PM → Worker → Review → (Fail) Worker(fix) → Review
+                   → (Pass) Tester → (Pass) Integrator (or Human) → Worker → Feature Audit → Complete
+                                  → (Fail) Worker(fix) → Review
 ```
+
+M과 동일한 분기 규칙: Review 실패 → Worker(fix) → Review; Tester 실패 → Worker(fix) → Review(처음부터 재수행); Tester 통과 → Integrator로 진행.
 
 ---
 
@@ -217,7 +250,9 @@ PM → Worker → Review → Integrator (or Human) → Worker → Feature Audit 
 Split the review into two independent reviews.
 
 ```text
-PM → Worker → Review ×2 → Integrator (or Human) → Worker → Feature Audit → Complete
+PM → Worker → Review ×2 → (Fail) Worker(fix) → Review ×2
+                       → (Pass) Tester → (Pass) Integrator (or Human) → Worker → Feature Audit → Complete
+                                      → (Fail) Worker(fix) → Review ×2
 ```
 
 ---
@@ -287,6 +322,8 @@ When a task step is completed, always verify the following — including for eac
 
 □ `docs/work/BACKLOG.md`'s Current section reflects this step (not only "the next task has been added to the backlog" — the just-finished step's status too)
 
+□ If the change has runtime-observable behavior, Tester has reported Pass (or the N/A reason is recorded)
+
 ---
 
 # 11. Core Operating Principles
@@ -322,6 +359,7 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 | Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs, **Skill: `engineering-principles`** (invoke first) |
 | Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy |
 | Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema, **Skill: `engineering-principles`** (invoke first) |
+| (any Layer with runtime behavior) | Implementation — Tester pass | Runs after Review passes | Same Reference docs as Review for that Layer/Stage, `Decision.md`/`TechnicalDebt.md`, Worker's handoff + modified files, and the runnable app itself (not the raw exploratory material behind a Decision-stage task) |
 
 ## 12.2 Worker vs. Review Materials
 
