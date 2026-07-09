@@ -51,13 +51,20 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 이 원칙 위반으로 확인된 필드: `ClothingItem.category`, `ClothingItem.season`, `Composition.season`, `ClothingItem.material` (모두 enum화 필요). 위반 아닌 필드(자유 텍스트라 String이 맞음): `name`, `color`, `location`, `memo`, `imagePath`.
 
-**다음 할 일 (Step 2) — 배치 방식 재검토 필요, 아래 "병행 실험" 결과 먼저 확인할 것**: 원래 계획은 `docs/knowledge/reference/policy/Workflow_Development.md` §1 Core Principles에 위 하드코딩 원칙을 하위 섹션으로 직접 추가하는 것이었음(기존 번호 체계 유지, 새 top-level 섹션 만들지 말 것). 그런데 2026-07-09에 "Workflow 문서엔 흐름/역할만 남기고 재사용 가능한 원칙은 Claude Code Skill로 분리하자"는 대안이 논의되어, 별도 worktree(`C:\Users\User\Documents\Projects\Digital-Wardrobe-testbed`, 브랜치 `feature/skill-extraction-testbed`, `localTestbed/` 안에서 PM/Worker/Review/Audit 팀으로 진행 중, 이 하드코딩 원칙이 첫 시험 대상)에서 파일럿이 진행 중임. **Step 2 착수 전, 그 파일럿 결과(`localTestbed/REPORT.md`, 별도 세션)가 나왔는지 먼저 확인 — 나왔으면 "인라인 추가" 대신 "스킬로 분리 + `Workflow_Project.md` §12.1에 등재" 방식을 검토.** 파일럿이 아직이거나 반려되면 원래 계획(인라인 추가)대로 진행: `Workflow_Frontend.md`에 그 섹션을 가리키는 한 줄 cross-reference만 추가. **`Workflow_Project.md` §4 Task Size 기준 XL로 취급**하고, 개발 리뷰 2회(review ×2) dispatch 후 가장 사소한 지적을 제외한 모든 피드백을 반영할 것.
+**Step 2 완료 (2026-07-09, 별도 worktree `policy-doc-versioning-audit`, 브랜치 `feature/policy-doc-versioning-audit`에서 진행)**: 파일럿(`Digital-Wardrobe-testbed/localTestbed/REPORT.md`) 결과가 채택 권고로 나와, "인라인 추가" 대신 "스킬로 분리 + `Workflow_Project.md` §12.1에 등재" 방식으로 진행함. 실제 산출물:
+- `.claude/skills/engineering-principles/SKILL.md` 신설 (원칙 원문은 2026-07-09 최종 확정본 — "design token 등" 포함). (스킬명은 이후 `hardcoding-prevention` → `engineering-principles`로 리네임됨, 내용/스코프 변경 없음.)
+- `.claude/skills/flutter-implementation-conventions/SKILL.md` 신설 (`Workflow_Frontend.md` §2~§6 원칙/AI Constraints/Review 체크리스트 이전).
+- `Workflow_Development.md` §4 Worker 섹션에 engineering-principles bare pointer 추가, Version 1.0 → 1.1.
+- `Workflow_Frontend.md` §2~§6을 스킬 pointer로 교체(헤더 유지). §1은 "Frontend Implementation 단계의 §12.1 앵커(스킬 인덱스) 문서" 역할로 재정의 — 현재 인덱스: `engineering-principles`, `flutter-implementation-conventions`. 문서 근본 사용 패턴이 바뀐 것으로 판단해 Version 1.0 → **2.0**(major, 최초의 1.1 minor bump 판단을 감사 이후 정정).
+- `Workflow_Project.md` §12.1 Required Materials에 등재 + 신규 §1.6 "Version Numbering" 규칙 추가, Version 1.0 → 1.1. UI/Screen·Implementation(Frontend) 행은 `Workflow_Frontend.md`가 앵커 문서가 됨에 따라 스킬 2건 명시 참조는 제거(중복 방지) — Logic/Feature·Data/API/Architecture 두 행은 자기 앵커 문서가 없어 `engineering-principles` 명시 참조 유지.
+- `Decision.md`에 스킬 분리 채택 결정, 버전 넘버링 규칙 결정, `Workflow_Frontend.md` 앵커 문서 재정의(+major bump 정정) 결정 총 3건 기록. `TechnicalDebt.md`에 `documentation-conventions`/`uiux-design-conventions`(파일럿에만 존재, 이번엔 미채택) 후속 검토 항목 기록.
+- 이 브랜치(`feature/flutter-hifi-screens`)의 Task 7 재개와는 무관 — 위 산출물은 별도 worktree/브랜치에 있으며, `feature/flutter-hifi-screens`가 향후 `dev`를 다시 머지할 때 자동으로 반영됨.
 
 **다음 할 일 (Step 3)**: Step 2 완료 후, Tasks 1-6 + material 추가 커밋(08750b0)에서 같은 bare-String 패턴 전수 감사. `category`/`season`/`material`(ClothingItem), `season`(Composition)을 enum화. 각 enum에 향후 JSON 외부화 예정이라는 `// TODO:` 코멘트 추가. `mock_data.dart`와 관련 테스트(`mock_data_test.dart`, `closet_providers_test.dart`, `gallery_semantics_test.dart`) 갱신. `flutter analyze` + `flutter test` 클린 확인 후 보고.
 
 재개 지점: `git stash pop` 후 Step 2 배치 방식부터 확인 (사용자가 원칙 내용 자체는 이미 확정했으니 재질문 불필요, 배치 방식만 파일럿 결과에 따라 판단).
 
-**병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: 위 skill-extraction 파일럿은 별도 세션이 별도 worktree에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
+(참고, 완료됨) 위 skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed/localTestbed`)은 채택 권고로 종료됐고, 그 결과가 위 "Step 2 완료" 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 병행 작업 아님.
 
 ---
 
