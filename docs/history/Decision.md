@@ -36,6 +36,24 @@ Impact:
 
 ---
 
+[Decision] Task Manifest 신설 — Required Materials를 Read/Edit/Write 태깅된 구체 목록으로 변환
+
+결정:
+- `Workflow_Project.md` §11 Core Operating Principles 항목 11("PM must convert Required Materials into an explicit Task Manifest before spawning a Worker")이 그동안 근거 문서 없는 선언으로만 존재하던 것을, `workflow_project/12_Role Information Access.md`에 신설한 §12.4 "Task Manifest"로 실제 정의함.
+- §12.1의 Required Materials는 추상적 카테고리("Plan reference docs" 등)일 뿐이고, PM이 Worker/Review를 스폰하기 직전에 이를 구체적 파일 경로 + 접근모드로 변환한 것이 Task Manifest. 접근모드 3종: **Read**(참고 자료, 수정 금지) / **Edit**(기존 파일 수정) / **Write**(신규 파일 생성). `Skill:` 항목은 항상 Read.
+- `worker.md`/`review.md`에 이 태깅 규약을 지키라는 문장 추가(Worker: 도구 권한이 허용해도 Read 태그 파일은 건드리지 않음 / Review: 전부 Read, Edit/Write 계층 없음).
+- `Workflow_Project.md` Version 2.0 → 2.1 (§12.4 신설은 chapter-level addition, §1.6 기준 minor bump).
+
+사유:
+"PM이 워커에게 일감·자료를 줄 때 Read/Edit/Write 권한이 따로 명시돼 있지 않다"는 지적에서 시작. 확인 결과 Task Manifest 항목 자체가 프로젝트 어디에도 실제로 연결/정의돼 있지 않은 선언뿐이었음 — 이번에 §12.4로 그 실체를 채움.
+
+Impact:
+- `workflow_project/12_Role Information Access.md` §12.4 신설
+- `Workflow_Project.md` §11 항목 11에 "(see §12.4)" 참조 추가, Version 2.0 → 2.1
+- `.claude/agents/worker.md`, `.claude/agents/review.md` 갱신
+
+---
+
 [Decision] `Workflow_Frontend.md`를 Frontend Implementation 단계의 §12.1 앵커(스킬 인덱스) 문서로 재정의 — 이전 minor bump 판단을 major로 정정
 
 결정:

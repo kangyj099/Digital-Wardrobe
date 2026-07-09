@@ -1,4 +1,4 @@
-> Version 2.0 — Defines the project workflow and links to detailed workflow documents.
+> Version 2.1 — Defines the project workflow and links to detailed workflow documents.
 > This workflow applies across the entire project, including planning, design, development, and release.
 
 # Project Workflow

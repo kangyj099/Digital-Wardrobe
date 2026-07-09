@@ -1,5 +1,7 @@
 # Design Principles
 
+> Version 2.0
+
 ## Stage 1 — UX Principles
 → docs\reference\design\00_DesignPrinciples\01_UX Principles.md
 
