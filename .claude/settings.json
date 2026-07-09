@@ -1,4 +1,14 @@
 {
+  "permissions": {
+    "deny":[
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.secrets/**)",
+      "Read(./.env)",
+      "Bash(rm -rf)"
+    ]
+  },
+
   "hooks": {
     "PreToolUse": [
       {
@@ -24,6 +34,6 @@
     ]
   },
   "enabledPlugins": {
-    "figma@claude-plugins-official": true
+    "figma@claude-plugins-official": false
   }
 }
