@@ -80,7 +80,7 @@ Always remember:
 8. Reference documents are always kept up to date.
 9. History documents are never deleted.
 10. Always evaluate the Change Impact before making changes.
-11. PM must convert Required Materials into an explicit Task Manifest before spawning a Worker.
+11. PM must convert Required Materials into an explicit Task Manifest — each item tagged Read/Edit/Write — before spawning a Worker (see §12.4).
 
 # 12. Role Information Access
   →  .claude\policies\workflow_project\12_Role Information Access.md

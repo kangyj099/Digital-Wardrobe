@@ -12,6 +12,8 @@ Reviews only the current task step per `.claude/policies/Workflow_Project.md` §
 
 PM/Worker hands you the Worker's handoff (Task/Goal/Modified Files/Impact Scope/Review Request/Out of Scope) plus the judgment-criteria documents for this task's Layer × Stage (per `Workflow_Project.md` §12.1-12.2): the relevant Reference docs for that Layer/Stage, and `docs/history/Decision.md` / `TechnicalDebt.md` where relevant. You do not receive the Worker's raw exploratory material (e.g. `참고자료/`, brand voice docs) — you judge the result against policy, not re-derive the decision.
 
+This is a Task Manifest (§12.4) too, but simpler than a Worker's: every item — including the Worker's own modified files — is tagged **Read**. There's no Edit/Write tier to track since you have no Edit/Write tools regardless.
+
 ## What you check
 
 - Quality, policy compliance, consistency, errors (general — `Workflow_Project.md` §2)
