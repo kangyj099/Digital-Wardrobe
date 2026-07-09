@@ -37,6 +37,16 @@ Do not create copies such as Version2, Final, or Final_Final.
 
 ---
 
+## 1.5 Concise Writing
+
+Reference documents are written as concisely as possible, without duplication, as long as doing so does not compromise exact meaning.
+
+- This applies to newly authored or edited content. It does not retroactively shorten existing History document entries (`Decision.md` / `TechnicalDebt.md`) — those are append-only per §6.
+- History document entries are held to a different standard: per §1.3 (Source of Truth), they must carry enough context to stand in for a lost conversation, so more detail is expected there than in Reference documents.
+- When conciseness would conflict with the reachability requirement in §3 "Skill-Internal Ledgers vs. Official Handoff" (transcribing content directly so a fresh session can find it), reachability wins — do not replace necessary inline detail with a link just to shorten a document.
+
+---
+
 # 2. Roles
 
 ## PM (Project Manager)
@@ -136,6 +146,17 @@ Never resend the entire project.
 * Impact scope
 * Review request
 * Out of scope
+
+---
+
+## Skill-Internal Ledgers vs. Official Handoff
+
+Some skills (e.g. superpowers subagent-driven-development) maintain gitignored progress ledgers (e.g. `.superpowers/sdd/*`) so a single session can recover its own context after compaction. These ledgers are **session-internal caches, not official cross-session handoff.**
+
+- **Primary defense**: updating `docs/work/BACKLOG.md`'s Current section is part of completing a task step, not a separate follow-up action deferred to a pause or session end. Same discipline as marking a todo complete or appending to a progress ledger — a step is not done until this is done. §10's Definition of Done applies this per step, not only when the whole task finishes.
+- **Backstop for when that slips**: if a task is paused incomplete, or a session ends, before a task finishes, the key decisions and next steps made so far must still be transcribed directly into `docs/work/BACKLOG.md` (and `Decision.md` where applicable). The `Stop`-event reminder hook (`.claude/hooks/check_backlog_freshness.py`) is a second, mechanical backstop for the same slip — advisory only, not a substitute for the primary defense above.
+- Only the "completed task → commit" mapping in a skill-internal ledger is trustworthy from a fresh session — and only because it can be independently reconstructed from `git log`. Prose in the ledger (decisions, rationale, next steps) does not survive into a new session unless it is copied into a tracked document.
+- Before reporting "recorded so a future session can continue," verify that a fresh session would actually reach the content by following the real `CLAUDE.md` → `BACKLOG.md` path. Existence and accuracy of the content alone is not sufficient.
 
 ---
 
@@ -241,7 +262,7 @@ It creates new tasks rather than making direct modifications.
 
 # 10. Definition of Done
 
-When a task is completed, always verify the following:
+When a task step is completed, always verify the following — including for each individual step within a larger task, not only when the whole task finishes (see §3 "Skill-Internal Ledgers vs. Official Handoff"):
 
 □ Changes have been committed to Git
 
@@ -253,7 +274,7 @@ When a task is completed, always verify the following:
 
 □ Change Impact has been reviewed
 
-□ The next task has been created or added to the backlog
+□ `docs/work/BACKLOG.md`'s Current section reflects this step (not only "the next task has been added to the backlog" — the just-finished step's status too)
 
 ---
 
