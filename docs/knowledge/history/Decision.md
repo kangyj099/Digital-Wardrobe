@@ -15,22 +15,22 @@ Impact:
 
 ---
 
-[Decision] 재사용 가능한 원칙을 Workflow 문서에서 Claude Code Skill로 분리 채택 (hardcoding-prevention, flutter-implementation-conventions)
+[Decision] 재사용 가능한 원칙을 Workflow 문서에서 Claude Code Skill로 분리 채택 (engineering-principles, flutter-implementation-conventions)
 
 결정:
 - Workflow_*.md 정책 문서에 있던 재사용 가능한 원칙 콘텐츠를 `.claude/skills/<name>/SKILL.md` 형태의 Claude Code Skill로 분리하는 방식을 채택. Workflow 문서에는 흐름/역할/파이프라인만 남기고, 원칙 본문은 스킬이 갖고 스킬을 명시적 bare pointer 문장으로 호출하는 구조로 전환.
-- 이번 패스에서 실제로 분리한 스킬 2개: `hardcoding-prevention`(`Workflow_Development.md` §4 Worker 섹션에서 pointer), `flutter-implementation-conventions`(`Workflow_Frontend.md` §2~§6 원칙 본문을 추출).
+- 이번 패스에서 실제로 분리한 스킬 2개: `engineering-principles`(최초 신설명 `hardcoding-prevention`, 이후 리네임 — `Workflow_Development.md` §4 Worker 섹션에서 pointer), `flutter-implementation-conventions`(`Workflow_Frontend.md` §2~§6 원칙 본문을 추출).
 - 같은 파일럿에서 함께 시험됐던 `documentation-conventions`, `uiux-design-conventions` 스킬은 이번 패스에서 채택하지 않음 — 아직 파일럿 초안 상태로 보류(`TechnicalDebt.md`에 후속 후보로 기록).
 
 사유:
 별도 worktree(`Digital-Wardrobe-testbed/localTestbed`, 브랜치 `feature/skill-extraction-testbed`)에서 PM/Worker/Review 팀으로 진행한 파일럿이 가설("원칙이 Workflow 문서에 인라인으로 쌓이면 텍스트량 때문에 오히려 안 지켜진다, 스킬로 분리하면 완화된다")을 검증함(`localTestbed/REPORT.md`). Verbatim 전사 요구사항(하드코딩 원칙 등)이 스킬 포맷 자체로 인한 드리프트 없이 지켜졌고, 유일한 리뷰 지적(P1: pointer 문장이 원칙을 재서술해 "제2의 Source of Truth" 실패 패턴을 재현)은 Worker 실행 실수였을 뿐 구조적 결함이 아니었으며 Review→Worker 1회전에서 자체 교정됨. `uiux-design-conventions` 스킬 초안은 verbatim 전사가 아닌 "방법론 추출"에도 이 포맷이 통한다는 것도 보였음(이번 패스에서는 미채택).
 
 Impact:
-- `.claude/skills/hardcoding-prevention/SKILL.md` 신설 — 원칙 원문은 파일럿 초안이 아니라 2026-07-09 최종 확정본("코드에 별도로 정의된 사전 합의된 const, enum, design token 등") 사용. 이 코드베이스에서 이미 확인된 위반 필드(`ClothingItem.category`/`season`/`material`, `Composition.season`) 참고용 메모 포함(조치는 별도 Step 3).
+- `.claude/skills/engineering-principles/SKILL.md` 신설(최초 신설명 `hardcoding-prevention`, 같은 패스 내에서 프로젝트 오너 요청으로 `engineering-principles`로 리네임 — 내용/스코프 변경 없음) — 원칙 원문은 파일럿 초안이 아니라 2026-07-09 최종 확정본("코드에 별도로 정의된 사전 합의된 const, enum, design token 등") 사용. 이 코드베이스에서 이미 확인된 위반 필드(`ClothingItem.category`/`season`/`material`, `Composition.season`) 참고용 메모 포함(조치는 별도 Step 3).
 - `.claude/skills/flutter-implementation-conventions/SKILL.md` 신설 — `Workflow_Frontend.md` §2(네비게이션)~§6(Review 체크리스트) 원칙/AI Constraints 전량 이전.
-- `Workflow_Development.md` §4 Worker 섹션에 hardcoding-prevention bare pointer 추가.
-- `Workflow_Frontend.md` §2~§6 본문을 스킬 pointer로 교체(헤더/번호는 유지), §1에 hardcoding-prevention pointer 추가, §1/§7은 그대로 유지, Version 1.0 → 1.1.
-- `Workflow_Project.md` §12.1 Required Materials 컬럼에 두 스킬 등재(`hardcoding-prevention`은 UI/Screen·Logic/Feature·Data/API/Architecture Implementation 행, `flutter-implementation-conventions`는 UI/Screen Implementation 행만), Version 1.0 → 1.1.
+- `Workflow_Development.md` §4 Worker 섹션에 engineering-principles bare pointer 추가.
+- `Workflow_Frontend.md` §2~§6 본문을 스킬 pointer로 교체(헤더/번호는 유지), §1에 engineering-principles pointer 추가, §1/§7은 그대로 유지, Version 1.0 → 1.1.
+- `Workflow_Project.md` §12.1 Required Materials 컬럼에 두 스킬 등재(`engineering-principles`는 UI/Screen·Logic/Feature·Data/API/Architecture Implementation 행, `flutter-implementation-conventions`는 UI/Screen Implementation 행만), Version 1.0 → 1.1.
 - `documentation-conventions`/`uiux-design-conventions` 채택은 보류 — `TechnicalDebt.md`에 후속 후보 task로 기록.
 
 ---
