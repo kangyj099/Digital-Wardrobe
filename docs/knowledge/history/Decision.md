@@ -14,6 +14,7 @@ Impact:
 - `Workflow_Frontend.md` §1 재작성(앵커/인덱스 역할 명시), Version 1.1 → 2.0
 - `Workflow_Project.md` §12.1 UI/Screen·Implementation(Frontend) 행에서 스킬 2건 명시 참조 제거 (Version bump 없음 — 같은 리비전 패스 내 1.0→1.1 bump로 이미 커버됨, §1.6 "one revision pass = one bump")
 - 아래 "Reference 문서 버전 넘버링 규칙 신설" Decision 항목의 `Workflow_Frontend.md` minor-bump 판단을 대체(supersede) — 그 항목 자체는 append-only 정책에 따라 소급 수정하지 않고 그대로 두되, 최신 판단은 이 항목을 따름.
+- (감사 발견 반영) 같은 패스에서 `Workflow_Development.md`도 §4 Worker 섹션에 스킬 pointer 문장 추가로 Version 1.0 → 1.1(chapter-level modification) — 아래 "Reference 문서 버전 넘버링 규칙 신설" Decision의 Impact 목록에 최초 누락됐던 것을 여기 보완 기록.
 
 ---
 
@@ -28,8 +29,7 @@ Reference 문서 여러 개가 `> Version X.Y` 헤더를 갖고 있었으나 언
 
 Impact:
 - `Workflow_Project.md` §1.6 신설, Version 1.0 → 1.1
-- 같은 패스에서 `Workflow_Frontend.md`도 이 규칙에 따라 Version 1.0 → 1.1 (챕터 단위 내용 교체는 수정이지 프레임워크 변경이 아니므로 minor bump) — **이 minor bump 판단은 이후 "Workflow_Frontend.md를 §12.1 앵커 문서로 재정의" Decision에서 major bump(2.0)로 대체(supersede)됨.**
-- 같은 패스에서 `Workflow_Development.md`도 §4 Worker 섹션에 스킬 pointer 문장 추가로 Version 1.0 → 1.1 (chapter-level modification)
+- 같은 패스에서 `Workflow_Frontend.md`도 이 규칙에 따라 Version 1.0 → 1.1 (챕터 단위 내용 교체는 수정이지 프레임워크 변경이 아니므로 minor bump)
 
 ---
 
