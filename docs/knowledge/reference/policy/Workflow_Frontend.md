@@ -15,6 +15,8 @@
 
 Worker/Review 모두 Layer=UI/Screen × Stage=Implementation(Frontend) 태스크를 맡을 때 이 문서를 참조한다 (`Workflow_Project.md` §12.1 Required Materials에 반영됨).
 
+값 하드코딩 금지 원칙은 `Workflow_Development.md` §1 "Hardcoding Policy (No Magic Values)" 참고.
+
 ---
 
 # 2. 네비게이션 원칙 (go_router)
