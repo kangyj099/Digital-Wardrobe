@@ -52,8 +52,8 @@ main  ─ 릴리즈 전용. 실제 배포 시에만 사용
 1. `.claude/hooks/block-git-commit.sh` — 위 표의 브랜치 인지형 로직으로 재작성
 2. `.claude/agents/worker.md` — "Worker는 절대 커밋하지 않는다" 규칙을 "feature 브랜치 안에서는 자유 커밋 가능, dev/main에는 직접 커밋 금지"로 수정
 3. `CLAUDE.md` "하네스 운영 원칙" 체크포인트 3 — "커밋 전 항상 리포트+확인"에서 "dev/main 커밋 및 PR 생성(gh pr create) 시에만 리포트+확인"으로 범위 축소
-4. `docs/knowledge/reference/policy/Workflow_Project.md` — 브랜치 전략 섹션 신설 (본 문서의 브랜치 구조/PR 정책 요약을 반영)
-5. `docs/knowledge/history/Decision.md` — 이번 정책 변경을 결정사항으로 기록
+4. `.claude/policies/Workflow_Project.md` — 브랜치 전략 섹션 신설 (본 문서의 브랜치 구조/PR 정책 요약을 반영)
+5. `docs/history/Decision.md` — 이번 정책 변경을 결정사항으로 기록
 
 `review.md`는 변경 없음 (여전히 read-only, 특정 task 리뷰만 수행).
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PreToolUse hook: gates git/gh actions per the project's branch policy.
 
-See docs/knowledge/reference/policy/Workflow_Project.md §13.
+See .claude/policies/Workflow_Project.md §13.
 - `git commit` on a `feature/*` branch: allowed, no gate.
 - `git commit` directly on `dev` or `main`: blocked, needs report + human confirmation.
 - `gh pr create` targeting `dev` (or any non-`main` base): allowed, no gate.

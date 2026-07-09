@@ -4,15 +4,15 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 ## 폴더 안내
 
-- `docs/` — 나(Claude)에게 보여주려고 만든 폴더. 기획/디자인/워크플로우 레퍼런스와 스킬 정의가 있음. 적극적으로 참고할 것.
-  - `docs/knowledge/reference/plan/` — 기획 문서 (MVP, Needs, IA/UserFlow, 화면별 UX명세서)
-  - `docs/knowledge/reference/design/` — 디자인 원칙, 브랜드가이드
-  - `docs/knowledge/reference/policy/` — 워크플로우 정책 3종 (Project/Design/Development)
-  - `docs/knowledge/reference/Glossary.md` — 전 영역 공통 용어집 (특정 카테고리에 속하지 않음)
-  - `docs/knowledge/Skills/UIUX/` — UIUX 스킬 정의
-  - `docs/knowledge/history/Decision.md` — 의사결정 기록
-  - `docs/knowledge/history/TechnicalDebt.md` — 기술부채 기록
+- `docs/` — 나(Claude)에게 보여주려고 만든 폴더. 기획/디자인 레퍼런스와 작업 기록이 있음. 적극적으로 참고할 것.
+  - `docs/reference/plan/` — 기획 문서 (MVP, Needs, IA/UserFlow, 화면별 UX명세서)
+  - `docs/reference/design/` — 디자인 원칙, 브랜드가이드
+  - `docs/reference/Glossary.md` — 전 영역 공통 용어집 (특정 카테고리에 속하지 않음)
+  - `docs/history/Decision.md` — 의사결정 기록
+  - `docs/history/TechnicalDebt.md` — 기술부채 기록
   - `docs/work/` — 작업 중 체크리스트 등
+- `.claude/policies/` — 워크플로우 정책 4종 (Project/Design/Development/Frontend)
+- `.claude/skills/` — 재사용 가능한 원칙/컨벤션 스킬 정의 (예: `engineering-principles`, `flutter-implementation-conventions`)
 - `참고자료/` — 디자인 목업/스크린샷 원본 덤프. `.gitignore` 처리되어 있고, 기본적으로 안 봐도 됨. 필요하면(예: "이 목업 보고 디자인해줘") 요청 시에만 열어볼 것.
 - `lib/`, `test/` — 실제 앱 코드/테스트. 작업 대상.
 - `android/`, `ios/` — Flutter 플랫폼 보일러플레이트. 평소엔 안 봐도 되고, 권한/아이콘/빌드 설정 건드릴 때만 확인.
@@ -20,12 +20,12 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 ## 하네스 운영 원칙 (이 세션 = PM)
 
-이 루트 세션이 PM 역할을 맡는다. 구현은 `.claude/agents/worker.md`, 리뷰는 `.claude/agents/review.md` 서브에이전트에게 위임한다. 상세 근거는 `docs/knowledge/reference/policy/Workflow_Project.md`(특히 §3, §12)를 따른다.
+이 루트 세션이 PM 역할을 맡는다. 구현은 `.claude/agents/worker.md`, 리뷰는 `.claude/agents/review.md` 서브에이전트에게 위임한다. 상세 근거는 `.claude/policies/Workflow_Project.md`(특히 §3, §12)를 따른다.
 
 **필수 체크포인트 (건너뛰지 말 것):**
 
 1. **작업 분배 가시성**: 워커/리뷰 서브에이전트를 스폰하기 전에, 누구(에이전트 타입)에게 어떤 task를 왜 보내는지 평문으로 먼저 알린다. 승인을 기다릴 필요는 없다(비차단 로그).
-2. **결정문서 diff 확인**: `docs/knowledge/history/*`, `docs/knowledge/reference/**` 수정은 항상 일반 Edit 승인 흐름을 거친다. 이 경로에 대해 auto-accept를 절대 켜지 않는다.
+2. **결정문서 diff 확인**: `docs/history/*`, `docs/reference/**`, `.claude/policies/**` 수정은 항상 일반 Edit 승인 흐름을 거친다. 이 경로에 대해 auto-accept를 절대 켜지 않는다.
 3. **dev/main 커밋, dev→main PR 생성 전 리포트 + 확인 / PR merge는 항상 사람 몫**: `feature/*` 브랜치 안에서의 commit, push, `gh pr create --base dev`는 Worker/PM 누구나 리포트·확인 없이 자유롭게 한다(merge 시점에 사람이 어차피 검토하므로). 하지만 `dev`/`main`에 직접 `git commit`하거나, `gh pr create --base main`으로 PR을 생성하거나, `main`으로 `git push`하기 전에는 반드시 "무엇을 했고 / 어디를 왜 고쳤고 / 어떤 영향이 있는지"를 텍스트로 먼저 작성하고 사용자 확인을 받는다. `gh pr merge`는 확인을 받아도 실행하지 않는다 — PR 병합은 항상 사람이 직접 한다. 이 행위들을 permissions allow-list에 절대 넣지 않는다 (`.claude/settings.json`의 훅이 추가로 강제함).
 4. **작업↔리뷰 사이클**: Worker→Review→Worker 순환은 사람 개입 없이 알아서 돌리되, 사이클이 끝나면 "로그 보시겠어요?"를 사용자에게 묻는다 (자동으로 전체 로그를 쏟아내지 않음).
 
