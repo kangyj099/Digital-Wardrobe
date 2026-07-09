@@ -213,18 +213,20 @@ Exception: if the single modification changes runtime-observable behavior (not j
 ## M (Medium)
 
 ```text
-Worker → Review → Tester → Worker → Complete
+Worker → Review → (Pass) Tester → (Fail) Worker(fix) → Complete
 ```
 
-Tester runs after Review passes, on any task with runtime-observable behavior. Review catches code-level problems first so Tester isn't spent running against code that's about to change.
+If Review fails, it goes straight back to Worker(fix) instead of reaching Tester (no point running behavior checks against code that's about to change). If Tester passes, it's Complete — no automatic re-verification loop after a fix.
 
 ---
 
 ## L (Large)
 
 ```text
-PM → Worker → Review → Tester → Integrator (or Human) → Worker → Feature Audit → Complete
+PM → Worker → Review → (Pass) Tester → (Fail) Worker(fix) → Integrator (or Human) → Worker → Feature Audit → Complete
 ```
+
+Same branch rule as M: Review fail → Worker(fix) directly; Tester fail → Worker(fix); Tester pass → continues to Integrator.
 
 ---
 
@@ -233,7 +235,7 @@ PM → Worker → Review → Tester → Integrator (or Human) → Worker → Fea
 Split the review into two independent reviews.
 
 ```text
-PM → Worker → Review ×2 → Tester → Integrator (or Human) → Worker → Feature Audit → Complete
+PM → Worker → Review ×2 → (Pass) Tester → (Fail) Worker(fix) → Integrator (or Human) → Worker → Feature Audit → Complete
 ```
 
 ---

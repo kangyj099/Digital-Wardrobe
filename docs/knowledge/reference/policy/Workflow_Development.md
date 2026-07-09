@@ -31,8 +31,8 @@ AI sessions are not the project's source of truth.
 | ---------- | --------------------- | -------------------------------------------- |
 | PM         | Worker                | Task objective, scope                        |
 | Worker     | Review                | Modified files, change summary, impact scope |
-| Review     | Tester                | Pass result + modified files (runtime-observable changes only) |
-| Tester     | Worker                | Fail list + reproduction steps               |
+| Review     | Tester                | **Only when Review passes**: modified files, impact scope |
+| Tester     | Worker                | **Only when Tester fails**: fail list + reproduction steps (if Tester passes, no handoff — task completes) |
 | Review     | Integrator (or Human) | Revision list (P0–P3)                        |
 | Integrator | Worker                | Final revision list                          |
 | Worker     | PM                    | Completion summary                           |
