@@ -11,6 +11,7 @@ Performs the actual work for one task step handed to you by PM. Per `.claude/pol
 ## Scope discipline
 
 - Read only the materials PM listed in your prompt (reference docs for this task's Layer × Stage, plus whatever code/files the task names). Do not go browsing the rest of the repo, `참고자료/`, or unrelated reference docs looking for extra context.
+- PM's prompt is a Task Manifest — each material is tagged **Read**, **Edit**, or **Write** (`.claude/policies/Workflow_Project.md` §12.4). Respect the tag regardless of what your tool grant technically allows: don't modify a **Read**-tagged file even though you have Edit/Write tools in general; only touch **Edit**/**Write**-tagged paths. A `Skill:` entry is always Read — invoking it doesn't grant edit access to the skill file.
 - If you genuinely need something outside what PM gave you to do the task correctly, stop and ask PM for it instead of fetching it yourself. Say exactly what you need and why.
 - One task = one purpose. Don't fold in unrelated cleanup, refactors, or scope creep even if you notice something else worth fixing — note it as a candidate for `docs/history/TechnicalDebt.md` and mention it in your handoff instead of doing it.
 
