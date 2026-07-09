@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] BACKLOG.md 갱신을 "태스크 완료 시 후속조치"에서 "각 스텝 완료의 일부"로 승격
+
+결정:
+- `Workflow_Project.md` §3 "Skill-Internal Ledgers vs. Official Handoff": BACKLOG.md Current 갱신을 1차 방어선으로 승격 — 각 작업 스텝이 끝날 때마다(전체 태스크 완료 시가 아니라) 갱신하는 걸 그 스텝을 "완료"로 표시하는 행위 자체의 일부로 취급. 미완료 중단/세션 종료 시 옮겨 적는 기존 규칙과 Stop 훅(`check_backlog_freshness.py`)은 이 1차 방어선이 빠졌을 때의 백스톱으로 재배치.
+- `Workflow_Project.md` §10 Definition of Done: 체크리스트가 "태스크 완료 시"뿐 아니라 태스크 내 개별 스텝마다 적용됨을 명시. "다음 태스크가 backlog에 추가됨" 항목을 "방금 끝난 스텝의 상태도 BACKLOG.md Current에 반영됨"으로 확장.
+- `CLAUDE.md` "진행 중 작업 상태" 항목의 행동 지침을 "세션 종료 시"에서 "각 스텝 완료 시"로 앞당김.
+
+사유:
+Stop 훅(경고) vs block(강제) 두 방식을 검토하던 중, 사용자가 "기록은 다른 문서와 달리 작업 자체의 일부로 봐야 한다"는 대안을 제시함. 외부에서 사후 감지해 대응하는 hook 방식(경고=놓칠 수 있음, block=사용자 승인 없는 자동 행동 유발)보다, 애초에 기록을 스텝 완료 정의에 포함시켜 빠지면 "완료"로 안 치는 구조가 근본적으로 우월하다고 판단. SDD 스킬이 이미 "리뷰 통과 시 그 자리에서 장부에 한 줄 추가"하는 습관을 갖고 있었는데, 그 습관이 향한 대상(gitignore된 내부 장부)이 잘못됐던 것뿐이므로, 같은 습관을 BACKLOG.md로 재조준.
+
+Impact:
+- `Workflow_Project.md` §3, §10 갱신
+- `CLAUDE.md` "진행 중 작업 상태" 항목 갱신
+- Stop 훅(`check_backlog_freshness.py`)은 유지하되 역할이 "1차 방어선"에서 "백스톱"으로 재정의됨 (코드 변경 없음, 문서상 위상만 변경)
+
+---
+
 [Decision] Reference 문서 작성 원칙에 "간결성"(§1.5) 추가
 
 결정:
