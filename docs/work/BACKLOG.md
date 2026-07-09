@@ -12,13 +12,13 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current Milestone
 
-디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `docs/knowledge/reference/policy/Workflow_Design.md` §2)
+디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `.claude/policies/Workflow_Design.md` §2)
 
 ---
 
 # Last Completed
 
-세션 인계(핸드오프) 브릿지 규칙 신설 — PR #4 병합 완료(2026-07-09, https://github.com/kangyj099/Digital-Wardrobe/pull/4). 3회 반복된 "세션 간 작업 맥락 인계 실패"의 구조적 수정: (1) `Workflow_Project.md` §3 "Skill-Internal Ledgers vs. Official Handoff" — gitignore된 스킬 내부 장부(`.superpowers/sdd/*`)는 세션 내부 캐시일 뿐 공식 인계 수단 아님, BACKLOG.md Current 갱신이 각 작업 스텝 완료의 일부(§10 Definition of Done 갱신도 동반)로 승격됨. (2) `Workflow_Project.md` §1.5 Concise Writing — Reference 문서는 간결하게, History 문서는 예외, §3 재현 가능성과 충돌 시 재현 가능성 우선. (3) Stop 훅(`.claude/hooks/check_backlog_freshness.py`) — BACKLOG.md가 HEAD보다 5커밋 이상 뒤처지면 비차단 경고(백스톱용, 1차 방어선 아님). 상세: `docs/knowledge/history/Decision.md` 상단 3개 항목.
+세션 인계(핸드오프) 브릿지 규칙 신설 — PR #4 병합 완료(2026-07-09, https://github.com/kangyj099/Digital-Wardrobe/pull/4). 3회 반복된 "세션 간 작업 맥락 인계 실패"의 구조적 수정: (1) `Workflow_Project.md` §3 "Skill-Internal Ledgers vs. Official Handoff" — gitignore된 스킬 내부 장부(`.superpowers/sdd/*`)는 세션 내부 캐시일 뿐 공식 인계 수단 아님, BACKLOG.md Current 갱신이 각 작업 스텝 완료의 일부(§10 Definition of Done 갱신도 동반)로 승격됨. (2) `Workflow_Project.md` §1.5 Concise Writing — Reference 문서는 간결하게, History 문서는 예외, §3 재현 가능성과 충돌 시 재현 가능성 우선. (3) Stop 훅(`.claude/hooks/check_backlog_freshness.py`) — BACKLOG.md가 HEAD보다 5커밋 이상 뒤처지면 비차단 경고(백스톱용, 1차 방어선 아님). 상세: `docs/history/Decision.md` 상단 3개 항목.
 
 (참고) Git-flow 커밋/PR 정책 도입 — PR #2도 병합 완료(2026-07-08).
 
@@ -76,7 +76,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 # MVP Progress
 
-`docs/knowledge/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
+`docs/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
 
 - [ ] Clothing archiving (AI 배경제거 + 자동태깅)
 - [ ] View/filter by tags
