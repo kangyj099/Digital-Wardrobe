@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/check_backlog_freshness.py 2>/dev/null || true",
+            "statusMessage": "Checking BACKLOG.md freshness..."
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
