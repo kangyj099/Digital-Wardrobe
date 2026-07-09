@@ -92,6 +92,29 @@ Review does not make direct modifications.
 
 ---
 
+## Tester
+
+Runs after Review passes on the current task. Drives the actual running app (Flutter `integration_test`) to check runtime behavior that static review can't see — never modifies product code.
+
+**Checks**
+
+* Actual behavior results (not code)
+* Realistic non-standard flows, not just the happy path
+* Regressions in connected existing features
+* All implemented states (success/loading/empty/error/retry/cancel)
+* Cross-screen data consistency
+* Data persistence across navigation/re-entry
+* Duplicate data from repeated input or duplicate requests
+* Compliance with Reference documents and policy
+
+**Does not**
+
+* Implement or fix
+* Propose refactors
+* Evaluate code style
+
+---
+
 ## Feature Audit
 
 Reviews the project as a whole.
@@ -183,20 +206,24 @@ Once work is completed, return it to the PM.
 Worker → Complete
 ```
 
+Exception: if the single modification changes runtime-observable behavior (not just text/style/docs), Tester still runs — treat it as the M pipeline for that step.
+
 ---
 
 ## M (Medium)
 
 ```text
-Worker → Review → Worker → Complete
+Worker → Review → Tester → Worker → Complete
 ```
+
+Tester runs after Review passes, on any task with runtime-observable behavior. Review catches code-level problems first so Tester isn't spent running against code that's about to change.
 
 ---
 
 ## L (Large)
 
 ```text
-PM → Worker → Review → Integrator (or Human) → Worker → Feature Audit → Complete
+PM → Worker → Review → Tester → Integrator (or Human) → Worker → Feature Audit → Complete
 ```
 
 ---
@@ -206,7 +233,7 @@ PM → Worker → Review → Integrator (or Human) → Worker → Feature Audit 
 Split the review into two independent reviews.
 
 ```text
-PM → Worker → Review ×2 → Integrator (or Human) → Worker → Feature Audit → Complete
+PM → Worker → Review ×2 → Tester → Integrator (or Human) → Worker → Feature Audit → Complete
 ```
 
 ---
@@ -276,6 +303,8 @@ When a task step is completed, always verify the following — including for eac
 
 □ `docs/work/BACKLOG.md`'s Current section reflects this step (not only "the next task has been added to the backlog" — the just-finished step's status too)
 
+□ If the change has runtime-observable behavior, Tester has reported Pass (or the N/A reason is recorded)
+
 ---
 
 # 11. Core Operating Principles
@@ -311,6 +340,7 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 | Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs |
 | Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy |
 | Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema |
+| (any Layer with runtime behavior) | Implementation — Tester pass | Runs after Review passes | Same Reference docs as Review for that Layer/Stage, `Decision.md`/`TechnicalDebt.md`, Worker's handoff + modified files, and the runnable app itself (not the raw exploratory material behind a Decision-stage task) |
 
 ## 12.2 Worker vs. Review Materials
 

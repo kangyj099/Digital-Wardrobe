@@ -31,6 +31,8 @@ AI sessions are not the project's source of truth.
 | ---------- | --------------------- | -------------------------------------------- |
 | PM         | Worker                | Task objective, scope                        |
 | Worker     | Review                | Modified files, change summary, impact scope |
+| Review     | Tester                | Pass result + modified files (runtime-observable changes only) |
+| Tester     | Worker                | Fail list + reproduction steps               |
 | Review     | Integrator (or Human) | Revision list (P0–P3)                        |
 | Integrator | Worker                | Final revision list                          |
 | Worker     | PM                    | Completion summary                           |
@@ -81,6 +83,20 @@ Modified Files
 Remaining Issues
 
 Next Candidate Task
+```
+
+---
+
+### Tester → Worker (or PM)
+
+```text
+Task
+
+Scenarios Tested (Pass/Fail each)
+
+Repro Steps (required for each Fail)
+
+Out of Scope / Skipped (what wasn't checked, and why)
 ```
 
 ---
@@ -149,7 +165,7 @@ By default, a single Review session is used.
 * Performance
 * Exception handling
 * Security
-* Testing
+* Testing (static only — whether test code exists and is well-structured/covers the right cases; does not run the app. Actual runtime behavior is Tester's job, below)
 * UX
 * Alignment with product requirements
 
@@ -174,6 +190,32 @@ Used only for large-scale tasks.
 * Accessibility
 * Usability
 * Alignment with product requirements
+
+---
+
+## Tester
+
+Runs after Review passes. Exercises the actual running app (Flutter `integration_test`) to check what static review can't see — runtime behavior, not code.
+
+**Responsibilities**
+
+* Check behavior results, not code
+* Cover realistic non-standard flows, not just the happy path
+* Check regressions in existing features connected to the change
+* Check every defined state (success, loading, empty, error, retry, cancel) that's actually implemented
+* Check that the same data displays consistently across screens
+* Check that saved data survives navigation/re-entry
+* Check that repeated input or duplicate requests don't create duplicate data
+* Check behavior against Reference documents and project policy
+* Design and commit its own `integration_test/` scripts (never touches `lib/`)
+* Report Pass/Fail with mandatory reproduction steps for every Fail
+
+**Does not**
+
+* Implement or fix anything
+* Propose refactors
+* Evaluate code style (that's Review's job)
+* Invent scenarios for features that aren't actually implemented yet
 
 ---
 

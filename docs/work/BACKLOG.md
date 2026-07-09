@@ -18,6 +18,12 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
+**하네스 확장: Tester 역할 신설 — 완료.** Worker→Review 2단계 사이클에 Tester(런타임 동작 검증, Flutter `integration_test` 기반)를 추가. 상세는 `docs/knowledge/history/Decision.md` 최신 항목 참고.
+- `.claude/agents/tester.md` 신설, `Workflow_Development.md`/`Workflow_Project.md`/`CLAUDE.md` 3종 문서 갱신(역할 정의, 파이프라인 M/L/XL에 Tester 삽입, handoff 템플릿, Definition of Done, Layer×Stage 자료 매핑).
+- `integration_test` 패키지 도입 + smoke test 작성, Windows desktop에서 실제 실행 검증 완료(`flutter test integration_test/app_smoke_test.dart -d windows` → "All tests passed!") — 커밋 `39a2958`, `feature/flutter-hifi-screens` 브랜치.
+- Android 툴체인(Android Studio/SDK)은 사용자가 별도로 계속 설치 진행 중 — 이번 Tester 셋업 자체는 Windows desktop 경로만으로 완결됐고, Android는 향후 추가 디바이스 타깃 옵션(블로커 아님).
+- 이어지는 **Task 7(옷장 메인 화면)** 구현이 새 Worker→Review→Tester 사이클을 처음 타는 실사용 케이스가 됨.
+
 Flutter Hi-Fi 스프린트 Task 1~6 + 하드코딩 원칙 정립(category/season/material enum화) — **PR #5 병합 완료 (dev, 2026-07-10, https://github.com/kangyj099/Digital-Wardrobe/pull/5)**.
 - Task 1~6: 프로젝트 셋업, 디자인 토큰, mock 모델/데이터, Riverpod provider, go_router 셸, 공용 갤러리 컴포넌트.
 - 하드코딩 원칙(모든 값은 (a)런타임 동적 데이터 (b)데이터 파일/리소스 (c)코드 내 const/enum/design token 중 하나를 Source of Truth로 가져야 함) 확정 — 전체 코드베이스에 적용, 예외는 일회성 테스트 코드/명시적 임시 placeholder/긴급 디버그 로깅 3가지뿐.
@@ -36,7 +42,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 - 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
 - Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
-**다음 할 일: Task 7(옷장 메인 화면) 재개.** Task 1~6은 완료·병합됐고, git stash 등 별도 복구 절차 불필요(작업 트리 깨끗함). 다만 **Task 7 플랜 원문(`docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`)의 계절 드롭다운 예시 코드가 `'겨울'`/`'사계절'` 같은 하드코딩된 한글 문자열을 그대로 쓰고 있음 — 이제 `category`/`season`/`material`이 enum이므로, 실제 구현 시 그 리터럴을 그대로 베끼면 새 하드코딩 위반이 생긴다.** `Season.values`/`ClothingCategory.values`를 순회하며 각 `.label`로 드롭다운을 구성할 것.
+**다음 할 일: Task 7(옷장 메인 화면) 재개.** Task 1~6은 완료·병합됐고, git stash 등 별도 복구 절차 불필요(작업 트리 깨끗함). Tester 하네스가 갖춰졌으니 Task 7부터 Worker→Review→Tester 사이클 적용. 다만 **Task 7 플랜 원문(`docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`)의 계절 드롭다운 예시 코드가 `'겨울'`/`'사계절'` 같은 하드코딩된 한글 문자열을 그대로 쓰고 있음 — 이제 `category`/`season`/`material`이 enum이므로, 실제 구현 시 그 리터럴을 그대로 베끼면 새 하드코딩 위반이 생긴다.** `Season.values`/`ClothingCategory.values`를 순회하며 각 `.label`로 드롭다운을 구성할 것. 또한 `selectedSeasonFilterProvider`가 이미 `Season?` 타입이라 플랜의 `DropdownButton<String?>` 예시 코드는 그대로 못 쓰고 `DropdownButton<Season?>`으로 바꿔야 함(2026-07-10 사전 점검에서 확인).
 
 **병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: skill-extraction 파일럿은 별도 세션이 별도 worktree(`Digital-Wardrobe-testbed`)에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
 

@@ -1,5 +1,41 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] BACKLOG.md 커밋 승인을 포맷 수정 vs. 진행 기록 수정으로 차등화
+
+결정:
+- `CLAUDE.md` "진행 중 작업 상태" 항목에 추가: BACKLOG.md의 **포맷(섹션 구조·배치) 수정**은 기존과 동일하게 일반 Edit 승인 흐름을 거친다. 반면 Current/Last Completed 등에 방금 끝난 작업을 반영하는 **진행 기록용 내용 수정**은 별도 확인 없이, 함께 진행 중인 작업 변경사항의 커밋에 묶어 커밋한다.
+
+사유:
+Tester 하네스 확장 작업 커밋 전, PM이 결정문서류 전체(Decision.md/BACKLOG.md 포함)를 습관적으로 커밋 전 확인받으려 했는데, 사용자가 BACKLOG.md의 일상적 진행 기록 갱신까지 매번 확인받는 건 과하다고 판단 — "작업 자체의 일부"로 이미 승격된 BACKLOG.md 갱신(§3 "Skill-Internal Ledgers vs. Official Handoff", 위 관련 Decision 참고)의 취지를 커밋 단계까지 일관되게 적용한 것. 단, 섹션 구조를 바꾸는 포맷 수정은 문서의 향후 가독성/일관성에 영향을 주므로 계속 확인 대상으로 남김.
+
+Impact:
+- `CLAUDE.md` "진행 중 작업 상태" 항목 갱신
+- 향후 BACKLOG.md 내용(진행 기록) 수정은 관련 작업 커밋에 자동 포함, 포맷 변경만 별도 확인
+
+---
+
+[Decision] 하네스에 Tester 역할 신설 — Worker→Review→Tester→Worker 사이클로 확장
+
+결정:
+- 기존 PM/Worker/Review 3역할 구조에 **Tester**를 추가. Review는 정적 코드 리뷰(품질/구조/테스트 코드 존재 여부)만 하고 앱을 실제로 구동하지 않는다는 공백이 있었음 — Tester가 그 공백(런타임 동작 검증)을 담당.
+- **실행 메커니즘**: Flutter `integration_test` 패키지. 위젯 트리를 코드로 직접 구동(`tester.tap`/`pump`)해 실제 Riverpod 상태·네비게이션·데이터 흐름을 검증. 이 환경엔 브라우저/GUI 자동화 도구가 없어 이게 유일하게 현실적인 수단.
+- **파이프라인 위치**: `Worker → Review → Tester → Worker(수정) → Complete` (M/L/XL). S(단일 수정)는 기본 생략하되, 런타임 동작을 바꾸면 예외적으로 포함.
+- **트리거 기준**: Task 크기 무관, 런타임 동작이 있는 모든 작업(`/verify` 스킬의 기존 스킵 규칙과 동일 원칙).
+- **테스트 스크립트 소유권**: Tester가 시나리오를 직접 설계하고 `integration_test/`에 작성·커밋(Worker가 자기 구현의 검증 시나리오까지 짜면 셀프리뷰 사각지대 발생). `lib/`는 절대 건드리지 않음 — Tester의 Write 권한은 `integration_test/`로만 제한.
+- Tester의 Do: 동작 결과 검사, 비정형 흐름 포함, 연결 기능 회귀 확인, 정의된 모든 상태(성공/로딩/빈상태/오류/재시도/취소 — 실제 구현된 것만) 확인, 화면 간 데이터 일관성, 이탈 후 데이터 유지(현재는 mock 데이터 단계라 in-memory 상태 범위로 한정, 실제 백엔드 영속성/네트워크 중복은 Firebase 연동 후 재적용), Reference 문서/정책 준수. Don't: 구현·리팩토링 제안·코드 스타일 평가 안함, 실제 사용자 시나리오만, Pass/Fail 보고 + 재현 절차 필수.
+
+사유:
+사용자가 "지금부터는 테스터가 있어야할 것 같다"며 구체적인 Do/Don't 스펙을 제시. 브레인스토밍으로 실행 메커니즘·파이프라인 위치·트리거 기준·스크립트 소유권 네 가지를 확정(각각 옵션 비교 후 사용자가 선택).
+
+Impact:
+- `.claude/agents/tester.md` 신설
+- `Workflow_Development.md` §2.1/§2.2(handoff 표·템플릿), §4(Review의 Testing 항목 재정의 + Tester 역할 섹션) 갱신
+- `Workflow_Project.md` §2(Roles), §5(Standard Pipeline), §10(Definition of Done), §12.1(Layer×Stage 자료 매핑) 갱신
+- `CLAUDE.md` 하네스 운영 원칙 갱신(Tester 언급, Write 범위 제약, 사이클 명칭 변경)
+- **환경 셋업 이슈 발견 → 해소**: `integration_test` 실행 검증이 처음엔 Windows desktop 빌드용 Visual Studio "Desktop development with C++" 워크로드 부재로 막혔음(웹 타깃은 `flutter test`가 integration test 미지원). 사용자가 VS C++ 워크로드 설치 완료 → `flutter test integration_test/app_smoke_test.dart -d windows` 실제 실행해 "All tests passed!" 확인, `39a2958` 커밋으로 확정. Android 툴체인은 별도로 계속 설치 진행 중(이 프로젝트가 `android/`/`ios/` 폴더를 가진 실제 모바일 타깃 프로젝트라 필요하지만, 이번 Tester 셋업 자체는 Windows desktop 경로만으로 완결됨 — Android는 향후 추가 디바이스 타깃 옵션).
+
+---
+
 [Decision] ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정 — enum화 대상
 
 결정:
