@@ -1,4 +1,4 @@
-> Version 1.0
+> Version 1.1
 > Purpose: A development implementation policy for solo app development projects using Claude Projects that **minimizes token usage while maintaining project quality and consistency.**
 
 ---
