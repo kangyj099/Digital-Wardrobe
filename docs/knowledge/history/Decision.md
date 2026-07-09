@@ -1,5 +1,40 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Reference 문서 버전 넘버링 규칙 신설 (§1.6)
+
+결정:
+- `Workflow_Project.md` §1.6 "Version Numbering" 신설: `> Version X.Y` 헤더를 가진 Reference 문서는 챕터 단위 추가/수정 시 점 뒤 숫자(minor)를, 문서의 사용 패턴·전체 프레임워크/구조 변경 시 점 앞 숫자(major)를 올린다. 한 리비전 패스는 그 안에 여러 챕터 단위 변경이 있어도 한 번만 bump한다.
+- 이 패스에서 신설과 동시에 규칙을 자기 자신에게 적용 — `Workflow_Project.md`를 Version 1.0 → 1.1로 bump(신규 §1.6 추가 + §12.1 테이블 수정, 둘 다 챕터 단위 변경이지만 한 패스이므로 1회 bump).
+
+사유:
+Reference 문서 여러 개가 `> Version X.Y` 헤더를 갖고 있었으나 언제 major/minor를 올릴지 기준이 없어 매번 임의로 판단해야 했음. 프로젝트 오너가 시맨틱 버저닝과 유사한 규칙(챕터 단위 변경=minor, 프레임워크/사용 패턴 변경=major)을 명시적으로 제시해 성문화.
+
+Impact:
+- `Workflow_Project.md` §1.6 신설, Version 1.0 → 1.1
+- 같은 패스에서 `Workflow_Frontend.md`도 이 규칙에 따라 Version 1.0 → 1.1 (챕터 단위 내용 교체는 수정이지 프레임워크 변경이 아니므로 minor bump)
+
+---
+
+[Decision] 재사용 가능한 원칙을 Workflow 문서에서 Claude Code Skill로 분리 채택 (hardcoding-prevention, flutter-implementation-conventions)
+
+결정:
+- Workflow_*.md 정책 문서에 있던 재사용 가능한 원칙 콘텐츠를 `.claude/skills/<name>/SKILL.md` 형태의 Claude Code Skill로 분리하는 방식을 채택. Workflow 문서에는 흐름/역할/파이프라인만 남기고, 원칙 본문은 스킬이 갖고 스킬을 명시적 bare pointer 문장으로 호출하는 구조로 전환.
+- 이번 패스에서 실제로 분리한 스킬 2개: `hardcoding-prevention`(`Workflow_Development.md` §4 Worker 섹션에서 pointer), `flutter-implementation-conventions`(`Workflow_Frontend.md` §2~§6 원칙 본문을 추출).
+- 같은 파일럿에서 함께 시험됐던 `documentation-conventions`, `uiux-design-conventions` 스킬은 이번 패스에서 채택하지 않음 — 아직 파일럿 초안 상태로 보류(`TechnicalDebt.md`에 후속 후보로 기록).
+
+사유:
+별도 worktree(`Digital-Wardrobe-testbed/localTestbed`, 브랜치 `feature/skill-extraction-testbed`)에서 PM/Worker/Review 팀으로 진행한 파일럿이 가설("원칙이 Workflow 문서에 인라인으로 쌓이면 텍스트량 때문에 오히려 안 지켜진다, 스킬로 분리하면 완화된다")을 검증함(`localTestbed/REPORT.md`). Verbatim 전사 요구사항(하드코딩 원칙 등)이 스킬 포맷 자체로 인한 드리프트 없이 지켜졌고, 유일한 리뷰 지적(P1: pointer 문장이 원칙을 재서술해 "제2의 Source of Truth" 실패 패턴을 재현)은 Worker 실행 실수였을 뿐 구조적 결함이 아니었으며 Review→Worker 1회전에서 자체 교정됨. `uiux-design-conventions` 스킬 초안은 verbatim 전사가 아닌 "방법론 추출"에도 이 포맷이 통한다는 것도 보였음(이번 패스에서는 미채택).
+
+Impact:
+- `.claude/skills/hardcoding-prevention/SKILL.md` 신설 — 원칙 원문은 파일럿 초안이 아니라 2026-07-09 최종 확정본("코드에 별도로 정의된 사전 합의된 const, enum, design token 등") 사용. 이 코드베이스에서 이미 확인된 위반 필드(`ClothingItem.category`/`season`/`material`, `Composition.season`) 참고용 메모 포함(조치는 별도 Step 3).
+- `.claude/skills/flutter-implementation-conventions/SKILL.md` 신설 — `Workflow_Frontend.md` §2(네비게이션)~§6(Review 체크리스트) 원칙/AI Constraints 전량 이전.
+- `Workflow_Development.md` §4 Worker 섹션에 hardcoding-prevention bare pointer 추가.
+- `Workflow_Frontend.md` §2~§6 본문을 스킬 pointer로 교체(헤더/번호는 유지), §1에 hardcoding-prevention pointer 추가, §1/§7은 그대로 유지, Version 1.0 → 1.1.
+- `Workflow_Project.md` §12.1 Required Materials 컬럼에 두 스킬 등재(`hardcoding-prevention`은 UI/Screen·Logic/Feature·Data/API/Architecture Implementation 행, `flutter-implementation-conventions`는 UI/Screen Implementation 행만), Version 1.0 → 1.1.
+- `documentation-conventions`/`uiux-design-conventions` 채택은 보류 — `TechnicalDebt.md`에 후속 후보 task로 기록.
+
+---
+
 [Decision] BACKLOG.md 갱신을 "태스크 완료 시 후속조치"에서 "각 스텝 완료의 일부"로 승격
 
 결정:

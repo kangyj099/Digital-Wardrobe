@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `documentation-conventions`/`uiux-design-conventions` 스킬 채택 보류 — 파일럿 초안만 존재, 정식 검토 필요
+
+상태: 미해결
+
+내용:
+`Digital-Wardrobe-testbed/localTestbed`(브랜치 `feature/skill-extraction-testbed`) 파일럿에서 `hardcoding-prevention`/`flutter-implementation-conventions`와 함께 시험됐으나, 실제 채택 패스(`hardcoding-prevention`/`flutter-implementation-conventions` 채택 Decision 참고)에서는 제외됨. `documentation-conventions`(`Workflow_Project.md` §1.4/§1.5 대상)와 `uiux-design-conventions`(`Workflow_Design.md`의 Layer Boundary Rule + Design/Visual Review 체크리스트 대상)는 아직 파일럿 초안 상태로만 존재. 채택 여부/타이밍 재검토 필요.
+
+참고: `Digital-Wardrobe-testbed/localTestbed/REPORT.md`
+
+---
+
 [TechDebt] `.superpowers/sdd/`의 플랫(non-namespaced) 파일명이 서로 다른 plan 간 충돌
 
 상태: 미해결

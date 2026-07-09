@@ -135,6 +135,8 @@ Manages the entire project (not limited to development).
 * Change product planning
 * Manage the project
 
+Before writing or reviewing implementation code, invoke the `hardcoding-prevention` skill (`.claude/skills/hardcoding-prevention/SKILL.md`).
+
 ---
 
 ## Review
