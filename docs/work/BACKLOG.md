@@ -59,7 +59,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **⚠️ 커밋 `03a9da5`("docs(policy): add hardcoding principle to Workflow_Development.md §1")는 Step 3(enum화) 완료 시점에 반드시 revert할 것.** 사용자가 2026-07-09에 판단 미스로 이 커밋을 reset했다가 다시 체리픽으로 복구함 — 그 과정에서 이 파일(BACKLOG.md)의 Step 2 완료 기록이 유실됐던 적이 있어(현재 재작성분), git 이력이 다시 꼬일 수 있으니 주의. revert 사유/후속 조치는 아직 미정 — Step 3 완료 시점에 사용자에게 다시 확인할 것(자동으로 revert 실행하지 말 것, 항상 확인 후).
 
-**Step 3 구현 완료 (2026-07-09, 커밋 `724c1cb`)**: `lib/models/enums.dart` 신설(`ClothingCategory`/`Season`/`ClothingMaterial`, 각각 `label` getter + JSON 외부화 예정 `// TODO:` 코멘트), `clothing_item.dart`(`kClothingMaterials` 제거, 3필드 enum화 + `copyWith` 갱신), `composition.dart`(`season`을 `Season?`로 nullable화), `mock_data.dart`/`closet_providers.dart`/테스트 2종(`closet_providers_test.dart`, `gallery_semantics_test.dart`) 갱신. PM이 `flutter analyze`/`flutter test` 재검증 완료(클린). **Development Review 진행 중 — 결과 반영 후 최종 완료 처리.**
+**Step 3 완료 (2026-07-09, 커밋 `724c1cb`)**: `lib/models/enums.dart` 신설(`ClothingCategory`/`Season`/`ClothingMaterial`, 각각 `label` getter + JSON 외부화 예정 `// TODO:` 코멘트), `clothing_item.dart`(`kClothingMaterials` 제거, 3필드 enum화 + `copyWith` 갱신), `composition.dart`(`season`을 `Season?`로 nullable화), `mock_data.dart`/`closet_providers.dart`/테스트 2종(`closet_providers_test.dart`, `gallery_semantics_test.dart`) 갱신. PM `flutter analyze`/`flutter test` 재검증 완료(클린) + Development Review 통과(P0/P1 없음, P3 서식 지적 1건은 `3ee7a40`에서 이미 해결). **하드코딩 원칙 위반 필드 4개(category/season/material, Composition.season) 전부 해소.**
+
+**⚠️ 다음 세션 우선 확인 사항 — 커밋 `03a9da5` revert 여부**: Step 3가 방금 완료됐으므로, 이전에 기록한 revert 조건("Step 3 완료 시")이 충족됨. 다만 자동으로 revert하지 않고 사용자에게 먼저 확인할 것(원 지시 그대로).
 
 **Category enum 값 확정 (사용자 확정, 2026-07-09)**: 8종 — 모자·상의·아우터·하의·원피스·양말·신발·가방/액세서리 (착용순서로 정렬, 03_화면별UX명세서.md §옷 종류 예시 순서 + 현재 mock 데이터의 원피스 포함).
 
