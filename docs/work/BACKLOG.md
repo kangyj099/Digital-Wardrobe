@@ -61,7 +61,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **Step 3 완료 (2026-07-09, 커밋 `724c1cb`)**: `lib/models/enums.dart` 신설(`ClothingCategory`/`Season`/`ClothingMaterial`, 각각 `label` getter + JSON 외부화 예정 `// TODO:` 코멘트), `clothing_item.dart`(`kClothingMaterials` 제거, 3필드 enum화 + `copyWith` 갱신), `composition.dart`(`season`을 `Season?`로 nullable화), `mock_data.dart`/`closet_providers.dart`/테스트 2종(`closet_providers_test.dart`, `gallery_semantics_test.dart`) 갱신. PM `flutter analyze`/`flutter test` 재검증 완료(클린) + Development Review 통과(P0/P1 없음, P3 서식 지적 1건은 `3ee7a40`에서 이미 해결). **하드코딩 원칙 위반 필드 4개(category/season/material, Composition.season) 전부 해소.**
 
-**⚠️ 다음 세션 우선 확인 사항 — 커밋 `03a9da5` revert 여부**: Step 3가 방금 완료됐으므로, 이전에 기록한 revert 조건("Step 3 완료 시")이 충족됨. 다만 자동으로 revert하지 않고 사용자에게 먼저 확인할 것(원 지시 그대로).
+**커밋 `03a9da5` revert 완료 (2026-07-10, 커밋 `9e8b66d`)**: 사용자 확인 후 실행. `Workflow_Development.md`의 "Hardcoding Policy" 하위 섹션, `Workflow_Frontend.md`의 cross-reference 한 줄, `Decision.md`의 "하드코딩 방지 원칙 확정" 항목이 제거됨. Decision.md는 그사이 `724c1cb`가 그 위에 새 항목(category/season 엔텀 확정)을 추가해 conflict 발생 — 03a9da5가 추가한 부분만 정확히 제거하고 이후 항목은 보존하도록 수동 해결.
+
+**참고**: 위 revert로 인해 하드코딩 원칙 자체의 정식 문서화(Workflow_Development.md §1)는 현재 되돌려진 상태. `docs/work/BACKLOG.md`(이 문서) 상단의 "하드코딩 원칙 최종 정의" 텍스트가 유일하게 남은 명문화된 기록. 정책 문서 재반영 여부는 별도 판단 필요(이 세션 범위 밖).
 
 **Category enum 값 확정 (사용자 확정, 2026-07-09)**: 8종 — 모자·상의·아우터·하의·원피스·양말·신발·가방/액세서리 (착용순서로 정렬, 03_화면별UX명세서.md §옷 종류 예시 순서 + 현재 mock 데이터의 원피스 포함).
 
