@@ -61,7 +61,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **커밋 `03a9da5` revert 완료 (2026-07-10, 커밋 `9e8b66d`)**: 사용자 확인 후 실행. `Workflow_Development.md`의 "Hardcoding Policy" 하위 섹션, `Workflow_Frontend.md`의 cross-reference 한 줄, `Decision.md`의 "하드코딩 방지 원칙 확정" 항목이 제거됨. Decision.md는 그사이 `724c1cb`가 그 위에 새 항목(category/season 엔텀 확정)을 추가해 conflict 발생 — 03a9da5가 추가한 부분만 정확히 제거하고 이후 항목은 보존하도록 수동 해결.
 
-**참고**: 위 revert로 인해 하드코딩 원칙 자체의 정식 문서화(Workflow_Development.md §1)는 현재 되돌려진 상태. `docs/work/BACKLOG.md`(이 문서) 상단의 "하드코딩 원칙 최종 정의" 텍스트가 유일하게 남은 명문화된 기록. 정책 문서 재반영 여부는 별도 판단 필요(이 세션 범위 밖).
+**참고**: 위 revert로 인해 하드코딩 원칙의 인라인 문서화(Workflow_Development.md §1)는 되돌려진 상태였음. 이후 별도 파일럿(skill-extraction-testbed) 검증을 거쳐, 인라인 서술 대신 `.claude/skills/`로 분리하는 방식으로 정식 재반영 결정 — 아래 "정책 채택" 항목 및 `docs/history/Decision.md` 최상단 참고.
 
 **Category enum 값 확정 (사용자 확정, 2026-07-09)**: 8종 — 모자·상의·아우터·하의·원피스·양말·신발·가방/액세서리 (착용순서로 정렬, 03_화면별UX명세서.md §옷 종류 예시 순서 + 현재 mock 데이터의 원피스 포함).
 
@@ -69,9 +69,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **Step 3 완료 절차 — 사용자 지시(2026-07-09)**: enum화 구현이 끝나도 바로 다음 작업(Task 7 재개 등)으로 넘어가지 말 것. 반드시 Development Review를 거친 뒤 결과를 사용자에게 보고하고 나서 다음 단계로 이동.
 
-**병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: skill-extraction 파일럿은 별도 세션이 별도 worktree(`Digital-Wardrobe-testbed`)에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
+**(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
-- Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `Workflow_*.md` 인라인 서술 대신 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리하는 정책 채택 — `Workflow_Project.md` §1.6(Version Numbering 신설) §12.1(스킬 등재) 갱신 포함. Review×2 + Audit 완료, PR 오픈 후 병합 대기. 상세: `docs/history/Decision.md` 최상단 항목들.
+**정책 채택**: Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `Workflow_*.md` 인라인 서술 대신 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리하는 정책 채택 — `Workflow_Project.md` §1.6(Version Numbering 신설) §12.1(스킬 등재) 갱신 포함. Review×2 + Audit 완료, PR 오픈 후 병합 대기. 상세: `docs/history/Decision.md` 최상단 항목들.
 
 ---
 
