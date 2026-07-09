@@ -36,6 +36,59 @@ Impact:
 
 ---
 
+[Decision] `Workflow_Frontend.md`를 Frontend Implementation 단계의 §12.1 앵커(스킬 인덱스) 문서로 재정의 — 이전 minor bump 판단을 major로 정정
+
+결정:
+- `Workflow_Frontend.md`의 역할을 "프론트엔드 구현 원칙 문서"에서 "`Workflow_Project.md` §12.1의 UI/Screen×Implementation(Frontend) 행이 가리키는 단일 안정 앵커 문서 — 이 단계에 적용되는 Frontend 스킬 목록을 관리하는 인덱스"로 재정의. §1에 이 역할을 명시적으로 서술하는 문장 추가(기존 스킬 호출 pointer 문장은 그대로 유지).
+- `Workflow_Project.md` §12.1 "UI/Screen | Implementation (Frontend)" 행에서 `**Skill: engineering-principles**`/`**Skill: flutter-implementation-conventions**` 개별 항목 제거 — `Workflow_Frontend.md`가 이미 그 두 스킬을 가리키므로 중복. 나머지 두 행(Logic/Feature Implementation, Data/API/Architecture Implementation)은 자기 몫의 앵커 문서가 아직 없어 `engineering-principles` 명시 참조를 그대로 유지.
+- `Workflow_Frontend.md` Version 1.1 → 2.0 (MAJOR) — 문서의 근본 사용 패턴이 "재사용 가능한 원칙을 담는 문서"에서 "스킬 인덱스/라우팅 문서"로 바뀜, §1.6 기준 "usage pattern·framework/structure 변경"에 해당. 같은 브랜치 안에서 앞서 내려진 "Version 1.0 → 1.1 minor bump" 판단(아래 "Reference 문서 버전 넘버링 규칙 신설" 항목의 Impact)을 대체(supersede)함 — 그 판단 시점엔 §2~§6 원칙 본문을 스킬로 옮기고 pointer로 교체하는 것만 반영했고, 문서 자체의 역할이 "원칙 문서 → 인덱스 문서"로 바뀌는 것까지는 포함하지 않았음.
+
+사유:
+§12.1의 목적은 PM이 Layer×Stage별로 워커에게 필요한 최소 자료만 건네는 것. Frontend Implementation 행에 `Workflow_Frontend.md`와 그 문서가 이미 가리키는 두 스킬을 모두 나열하는 건 중복이었음 — `Workflow_Frontend.md` §1이 이미 "이 두 스킬을 호출하라"고 말하고 있으므로. 프로젝트 오너가 이 문서를 "Frontend 관련 스킬이 늘어나거나 더 세분화(예: 네비게이션/상태관리/테스트가 각각 별도 스킬로 쪼개짐)돼도 §12.1 표 셀은 절대 커지지 않고, 이 문서 하나만 계속 가리키면 되는" 안정적 앵커로 명시적으로 재정의하기로 함.
+
+Impact:
+- `Workflow_Frontend.md` §1 재작성(앵커/인덱스 역할 명시), Version 1.1 → 2.0
+- `Workflow_Project.md` §12.1 UI/Screen·Implementation(Frontend) 행에서 스킬 2건 명시 참조 제거 (Version bump 없음 — 같은 리비전 패스 내 1.0→1.1 bump로 이미 커버됨, §1.6 "one revision pass = one bump")
+- 아래 "Reference 문서 버전 넘버링 규칙 신설" Decision 항목의 `Workflow_Frontend.md` minor-bump 판단을 대체(supersede) — 그 항목 자체는 append-only 정책에 따라 소급 수정하지 않고 그대로 두되, 최신 판단은 이 항목을 따름.
+- (감사 발견 반영) 같은 패스에서 `Workflow_Development.md`도 §4 Worker 섹션에 스킬 pointer 문장 추가로 Version 1.0 → 1.1(chapter-level modification) — 아래 "Reference 문서 버전 넘버링 규칙 신설" Decision의 Impact 목록에 최초 누락됐던 것을 여기 보완 기록.
+
+---
+
+[Decision] Reference 문서 버전 넘버링 규칙 신설 (§1.6)
+
+결정:
+- `Workflow_Project.md` §1.6 "Version Numbering" 신설: `> Version X.Y` 헤더를 가진 Reference 문서는 챕터 단위 추가/수정 시 점 뒤 숫자(minor)를, 문서의 사용 패턴·전체 프레임워크/구조 변경 시 점 앞 숫자(major)를 올린다. 한 리비전 패스는 그 안에 여러 챕터 단위 변경이 있어도 한 번만 bump한다.
+- 이 패스에서 신설과 동시에 규칙을 자기 자신에게 적용 — `Workflow_Project.md`를 Version 1.0 → 1.1로 bump(신규 §1.6 추가 + §12.1 테이블 수정, 둘 다 챕터 단위 변경이지만 한 패스이므로 1회 bump).
+
+사유:
+Reference 문서 여러 개가 `> Version X.Y` 헤더를 갖고 있었으나 언제 major/minor를 올릴지 기준이 없어 매번 임의로 판단해야 했음. 프로젝트 오너가 시맨틱 버저닝과 유사한 규칙(챕터 단위 변경=minor, 프레임워크/사용 패턴 변경=major)을 명시적으로 제시해 성문화.
+
+Impact:
+- `Workflow_Project.md` §1.6 신설, Version 1.0 → 1.1
+- 같은 패스에서 `Workflow_Frontend.md`도 이 규칙에 따라 Version 1.0 → 1.1 (챕터 단위 내용 교체는 수정이지 프레임워크 변경이 아니므로 minor bump)
+
+---
+
+[Decision] 재사용 가능한 원칙을 Workflow 문서에서 Claude Code Skill로 분리 채택 (engineering-principles, flutter-implementation-conventions)
+
+결정:
+- Workflow_*.md 정책 문서에 있던 재사용 가능한 원칙 콘텐츠를 `.claude/skills/<name>/SKILL.md` 형태의 Claude Code Skill로 분리하는 방식을 채택. Workflow 문서에는 흐름/역할/파이프라인만 남기고, 원칙 본문은 스킬이 갖고 스킬을 명시적 bare pointer 문장으로 호출하는 구조로 전환.
+- 이번 패스에서 실제로 분리한 스킬 2개: `engineering-principles`(최초 신설명 `hardcoding-prevention`, 이후 리네임 — `Workflow_Development.md` §4 Worker 섹션에서 pointer), `flutter-implementation-conventions`(`Workflow_Frontend.md` §2~§6 원칙 본문을 추출).
+- 같은 파일럿에서 함께 시험됐던 `documentation-conventions`, `uiux-design-conventions` 스킬은 이번 패스에서 채택하지 않음 — 아직 파일럿 초안 상태로 보류(`TechnicalDebt.md`에 후속 후보로 기록).
+
+사유:
+별도 worktree(`Digital-Wardrobe-testbed/localTestbed`, 브랜치 `feature/skill-extraction-testbed`)에서 PM/Worker/Review 팀으로 진행한 파일럿이 가설("원칙이 Workflow 문서에 인라인으로 쌓이면 텍스트량 때문에 오히려 안 지켜진다, 스킬로 분리하면 완화된다")을 검증함(`localTestbed/REPORT.md`). Verbatim 전사 요구사항(하드코딩 원칙 등)이 스킬 포맷 자체로 인한 드리프트 없이 지켜졌고, 유일한 리뷰 지적(P1: pointer 문장이 원칙을 재서술해 "제2의 Source of Truth" 실패 패턴을 재현)은 Worker 실행 실수였을 뿐 구조적 결함이 아니었으며 Review→Worker 1회전에서 자체 교정됨. `uiux-design-conventions` 스킬 초안은 verbatim 전사가 아닌 "방법론 추출"에도 이 포맷이 통한다는 것도 보였음(이번 패스에서는 미채택).
+
+Impact:
+- `.claude/skills/engineering-principles/SKILL.md` 신설(최초 신설명 `hardcoding-prevention`, 같은 패스 내에서 프로젝트 오너 요청으로 `engineering-principles`로 리네임 — 내용/스코프 변경 없음) — 원칙 원문은 파일럿 초안이 아니라 2026-07-09 최종 확정본("코드에 별도로 정의된 사전 합의된 const, enum, design token 등") 사용. 이 코드베이스에서 이미 확인된 위반 필드(`ClothingItem.category`/`season`/`material`, `Composition.season`) 참고용 메모 포함(조치는 별도 Step 3).
+- `.claude/skills/flutter-implementation-conventions/SKILL.md` 신설 — `Workflow_Frontend.md` §2(네비게이션)~§6(Review 체크리스트) 원칙/AI Constraints 전량 이전.
+- `Workflow_Development.md` §4 Worker 섹션에 engineering-principles bare pointer 추가.
+- `Workflow_Frontend.md` §2~§6 본문을 스킬 pointer로 교체(헤더/번호는 유지). §1은 목적/스코프 내용은 그대로 유지하되 `engineering-principles`·`flutter-implementation-conventions` 두 스킬을 가리키는 pointer 문장이 새로 추가됨(§1 자체가 무수정으로 남은 것은 아님). §7은 무수정 유지. Version 1.0 → 1.1.
+- `Workflow_Project.md` §12.1 Required Materials 컬럼에 두 스킬 등재(`engineering-principles`는 UI/Screen·Logic/Feature·Data/API/Architecture Implementation 행, `flutter-implementation-conventions`는 UI/Screen Implementation 행만), Version 1.0 → 1.1.
+- `documentation-conventions`/`uiux-design-conventions` 채택은 보류 — `TechnicalDebt.md`에 후속 후보 task로 기록.
+
+---
+
 [Decision] ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정 — enum화 대상
 
 결정:

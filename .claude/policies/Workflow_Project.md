@@ -1,4 +1,4 @@
-> Version 1.0 — Defines an efficient workflow for reducing token usage while producing accurate results.
+> Version 1.1 — Defines an efficient workflow for reducing token usage while producing accurate results.
 > This document applies across the entire project, including planning, design, development, and release.
 
 # Project Workflow
@@ -44,6 +44,17 @@ Reference documents are written as concisely as possible, without duplication, a
 - This applies to newly authored or edited content. It does not retroactively shorten existing History document entries (`Decision.md` / `TechnicalDebt.md`) — those are append-only per §6.
 - History document entries are held to a different standard: per §1.3 (Source of Truth), they must carry enough context to stand in for a lost conversation, so more detail is expected there than in Reference documents.
 - When conciseness would conflict with the reachability requirement in §3 "Skill-Internal Ledgers vs. Official Handoff" (transcribing content directly so a fresh session can find it), reachability wins — do not replace necessary inline detail with a link just to shorten a document.
+
+---
+
+## 1.6 Version Numbering
+
+Reference documents carrying a `> Version X.Y` header follow semantic-ish versioning.
+
+- A chapter-level addition or modification bumps the number after the dot (minor): X.Y → X.(Y+1).
+- A change to the document's usage pattern or overall framework/structure bumps the number before the dot (major): X.Y → (X+1).0.
+- One revision pass gets one bump, even if it contains multiple chapter-level changes.
+- Cosmetic edits that don't change meaning (renames, cross-reference updates, typo/wording fixes) do not count as a modification for this purpose — same exclusion as §1.5's Decision.md logging rule.
 
 ---
 
@@ -343,11 +354,11 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 | Layer | Stage | Required Review | Required Materials |
 | --- | --- | --- | --- |
 | UI/Screen | Decision (Design) | Design Review | Raw references (`참고자료/`), Design reference docs, Plan reference docs (IA/UX spec), Brand docs, `Decision.md` |
-| UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy, Frontend workflow policy (`Workflow_Frontend.md`) |
+| UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy, Frontend workflow policy (`Workflow_Frontend.md` — stage-index anchor doc, lists the Frontend-specific skills to invoke) |
 | Logic/Feature | Decision (Planning) | Usually none (PM scope) | Plan reference docs |
-| Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs |
+| Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs, **Skill: `engineering-principles`** (invoke first) |
 | Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy |
-| Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema |
+| Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema, **Skill: `engineering-principles`** (invoke first) |
 | (any Layer with runtime behavior) | Implementation — Tester pass | Runs after Review passes | Same Reference docs as Review for that Layer/Stage, `Decision.md`/`TechnicalDebt.md`, Worker's handoff + modified files, and the runnable app itself (not the raw exploratory material behind a Decision-stage task) |
 
 ## 12.2 Worker vs. Review Materials

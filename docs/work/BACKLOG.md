@@ -12,7 +12,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current Milestone
 
-디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `docs/knowledge/reference/policy/Workflow_Design.md` §2)
+디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `.claude/policies/Workflow_Design.md` §2)
 
 ---
 
@@ -44,7 +44,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 **다음 할 일: Task 7(옷장 메인 화면) 재개.** Task 1~6은 완료·병합됐고, git stash 등 별도 복구 절차 불필요(작업 트리 깨끗함). Tester 하네스가 갖춰졌으니 Task 7부터 Worker→Review→Tester 사이클 적용. 다만 **Task 7 플랜 원문(`docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`)의 계절 드롭다운 예시 코드가 `'겨울'`/`'사계절'` 같은 하드코딩된 한글 문자열을 그대로 쓰고 있음 — 이제 `category`/`season`/`material`이 enum이므로, 실제 구현 시 그 리터럴을 그대로 베끼면 새 하드코딩 위반이 생긴다.** `Season.values`/`ClothingCategory.values`를 순회하며 각 `.label`로 드롭다운을 구성할 것. 또한 `selectedSeasonFilterProvider`가 이미 `Season?` 타입이라 플랜의 `DropdownButton<String?>` 예시 코드는 그대로 못 쓰고 `DropdownButton<Season?>`으로 바꿔야 함(2026-07-10 사전 점검에서 확인).
 
-**병행 중인 별도 작업 (참고, 이 스프린트 범위 밖)**: skill-extraction 파일럿은 별도 세션이 별도 worktree(`Digital-Wardrobe-testbed`)에서 진행 중 — 이 브랜치/세션에서 중복 착수하지 말 것.
+**(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
+
+**정책 채택**: Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `Workflow_*.md` 인라인 서술 대신 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리하는 정책 채택 — `Workflow_Project.md` §1.6(Version Numbering 신설) §12.1(스킬 등재) 갱신 포함. Review×2 + Audit 완료, PR 오픈 후 병합 대기. 상세: `docs/history/Decision.md` 최상단 항목들.
 
 ---
 
@@ -56,7 +58,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — 
 
 # MVP Progress
 
-`docs/knowledge/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
+`docs/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
 
 - [ ] Clothing archiving (AI 배경제거 + 자동태깅)
 - [ ] View/filter by tags
