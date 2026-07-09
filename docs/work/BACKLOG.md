@@ -26,6 +26,8 @@ Git-flow 커밋/PR 정책 도입 + PR-create/merge 게이트 재설계 (main/dev
 
 (없음 — 위 작업은 PM/AI 쪽에서 할 일 끝났고 사용자 merge만 남음)
 
+- Workflow 문서의 재사용 가능한 원칙(하드코딩 방지, Flutter 구현 규칙)을 `Workflow_*.md` 인라인 서술 대신 `.claude/skills/`(`engineering-principles`, `flutter-implementation-conventions`)로 분리하는 정책 채택 — `Workflow_Project.md` §1.6(Version Numbering 신설) §12.1(스킬 등재) 갱신 포함. Review×2 + Audit 완료, PR 오픈 후 병합 대기. 상세: `docs/knowledge/history/Decision.md` 최상단 항목들.
+
 ---
 
 # Next
