@@ -14,20 +14,28 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// Task 1(Season enum 4종→3종 개편, commit fb15a84) 재검증 시 계절 드롭다운 순서 assertion 추가.
 /// Task 2(Design Tokens 확정, commit 6505fea/46052bc) 재검증 시 밀도 순환 방향이
 /// 오름차순(3→5→1)에서 내림차순(5→3→1)으로 반전되어 순환 테스트 3개의 기대값을 갱신.
-/// 화면 기본값은 mid(3)이라, 실제 탭 시퀀스는 3→1→5→3→1→5...로 관찰된다(직접 실행해 확인).
 /// Task 3(화면 레이아웃 재구축, commit e91d059+5bea4bd) 재검증 시:
 /// - 카테고리 드롭다운(옷장/코디/스타일일지) 이동 시나리오 2개 신설.
 /// - FAB가 탭 즉시 이동하지 않고 "한 장/여러 장 추가하기" 펼침 메뉴부터 뜨는 것으로 동작이
 ///   바뀌어(의도된 변화), 기존 "FAB 탭 시 /closet/add 로 정확히 이동한다" 테스트를
 ///   펼침→옵션탭→이동 흐름으로 갱신하고, 펼침/접힘 토글·계절별 라벨 전환 테스트를 신설.
 /// - 그리드 타일 라벨이 상품명 대신 옷 종류로 바뀐 것을 확인하는 테스트 신설.
+/// 밀도 값 변경(commit 8b6bcab, AppDensity.min/mid/max = 1/3/5 → 1/2/4, 순환 방향은
+/// 그대로 내림차순) 재검증 시:
+/// - 순환 테스트 3개의 기대값을 3→1→5→3 계열에서 2→1→4→2 계열로 갱신(화면 기본값이
+///   mid=2로 바뀌어 실제 탭 시퀀스는 2(시작)→1→4→2).
+/// - 기본 밀도가 mid(2, 2컬럼)로 바뀌면서 12개 mock 아이템 전부가 한 화면에 들어가려면
+///   행이 늘어나(2컬럼×6행) 이전 physicalSize(1400×3000)로는 부족해짐 → height를
+///   실측으로 늘려 12개 전부 lazy-build 되도록 조정.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   Future<ProviderContainer> pumpClosetMain(WidgetTester tester) async {
     // 12개 아이템이 스크롤 없이 한 화면에 모두 빌드되도록 뷰포트를 충분히 키운다
     // (실제 창 크기 제약 때문에 GridView.builder가 화면 밖 아이템을 지연 생성하지 않게 함).
-    tester.view.physicalSize = const Size(1400, 3000);
+    // 기본 밀도가 mid(2컬럼)라 타일이 커지고 12개가 6행에 걸쳐 배치되므로, 이전(3000)보다
+    // 훨씬 큰 세로 길이가 필요하다(실측으로 결정한 값).
+    tester.view.physicalSize = const Size(1400, 4600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -131,12 +139,13 @@ void main() {
     expect(find.byType(GridView), findsOneWidget);
   });
 
-  testWidgets('밀도 토글 아이콘이 3→1→5→3 순으로 그리드 컬럼 수와 아이콘을 함께 바꾼다 (탭 사이 프레임 반영 O)', (tester) async {
+  testWidgets('밀도 토글 아이콘이 4→2→1→4 순으로 그리드 컬럼 수와 아이콘을 함께 바꾼다 (탭 사이 프레임 반영 O)', (tester) async {
     await pumpClosetMain(tester);
 
-    // Task 2에서 순환 방향이 내림차순(5→3→1)으로 반전됨. 화면 기본값이 mid(3)이라
-    // 실제 탭 시퀀스는 3(시작, view_comfy) → 1(crop_square) → 5(grid_view) → 3(view_comfy)이다.
-    expect(crossAxisCount(tester), 3);
+    // Task 2에서 순환 방향이 내림차순으로 반전되었고, 이번 밀도 값 변경(1/3/5→1/2/4)으로
+    // 화면 기본값이 mid(2)이라 실제 탭 시퀀스는 2(시작, view_comfy) → 1(crop_square)
+    // → 4(grid_view) → 2(view_comfy)이다.
+    expect(crossAxisCount(tester), 2);
     expect(densityToggleIcon(tester), Icons.view_comfy);
 
     await tester.tap(find.byTooltip('그리드 밀도 전환'));
@@ -146,17 +155,17 @@ void main() {
 
     await tester.tap(find.byTooltip('그리드 밀도 전환'));
     await tester.pump();
-    expect(crossAxisCount(tester), 5);
+    expect(crossAxisCount(tester), 4);
     expect(densityToggleIcon(tester), Icons.grid_view);
 
     await tester.tap(find.byTooltip('그리드 밀도 전환'));
     await tester.pump();
-    expect(crossAxisCount(tester), 3);
+    expect(crossAxisCount(tester), 2);
     expect(densityToggleIcon(tester), Icons.view_comfy);
   });
 
   testWidgets(
-    '[회귀 고정] 밀도 아이콘을 프레임 반영 없이 2번 연속 탭해도 5→3→1 순환이 깨지지 않는다 '
+    '[회귀 고정] 밀도 아이콘을 프레임 반영 없이 2번 연속 탭해도 4→2→1 순환이 깨지지 않는다 '
     '(stale-closure race, fixed in 10d3643)',
     (tester) async {
       final container = await pumpClosetMain(tester);
@@ -167,16 +176,16 @@ void main() {
       // 리빌드가 끼어들지 않으면 각 탭이 매번 "같은 이전 값 기준"으로 next를 계산해
       // 순환하지 않고 첫 탭이 계산한 값에 멈추는 결함이 있었다(commit 10d3643에서
       // onPressed 내부에서 ref.read로 최신값을 다시 조회하도록 수정되어 해결됨). 이 테스트는
-      // 그 수정이 회귀하지 않는지를, Task 2에서 반전된 새 순환 방향(5→3→1) 기준으로 고정한다.
+      // 그 수정이 회귀하지 않는지를, 새 밀도 값(1/2/4) 기준 순환 방향(2→1→4)으로 고정한다.
       await tester.tap(find.byTooltip('그리드 밀도 전환'));
       await tester.tap(find.byTooltip('그리드 밀도 전환'));
       await tester.pumpAndSettle();
 
-      // 기본값 3에서 시작해 순환 로직대로면 두 번째 탭 후 5여야 한다(3→1→5).
+      // 기본값 2에서 시작해 순환 로직대로면 두 번째 탭 후 4여야 한다(2→1→4).
       expect(
         container.read(closetDensityProvider),
-        5,
-        reason: '프레임 반영 없이 연속 탭해도 순환 로직(3→1→5)대로 진행되어야 한다.',
+        4,
+        reason: '프레임 반영 없이 연속 탭해도 순환 로직(2→1→4)대로 진행되어야 한다.',
       );
     },
   );
@@ -192,11 +201,11 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      // 기본값 3에서 시작해 3→1→5→3→1→5 순환대로면 5회 탭 후 5여야 한다.
+      // 기본값 2에서 시작해 2→1→4→2→1→4 순환대로면 5회 탭 후 4여야 한다.
       expect(
         container.read(closetDensityProvider),
-        5,
-        reason: '순환 로직대로면 5회 탭 후 5여야 한다.',
+        4,
+        reason: '순환 로직대로면 5회 탭 후 4여야 한다.',
       );
     },
   );
