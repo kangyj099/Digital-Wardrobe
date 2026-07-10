@@ -15,6 +15,12 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// Task 2(Design Tokens 확정, commit 6505fea/46052bc) 재검증 시 밀도 순환 방향이
 /// 오름차순(3→5→1)에서 내림차순(5→3→1)으로 반전되어 순환 테스트 3개의 기대값을 갱신.
 /// 화면 기본값은 mid(3)이라, 실제 탭 시퀀스는 3→1→5→3→1→5...로 관찰된다(직접 실행해 확인).
+/// Task 3(화면 레이아웃 재구축, commit e91d059+5bea4bd) 재검증 시:
+/// - 카테고리 드롭다운(옷장/코디/스타일일지) 이동 시나리오 2개 신설.
+/// - FAB가 탭 즉시 이동하지 않고 "한 장/여러 장 추가하기" 펼침 메뉴부터 뜨는 것으로 동작이
+///   바뀌어(의도된 변화), 기존 "FAB 탭 시 /closet/add 로 정확히 이동한다" 테스트를
+///   펼침→옵션탭→이동 흐름으로 갱신하고, 펼침/접힘 토글·계절별 라벨 전환 테스트를 신설.
+/// - 그리드 타일 라벨이 상품명 대신 옷 종류로 바뀐 것을 확인하는 테스트 신설.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -38,8 +44,18 @@ void main() {
   Finder seasonDropdownFinder() =>
       find.byWidgetPredicate((w) => w is DropdownButton<Season?>);
 
+  Finder categoryDropdownFinder() =>
+      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+
   Future<void> selectSeason(WidgetTester tester, String label) async {
     await tester.tap(seasonDropdownFinder());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> selectCategory(WidgetTester tester, String label) async {
+    await tester.tap(categoryDropdownFinder());
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
@@ -185,10 +201,76 @@ void main() {
     },
   );
 
-  testWidgets('FAB 탭 시 /closet/add 로 정확히 이동한다', (tester) async {
+  testWidgets('카테고리 드롭다운에서 코디 선택 시 코디 메인(/composition)으로 실제 이동한다', (tester) async {
+    await pumpClosetMain(tester);
+
+    await selectCategory(tester, '코디');
+
+    expect(find.text('코디 메인'), findsOneWidget);
+    expect(find.byType(SelectableGalleryTile), findsNothing);
+  });
+
+  testWidgets('카테고리 드롭다운에서 스타일일지 선택 시 스타일일지 메인(/style-log)으로 실제 이동한다', (tester) async {
+    await pumpClosetMain(tester);
+
+    await selectCategory(tester, '스타일일지');
+
+    expect(find.text('스타일일지 메인'), findsOneWidget);
+    expect(find.byType(SelectableGalleryTile), findsNothing);
+  });
+
+  testWidgets('FAB 탭 시 "한 장/여러 장 추가하기" 펼침 메뉴가 나타나고, 다시 탭하면 접힌다', (tester) async {
+    await pumpClosetMain(tester);
+
+    // 초기 상태(접힘)에는 옵션 라벨이 보이지 않아야 한다.
+    expect(find.text('한 장 추가하기'), findsNothing);
+    expect(find.text('여러 장 추가하기'), findsNothing);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('한 장 추가하기'), findsOneWidget);
+    expect(find.text('여러 장 추가하기'), findsOneWidget);
+    // 펼침 상태에서도 여전히 옷장 메인 화면(이동하지 않음).
+    expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('한 장 추가하기'), findsNothing);
+    expect(find.text('여러 장 추가하기'), findsNothing);
+  });
+
+  testWidgets('FAB 펼침 상태에서 계절을 전체→특정 계절로 바꾸면 옵션 라벨이 "이 분류에 ~"로 바뀐다', (tester) async {
     await pumpClosetMain(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('한 장 추가하기'), findsOneWidget);
+    expect(find.text('여러 장 추가하기'), findsOneWidget);
+
+    await selectSeason(tester, '여름');
+
+    expect(find.text('이 분류에 한 장 추가하기'), findsOneWidget);
+    expect(find.text('이 분류에 여러 장 추가하기'), findsOneWidget);
+    expect(find.text('한 장 추가하기'), findsNothing);
+    expect(find.text('여러 장 추가하기'), findsNothing);
+
+    await selectSeason(tester, '전체');
+
+    expect(find.text('한 장 추가하기'), findsOneWidget);
+    expect(find.text('여러 장 추가하기'), findsOneWidget);
+    expect(find.text('이 분류에 한 장 추가하기'), findsNothing);
+  });
+
+  testWidgets('FAB 펼침 메뉴에서 옵션을 탭하면 /closet/add 로 이동한다', (tester) async {
+    await pumpClosetMain(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('한 장 추가하기'));
     await tester.pumpAndSettle();
 
     expect(find.text('옷 추가하기'), findsOneWidget);
@@ -203,5 +285,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('옷 상세 c01'), findsOneWidget);
+  });
+
+  testWidgets('그리드 타일 라벨이 상품명이 아닌 옷 종류(카테고리)로 표시된다', (tester) async {
+    await pumpClosetMain(tester);
+
+    // c01(플로럴 원피스), c08(슬립 드레스)은 둘 다 category=dress → "원피스" 라벨.
+    expect(find.text('원피스'), findsNWidgets(2));
+    // 상품명 자체는 화면 어디에도 노출되지 않아야 한다.
+    expect(find.text('플로럴 원피스'), findsNothing);
+    expect(find.text('슬립 드레스'), findsNothing);
   });
 }
