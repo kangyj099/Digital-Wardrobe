@@ -47,13 +47,14 @@ class ClosetMainScreen extends ConsumerWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.grid_view),
+                  icon: Icon(_densityIcon(density)),
                   tooltip: '그리드 밀도 전환',
                   onPressed: () {
                     final current = ref.read(closetDensityProvider);
                     final currentIndex = AppDensity.levels.indexOf(current);
-                    final next =
-                        AppDensity.levels[(currentIndex + 1) % AppDensity.levels.length];
+                    final previousIndex =
+                        currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
+                    final next = AppDensity.levels[previousIndex];
                     ref.read(closetDensityProvider.notifier).state = next;
                   },
                 ),
@@ -80,5 +81,11 @@ class ClosetMainScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  IconData _densityIcon(int density) {
+    if (density == AppDensity.max) return Icons.grid_view;
+    if (density == AppDensity.mid) return Icons.view_comfy;
+    return Icons.crop_square;
   }
 }
