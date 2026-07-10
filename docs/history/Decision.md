@@ -1,5 +1,27 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Season enum 4종 → 3종 개편 (사계절 폐기, 간절기→봄가을 리네임) — 기존 "ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정" 결정 중 Season 부분을 대체
+
+결정:
+- `lib/models/enums.dart`의 `Season` enum을 `summer, winter, transitional, allSeason` 4종에서 `springFall, summer, winter` 3종으로 변경.
+  - `allSeason`(사계절)은 폐기(제거) — 별도 계절값으로 존치하지 않음.
+  - `transitional`(간절기)은 `springFall`(봄가을)로 리네임 — 개념은 유지하되 라벨과 식별자만 변경.
+  - 선언 순서를 `springFall → summer → winter`로 고정(정렬 기본순서 표와 일치).
+- 기존 `Season.allSeason`/`Season.transitional`로 태깅되어 있던 목업 아이템(`lib/mock/mock_data.dart`) 전부를 `Season.springFall`로 재태깅.
+- `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md`의 정렬 기본순서 표("계절" 행)를 "여름 → 겨울 → 간절기 → 사계절"에서 "봄가을 → 여름 → 겨울"로 갱신.
+- 이 결정은 아래(§) "ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정" 결정 중 `Season` 4종("여름 / 겨울 / 간절기 / 사계절") 확정 부분을 대체(supersede)한다. append-only 원칙에 따라 그 항목 자체는 삭제·수정하지 않고 그대로 둔다.
+
+사유:
+옷장 메인 화면 재설계 작업 중 사용자가 실제 목업 데이터 모델을 화면과 대조하며 검토한 결과, "사계절"이라는 계절 구분이 실사용 맥락에서 불필요하고(모든 계절에 다 입는 옷은 "간절기" 또는 개별 계절로도 충분히 표현 가능), "간절기"라는 명칭보다 "봄가을"이 사용자에게 더 직관적이라고 직접 확정.
+
+Impact:
+- `lib/models/enums.dart`: `Season` enum 3종으로 축소, 선언 순서 변경
+- `lib/mock/mock_data.dart`: 기존 `Season.allSeason`/`Season.transitional` 태깅 아이템·구성(Composition) 전부 `Season.springFall`로 재태깅
+- `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md`: 정렬 기본순서 표 갱신
+- `test/`, `integration_test/`의 `Season.allSeason`/`transitional` 참조 갱신
+
+---
+
 [Decision] Design 워크플로우-Development 파이프라인 교차 트리거 신설 (Visual Review 누락 방지)
 
 결정:

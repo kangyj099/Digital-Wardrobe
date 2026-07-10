@@ -53,7 +53,7 @@ void main() {
     expect(find.text('미완성'), findsOneWidget);
   });
 
-  testWidgets('계절 드롭다운에 전체 + 4개 계절 옵션이 실제로 나타난다', (tester) async {
+  testWidgets('계절 드롭다운에 전체 + 3개 계절 옵션이 실제로 나타난다', (tester) async {
     await pumpClosetMain(tester);
 
     await tester.tap(seasonDropdownFinder());

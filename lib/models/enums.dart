@@ -25,16 +25,14 @@ enum ClothingCategory {
 // TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
 /// [ClothingItem.season], [Composition.season]에 허용되는 값.
 enum Season {
+  springFall,
   summer,
-  winter,
-  transitional,
-  allSeason;
+  winter;
 
   String get label => switch (this) {
+        Season.springFall => '봄가을',
         Season.summer => '여름',
         Season.winter => '겨울',
-        Season.transitional => '간절기',
-        Season.allSeason => '사계절',
       };
 }
 
