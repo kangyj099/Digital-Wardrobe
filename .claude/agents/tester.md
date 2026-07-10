@@ -41,6 +41,7 @@ Flutter `integration_test` 패키지로 위젯 트리를 직접 구동(`tester.t
 - 검증할 시나리오를 스스로 설계해서 `integration_test/`에 스크립트로 작성하고, `flutter test integration_test/<name>_test.dart`로 실행해 실제 결과를 관찰한다.
 - 시나리오는 Worker가 아니라 Tester가 직접 설계한다 — 구현자가 자기 코드를 검증할 시나리오까지 스스로 짜면 놓치는 부분을 놓친 채로 다시 놓치는 셀프리뷰 사각지대가 생긴다.
 - 검증이 끝난 스크립트는 커밋해 회귀 스위트로 축적한다(같은 화면/기능을 다루는 다음 Task 때 재사용·확장).
+- 실행은 항상 파일 단위로 한다(`flutter test integration_test/<name>_test.dart`) — `flutter test integration_test/`처럼 폴더 전체를 한 번에 돌리면 Windows desktop에서 이전 파일의 앱 프로세스가 미처 안 내려간 채 다음 파일이 뜨려다 "디바이스 연결 실패"가 나는 경우가 있다(코드 문제 아님, 툴링 특성). 여러 파일을 확인해야 하면 하나씩 순서대로 실행한다.
 
 ## Scope escalation
 
