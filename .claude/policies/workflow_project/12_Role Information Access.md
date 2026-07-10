@@ -8,11 +8,11 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 
 | Layer | Stage | Required Review | Required Materials |
 | --- | --- | --- | --- |
-| UI/Screen | Decision (Design) | Design Review | Raw references (`참고자료/`), Design reference docs, Plan reference docs (IA/UX spec), Brand docs, `Decision.md` |
+| UI/Screen | Decision (Design) | Design Review | Raw references (`참고자료/`), Design reference docs, Plan reference docs (IA/UX spec), Brand docs, `Decision.md`, **Skill: `uiux-design-conventions`** (invoke first), **Skill: `documentation-conventions`** (invoke first) |
 | UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy, Frontend workflow policy (`Workflow_Frontend.md` — stage-index anchor doc, lists the Frontend-specific skills to invoke) |
-| Logic/Feature | Decision (Planning) | Usually none (PM scope) | Plan reference docs |
+| Logic/Feature | Decision (Planning) | Usually none (PM scope) | Plan reference docs, **Skill: `documentation-conventions`** (invoke first) |
 | Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs, **Skill: `engineering-principles`** (invoke first) |
-| Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy |
+| Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy, **Skill: `documentation-conventions`** (invoke first) |
 | Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema, **Skill: `engineering-principles`** (invoke first) |
 | (any Layer with runtime behavior) | Implementation — Tester pass | Runs after Review passes | Same Reference docs as Review for that Layer/Stage, `Decision.md`/`TechnicalDebt.md`, Worker's handoff + modified files, and the runnable app itself (not the raw exploratory material behind a Decision-stage task) |
 

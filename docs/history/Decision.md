@@ -17,6 +17,27 @@ Impact:
 
 ---
 
+[Decision] `documentation-conventions`/`uiux-design-conventions` 스킬 실채택 — 보류됐던 TechDebt 해소
+
+결정:
+- 파일럿(`Digital-Wardrobe-testbed/localTestbed`, 이후 삭제됨 — 내용은 이전 파일럿 세션에서 이미 검증·기록됨)에서 시험만 되고 채택 보류 상태였던 두 스킬을 실제 채택.
+- `documentation-conventions`: `Workflow_Project.md` §1.4(Living Documents)/§1.5(Concise Writing)를 원문 그대로 이전. `workflow_project/01_Core Principles.md`의 해당 두 섹션 본문을 포인터로 교체(헤더 번호 유지).
+- `uiux-design-conventions`: `Workflow_Design.md`의 Layer Boundary Rule(`workflow_design/01_core principles.md`)과 Design Review/Visual Review 체크리스트(`workflow_design/06_design review.md`) 본문을 이전, 각각 포인터로 교체. 브랜드 값/원칙 텍스트는 복사하지 않고 `01_BrandGuid.md` 참조만 남김(제2의 Source of Truth 방지 원칙 유지).
+- `Workflow_Project.md` §12.1 표에 두 스킬 등재: `uiux-design-conventions`는 UI/Screen×Decision(Design) 행, `documentation-conventions`는 3개 Decision-stage 행(UI/Screen, Logic/Feature, Data/API/Architecture) 전부 — Decision-stage 작업이 Reference 문서 신규/갱신 내용을 만들어내는 지점이라는 근거.
+- Version 범프: `Workflow_Project.md` 2.1 → 2.2, `Workflow_Design.md` 2.0 → 2.1 (둘 다 챕터 단위 수정, §1.6 기준 minor).
+
+사유:
+`engineering-principles`/`flutter-implementation-conventions` 채택 이후 dev에 반영된 앵커 구조 정리 작업이 안정화됐고, 이 TechDebt 항목이 "채택 여부/타이밍 재검토 필요"로 남아있어 재검토한 결과 채택하지 않을 이유가 없다고 판단.
+
+Impact:
+- `.claude/skills/documentation-conventions/SKILL.md`, `.claude/skills/uiux-design-conventions/SKILL.md` 신설
+- `workflow_project/01_Core Principles.md`, `workflow_design/01_core principles.md`, `workflow_design/06_design review.md` 본문 축소, 포인터 추가
+- `Workflow_Project.md` §12.1 갱신, Version 2.1→2.2
+- `Workflow_Design.md` Version 2.0→2.1
+- `TechnicalDebt.md` 해당 항목 해결 처리
+
+---
+
 [Decision] BACKLOG.md 커밋 승인을 포맷 수정 vs. 진행 기록 수정으로 차등화
 
 결정:
