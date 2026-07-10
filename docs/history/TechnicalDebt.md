@@ -1,5 +1,14 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] 옷장 메인 재설계 중 추가된 시각적 매직넘버(스크롤마스크/틴트/디버그 상태바 치수) 토큰화 필요
+
+상태: 미해결
+
+내용:
+`closet_main_screen.dart`에 추가한 세이지 틴트 컨테이너 크기(240x240)/alpha(0.3), `ShaderMask` stops([0.0, 0.06]), 디버그 상태바 높이(24)·아이콘 크기(14)·도트 크기(6)·폰트 크기(12) 등이 리터럴로 남아있음. 이번 스코프(코너 반경/duration 토큰화)와는 별개라 이번 라운드에서는 토큰화하지 않았으나, 추후 Design Tokens 확정 시 반영 검토 필요.
+
+---
+
 [TechDebt] `AppRadius`(`lib/theme/app_spacing.dart`) — Brand Guide/Design Tokens 문서에 정식 등재 필요
 
 상태: 미해결

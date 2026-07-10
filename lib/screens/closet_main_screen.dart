@@ -5,15 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../router/app_router.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/overlay_header.dart';
-
-/// 최상단 카테고리 드롭다운에서 고를 수 있는 3개 영역. '옷장'을 선택하면 이 화면에 머물고,
-/// 나머지는 `context.go`로 해당 영역의 루트로 이동한다(`_공통 규칙.md`: 카테고리 전환 시 항상 루트에서 시작).
-const _closetCategoryLabel = '옷장';
-const _compositionCategoryLabel = '코디';
-const _styleLogCategoryLabel = '스타일일지';
 
 class ClosetMainScreen extends ConsumerStatefulWidget {
   const ClosetMainScreen({super.key});
@@ -30,15 +25,17 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     final items = ref.watch(filteredClosetItemsProvider);
     final season = ref.watch(selectedSeasonFilterProvider);
     final density = ref.watch(closetDensityProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
 
     final singleLabel = season == null ? '한 장 추가하기' : '이 분류에 한 장 추가하기';
     final multiLabel = season == null ? '여러 장 추가하기' : '이 분류에 여러 장 추가하기';
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFF7F6F3), Color(0xFFEDE9E1)],
+            colors: [colorScheme.surface, semanticColors.gray100],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -55,7 +52,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFC5D3C7).withValues(alpha: 0.3),
+                      colorScheme.secondary.withValues(alpha: 0.3),
                       Colors.transparent,
                     ],
                   ),
@@ -174,35 +171,38 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
   }
 
   Widget _buildCategoryDropdown(BuildContext context) {
-    const categories = [_closetCategoryLabel, _compositionCategoryLabel, _styleLogCategoryLabel];
-    return DropdownButton<String>(
-      value: _closetCategoryLabel,
+    return DropdownButton<AppCategory>(
+      value: AppCategory.closet,
       underline: const SizedBox.shrink(),
       borderRadius: BorderRadius.circular(AppRadius.sm),
-      items: categories
+      items: AppCategory.values
           .map(
-            (c) => DropdownMenuItem<String>(
+            (c) => DropdownMenuItem<AppCategory>(
               value: c,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (c == _closetCategoryLabel) ...[
+                  if (c == AppCategory.closet) ...[
                     const Icon(Icons.circle, size: 6),
                     const SizedBox(width: AppSpacing.xxs),
                   ],
-                  Text(c),
+                  Text(c.label),
                 ],
               ),
             ),
           )
           .toList(),
       onChanged: (value) {
-        if (value == _compositionCategoryLabel) {
-          context.go(AppRoute.compositionMain);
-        } else if (value == _styleLogCategoryLabel) {
-          context.go(AppRoute.styleLogMain);
+        switch (value) {
+          case AppCategory.composition:
+            context.go(AppRoute.compositionMain);
+          case AppCategory.styleLog:
+            context.go(AppRoute.styleLogMain);
+          case AppCategory.closet:
+          case null:
+            // '옷장' 선택은 이미 이 화면이므로 아무 동작도 하지 않는다.
+            break;
         }
-        // '옷장' 선택은 이미 이 화면이므로 아무 동작도 하지 않는다.
       },
     );
   }
