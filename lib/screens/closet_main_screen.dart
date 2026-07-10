@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../router/app_router.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/overlay_header.dart';
@@ -26,20 +25,13 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     final season = ref.watch(selectedSeasonFilterProvider);
     final density = ref.watch(closetDensityProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    final semanticColors = Theme.of(context).extension<AppSemanticColors>()!;
 
     final singleLabel = season == null ? '한 장 추가하기' : '이 분류에 한 장 추가하기';
     final multiLabel = season == null ? '여러 장 추가하기' : '이 분류에 여러 장 추가하기';
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [colorScheme.surface, semanticColors.gray100],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: colorScheme.surface,
         child: Stack(
           children: [
             // 우상단 세이지 틴트 — 장식용 배경 오버레이(스크롤/상호작용에 반응하지 않는 정적 레이어).
@@ -52,7 +44,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     colors: [
-                      colorScheme.secondary.withValues(alpha: 0.3),
+                      colorScheme.secondary.withValues(alpha: 0.15),
                       Colors.transparent,
                     ],
                   ),
