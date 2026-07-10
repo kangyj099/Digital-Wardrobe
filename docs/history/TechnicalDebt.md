@@ -1,5 +1,14 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `AppRadius`(`lib/theme/app_spacing.dart`) — Brand Guide/Design Tokens 문서에 정식 등재 필요
+
+상태: 미해결
+
+내용:
+옷장 메인 재설계 시 `AppRadius.sm`(16, 드롭다운 패널)/`AppRadius.pill`(100, 필 버튼)을 코드에서 처음 정의했으나, Design Tokens에는 이 코너 반경 값에 대한 역할명 자체가 없었음. 추후 Brand Guide/Design Tokens 문서에 정식 등재 검토 필요.
+
+---
+
 [TechDebt] `documentation-conventions`/`uiux-design-conventions` 스킬 채택 보류 — 파일럿 초안만 존재, 정식 검토 필요
 
 상태: 해결됨 (2026-07-10) — 실채택 완료. 상세: `Decision.md` 최상단 항목 참고.

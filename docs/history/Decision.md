@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 옷장 메인 재설계 — Design Tokens 확정(타이포/코너반경/모션/글래스 헤더/밀도 토글 방향)
+
+결정:
+- `lib/theme/app_typography.dart`: Body 계열(`bodyLarge`/`bodyMedium`/`bodySmall`)에 쓰던 `KoPubDotum`을 제거하고 `Pretendard`로 단일화(굵기는 기존 `FontWeight.w500` 유지). 코드 내 유일한 사용처였으므로 `pubspec.yaml`의 `KoPubDotum` `fonts:` 등록도 함께 제거.
+- `lib/theme/app_spacing.dart`: `AppRadius`(`sm=16`, `pill=100`) 신설 — Design Tokens에 역할명조차 없던 코너 반경 값을 옷장 메인 목업 기준으로 처음 정의. `AppMotion`(`fast=200ms`, `searchExpand=300ms`) 신설 — Design Tokens의 `Motion.standard` 역할명에 값을 처음 채택, 다른 화면 재사용 전제.
+- `lib/widgets/overlay_header.dart`: 글래스 헤더 배경 투명도를 `alpha: 0.7` → `alpha: 0.38`로 수정(목업 값 `rgba(247,246,243,0.38)`과 일치), 얇은 화이트 보더(`alpha 0.2`)와 약한 `BoxShadow`(`alpha 0.05`, `blurRadius 8`, `offset(0,2)`) 추가.
+- `lib/screens/closet_main_screen.dart`: 그리드 밀도 토글 순환 방향을 오름차순(3→5→1→3)에서 목업 요구사항인 내림차순(5→3→1→5)으로 반전. 토글 아이콘도 밀도 단계별로 분기(5=`grid_view`, 3=`view_comfy`, 1=`crop_square`)해 시각적으로 구분되게 함.
+
+사유:
+Task 7(옷장 메인) 구현이 실제 목업과 어긋난 부분을 재설계하는 플랜(`옷장 메인 화면 재설계` 플랜 §2, Design Tokens 확정 Task) 진행 중, 목업 대조 결과 위 값들이 잠정값·오차·미정 상태였음을 확인해 이번 Task에서 확정.
+
+Impact:
+- `lib/theme/app_typography.dart`, `lib/theme/app_spacing.dart`, `lib/widgets/overlay_header.dart`, `lib/screens/closet_main_screen.dart`, `pubspec.yaml`
+- `AppRadius`는 Brand Guide/Design Tokens 문서에 아직 정식 등재 안 됨 — `docs/history/TechnicalDebt.md`에 후속 조치 후보로 기록.
+- 밀도 토글 방향 반전으로 `integration_test/closet_main_screen_test.dart`의 기존 순환 방향(3→5→1) 전제 assertion 3건이 실패 — Tester가 별도로 갱신 예정.
+
+---
+
 [Decision] Season enum 4종 → 3종 개편 (사계절 폐기, 간절기→봄가을 리네임) — 기존 "ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정" 결정 중 Season 부분을 대체
 
 결정:
