@@ -48,7 +48,7 @@ class SelectableGalleryTile extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
                   color: colorScheme.surface.withValues(alpha: 0.85),
                   child: Text(
-                    item.name,
+                    item.category.label,
                     style: Theme.of(context).textTheme.labelSmall,
                     overflow: TextOverflow.ellipsis,
                   ),
