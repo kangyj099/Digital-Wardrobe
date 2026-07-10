@@ -1,5 +1,21 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Design 워크플로우-Development 파이프라인 교차 트리거 신설 (Visual Review 누락 방지)
+
+결정:
+- `Workflow_Design.md` §2.1 "Cross-Workflow Trigger" 신설: 대표 Hi-Fi Sample(3~5개 화면)이 Development 파이프라인(Layer=UI/Screen, Stage=Implementation/Frontend)으로 만들어지는 경우, Development Review/Tester 통과가 Visual Review(타이포/색상/여백/시각적 위계 확인)를 대체하지 않는다. 대표 샘플이 Development 트랙에서 완성되면 PM이 Visual Review를 명시적으로 트리거해야 하고, 그 전까지 Design Tokens는 잠정값(freeze 안 됨)으로 취급한다. Version 2.1 → 2.2.
+- `CLAUDE.md` 필수 체크포인트에 6번 "Design 마일스톤 교차 확인" 추가.
+
+사유:
+Task 7(옷장 메인 화면, 대표 Hi-Fi Sample의 첫 화면)이 `Layer=UI/Screen, Stage=Implementation(Frontend)`로 태깅되어 Worker→Review→Tester 사이클만 타고 완료 처리됐는데, 이 사이클 어디에도 Visual Review(타이포/색상/여백 등 "눈으로 봐야 아는 것")를 체크하는 지점이 없었음. `BACKLOG.md`의 "Next" 항목에 Typography가 "임시값 — 실제 화면 육안 확인 후 재검토 필요"라고 이미 적혀 있었는데도 PM이 명시적 체크포인트 없이 지나침. 사용자가 "리뷰 과정에 비주얼 리뷰 했어?"라고 물어 발견, Design/Development 두 워크플로우가 서로의 완료 조건을 모르는 구조적 공백으로 진단하고 즉시 정책 보완 지시.
+
+Impact:
+- `Workflow_Design.md` §2.1 신설, Version 2.2
+- `CLAUDE.md` 체크포인트 6 추가
+- Task 7의 실제 Visual Review는 아직 미실시 — 별도로 진행 예정
+
+---
+
 [Decision] feature 브랜치의 dev 동기화 주기 신설 (Task/Plan 완료 시점마다 pull)
 
 결정:
