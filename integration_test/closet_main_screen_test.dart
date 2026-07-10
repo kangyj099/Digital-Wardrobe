@@ -12,6 +12,9 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 
 /// Task 7(옷장 메인 화면) 검증. Review 통과분(commit 8145d3f) 대상 Tester 시나리오.
 /// Task 1(Season enum 4종→3종 개편, commit fb15a84) 재검증 시 계절 드롭다운 순서 assertion 추가.
+/// Task 2(Design Tokens 확정, commit 6505fea/46052bc) 재검증 시 밀도 순환 방향이
+/// 오름차순(3→5→1)에서 내림차순(5→3→1)으로 반전되어 순환 테스트 3개의 기대값을 갱신.
+/// 화면 기본값은 mid(3)이라, 실제 탭 시퀀스는 3→1→5→3→1→5...로 관찰된다(직접 실행해 확인).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -46,6 +49,13 @@ void main() {
     final gridView = tester.widget<GridView>(find.byType(GridView));
     final delegate = gridView.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
     return delegate.crossAxisCount;
+  }
+
+  IconData densityToggleIcon(WidgetTester tester) {
+    final icon = tester.widget<Icon>(
+      find.descendant(of: find.byTooltip('그리드 밀도 전환'), matching: find.byType(Icon)),
+    );
+    return icon.icon!;
   }
 
   testWidgets('부팅 시 mock 옷 12개가 렌더링되고 미완성 배지 1개가 표시된다', (tester) async {
@@ -105,26 +115,32 @@ void main() {
     expect(find.byType(GridView), findsOneWidget);
   });
 
-  testWidgets('밀도 토글 아이콘이 3→5→1→3 순으로 그리드 컬럼 수를 바꾼다 (탭 사이 프레임 반영 O)', (tester) async {
+  testWidgets('밀도 토글 아이콘이 3→1→5→3 순으로 그리드 컬럼 수와 아이콘을 함께 바꾼다 (탭 사이 프레임 반영 O)', (tester) async {
     await pumpClosetMain(tester);
 
+    // Task 2에서 순환 방향이 내림차순(5→3→1)으로 반전됨. 화면 기본값이 mid(3)이라
+    // 실제 탭 시퀀스는 3(시작, view_comfy) → 1(crop_square) → 5(grid_view) → 3(view_comfy)이다.
     expect(crossAxisCount(tester), 3);
-
-    await tester.tap(find.byTooltip('그리드 밀도 전환'));
-    await tester.pump();
-    expect(crossAxisCount(tester), 5);
+    expect(densityToggleIcon(tester), Icons.view_comfy);
 
     await tester.tap(find.byTooltip('그리드 밀도 전환'));
     await tester.pump();
     expect(crossAxisCount(tester), 1);
+    expect(densityToggleIcon(tester), Icons.crop_square);
+
+    await tester.tap(find.byTooltip('그리드 밀도 전환'));
+    await tester.pump();
+    expect(crossAxisCount(tester), 5);
+    expect(densityToggleIcon(tester), Icons.grid_view);
 
     await tester.tap(find.byTooltip('그리드 밀도 전환'));
     await tester.pump();
     expect(crossAxisCount(tester), 3);
+    expect(densityToggleIcon(tester), Icons.view_comfy);
   });
 
   testWidgets(
-    '[회귀 고정] 밀도 아이콘을 프레임 반영 없이 2번 연속 탭해도 3→5→1 순환이 깨지지 않는다 '
+    '[회귀 고정] 밀도 아이콘을 프레임 반영 없이 2번 연속 탭해도 5→3→1 순환이 깨지지 않는다 '
     '(stale-closure race, fixed in 10d3643)',
     (tester) async {
       final container = await pumpClosetMain(tester);
@@ -133,18 +149,18 @@ void main() {
       // 반영되기 전에 연속으로 탭하는 상황(예: 프레임 드랍 중 빠른 연타)을 재현한다.
       // 과거에는 onPressed 클로저가 build() 시점에 캡처된 density 지역 변수를 참조해,
       // 리빌드가 끼어들지 않으면 각 탭이 매번 "같은 이전 값 기준"으로 next를 계산해
-      // 3→5→1로 순환하지 않고 첫 탭이 계산한 값(5)에 멈추는 결함이 있었다(commit 10d3643에서
+      // 순환하지 않고 첫 탭이 계산한 값에 멈추는 결함이 있었다(commit 10d3643에서
       // onPressed 내부에서 ref.read로 최신값을 다시 조회하도록 수정되어 해결됨). 이 테스트는
-      // 그 수정이 회귀하지 않는지를 고정한다.
+      // 그 수정이 회귀하지 않는지를, Task 2에서 반전된 새 순환 방향(5→3→1) 기준으로 고정한다.
       await tester.tap(find.byTooltip('그리드 밀도 전환'));
       await tester.tap(find.byTooltip('그리드 밀도 전환'));
       await tester.pumpAndSettle();
 
-      // 순환 로직대로라면 두 번째 탭 후 1이어야 한다.
+      // 기본값 3에서 시작해 순환 로직대로면 두 번째 탭 후 5여야 한다(3→1→5).
       expect(
         container.read(closetDensityProvider),
-        1,
-        reason: '프레임 반영 없이 연속 탭해도 순환 로직(3→5→1)대로 진행되어야 한다.',
+        5,
+        reason: '프레임 반영 없이 연속 탭해도 순환 로직(3→1→5)대로 진행되어야 한다.',
       );
     },
   );
@@ -160,11 +176,11 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      // 3→5→1→3→5→1 순환대로 5회 후 1이어야 한다.
+      // 기본값 3에서 시작해 3→1→5→3→1→5 순환대로면 5회 탭 후 5여야 한다.
       expect(
         container.read(closetDensityProvider),
-        1,
-        reason: '순환 로직대로면 5회 탭 후 1이어야 한다.',
+        5,
+        reason: '순환 로직대로면 5회 탭 후 5여야 한다.',
       );
     },
   );
