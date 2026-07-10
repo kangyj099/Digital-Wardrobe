@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +11,7 @@ import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
 
 /// Task 7(옷장 메인 화면) 검증. Review 통과분(commit 8145d3f) 대상 Tester 시나리오.
+/// Task 1(Season enum 4종→3종 개편, commit fb15a84) 재검증 시 계절 드롭다운 순서 assertion 추가.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -53,18 +56,26 @@ void main() {
     expect(find.text('미완성'), findsOneWidget);
   });
 
-  testWidgets('계절 드롭다운에 전체 + 3개 계절 옵션이 실제로 나타난다', (tester) async {
+  testWidgets('계절 드롭다운에 전체 + 3개 계절 옵션이 실제로 나타나고, 봄가을→여름→겨울 순으로 정렬된다', (tester) async {
     await pumpClosetMain(tester);
 
     await tester.tap(seasonDropdownFinder());
     await tester.pumpAndSettle();
 
-    final values = tester
-        .widgetList<DropdownMenuItem<Season?>>(find.byType(DropdownMenuItem<Season?>))
-        .map((w) => w.value)
-        .toSet();
+    final rawItems = tester
+        .widgetList<DropdownMenuItem<Season?>>(find.byType(DropdownMenuItem<Season?>));
 
+    final values = rawItems.map((w) => w.value).toSet();
     expect(values, {null, ...Season.values});
+
+    // 정렬 기본순서 표(_공통 규칙.md: "봄가을 → 여름 → 겨울")를 실제 렌더링 순서로 확인.
+    // 주의: 열린 DropdownButton 오버레이는 선택된 항목의 DropdownMenuItem을 내부적으로
+    // 중복 렌더링하는 Flutter 프레임워크 동작이 있어(현재 선택값=전체), 순서 비교 전
+    // 최초 등장 순서를 보존한 채 중복을 제거한다(LinkedHashSet).
+    final orderedLabels =
+        LinkedHashSet<String>.from(rawItems.map((w) => w.value?.label ?? '전체')).toList();
+
+    expect(orderedLabels, ['전체', '봄가을', '여름', '겨울']);
   });
 
   testWidgets('여름 계절 필터 선택 시 그리드가 3개로 줄어들고, 전체로 되돌리면 12개로 복원된다', (tester) async {
@@ -75,6 +86,13 @@ void main() {
 
     await selectSeason(tester, '전체');
     expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+  });
+
+  testWidgets('봄가을 계절 필터 선택 시 그리드가 9개로 줄어든다', (tester) async {
+    await pumpClosetMain(tester);
+
+    await selectSeason(tester, '봄가을');
+    expect(find.byType(SelectableGalleryTile), findsNWidgets(9));
   });
 
   testWidgets('아이템이 0개인 겨울 계절 선택 시 크래시 없이 빈 그리드로 전환된다', (tester) async {
