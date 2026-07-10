@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 옷장 메인 그리드 밀도 컬럼 수 1/3/5 → 1/2/4 변경 — 기존 "옷장 메인 재설계 — Design Tokens 확정" 결정 중 `AppDensity` 값 부분을 대체
+
+결정:
+- `lib/theme/app_spacing.dart`의 `AppDensity`: `mid=3`→`mid=2`, `max=5`→`max=4`로 변경(`min=1`은 유지). `levels = [min, mid, max]` 리스트 정의 자체는 변경 없음(값만 `[1, 2, 4]`로 바뀜).
+- `lib/providers/closet_providers.dart`의 `closetDensityProvider` 기본값이 리터럴 `3`으로 하드코딩되어 있던 것을 `AppDensity.mid` 참조로 교체(전수 확인 중 발견 — 값 변경 시 새 밀도 집합 `{1,2,4}`에 속하지 않는 죽은 리터럴이 될 위험이 있었음).
+- 순환 방향(내림차순, max→mid→min)은 그대로 유지 — 4→2→1→4로 순환.
+- 이 결정은 아래 "옷장 메인 재설계 — Design Tokens 확정" 결정 중 `AppDensity`가 `min=1/mid=3/max=5`로 확정됐던 부분을 대체(supersede)한다. append-only 원칙에 따라 해당 항목 자체는 삭제·수정하지 않고 그대로 둔다(순환 방향 결정은 이번 변경 대상이 아니므로 그대로 유효).
+
+사유:
+사용자가 옷장 메인 그리드 밀도 컬럼 수를 1/3/5에서 1/2/4로 확정(사용자 직접 결정).
+
+Impact:
+- `lib/theme/app_spacing.dart`, `lib/providers/closet_providers.dart`
+- `lib/screens/closet_main_screen.dart`는 `AppDensity.max`/`.mid`/`.min` 상수 참조만 쓰고 있어 코드 변경 불필요.
+- `integration_test/closet_main_screen_test.dart`의 밀도 순환 관련 assertion 3건(기존 "3→1→5→3" 전제)이 실패 — Tester가 별도로 갱신 예정.
+
+---
+
 [Decision] 옷장 메인 재설계 — Design Tokens 확정(타이포/코너반경/모션/글래스 헤더/밀도 토글 방향)
 
 결정:

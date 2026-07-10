@@ -18,8 +18,8 @@ class AppDensity {
   AppDensity._();
 
   static const int min = 1;
-  static const int mid = 3;
-  static const int max = 5;
+  static const int mid = 2;
+  static const int max = 4;
 
   static const List<int> levels = [min, mid, max];
 }
