@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_colors.dart';
 import 'status_badge.dart';
 
 class SelectableGalleryTile extends StatelessWidget {
@@ -26,6 +27,7 @@ class SelectableGalleryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     return Semantics(
       button: true,
       label: '${item.name}, ${item.color}, 착용 ${item.wearCount}회'
@@ -35,7 +37,7 @@ class SelectableGalleryTile extends StatelessWidget {
         onTap: item.isIncomplete ? null : onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: colorScheme.secondary.withValues(alpha: item.isIncomplete ? 0.4 : 1.0),
+            color: semantic.gray200,
             border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
           ),
           child: LayoutBuilder(
@@ -58,7 +60,7 @@ class SelectableGalleryTile extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface.withValues(alpha: 0.7),
+                        color: semantic.gray50.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Text(
