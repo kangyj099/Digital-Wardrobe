@@ -29,7 +29,7 @@ Flutter Hi-Fi 스프린트 Task 1~6 + 하드코딩 원칙 정립(category/season
 - 하드코딩 원칙(모든 값은 (a)런타임 동적 데이터 (b)데이터 파일/리소스 (c)코드 내 const/enum/design token 중 하나를 Source of Truth로 가져야 함) 확정 — 전체 코드베이스에 적용, 예외는 일회성 테스트 코드/명시적 임시 placeholder/긴급 디버그 로깅 3가지뿐.
 - `ClothingItem.category`/`season`/`material`, `Composition.season`을 bare `String`에서 `lib/models/enums.dart`의 실제 Dart `enum`(`ClothingCategory` 8종/`Season` 4종/`ClothingMaterial` 18종, 각각 `label` getter)으로 전환 — 위반 필드 4개 전부 해소.
 - Season 값 체계를 봄/여름/가을/겨울(기존 `03_화면별UX명세서.md` 기준)에서 여름/겨울/간절기/사계절로 재정의(사용자 확정) — 그 문서도 함께 갱신됨.
-- **주의**: 하드코딩 원칙의 정책 문서화(`Workflow_Development.md` §1 "Hardcoding Policy" 하위 섹션, `Workflow_Frontend.md` cross-reference)는 커밋 후 사용자 지시로 revert됨(커밋 `9e8b66d`) — 원칙 자체는 유효하고 실제 코드에도 이미 적용됐지만, **정책 문서 상에는 더 이상 명문화되어 있지 않음**. 유일하게 남은 기록은 `Decision.md` 상단 항목들. 정책 문서 재반영 여부는 미결— 필요시 사용자에게 확인 후 진행.
+- **(해결됨)** 하드코딩 원칙의 정책 문서화(`Workflow_Development.md` §1 "Hardcoding Policy" 하위 섹션, `Workflow_Frontend.md` cross-reference)는 커밋 후 사용자 지시로 한 차례 revert됐었으나(커밋 `9e8b66d`), 이후 `.claude/skills/engineering-principles/SKILL.md`로 정식 재문서화 완료(스킬 분리 정책 채택, 상세: `Decision.md`). 현재 정책 문서(스킬) 상에 명문화돼 있음 — 더 이상 미결 상태 아님.
 
 (참고) 세션 인계 브릿지 규칙 신설 — PR #4 병합 완료(2026-07-09). Git-flow 커밋/PR 정책 도입 — PR #2 병합 완료(2026-07-08).
 

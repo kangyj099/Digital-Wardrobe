@@ -115,19 +115,4 @@ Runs after Review passes. Exercises the actual running app (Flutter `integration
 ---
 
 ## Feature Audit
-
-**Responsibility**
-
-Reviews the project as a whole.
-
-**Checks**
-
-* Missing functionality
-* Policy conflicts
-* UX consistency
-* Architecture
-* Requirements compliance
-
-**Important**
-
-Audit does not make direct modifications. It creates new tasks for the PM.
+→ `Workflow_Project.md` §2 Feature Audit (per §1.7, this role has no development-specific elaboration — defers to the project-wide definition).

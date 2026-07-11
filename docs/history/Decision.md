@@ -1,5 +1,44 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Audit 발견 사항 반영 — §1.7 문서 계층/오버라이드 원칙 신설 + §7/§12.1 모순 해소 + Role 중복 정리
+
+결정:
+- **§7 vs §12.1 모순 해소**: `workflow_project/12_Role Information Access.md` §12.1의 "Layer×Stage 태깅이 §7 Impact Scope 평가 도중 일어난다"는 문장을 수정 — 태깅(항상, 가벼움)과 §7의 정식 Change Impact 평가(L/XL만, 무거움)를 별개 개념으로 명확히 분리. §10/§11의 "항상 평가" 문구는 그대로 유지(그게 맞는 방향).
+- **§1.7 "Document Hierarchy & Override" 신설** (`workflow_project/01_Core Principles.md`): `Workflow_Project.md`=부모(기본 규칙), `Workflow_Development.md`/`Workflow_Design.md`=자식(도메인별 override/elaboration), `Workflow_Frontend.md`=Development·Design 양쪽에서 파생되는 Flutter/Dart 구현 특화 문서. 자식이 특정 주제를 다루면 그 도메인에서 자식이 우선, 자식이 침묵하면 부모 규칙이 기본값. **단, "침묵 = 부모 따름"을 암묵적으로 기대하지 않고, 그 경우엔 반드시 명시적 포인터를 남기도록 못박음** — Task Manifest(§12.4)가 도메인 문서만 좁게 넘길 수 있어 진짜 침묵과 의도적 위임을 구분할 방법이 없기 때문.
+- **Feature Audit 중복 해소**: `workflow_development/04_Roles.md`의 Feature Audit 섹션(Project 쪽과 체크리스트가 미묘하게 갈라져 있던 유일한 항목 — 개발 맥락 특화 내용이 실질적으로 없었음)을 `Workflow_Project.md` §2로 가리키는 명시적 포인터로 교체. PM/Worker/Review/Tester/Integrator는 Development 쪽에 실제 도메인 특화 내용(Review Areas 세부, Development/Product-UX Review 서브타입, Integrator "기본은 사람" 정책 등)이 있어 그대로 유지 — §1.7의 "자식이 elaborate하면 자식이 우선" 사례.
+- **Role 체크리스트 문구 통일** (임시 조치, 위 포인터 전환으로 최종 해소): Feature Audit을 포인터로 바꾸기 전, 두 문서의 체크리스트가 다르게 갈라져 있던 걸("Design System consistency" vs "Requirements compliance") 먼저 통일했었음 — 최종적으로는 포인터 전환으로 중복 자체가 사라짐.
+- **문구 정리**: `Workflow_Development.md` 헤더의 "Claude Projects" 표기를 "Claude Code"로 정정(Claude Projects는 이미 폐기됨). §2.1 Handoff 표의 "Tester 통과 시 handoff 없이 task completes" 문구가 M 사이즈에만 해당됨을 명시(L/XL은 Integrator로 진행).
+- **BACKLOG.md stale 문구 정정**: "하드코딩 원칙이 정책 문서 상 명문화 안 됨, 재반영 미결"이라던 주의 문구를 "engineering-principles 스킬로 이미 재문서화 완료"로 갱신.
+- **Version 범프**: `Workflow_Project.md` 2.2 → 2.3 (§1.7 신설, chapter-level), `Workflow_Development.md` 1.2 → 1.3 (여러 챕터급 수정, 한 리비전 패스 1회 bump).
+
+사유:
+사용자가 정책 문서 전반에 대한 Audit을 요청, 다음 항목들이 발견됨: (1) §7/§10/§11/§12.1의 Change Impact 평가 범위 모순 [P0], (2) `Workflow_Project.md`/`Workflow_Design.md`의 라우터+앵커 구조 전환 자체가 Decision.md에 기록되지 않음 [P1, 별도 항목으로 보완 — 바로 아래], (5) Role 정의가 Project/Development 두 곳에 있고 Feature Audit 체크리스트가 실제로 갈라져 있었음 [P2], (6)(7) 사소한 문구 오류 [P3], (8) BACKLOG.md stale 문구 [부수 발견]. (5)를 검토하는 과정에서 사용자가 애초에 "Project=기본, Development/Design=상세 override"라는 의도로 설계했었다고 확인 — 다만 그 의도가 문서 어디에도 명문화돼 있지 않아 우연한 드리프트(Feature Audit)를 막지 못했음. §1.7로 그 의도 자체를 성문화.
+
+Impact:
+- `workflow_project/01_Core Principles.md` §1.7 신설
+- `workflow_project/12_Role Information Access.md` §12.1 문구 수정
+- `workflow_development/04_Roles.md` Feature Audit → 포인터, 헤더 문구, Handoff 표 문구 수정
+- `workflow_project/02_Roles.md` Feature Audit 체크리스트 일시 수정(포인터 전환으로 최종적으로는 Development 쪽만 영향, Project 쪽 "Requirements compliance" 추가는 유지 — 어차피 맞는 내용)
+- `Workflow_Project.md` Version 2.2→2.3, `Workflow_Development.md` Version 1.2→1.3
+- `docs/work/BACKLOG.md` stale 문구 정정
+
+---
+
+[Decision] `Workflow_Project.md`/`Workflow_Design.md`를 모놀리식 문서에서 라우터+앵커 구조로 전면 개편 (Version 2.0 major bump) — 사후 기록 (Audit 발견, 기록 누락 보완)
+
+결정:
+- 프로젝트 오너가 `Workflow_Project.md`, `Workflow_Design.md`를 각 섹션 헤딩 + `→ 경로` 포인터만 남기는 "라우터" 문서로, 20줄 이상 섹션 본문은 `workflow_project/`, `workflow_design/` 하위 개별 파일로 분리하는 구조로 직접 재작성함.
+- 이 구조 변경 자체는 §1.6 기준 "문서 사용 패턴·전체 프레임워크 변경"에 해당해 두 문서 모두 Version 2.0(major)로 이미 반영됨 — 다만 그 판단 근거를 기록하는 Decision.md 항목이 누락돼 있었음(Audit에서 발견, 이 항목으로 사후 보완).
+- 재정리 과정에서 발생한 회귀(계절 정렬값 오염, 깨진/누락 앵커 경로, `Workflow_Project.md` §7~§11 헤딩/본문 밀림 및 중복, 고아 파일)는 별도 세션에서 전수 점검 후 수정 — 관련 세부는 PR #6/#8 이력 및 이 파일 상단 근처 다른 항목들 참고.
+
+사유:
+Audit이 "문서 정책(Decision.md 기록 의무) 위반 — 구조 변경 자체를 기록한 항목이 없다"고 지적. `Workflow_Development.md` §5 Decision.md Policy("Workflow changes, Reference document policy changes는 기록 대상")에 해당하는 변경인데 실제로는 그 이후의 개별 수정(Frontend.md 재정의, Task Manifest 등)만 기록되고 최초 구조 개편 자체는 기록되지 않았음.
+
+Impact:
+- 기록 자체만 보완, 문서 내용 변경 없음
+
+---
+
 [Decision] `documentation-conventions`/`uiux-design-conventions` 스킬 실채택 — 보류됐던 TechDebt 해소
 
 결정:

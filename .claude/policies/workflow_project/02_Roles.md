@@ -77,6 +77,7 @@ Reviews the project as a whole.
 * Architecture
 * UX consistency
 * Design System consistency
+* Requirements compliance
 
 **Important**
 
