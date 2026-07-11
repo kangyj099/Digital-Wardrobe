@@ -50,13 +50,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 - 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
 - Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
-**옷장 메인 화면 재설계 진행 중 (2026-07-10~11, 일시 중단 상태)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. 상세 설계는 `C:\Users\User\.claude\plans\crispy-wishing-metcalfe.md`(플랜 파일, 세션 로컬 — 필요시 이 BACKLOG 요약으로 복원 가능).
-- **완료**: Season enum 개편(사계절 폐기→봄가을 3종, 커밋 `fb15a84`~`acbbc46`), Design Tokens 확정(Typography Pretendard 단일화/AppRadius·AppMotion 신설/글래스헤더 opacity+보더그림자/밀도 순환방향, 커밋 `6505fea`~`59930c9`), 화면 레이아웃 재구축(카테고리 드롭다운/FAB 확장/스크롤마스크/배경/타일라벨, 커밋 `e91d059`~`757ecd6`), 밀도 컬럼 1/3/5→1/2/4 변경(커밋 `8b6bcab`~`cca2500`), 시각 디테일 조정 라운드(배지 캡슐화/배경단색/틴트완화/라벨투명도+모서리+비례마진, 커밋 `0da0cee`) + 사용자 직접 커밋(타일배경 gray200/태그 gray50, 커밋 `f592f97`).
-- **Review/Tester 대기 중(일시 중단)**: 시각 디테일 조정 라운드(`0da0cee`)가 Worker 완료 후 Review/Tester를 아직 안 거침 — PM이 `flutter analyze` 직접 재확인만 하고 정식 사이클은 보류. 재개 시 Review부터.
-- **Worker 완료, Review/Tester 대기(일시 중단)**: 컬러 팔레트 변수화(Task 6) — `ColorPalette` 데이터 클래스로 리팩터 + Palette 1/2 등록(비활성 상태, `activePalette=current`로 기존 색 유지, 시각적 회귀 없음). 커밋 `399d3ef`, push 완료. PM이 diff+`flutter analyze` 직접 재검증 완료. 정식 Review/Tester 사이클은 재개 시 진행.
-- **요청받았으나 미착수**: 하단 좌측 뒤로가기 버튼(프로스티드글래스 스타일) 추가.
-- **미착수**: Task 4(ExpandableSearchField + HUD Scrollbar).
-- **하네스 이슈 발견**: `flutter analyze`를 서브에이전트가 실행할 때 "claude-sonnet-5 safety classifier temporarily unavailable" 오류로 간헐적으로 차단되는 현상 발견(다른 bash 명령은 정상) — 원인 미상, 재발 시 PM이 직접 `flutter analyze` 대신 실행해서 우회 중.
+**옷장 메인 화면 재설계 진행 중 (2026-07-10~11, 일시 중단 상태)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. **상세 진행상황·설계 스케치·재개 순서는 `docs/work/옷장메인_재설계_체크리스트.md` 참고**(git 추적됨, 항상 최신 — 이전에 `~/.claude/plans/`의 세션 로컬 플랜 파일을 참고 문서로 남겼었는데 그건 이미 낡았고 비추적 파일이라 이 문서로 완전히 대체함).
+- 요약: Season enum 개편/Design Tokens 확정/레이아웃 재구축/밀도값 변경/시각 디테일 라운드/컬러 팔레트 변수화까지 Worker 작업은 전부 완료(커밋 `fb15a84`~`399d3ef`), 그중 시각 디테일 라운드(`0da0cee`)와 팔레트(`399d3ef`)는 **Review/Tester 정식 사이클 미실시**(PM 직접 검증만 완료) 상태로 일시 중단.
+- 뒤로가기 버튼(요청받음, 미착수), Task 4(검색필드+스크롤바, 미착수)는 체크리스트 문서에 상세 기록.
 
 **다음 재개 시 할 일**: 사용자가 직접 화면을 보고 판단한 추가 디테일이 있으면 먼저 반영 → 시각 디테일 라운드(`0da0cee`) Review→Tester 마무리 → 뒤로가기 버튼 → 팔레트 작업(Task 6) Review→Tester → Task 4(검색필드+스크롤바) → Task 8(스타일일지 열람) 등 나머지 화면으로 이어감. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
 
