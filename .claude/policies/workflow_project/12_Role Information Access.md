@@ -4,7 +4,7 @@ Defines what materials each role sees for a given task, based on the task's **La
 
 ## 12.1 Layer × Stage Determines Scope
 
-Every task is tagged with the Layer(s) it touches and the Stage (Decision or Implementation) within that layer. This tagging happens during the existing Impact Scope evaluation (§7) — no separate step is added.
+Every task is tagged with the Layer(s) it touches and the Stage (Decision or Implementation) within that layer — regardless of task size. This tagging is a lightweight classification, distinct from §7's heavier formal Change Impact evaluation (which only applies to L/XL tasks): tagging always happens so material routing works even for S/M tasks; for L/XL tasks it naturally happens alongside the §7 evaluation, but it is not gated by §7 and needs no separate step even for smaller tasks.
 
 | Layer | Stage | Required Review | Required Materials |
 | --- | --- | --- | --- |
