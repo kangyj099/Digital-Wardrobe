@@ -45,12 +45,20 @@ Flutter Hi-Fi 스프린트 Task 1~6 + 하드코딩 원칙 정립(category/season
 
 # Current
 
-Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-10) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev에 한 차례 병합 완료, **같은 브랜치에서 계속 작업 이어감** — 새 브랜치 불필요)에서 Subagent-Driven으로 진행 중.
+Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 정정** — 기존 2026-07-10에서 연장, 2026-07-11 사용자 확정. 옷장 메인 재설계가 예상보다 커져 스코프 안정화 위해 조정) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev에 한 차례 병합 완료, **같은 브랜치에서 계속 작업 이어감** — 새 브랜치 불필요)에서 Subagent-Driven으로 진행 중.
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`
 - 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
 - Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
-**다음 할 일: Task 8(공용 컴포넌트 C10 + 화면 — 스타일일지 열람) 착수.** Task 7까지 완료·Worker→Review→Tester 사이클 실전 검증 끝남. Task 8부터는 `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언)이 이미 Task 7에서 확립됐으니, 새 라우트 추가 시 이 순서 유의.
+**옷장 메인 화면 재설계 진행 중 (2026-07-10~11, 일시 중단 상태)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. 상세 설계는 `C:\Users\User\.claude\plans\crispy-wishing-metcalfe.md`(플랜 파일, 세션 로컬 — 필요시 이 BACKLOG 요약으로 복원 가능).
+- **완료**: Season enum 개편(사계절 폐기→봄가을 3종, 커밋 `fb15a84`~`acbbc46`), Design Tokens 확정(Typography Pretendard 단일화/AppRadius·AppMotion 신설/글래스헤더 opacity+보더그림자/밀도 순환방향, 커밋 `6505fea`~`59930c9`), 화면 레이아웃 재구축(카테고리 드롭다운/FAB 확장/스크롤마스크/배경/타일라벨, 커밋 `e91d059`~`757ecd6`), 밀도 컬럼 1/3/5→1/2/4 변경(커밋 `8b6bcab`~`cca2500`), 시각 디테일 조정 라운드(배지 캡슐화/배경단색/틴트완화/라벨투명도+모서리+비례마진, 커밋 `0da0cee`) + 사용자 직접 커밋(타일배경 gray200/태그 gray50, 커밋 `f592f97`).
+- **Review/Tester 대기 중(일시 중단)**: 시각 디테일 조정 라운드(`0da0cee`)가 Worker 완료 후 Review/Tester를 아직 안 거침 — PM이 `flutter analyze` 직접 재확인만 하고 정식 사이클은 보류. 재개 시 Review부터.
+- **진행 중**: 컬러 팔레트 변수화(Task 6) — `ColorPalette` 데이터 클래스로 리팩터 + Palette 1/2 등록(비활성 상태, `activePalette=current`로 기존 색 유지). Worker 작업 중.
+- **요청받았으나 미착수**: 하단 좌측 뒤로가기 버튼(프로스티드글래스 스타일) 추가.
+- **미착수**: Task 4(ExpandableSearchField + HUD Scrollbar).
+- **하네스 이슈 발견**: `flutter analyze`를 서브에이전트가 실행할 때 "claude-sonnet-5 safety classifier temporarily unavailable" 오류로 간헐적으로 차단되는 현상 발견(다른 bash 명령은 정상) — 원인 미상, 재발 시 PM이 직접 `flutter analyze` 대신 실행해서 우회 중.
+
+**다음 재개 시 할 일**: 사용자가 직접 화면을 보고 판단한 추가 디테일이 있으면 먼저 반영 → 시각 디테일 라운드(`0da0cee`) Review→Tester 마무리 → 뒤로가기 버튼 → 팔레트 작업(Task 6) Review→Tester → Task 4(검색필드+스크롤바) → Task 8(스타일일지 열람) 등 나머지 화면으로 이어감. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
