@@ -54,7 +54,14 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 - 요약: Season enum 개편/Design Tokens 확정/레이아웃 재구축/밀도값 변경/시각 디테일 라운드/컬러 팔레트 변수화까지 Worker 작업은 전부 완료(커밋 `fb15a84`~`399d3ef`), 그중 시각 디테일 라운드(`0da0cee`)와 팔레트(`399d3ef`)는 **Review/Tester 정식 사이클 미실시**(PM 직접 검증만 완료) 상태로 일시 중단.
 - 뒤로가기 버튼(요청받음, 미착수), Task 4(검색필드+스크롤바, 미착수)는 체크리스트 문서에 상세 기록.
 
-**다음 재개 시 할 일**: 사용자가 직접 화면을 보고 판단한 추가 디테일이 있으면 먼저 반영 → 시각 디테일 라운드(`0da0cee`) Review→Tester 마무리 → 뒤로가기 버튼 → 팔레트 작업(Task 6) Review→Tester → Task 4(검색필드+스크롤바) → Task 8(스타일일지 열람) 등 나머지 화면으로 이어감. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
+**일정 재검토 (2026-07-12)**: 마감 연장(07-10→07-24, 위 참고) 배경이 된 옷장 메인 재설계 자체가 이번 스프린트의 Design Tokens 확정 작업을 겸했다는 점에 근거해 남은 12일 스코프를 재우선순위화함:
+- **Tier 1 (즉시, 비용 낮음)**: 시각 디테일 라운드(`0da0cee`)·팔레트(`399d3ef`) Review→Tester 마무리 — 코드는 이미 작성됨, Task 7 Definition of Done을 닫는 항목.
+- **Tier 2**: 뒤로가기 버튼 추가 (요청받음, 스코프 작음).
+- **Tier 3 (뒤로 미룸)**: 검색필드(ExpandableSearchField)+HUD 스크롤바 — 이미 동작하는 화면 위의 UX 장식이라, 나머지 8개 화면(Task 8~15) 확보가 더 급함. Tier 1/2 끝나면 바로 Task 8로 넘어가고, Task 4는 Task 8~15 완료 후 여유 있을 때 착수.
+- **Task 8~15(나머지 8개 화면)**: Task 7에서 Design Tokens(Typography/Density/Season enum/AppRadius/AppMotion/ColorPalette 구조)가 이미 확정됐으므로, 이후 화면들은 별도 디자인 탐색 라운드 없이 확정된 토큰을 그대로 적용하는 구현으로 진행 — Task 7만큼의 소요는 예상하지 않음. 원본 플랜(`docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`)의 Global Constraints를 이 확정값 기준으로 갱신 완료(2026-07-12, addendum 추가).
+- **체크포인트**: 07-19(중간 지점)까지 진행 속도를 보고, 뒤처지면 Task 15(스타일일지 추가) 등 스코프 축소 여부를 사용자와 재확인.
+
+`lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 

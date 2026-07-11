@@ -12,8 +12,8 @@
 
 - 색상/폰트/spacing/density 실제 값은 `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`의 "디자인 토큰(임시 확정값)" 섹션 값을 그대로 사용 — 화면 코드에 색상 hex나 픽셀 숫자를 직접 쓰지 않는다. 전부 `Theme.of(context)` 또는 `lib/theme/` 상수 참조.
 - Spacing: `xxs=4, xs=8, sm=12, md=16, lg=24, xl=32`, `galleryGap=1`.
-- Density(Grouped Main 전용): `min=1, mid=3, max=5`열.
-- Typography 크기: Display 57/45/36, Headline 32/28/24, Title 22/16/14, Body 16/14/12, Label 14/12/11. Body 계열 폰트 = `KoPubDotum`, 나머지 = `Pretendard`.
+- Density(Grouped Main 전용): ~~`min=1, mid=3, max=5`열~~ **옷장 메인 재설계로 `1/2/4`로 변경됨 — 아래 addendum 참고.**
+- Typography 크기: Display 57/45/36, Headline 32/28/24, Title 22/16/14, Body 16/14/12, Label 14/12/11. ~~Body 계열 폰트 = `KoPubDotum`, 나머지 = `Pretendard`~~ **옷장 메인 재설계로 전체 `Pretendard` 단일화됨(`KoPubDotum` 폐기) — 아래 addendum 참고.**
 - 색상(Light): Primary `#394550`/OnPrimary `#F7F6F3`, Secondary `#C5D3C7`/OnSecondary `#2B2D30`, Surface `#F7F6F3`/OnSurface `#2B2D30`, Background `#F7F6F3`/OnBackground `#2B2D30`, Error `#A34B50`/OnError `#F7F6F3`. Gray50~900: `#F7F6F3 #DDD4C8 #CBC0B0 #B3A99A #948E86 #6E7679 #52606A #3E4C56 #2C3841 #1D262D`. Warning `#B98A3D`, Success `#394550`(Primary와 동일).
 - 색상(Dark): Primary `#93B5CC`/OnPrimary `#232B31`, Secondary `#8FA890`/OnSecondary `#232B31`, Surface `#2C3841`/OnSurface `#EDE9E1`, Background `#1D262D`/OnBackground `#EDE9E1`, Error `#D98A8E`/OnError `#1D262D`. Warning `#D9A05C`, Success `#93B5CC`.
 - 코디 에디터 화면(Task 8)은 드래그/회전/크기조절/z-index 로직을 구현하지 않는다 — 정적 배치만 표시.
@@ -25,8 +25,15 @@
   - `assets/fonts/KoPub/KoPub 폰트 사용 목적 설문 제출 필요(출시전에).txt`: 사용자의 개인 메모(출시 전 라이선스 설문 제출 필요, https://forms.gle/aQU7b3EoaF53zMKaA) — 에셋 등록 대상 아님, 이번 스프린트 스코프 밖.
 - 옷/코디 샘플 이미지는 사용자가 `assets/images/mock/`에 배치했다. **실제 파일명은 `item_01.jpg` 규칙이 아니라 `IMG_XXXX_preview_rev_1.png`/`IMG_XXXX.PNG`/`IMG_XXXX-removebg-preview.png` 형태다 — Task 3 진행 후 mock_data.dart를 실제 파일명에 맞게 재작성했다(아래 addendum 참고). 앞으로 이 Task를 다시 열어볼 일이 있다면 이 문단이 최신 상태다.**
 - 테스트 방침: 화면/위젯은 `flutter run`으로 직접 확인(위젯 단위 TDD 아님). 순수 로직(필터/정렬 함수)에는 `flutter test`로 단위 테스트 작성. Semantics label을 가진 재사용 컴포넌트는 위젯 테스트 1개 이상 필수(Workflow_Frontend.md §5).
-- **`docs/knowledge/reference/policy/Workflow_Frontend.md` 전체를 따른다** (Task 2 진행 중 신설됨) — 특히: 드릴다운/크로스레퍼런스 네비게이션은 `context.push()`만 사용(`context.go()` 금지, 상위 카테고리 전환에만 허용), 컨트롤러/리스너는 `dispose()` 필수, `ref.watch()`는 `build()`에서만·`ref.read()`는 콜백에서만, 필터링 대상 리스트 아이템에는 `key: ValueKey(id)` 필수, `Semantics(label:...)`의 자식이 자체 접근성 정보를 가지면 `excludeSemantics: true` 필수.
+- **`.claude/skills/flutter-implementation-conventions/SKILL.md`를 따른다** (경로 갱신: 원래 `docs/knowledge/reference/policy/Workflow_Frontend.md`에 있던 이 원칙들은 폴더구조 개편(PR #6) 이후 `.claude/skills/flutter-implementation-conventions`로 이전됨 — 항상 이 스킬을 최신본으로 참고할 것) — 특히: 드릴다운/크로스레퍼런스 네비게이션은 `context.push()`만 사용(`context.go()` 금지, 상위 카테고리 전환에만 허용), 컨트롤러/리스너는 `dispose()` 필수, `ref.watch()`는 `build()`에서만·`ref.read()`는 콜백에서만, 필터링 대상 리스트 아이템에는 `key: ValueKey(id)` 필수, `Semantics(label:...)`의 자식이 자체 접근성 정보를 가지면 `excludeSemantics: true` 필수.
 - **`ClothingItem`에 `material` 필드가 추가됐다** (Task 7 착수 전 addendum, Decision.md 참고) — 필수 `String`, 값은 `lib/models/clothing_item.dart`의 `kClothingMaterials`(18개 폐쇄형 어휘) 중 하나. `ClothingItem`을 생성하는 모든 코드(신규 Task 포함)는 이 필드를 채워야 한다. `ClothingItem`을 부분 수정할 땐 전체 필드를 손으로 나열하지 말고 `copyWith()`를 사용한다.
+- **(2026-07-12 추가) 옷장 메인 재설계로 위 값 다수가 이 플랜의 원문과 달라졌다 — 아래 Task 8 이후를 진행할 워커는 이 문단의 리터럴 값이 아니라 실제 코드/`Decision.md`를 Source of Truth로 삼을 것:**
+  - `Season` enum: 4종(여름/겨울/간절기/사계절) → **3종**(`springFall`/`summer`/`winter`, `lib/models/enums.dart`). 이 플랜의 Task 3/7 스니펫에 남아있는 `'겨울'`/`'사계절'` 같은 리터럴 문자열 예시는 이미 실제 enum 타입으로 대체된 지 오래(Task 3 완료 시점부터) — 신규 화면에서도 반드시 `Season` enum을 참조.
+  - 그리드 밀도: `1/3/5` → **`1/2/4`**(`AppDensity`, `lib/theme/app_spacing.dart`), 순환 방향도 오름차순→**내림차순**(4→2→1→4)으로 반전.
+  - Typography Body 폰트: `KoPubDotum` → **`Pretendard`로 단일화**(`KoPubDotum` 관련 pubspec 등록도 제거됨).
+  - 코너 반경/모션 토큰 신설: `AppRadius`(`sm=16`, `pill=100`), `AppMotion`(`fast=200ms`, `searchExpand=300ms`) — 이 플랜 작성 시점엔 존재하지 않았음, `lib/theme/app_spacing.dart` 참고.
+  - 색상 구조: 위 Light/Dark hex 값 자체는 아직 유효(`ColorPalette.current`가 그대로 씀)하나, `lib/theme/app_colors.dart`가 `ColorPalette` 데이터 클래스 기반으로 리팩터됨 — 팔레트 후보(`palette1`/`palette2`)가 이미 등록돼 있으니 신규 화면 작업 중 팔레트 전환 지시가 있을 수 있음, `activePalette` 상수 확인.
+  - 상세 근거는 전부 `Decision.md`(2026-07-10~11 항목들)에 기록됨.
 
 ---
 
