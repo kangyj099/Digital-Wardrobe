@@ -53,7 +53,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 **옷장 메인 화면 재설계 진행 중 (2026-07-10~11, 일시 중단 상태)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. 상세 설계는 `C:\Users\User\.claude\plans\crispy-wishing-metcalfe.md`(플랜 파일, 세션 로컬 — 필요시 이 BACKLOG 요약으로 복원 가능).
 - **완료**: Season enum 개편(사계절 폐기→봄가을 3종, 커밋 `fb15a84`~`acbbc46`), Design Tokens 확정(Typography Pretendard 단일화/AppRadius·AppMotion 신설/글래스헤더 opacity+보더그림자/밀도 순환방향, 커밋 `6505fea`~`59930c9`), 화면 레이아웃 재구축(카테고리 드롭다운/FAB 확장/스크롤마스크/배경/타일라벨, 커밋 `e91d059`~`757ecd6`), 밀도 컬럼 1/3/5→1/2/4 변경(커밋 `8b6bcab`~`cca2500`), 시각 디테일 조정 라운드(배지 캡슐화/배경단색/틴트완화/라벨투명도+모서리+비례마진, 커밋 `0da0cee`) + 사용자 직접 커밋(타일배경 gray200/태그 gray50, 커밋 `f592f97`).
 - **Review/Tester 대기 중(일시 중단)**: 시각 디테일 조정 라운드(`0da0cee`)가 Worker 완료 후 Review/Tester를 아직 안 거침 — PM이 `flutter analyze` 직접 재확인만 하고 정식 사이클은 보류. 재개 시 Review부터.
-- **진행 중**: 컬러 팔레트 변수화(Task 6) — `ColorPalette` 데이터 클래스로 리팩터 + Palette 1/2 등록(비활성 상태, `activePalette=current`로 기존 색 유지). Worker 작업 중.
+- **Worker 완료, Review/Tester 대기(일시 중단)**: 컬러 팔레트 변수화(Task 6) — `ColorPalette` 데이터 클래스로 리팩터 + Palette 1/2 등록(비활성 상태, `activePalette=current`로 기존 색 유지, 시각적 회귀 없음). 커밋 `399d3ef`, push 완료. PM이 diff+`flutter analyze` 직접 재검증 완료. 정식 Review/Tester 사이클은 재개 시 진행.
 - **요청받았으나 미착수**: 하단 좌측 뒤로가기 버튼(프로스티드글래스 스타일) 추가.
 - **미착수**: Task 4(ExpandableSearchField + HUD Scrollbar).
 - **하네스 이슈 발견**: `flutter analyze`를 서브에이전트가 실행할 때 "claude-sonnet-5 safety classifier temporarily unavailable" 오류로 간헐적으로 차단되는 현상 발견(다른 bash 명령은 정상) — 원인 미상, 재발 시 PM이 직접 `flutter analyze` 대신 실행해서 우회 중.
