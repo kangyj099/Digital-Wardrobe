@@ -1,5 +1,25 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 컬러 팔레트를 `ColorPalette` 데이터 클래스로 구조화, Palette 1/2 등록(비활성)
+
+결정:
+- `lib/theme/app_colors.dart`에 `ColorPalette` 데이터 클래스 신설(`name`/`gray50`/`gray100`/`primary300`/`primary500`/`accent`/`text` 6필드 + name). `bg`는 두 팔레트 모두 `gray50`과 동일해 별도 필드 없이 `gray50` 재사용.
+- 팔레트 3개 등록: `ColorPalette.current`(기존 Brand Guide Pass 2 고정값을 그대로 옮긴 것), `ColorPalette.palette1`, `ColorPalette.palette2`(사용자가 이번에 준 팔레트 2종).
+- `const ColorPalette activePalette = ColorPalette.current;` 한 줄로 전체 라이트 테마 팔레트를 전환할 수 있는 구조를 만듦. **이번 결정으로 색이 바뀐 것은 아니다** — `activePalette`가 여전히 `current`를 가리키므로 화면에 보이는 색은 리팩터 전과 동일.
+- `AppColors.light`(ColorScheme)와 `AppSemanticColors.light`를 `activePalette` 기반 파생값으로 변경. `static const` → `static ... get`으로 바뀔 수밖에 없었음(런타임 평가가 필요해 `const` 유지 불가).
+- `AppSemanticColors`에 신규 필드 `primaryLight`(← `activePalette.primary300`), `accent`(← `activePalette.accent`) 추가. 이에 따라 생성자가 두 필드를 `required`로 요구하게 되어, 값이 하드코딩된 `AppSemanticColors.dark`에도 값을 채워야 했음 — `dark`의 기존 `primary`/`secondary` 값을 그대로 재사용(`primaryLight: 0xFF93B5CC`, `accent: 0xFF8FA890`), dark의 다른 기존 필드 값은 전혀 건드리지 않음.
+- `gray200`~`gray900`, `warning`, `success`, `AppColors.dark`, `AppSemanticColors.dark`의 기존 색상 값은 팔레트에 없는 role이거나 다크모드 데이터가 없어 손대지 않고 그대로 유지(특히 `gray200`은 갤러리 타일 배경으로 쓰이는 값이라 명시적으로 보존).
+
+사유:
+사용자가 컬러 팔레트를 코드 한 곳만 바꾸면 전체 테마가 바뀌도록 구조화해달라고 요청, 동시에 팔레트 후보 2종(Palette 1/2)을 등록해달라고 요청.
+
+Impact:
+- `lib/theme/app_colors.dart`만 수정, `lib/theme/app_theme.dart`는 이미 getter로 접근하고 있어 코드 변경 불필요.
+- `activePalette`를 `palette1`/`palette2`로 바꾸면 별도 코드 변경 없이 라이트 테마 전체 색이 전환됨(다크 테마는 영향 없음 — 별도 구조).
+- Palette 1/2는 현재 미사용(등록만 됨) — 실제 적용은 별도 Task에서 사용자 확정 후 진행.
+
+---
+
 [Decision] 옷장 메인 그리드 밀도 컬럼 수 1/3/5 → 1/2/4 변경 — 기존 "옷장 메인 재설계 — Design Tokens 확정" 결정 중 `AppDensity` 값 부분을 대체
 
 결정:
