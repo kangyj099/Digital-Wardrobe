@@ -1,5 +1,5 @@
-> Version 1.2
-> Purpose: A development implementation policy for solo app development projects using Claude Projects that **minimizes token usage while maintaining project quality and consistency.**
+> Version 1.3
+> Purpose: A development implementation policy for solo app development projects using Claude Code that **minimizes token usage while maintaining project quality and consistency.**
 
 ---
 
@@ -32,7 +32,7 @@ AI sessions are not the project's source of truth.
 | PM         | Worker                | Task objective, scope                        |
 | Worker     | Review                | Modified files, change summary, impact scope |
 | Review     | Tester                | **Only when Review passes**: modified files, impact scope |
-| Tester     | Worker                | **Only when Tester fails**: fail list + reproduction steps — Worker fixes, then goes back to Review, not straight back to Tester (full Review→Tester cycle repeats until both pass). If Tester passes, no handoff — task completes. |
+| Tester     | Worker                | **Only when Tester fails**: fail list + reproduction steps — Worker fixes, then goes back to Review, not straight back to Tester (full Review→Tester cycle repeats until both pass). If Tester passes: for M, no handoff — task completes; for L/XL, proceeds to Integrator (or Human) per §3's pipeline, not a direct handoff-free completion. |
 | Review     | Integrator (or Human) | Revision list (P0–P3)                        |
 | Integrator | Worker                | Final revision list                          |
 | Worker     | PM                    | Completion summary                           |

@@ -35,3 +35,13 @@ Reference documents carrying a `> Version X.Y` header follow semantic-ish versio
 - A change to the document's usage pattern or overall framework/structure bumps the number before the dot (major): X.Y → (X+1).0.
 - One revision pass gets one bump, even if it contains multiple chapter-level changes.
 - Cosmetic edits that don't change meaning (renames, cross-reference updates, typo/wording fixes) do not count as a modification for this purpose — same exclusion as §1.5's Decision.md logging rule.
+
+---
+
+## 1.7 Document Hierarchy & Override
+
+`Workflow_Project.md` defines project-wide default rules. Domain documents (`Workflow_Development.md`, `Workflow_Design.md`) may override or elaborate a Project rule for their domain — where they do, the domain document's version governs within that domain. Where a domain document is silent on a topic, Project's rule applies as the default.
+
+`Workflow_Frontend.md` further specializes `Workflow_Development.md` and `Workflow_Design.md` for Flutter/Dart implementation-stage UI/Screen work specifically (per its own §1 scope note) — it is not a single-parent child of either alone.
+
+A domain document that intentionally defers to Project on a topic (rather than genuinely having nothing to add) must say so with an explicit pointer, not silence. Silence is ambiguous: a task's Task Manifest (§12.4) may include only the domain document, not Project.md, so a reader/AI with no access to Project.md cannot distinguish "this topic doesn't apply here" from "this topic applies, go look at the parent."
