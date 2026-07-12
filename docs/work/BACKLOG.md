@@ -63,10 +63,15 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
   - 뒤로가기 버튼(요청받음, 미착수), Task 4(검색필드+스크롤바, 뒤로 미룸)는 체크리스트 문서에 상세 기록.
 - **(2026-07-12 완료) 하단 좌측 뒤로가기 버튼**: `context.canPop()` 기반 노출 + `OverlayHeader`와 동일한 프로스티드글래스 톤(블러/보더/그림자) 재사용해 구현 — 커밋 `31b42b0`. Review Pass(P0/P1 없음, P2 2건은 비차단 — 톤 값이 `OverlayHeader`와 별개 리터럴로 중복돼있는 점과 safe-area 미처리, 체크리스트 "후속 필요"에 기록). Tester가 라우터가 flat `GoRoute`라 평소 `canPop()`이 늘 false임을 확인하고 인위적으로 push해 검증(체크리스트에 기록된 의도된 임시 상태, 결함 아님) — 통합테스트 22/22 Pass(신규 3 + 기존 19).
 
-**(2026-07-12) 작업 방식 전환 — Task 8~15 순차 진행 중단, 전체 화면 아키텍처 재설계로 전환.** 위 뒤로가기 버튼 작업 중 사용자가 "뒤로가기/카테고리 토글/그룹형 드릴다운은 화면 하나씩이 아니라 앱을 관통하는 공용 UI여야 한다"고 지적 — Task 8~15를 화면별로 순차 구현하던 기존 방식이 이 전제를 반영 못하고 있었음이 드러남. **상세 배경·사용자 확정 규칙·중단 시점 uncommitted 상태는 `docs/work/전체화면_아키텍처_재설계_체크리스트.md` 참고, 다음 세션은 그 문서부터 읽고 시작할 것.**
-- 사용자 확정 규칙 요약: 뒤로가기는 조건 충족 시 **모든 화면**, 카테고리 토글은 **코디 만들기/옷 추가하기/스타일일지 추가하기 제외 전 화면**, 그룹형 드릴다운은 **각 도메인 '메인' 화면**(옷장/코디/스타일일지 메인).
-- 다음 세션 작업: `docs/reference/plan/03_화면별UX명세서/` 전체 재정독 → 화면별 3개 규칙 적용 표 작성 → 공용 쉘/컴포넌트 우선 설계로 Task 8~15 재산정(`superpowers:brainstorming` → 필요시 `superpowers:writing-plans`).
-- **중단 시점 uncommitted 변경 있음**(다음 세션이 판단): `lib/router/app_router.dart`(placeholder AppBar 뒤로가기, Tester가 찾은 중복텍스트 Fail을 Worker가 수정했으나 재-Review 전 중단), `integration_test/placeholder_back_button_test.dart`(신규, untracked).
+**(2026-07-12) 작업 방식 전환 — Task 8~15 순차 진행 중단, 전체 화면 아키텍처 재설계로 전환.** 위 뒤로가기 버튼 작업 중 사용자가 "뒤로가기/카테고리 토글/그룹형 드릴다운은 화면 하나씩이 아니라 앱을 관통하는 공용 UI여야 한다"고 지적 — Task 8~15를 화면별로 순차 구현하던 기존 방식이 이 전제를 반영 못하고 있었음이 드러남.
+
+**(2026-07-13 완료) 위 재설계의 브레인스토밍·스펙 확정 — 사용자 최종 승인 완료.** 결과물: `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`. `docs/work/전체화면_아키텍처_재설계_체크리스트.md`는 은퇴(내용은 이 스펙으로 이관, append-only로 그대로 보존).
+- **아키텍처**: 공용 셸 위젯 `AppMainScaffold`(신설 예정, B안 채택 — 화면이 이걸 쓰기만 하면 뒤로가기/토글/그룹바를 빠뜨릴 수 없는 구조)가 뒤로가기(`FrostedBackButton` 추출)·카테고리 토글(`CategoryToggleDropdown` 추출+파라미터화)·`groupingBar` 슬롯(그룹형 드릴다운용)을 소유. Add/Create 3화면은 자체 취소/저장 헤더 유지, 이 셸 미사용.
+- **화면별 규칙 표 확정**(스펙 §1) — 그룹형 드릴다운은 옷장/코디 메인만(스타일일지는 기존 스펙대로 플랫+필터 유지, 이전 세션 기록의 "3개 전부" 충돌 해소됨), 선택 모달은 원 화면과 동일 사양(옷장/코디 모달은 그룹형, 스타일일지 모달은 플랫).
+- **개발 프로세스 8단계로 재편**(Task 8~15 대체) — ①전체 화면 Skeleton → ②Component Library 구축(후보 리스트업→사용자 검수→제작) → ③Main 3개 적용 → ④Detail 적용 → ⑤Editor 적용 → ⑥나머지 적용 → ⑦기능 구현 → ⑧디테일 튜닝.
+- **다음 세션 작업**: Step①(스켈레톤) 착수 — `superpowers:writing-plans`로 구체 플랜 작성부터 시작(스펙 §3 Step① 범위 참고: 컴포넌트 없이 12개 화면 전부의 페이지 타입/레이아웃 리전만 먼저 정의).
+- **중단 시점 정리 완료**: 이전에 남아있던 uncommitted 변경(`app_router.dart` placeholder AppBar 수정, `placeholder_back_button_test.dart`)은 stash로 보관 후 Step①로 흡수하기로 하고 stash drop 완료 — 재작업 불필요, 새로 시작.
+- **하네스 확장(부수, 완료)**: 이 재설계를 계기로 `.claude/agents/audit.md`(Feature Audit 역할, 프로젝트 전체 홀리스틱 검토) 신설 — L/XL 태스크 완료 시마다 자동으로 돎, review 서브에이전트 사전 검증 거침. `Workflow_Project.md` §15 "Worktree Placement" 정책도 신설(worktree는 저장소 바깥 형제 디렉토리로만 생성 — 이 환경 Grep/Glob이 `.gitignore`를 안 지키는 게 확인돼 유일한 구조적 해법으로 확정) + 고아 worktree 디렉토리 2개 정리. 상세: `docs/history/Decision.md`.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
