@@ -85,7 +85,7 @@ class CompositionMainScreen extends StatelessWidget {
           ),
           skeletonRegion(
             context,
-            '분류 선택 바 (그룹형 드릴다운) — Step②',
+            '분류 선택 바 (그룹형 드릴다운) — Step②에서 AppMainScaffold groupingBar 슬롯으로 대체 예정',
             height: 48,
           ),
           skeletonRegion(context, '코디 갤러리 그리드 (그룹형)'),
@@ -167,16 +167,17 @@ git commit -m "feat(skeleton): add skeletonRegion helper and composition main sk
 import 'skeleton_region.dart';
 ```
 
-`OverlayHeader(...)`와 그 다음 `Expanded(child: ShaderMask(...))` 사이에 다음을 삽입(현재 `Column`의 두 번째와 세 번째 child 사이):
+`OverlayHeader(...)` 블록이 끝나고 `Expanded(child: ShaderMask(...))` 블록이 시작되는 경계— 파일에서 유일하게 일치하는 지점(`ShaderMask`는 이 파일에 한 번만 등장) — 에 리전 하나를 끼워 넣는다. 다음 정확한 텍스트를:
 
 ```dart
-                OverlayHeader(
-                  actions: [
-                    TextButton(onPressed: () {}, child: const Text('선택')),
-                  ],
-                  child: Row(
-                    // ...기존 내용 그대로...
-                  ),
+                ),
+                Expanded(
+                  child: ShaderMask(
+```
+
+다음으로 교체(앞의 `                ),`는 `OverlayHeader(...)`를 닫는 괄호 그대로 유지하고, 그 바로 뒤에 `skeletonRegion(...)` 호출과 콤마를 추가한 뒤 기존 `Expanded(child: ShaderMask(` 줄을 그대로 이어붙인다):
+
+```dart
                 ),
                 skeletonRegion(
                   context,
@@ -185,10 +186,9 @@ import 'skeleton_region.dart';
                 ),
                 Expanded(
                   child: ShaderMask(
-                    // ...기존 내용 그대로...
 ```
 
-(`OverlayHeader`와 `Expanded` 블록 자체의 내용은 수정하지 않는다 — 그 사이에 새 `skeletonRegion(...)` 호출 한 줄만 `Column`의 children 리스트에 추가한다.)
+`OverlayHeader`와 `Expanded` 블록 자체의 내용(그 안의 `Row`/`ShaderMask` 등)은 한 글자도 수정하지 않는다 — `Column`의 children 리스트에 `skeletonRegion(...)` 호출 하나만 두 블록 사이에 추가하는 순수 삽입이다.
 
 - [ ] **Step 2: 정적 분석 + 회귀 테스트**
 
