@@ -43,6 +43,10 @@ Flutter Hi-Fi 스프린트 Task 1~6 + 하드코딩 원칙 정립(category/season
 
 ---
 
+ **하네스 로깅 보강 — 완료 (2026-07-12).** 토큰 소모 진단 중 발견한 두 공백을 메움: (1) Workflow_Project.md §14.1 — 에이전트 스폰 전/handoff 직후 /context 근사 토큰 Delta를 docs/work/TokenLog.md에 기록. (2) §14.2 — Worker/Review/Tester handoff에 Read/Search/Edit 호출 통계(Stats) 기록, docs/work/AgentStats.md에 누적. opt-in, 기본 OFF — docs/work/TokenLog.md 헤더의 Status: ON/OFF 한 줄이 §14.1/§14.2 공통 스위치이며, 토큰 소모 문제가 의심될 때만 켬. worker.md/review.md/tester.md 3종 handoff 포맷도 이 스위치에 따라 Stats 줄을 조건부로 포함하도록 갱신. 부수: stale worktree 4개 정리(위 Known Issues 참고).
+
+---
+
 # Current
 
 Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 정정** — 기존 2026-07-10에서 연장, 2026-07-11 사용자 확정. 옷장 메인 재설계가 예상보다 커져 스코프 안정화 위해 조정) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev에 한 차례 병합 완료, **같은 브랜치에서 계속 작업 이어감** — 새 브랜치 불필요)에서 Subagent-Driven으로 진행 중.
@@ -91,7 +95,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 
 # Known Issues
 
-- `.claude/worktrees/policy-doc-versioning-audit/` — 이 프로젝트 루트 밑에 untracked로 남아있는, 이 세션/브랜치와 무관한 별도 워크트리(다른 작업 "policy-doc-versioning-audit" 소유로 추정). 이번 세션들에서 조사만 하고 손대지 않음 — 정리 여부는 그 작업의 소유 세션이 판단할 것.
+(2026-07-12 해소됨) `.claude/worktrees/policy-doc-versioning-audit/` 등 stale worktree 4개 — 사용자가 3개 정리, 나머지 1개(디렉토리는 이미 삭제된 상태였음)는 `git worktree prune`으로 메타데이터 정리 완료. 원인: 이 worktree들이 gitignore 안 돼 있어서 Grep/Glob 전체 검색 시 같은 파일이 중복 매칭되어 토큰 소모가 배가됐음.
 
 ---
 

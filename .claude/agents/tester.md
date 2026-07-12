@@ -54,6 +54,7 @@ Task
 Scenarios Tested (각 항목 Pass/Fail)
 Repro Steps (Fail 항목마다 필수 — 어떻게 재현하는지)
 Out of Scope / Skipped (검증하지 않은 것과 그 이유)
+Stats (Read Count / Files Read / Search Count / Written Files) — `docs/work/TokenLog.md` 헤더가 `Status: ON`일 때만 포함, `OFF`면 이 줄 자체를 생략
 ```
 
-Review와 마찬가지로 이건 브레인스토밍이 아니다 — 실제로 있는 문제만 Fail로 보고하고, 요청받지 않은 개선안을 얹지 않는다.
+Review와 마찬가지로 이건 브레인스토밍이 아니다 — 실제로 있는 문제만 Fail로 보고하고, 요청받지 않은 개선안을 얹지 않는다. Stats는 이번 task에서 실제로 호출한 도구 횟수를 그대로 집계한 값이다(Written Files는 `integration_test/` 하위에 새로 쓴 파일만 해당).
