@@ -28,6 +28,11 @@
             "type": "command",
             "command": "python .claude/hooks/check_backlog_freshness.py 2>/dev/null || true",
             "statusMessage": "Checking BACKLOG.md freshness..."
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/check_task_boundary.py 2>/dev/null || true",
+            "statusMessage": "Checking task boundary..."
           }
         ]
       }
