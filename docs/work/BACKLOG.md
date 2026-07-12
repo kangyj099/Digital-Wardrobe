@@ -54,11 +54,15 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 - 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
 - Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
-**옷장 메인 화면 재설계 진행 중 (2026-07-10~11, 일시 중단 상태)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. **상세 진행상황·설계 스케치·재개 순서는 `docs/work/옷장메인_재설계_체크리스트.md` 참고**(git 추적됨, 항상 최신 — 이전에 `~/.claude/plans/`의 세션 로컬 플랜 파일을 참고 문서로 남겼었는데 그건 이미 낡았고 비추적 파일이라 이 문서로 완전히 대체함).
-- 요약: Season enum 개편/Design Tokens 확정/레이아웃 재구축/밀도값 변경/시각 디테일 라운드/컬러 팔레트 변수화까지 Worker 작업은 전부 완료(커밋 `fb15a84`~`399d3ef`), 그중 시각 디테일 라운드(`0da0cee`)와 팔레트(`399d3ef`)는 **Review/Tester 정식 사이클 미실시**(PM 직접 검증만 완료) 상태로 일시 중단.
-- 뒤로가기 버튼(요청받음, 미착수), Task 4(검색필드+스크롤바, 미착수)는 체크리스트 문서에 상세 기록.
+**옷장 메인 화면 재설계 — 마무리 단계 (2026-07-10~12)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. **상세 진행상황·설계 스케치는 `docs/work/옷장메인_재설계_체크리스트.md` 참고**.
+- 요약: Season enum 개편/Design Tokens 확정/레이아웃 재구축/밀도값 변경/시각 디테일 라운드/컬러 팔레트 변수화까지 Worker 작업은 전부 완료(커밋 `fb15a84`~`399d3ef`).
+- **(2026-07-12 완료) 시각 디테일 라운드(`0da0cee`) + 팔레트(`399d3ef`) Review→Tester 정식 사이클 마무리**:
+  - Review에서 `0da0cee`에 P1 1건 발견 — `selectable_gallery_tile.dart`의 `_labelMarginRatio`(4/627.5)가 특정 데스크톱 뷰포트 가정을 역산한 하드코딩이라 engineering-principles 위반. 프로젝트 오너 지시로 근본 수정: 라벨 마진을 기존 `AppSpacing.xxs` 토큰으로 대체하고, 라벨박스가 `right` 없는 `Positioned`+`ConstrainedBox(maxWidth: 타일폭-xxs*2)`로 텍스트 길이에 맞춰 늘어나되 타일 밖으로 넘치면 `ellipsis`(+`maxLines:1`)로 처리되게 재구현 — 커밋 `30a90e5`. 재-Review Pass.
+  - `399d3ef`(팔레트)는 Review 1차 통과(Pass, 이슈 없음) — Decision.md의 "색이 바뀐 것은 아니다" 불변조건을 diff 레벨에서 검증 완료.
+  - Tester가 통합테스트 19개(기존 15개 + 라벨 크기조절/팔레트 회귀 신규 4개) 전부 Pass 확인 — 커밋 `0471265`. 짧은/긴 카테고리 라벨이 밀도 1/2/4 전 구간에서 타일 안에 들어맞고, 팔레트 리팩터 후 실제 런타임 색상값이 이전과 동일함을 확인.
+  - 뒤로가기 버튼(요청받음, 미착수), Task 4(검색필드+스크롤바, 뒤로 미룸)는 체크리스트 문서에 상세 기록.
 
-**다음 재개 시 할 일**: 사용자가 직접 화면을 보고 판단한 추가 디테일이 있으면 먼저 반영 → 시각 디테일 라운드(`0da0cee`) Review→Tester 마무리 → 뒤로가기 버튼 → 팔레트 작업(Task 6) Review→Tester → Task 4(검색필드+스크롤바) → Task 8(스타일일지 열람) 등 나머지 화면으로 이어감. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
+**다음 할 일**: 뒤로가기 버튼(Tier 2, 작음) → Task 8(스타일일지 열람) 등 나머지 8개 화면으로 이어감. Task 4(검색필드+스크롤바)는 이미 동작하는 화면 위의 UX 장식이라, 나머지 8개 화면(Task 8~15) 확보가 더 급해 뒤로 미룸 — Task 8~15는 이번 재설계로 확정된 토큰(Typography/Density/Season enum/AppRadius/AppMotion/ColorPalette)을 그대로 적용하면 되므로 Task 7만큼의 디자인 탐색은 필요 없을 것으로 예상. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
