@@ -92,7 +92,7 @@ final compositionDrilledSeasonProvider = StateProvider<Season?>((ref) => null);
 
 ### Step① 범위 (지금 착수)
 
-모든 화면(위 §1 표의 12개 전부)에 대해 **컴포넌트 없이** 다음만 정의:
+모든 화면(위 §1 표의 13행 전부 — 옷장 메인부터 선택 모달 2종까지)에 대해 **컴포넌트 없이** 다음만 정의:
 - 페이지 타입(§1 표에 이미 확정됨)
 - 레이아웃 리전(헤더 영역/토글바 영역/본문 영역/FAB 영역 등 — 실제 위젯 없이 자리만)
 - 골격 코드: 현재 `app_router.dart`의 `_placeholder(String label)` 단순 텍스트 placeholder를, 위 리전 구조를 반영한 골격으로 승격(아직 공용 컴포넌트는 안 씀 — 컴포넌트는 Step②)

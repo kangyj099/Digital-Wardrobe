@@ -50,8 +50,8 @@ Flutter Hi-Fi 스프린트 Task 1~6 + 하드코딩 원칙 정립(category/season
 # Current
 
 Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 정정** — 기존 2026-07-10에서 연장, 2026-07-11 사용자 확정. 옷장 메인 재설계가 예상보다 커져 스코프 안정화 위해 조정) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev에 한 차례 병합 완료, **같은 브랜치에서 계속 작업 이어감** — 새 브랜치 불필요)에서 Subagent-Driven으로 진행 중.
-- 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`
-- 플랜(Task 1~15): `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`
+- 스펙(스프린트 전체 범위): `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`
+- 플랜: `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md` — **Task 1~7은 유효, Task 8~15는 아래 "8단계 프로세스"로 대체됨(더 이상 이 플랜대로 진행하지 말 것)**. 지금 당장 뭘 할지는 아래 "Current" 맨 아래 문단(2026-07-13 항목)의 "다음 세션 작업"을 따를 것.
 - Design Workflow의 "Hi-Fi Sample" 단계를 실제 코드로 겸함 — 완료되면 아래 "Next"의 Hi-Fi Sample 항목도 함께 해소됨.
 
 **옷장 메인 화면 재설계 — 마무리 단계 (2026-07-10~12)** — Task 7 완료 후 Visual Review가 아예 없었다는 게 드러나(사용자 질문 "리뷰 과정에 비주얼 리뷰 했어?"로 발견), 목업 스펙과 실제 구현을 정밀 대조해서 재작업 중. **상세 진행상황·설계 스케치는 `docs/work/옷장메인_재설계_체크리스트.md` 참고**.
