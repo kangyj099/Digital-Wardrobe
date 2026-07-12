@@ -5,8 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/main.dart';
+import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
+import 'package:digittal_wardrobe/theme/app_colors.dart';
+import 'package:digittal_wardrobe/theme/app_spacing.dart';
+import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
 
@@ -27,6 +31,11 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// - 기본 밀도가 mid(2, 2컬럼)로 바뀌면서 12개 mock 아이템 전부가 한 화면에 들어가려면
 ///   행이 늘어나(2컬럼×6행) 이전 physicalSize(1400×3000)로는 부족해짐 → height를
 ///   실측으로 늘려 12개 전부 lazy-build 되도록 조정.
+///
+/// 아래는 라벨박스 크기조절 리팩터(commit 0da0cee+30a90e5)와 ColorPalette 리팩터
+/// (commit 399d3ef) 재검증 시 신설한 테스트(16~19번). 기존 1~15번은 위 이력 그대로이며
+/// 재확인 결과(2026-07-12) 현재 코드(Season 3종, AppDensity.levels=[1,2,4]) 기준으로도
+/// 그대로 유효해 별도 갱신이 필요하지 않았다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -47,6 +56,27 @@ void main() {
     );
     await tester.pumpAndSettle();
     return container;
+  }
+
+  /// SelectableGalleryTile 하나만 정사각형 타일(tileSize x tileSize) 안에 격리해서
+  /// 렌더링한다. 라벨박스 크기조절 로직을 mock 데이터에 없는 카테고리(가방·액세서리 등)로도
+  /// 검증하기 위한 최소 하네스 — 실제 위젯 코드(SelectableGalleryTile)를 그대로 구동한다.
+  Future<void> pumpIsolatedTile(WidgetTester tester, ClothingItem item, double tileSize) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: tileSize,
+              height: tileSize,
+              child: SelectableGalleryTile(item: item, onTap: () {}),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
   }
 
   Finder seasonDropdownFinder() =>
@@ -305,4 +335,182 @@ void main() {
     expect(find.text('플로럴 원피스'), findsNothing);
     expect(find.text('슬립 드레스'), findsNothing);
   });
+
+  // ── 아래부터 라벨박스 크기조절 리팩터(0da0cee+30a90e5) 검증 ──────────────────
+
+  testWidgets(
+    '짧은 카테고리 라벨(상의)은 넓은 타일(300px)에서도 텍스트 크기만큼만 좁게 표시되고 '
+    '타일 전체 폭을 채우지 않는다',
+    (tester) async {
+      const item = ClothingItem(
+        id: 'label-short',
+        name: '테스트용 상의',
+        category: ClothingCategory.top,
+        color: 'white',
+        season: Season.springFall,
+        material: ClothingMaterial.cotton,
+        imagePath: '',
+      );
+      await pumpIsolatedTile(tester, item, 300);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('상의'), findsOneWidget);
+
+      final labelBoxFinder = find.descendant(
+        of: find.byType(SelectableGalleryTile),
+        matching: find.byType(ConstrainedBox),
+      );
+      expect(labelBoxFinder, findsOneWidget);
+
+      final labelWidth = tester.getRect(labelBoxFinder).width;
+      // 예전(고정폭) 구조였다면 300 - AppSpacing.xxs*2 = 292에 가까운 폭이 됐을 것.
+      // 지금은 텍스트("상의" 2글자, labelSmall 11px) + 좌우 패딩만큼만 차지해야 한다.
+      expect(
+        labelWidth,
+        lessThan(100),
+        reason: '라벨박스가 타일 폭(300)을 채우지 않고 텍스트 크기에 맞춰 좁게 표시되어야 한다. 실측 폭=$labelWidth',
+      );
+    },
+  );
+
+  testWidgets(
+    '가장 긴 카테고리 라벨("가방·액세서리")을 가진 아이템이 밀도4 상당의 좁은 타일(50px)에서도 '
+    '타일 경계를 넘어 튀어나오지 않고 ellipsis로 실제 truncation이 일어난다',
+    (tester) async {
+      const item = ClothingItem(
+        id: 'label-long',
+        name: '테스트용 가방',
+        category: ClothingCategory.bagAccessory,
+        color: 'black',
+        season: Season.springFall,
+        material: ClothingMaterial.cotton,
+        imagePath: '',
+      );
+
+      // 1) 넉넉한 타일(500px)에서 이 라벨의 "자연 폭"(줄바꿈/잘림 없이 필요한 실제 폭)을 먼저 측정.
+      await pumpIsolatedTile(tester, item, 500);
+      final labelBoxFinder = find.descendant(
+        of: find.byType(SelectableGalleryTile),
+        matching: find.byType(ConstrainedBox),
+      );
+      final naturalWidth = tester.getRect(labelBoxFinder).width;
+
+      // 2) 같은 아이템을 밀도4 상당의 좁은 타일(50px)에 다시 그린다.
+      await pumpIsolatedTile(tester, item, 50);
+
+      // 오버플로 렌더 에러(RenderFlex overflowed 등) 없이 크래시 없이 렌더링되어야 한다.
+      expect(tester.takeException(), isNull);
+
+      final tileRect = tester.getRect(find.byType(SelectableGalleryTile));
+      expect(labelBoxFinder, findsOneWidget);
+      final labelRect = tester.getRect(labelBoxFinder);
+      final constrainedWidth = labelRect.width;
+
+      // 자연 폭이 50px 타일의 여유 폭보다 커야, 실제로 이 테스트가 "잘림"을 검증하는 게 된다
+      // (아니라면 그냥 우연히 다 들어간 것이지 ellipsis 로직을 검증한 게 아니다).
+      final available = 50 - AppSpacing.xxs * 2;
+      expect(
+        naturalWidth,
+        greaterThan(available),
+        reason: '이 텍스트의 자연 폭($naturalWidth)이 좁은 타일의 여유 폭($available)보다 커야 '
+            'ellipsis 잘림이 실제로 검증된다. 그렇지 않다면 타일이 이미 충분히 넓다는 뜻.',
+      );
+
+      // 라벨박스가 타일의 우측 경계를 넘지 않아야 한다(ConstrainedBox의
+      // maxWidth: constraints.maxWidth - AppSpacing.xxs*2 로 제한된 만큼).
+      expect(
+        labelRect.right,
+        lessThanOrEqualTo(tileRect.right + 0.5),
+        reason: '라벨박스 우측 끝이 타일 경계를 넘으면 안 된다. tileRect=$tileRect labelRect=$labelRect',
+      );
+      expect(
+        constrainedWidth,
+        lessThanOrEqualTo(available + 0.5),
+        reason: 'ConstrainedBox maxWidth 제약(타일폭 - xxs*2)을 넘으면 안 된다.',
+      );
+    },
+  );
+
+  testWidgets(
+    '실제 mock 아이템(c04, 아우터)의 라벨이 밀도 2→1→4 전환 전 구간에서 항상 타일 경계 안에 들어맞고 '
+    '크래시 없다 (밀도4=가장 좁은 타일에서 가장 위험)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      Future<void> assertLabelFitsTile() async {
+        expect(tester.takeException(), isNull);
+        final tileFinder = find.byKey(const ValueKey('c04'));
+        expect(tileFinder, findsOneWidget);
+        final tileRect = tester.getRect(tileFinder);
+        final labelBoxFinder = find.descendant(
+          of: tileFinder,
+          matching: find.byType(ConstrainedBox),
+        );
+        expect(labelBoxFinder, findsOneWidget);
+        final labelRect = tester.getRect(labelBoxFinder);
+
+        expect(labelRect.left, greaterThanOrEqualTo(tileRect.left - 0.5));
+        expect(labelRect.right, lessThanOrEqualTo(tileRect.right + 0.5));
+        expect(labelRect.top, greaterThanOrEqualTo(tileRect.top - 0.5));
+        expect(labelRect.bottom, lessThanOrEqualTo(tileRect.bottom + 0.5));
+      }
+
+      // 기본값 mid(2)에서 시작. c04(트렌치코트)는 category=outer → "아우터" 라벨
+      // (c09 레더 재킷도 같은 카테고리라 텍스트 자체는 화면에 2개 있으므로, 텍스트가
+      // 아니라 c04 타일 하나로 범위를 좁혀서 검증한다).
+      await assertLabelFitsTile();
+
+      await tester.tap(find.byTooltip('그리드 밀도 전환'));
+      await tester.pumpAndSettle();
+      expect(crossAxisCount(tester), 1);
+      await assertLabelFitsTile();
+
+      await tester.tap(find.byTooltip('그리드 밀도 전환'));
+      await tester.pumpAndSettle();
+      expect(crossAxisCount(tester), 4);
+      await assertLabelFitsTile();
+    },
+  );
+
+  // ── 아래부터 ColorPalette 리팩터(399d3ef) 검증 ──────────────────────────────
+
+  testWidgets(
+    'ColorPalette 리팩터 후에도 옷장 메인 실제 렌더링 색상이 팔레트 리팩터 이전 고정값과 '
+    '동일하고, 테마 적용이 크래시 없이 된다',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      expect(tester.takeException(), isNull);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      final colorScheme = Theme.of(context).colorScheme;
+      final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+
+      // Decision.md: "이번 결정으로 색이 바뀐 것은 아니다"(activePalette가 여전히
+      // current를 가리킴) — 리팩터 이전 하드코딩 값과 실제 런타임 값이 일치해야 한다.
+      expect(colorScheme.primary, const Color(0xFF394550));
+      expect(colorScheme.onPrimary, const Color(0xFFF7F6F3));
+      expect(colorScheme.secondary, const Color(0xFFC5D3C7));
+      expect(colorScheme.surface, const Color(0xFFF7F6F3));
+      expect(colorScheme.onSurface, const Color(0xFF2B2D30));
+
+      expect(semantic.gray50, const Color(0xFFF7F6F3));
+      expect(semantic.gray100, const Color(0xFFDDD4C8));
+      expect(semantic.gray200, const Color(0xFFCBC0B0));
+      expect(semantic.background, const Color(0xFFF7F6F3));
+      expect(semantic.onBackground, const Color(0xFF2B2D30));
+      expect(semantic.primaryLight, const Color(0xFFC5D3C7));
+      expect(semantic.accent, const Color(0xFFC5D3C7));
+
+      // 실제 타일 배경(semantic.gray200)이 런타임에 그 값 그대로 렌더링되는지도 확인.
+      final tileContainer = tester.widget<Container>(
+        find.descendant(
+          of: find.byType(SelectableGalleryTile).first,
+          matching: find.byType(Container),
+        ).first,
+      );
+      final decoration = tileContainer.decoration as BoxDecoration;
+      expect(decoration.color, const Color(0xFFCBC0B0));
+    },
+  );
 }
