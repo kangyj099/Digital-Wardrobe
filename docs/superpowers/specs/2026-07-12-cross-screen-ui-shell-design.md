@@ -22,7 +22,8 @@
 | 코디 만들기 | Add/Create | X | X | X |
 | 스타일 일지 추가 | Add/Create | X | X | X |
 | 설정 | Utility | O | X | X |
-| 선택 모달(옷장/코디/스타일일지 재호출) | Modal/Sheet | 별도(닫기 X버튼) | X | 원 화면 로직 유지 여부는 Step③~⑥에서 화면별 결정 |
+| 선택 모달(옷장/코디 재호출) | Modal/Sheet | 별도(닫기 X버튼) | X | **O** (원 화면과 동일 사양 — 사용자 확정) |
+| 선택 모달(스타일일지 재호출) | Modal/Sheet | 별도(닫기 X버튼) | X | X (원 화면이 플랫이므로 동일하게 X) |
 
 **해소된 충돌**: 이전 체크리스트가 "그룹형 드릴다운은 옷장/코디/스타일일지 메인 전부"라고 기록했었으나, `00_페이지 타입 정의.md`와 `03_스타일 일지.md` 원문이 스타일 일지를 처음부터 "플랫+필터형"(그룹화 없음, 휴지통과 동일 계열)으로 명시하고 있어 충돌 — 사용자 확인 결과 **기존 스펙(플랫+필터형) 유지**로 확정. 그룹형 드릴다운은 옷장/코디 2개 화면에만 적용한다.
 
@@ -48,11 +49,22 @@
 
 ### 그룹형 드릴다운 상태 (옷장/코디 전용)
 
-옷장메인 체크리스트에 이미 있던 설계 스케치를 코디에도 동일 적용(제네릭 추상화는 두 개뿐이라 하지 않음 — YAGNI):
+상태 "모양"(3단계 enum)은 옷장/코디에 동일한 개념이므로 **enum 타입 자체는 하나로 공유**한다(이 프로젝트가 `Season`/`ClothingCategory` 등 여러 모델이 공유 enum을 쓰는 기존 관례와 일치). 상태 **인스턴스**(Provider)는 도메인별로 분리 — 옷장/코디가 지금 각자 뭘 드릴다운했는지는 서로 독립된 값이어야 하기 때문(코디를 드릴다운해도 옷장 상태는 안 바뀜):
+
 ```dart
-enum ClosetViewMode { groupOverview, allFlat, drilledInto }
-// compositionViewModeProvider도 동일 shape로 별도 생성
+// lib/models/enums.dart — 옷장/코디 공용
+enum GroupedMainViewMode { groupOverview, allFlat, drilledInto }
+
+// lib/providers/closet_providers.dart
+final closetViewModeProvider = StateProvider<GroupedMainViewMode>((ref) => GroupedMainViewMode.groupOverview);
+final closetDrilledSeasonProvider = StateProvider<Season?>((ref) => null);
+
+// lib/providers/composition_providers.dart
+final compositionViewModeProvider = StateProvider<GroupedMainViewMode>((ref) => GroupedMainViewMode.groupOverview);
+final compositionDrilledSeasonProvider = StateProvider<Season?>((ref) => null);
 ```
+
+완전 중복(타입까지 두 번 정의)도 아니고, 별도 컨트롤러 클래스로 묶는 과한 제네릭 추상화도 아닌 중간 지점 — 타입(개념)만 공유하고 상태는 도메인별로 독립.
 
 ---
 
