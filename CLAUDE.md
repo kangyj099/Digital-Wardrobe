@@ -37,6 +37,8 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 **스코프 확장**: Review가 부여받은 자료 밖의 것이 필요하면 스스로 접근하지 않고 PM(이 세션)에게 요청한다. PM은 Impact Scope를 재평가해 필요한 최소한만 추가로 허용한다.
 
+**Worktree 배치**: 별도 세션이 병렬로 쓸 worktree는 `.claude/worktrees/`(`EnterWorktree` 기본 위치)가 아니라 **저장소 바깥 형제 디렉토리**로 만든다(`git worktree add ../Digital-Wardrobe-<목적> <branch>`) — 이 프로젝트의 Grep/Glob이 `.gitignore`를 안 지켜서, 저장소 안에 두면 이 세션의 모든 검색이 그 worktree 파일까지 중복 매칭한다. 상세 근거는 `Workflow_Project.md` §15.
+
 **진행 중 작업 상태**: 세션 시작 시 `docs/work/BACKLOG.md`(프로젝트 전체 현재 상태 스냅샷)부터 확인한다. 하네스 구축처럼 별도로 추적할 만한 하위 작업은 `docs/work/`에 개별 체크리스트 파일을 두고 BACKLOG.md에서 링크한다. **BACKLOG.md Current 갱신은 각 작업 스텝을 완료 처리하는 행위 자체의 일부다(세션 종료 시에만 하는 후속 조치가 아님) — 미완료 상태로 중단되거나 세션이 끝날 때도 마찬가지로 그 시점까지의 핵심 결정·다음 계획을 반드시 BACKLOG.md(필요시 Decision.md)에 직접 적는다.** 스킬이 쓰는 gitignore된 임시 장부(예: `.superpowers/sdd/*`)는 세션 내부 복구용 캐시일 뿐 공식 인계 수단이 아니다. 상세 규칙은 `Workflow_Project.md` §3 "Skill-Internal Ledgers vs. Official Handoff" 참고.
 
 **BACKLOG.md 커밋 승인 차등**: 섹션 구조·배치를 바꾸는 **포맷 수정**은 일반 Edit 승인 흐름을 그대로 거친다. 반면 Current/Last Completed 등에 방금 끝난 작업을 반영하는 **진행 기록용 내용 수정**은 그 자체로 별도 확인을 구하지 않고, 함께 진행 중인 작업 변경사항의 커밋에 묶어 커밋한다(별도 커밋으로 쪼개지 않음).

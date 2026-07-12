@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Worktree는 저장소 바깥 형제 디렉토리로만 생성 — `.claude/worktrees/`(기본 위치)는 검색 중복의 원인으로 확인돼 신규 생성 금지
+
+결정:
+- 별도 세션이 병렬로 쓸 worktree는 항상 `git worktree add ../Digital-Wardrobe-<목적> <branch>` 형태로 **저장소 바깥**에 만든다. `EnterWorktree` 툴의 기본 동작(`.claude/worktrees/` 안에 생성)은 이 프로젝트에서 쓰지 않는다.
+- `Workflow_Project.md` §15 "Worktree Placement" 신설(v2.5→v2.6), `CLAUDE.md` 하네스 섹션에도 짧은 포인터 추가.
+- 원인 조사 중 확인된 사실: 이 환경의 Grep/Glob 도구가 `.gitignore`를 전혀 참조하지 않음(검증: 명백히 gitignore 대상인 `.dart_tool/`도 Glob에 147개 파일이 그대로 매칭됨). `.claude/worktrees`가 `.gitignore`에 등록돼 있어도 소용없고, `.ignore`/`.rgignore` 같은 대체 ignore 파일도 같은 이유로 효과가 없을 것으로 판단(도구 자체가 ignore 파일을 안 읽으므로) — 그래서 물리적으로 저장소 트리 밖에 두는 것만이 구조적으로 확실한 해법.
+- 부수: 고아 worktree 디렉토리 2개(`.claude/worktrees/policy-audit-fix`, `setting-ui-temp`) 발견·삭제. `setting-ui-temp`는 이미 2026-07-12에 "해소됨"으로 기록됐던 `policy-doc-versioning-audit` 메타데이터를 가리키는 죽은 `.git` 포인터를 갖고 있었음 — 즉 그 정리 이후로도 계속 남아 검색을 중복시키고 있었던 것으로 추정. `git worktree remove` 대신 `rm -rf`로 지워졌던 게 원인으로 보임(정상 명령을 안 쓰면 메타데이터만 pruned되고 디렉토리는 안 지워질 수 있음).
+
+사유:
+사용자가 "문서 재구조화를 다른 세션/worktree로 진행하면 이 세션 탐색 범위가 2배로 늘지 않냐"고 질문 → 실측 결과 실제로 이미 벌어지고 있던 문제였음이 드러남.
+
+Impact:
+- `.claude/policies/Workflow_Project.md`, `CLAUDE.md` 수정.
+- 향후 모든 worktree 생성(문서 재구조화 세션 포함)이 이 규칙을 따라야 함.
+- `.dart_tool`/`build` 등 다른 gitignore 대상도 평소 검색에 걸리고 있다는 부수 발견 — 이번 스코프에서 별도 조치는 안 함(필요시 후속 검토).
+
+---
+
 [Decision] 컬러 팔레트를 `ColorPalette` 데이터 클래스로 구조화, Palette 1/2 등록(비활성)
 
 결정:

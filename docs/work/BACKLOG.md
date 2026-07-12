@@ -110,7 +110,8 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 
 # Known Issues
 
-(2026-07-12 해소됨) `.claude/worktrees/policy-doc-versioning-audit/` 등 stale worktree 4개 — 사용자가 3개 정리, 나머지 1개(디렉토리는 이미 삭제된 상태였음)는 `git worktree prune`으로 메타데이터 정리 완료. 원인: 이 worktree들이 gitignore 안 돼 있어서 Grep/Glob 전체 검색 시 같은 파일이 중복 매칭되어 토큰 소모가 배가됐음.
+(2026-07-13 재발·재해소, 원인 정정) `.claude/worktrees/policy-doc-versioning-audit/` 등 stale worktree 4개(2026-07-12 정리) 이후에도 고아 디렉토리 2개(`policy-audit-fix`, `setting-ui-temp`)가 남아있었음 — `setting-ui-temp`는 이미 pruned된 `policy-doc-versioning-audit` 메타데이터를 가리키는 죽은 `.git` 포인터를 갖고 있어, 그 정리 이후로도 계속 검색을 중복시키고 있었던 것으로 추정(`rm -rf`로 지워 `git worktree remove`를 안 거친 게 원인으로 보임). 2026-07-13에 재발견·삭제 완료.
+**원인 정정**: 2026-07-12 기록엔 "이 worktree들이 gitignore 안 돼 있어서"라고 돼 있었으나, 이후 `.claude/worktrees`는 실제로 `.gitignore`에 등록돼 있었음에도 Glob이 여전히 매칭하는 걸 확인 — 진짜 원인은 **이 환경의 Grep/Glob 도구가 `.gitignore`를 아예 참조하지 않는 것**(gitignore 대상인 `.dart_tool/`도 그대로 매칭됨으로 검증). 재발 방지로 `Workflow_Project.md` §15 신설 — 앞으로 병렬 세션용 worktree는 저장소 바깥 형제 디렉토리로만 생성(상세: `Decision.md` 최상단).
 
 ---
 
