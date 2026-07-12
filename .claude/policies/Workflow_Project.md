@@ -1,4 +1,4 @@
-> Version 2.3 — Defines the project workflow and links to detailed workflow documents.
+> Version 2.4 — Defines the project workflow and links to detailed workflow documents.
 > This workflow applies across the entire project, including planning, design, development, and release.
 
 # Project Workflow
@@ -87,3 +87,15 @@ Always remember:
 
 # 13. Branch Strategy & PR Policy
   →  .claude\policies\workflow_project\13_Branch Strategy & PR Policy.md
+
+# 14. Token & Stats Logging
+
+## 14.1 Token Usage (approximate)
+
+PM checks the current conversation's total context token count (`/context`) immediately before spawning a Worker/Review/Tester, and again right after receiving that agent's handoff. The difference (Delta) is logged to `docs/work/TokenLog.md`.
+
+This Delta approximates the growth of the PM session's own context (the dispatch prompt plus the returned handoff) — it is not the subagent's own internal token consumption, which PM cannot observe since the subagent runs in a separate context window.
+
+## 14.2 Read/Edit Stats
+
+Every Worker/Review/Tester handoff includes a Stats line: Read Count, Files Read, Search Count (Grep/Glob), and Edit/Write Files. PM appends each handoff's Stats to `docs/work/AgentStats.md`.

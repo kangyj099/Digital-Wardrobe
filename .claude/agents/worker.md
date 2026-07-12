@@ -28,6 +28,7 @@ Modified Files
 Impact Scope
 Review Request
 Out of Scope
+Stats (Read Count / Files Read / Search Count / Edit Files)
 ```
 
-Keep it to the minimum necessary information — do not resend or re-explain the whole project (Minimal Handoff Principle, `Workflow_Project.md` §3).
+Keep it to the minimum necessary information — do not resend or re-explain the whole project (Minimal Handoff Principle, `Workflow_Project.md` §3). Stats is a tally of your own tool calls this task, not an estimate — Read Count/Search Count are integers, Files Read/Edit Files are the actual paths.

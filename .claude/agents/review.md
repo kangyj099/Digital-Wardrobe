@@ -35,5 +35,6 @@ P0
 P1
 P3
 Rationale
+Stats (Read Count / Files Read / Search Count)
 ```
-(Worker → Review handoff template, `Workflow_Development.md` §2.2)
+(Worker → Review handoff template, `Workflow_Development.md` §2.2). Stats is a tally of your own tool calls this task (no Edit Files — you have no Edit/Write tools).
