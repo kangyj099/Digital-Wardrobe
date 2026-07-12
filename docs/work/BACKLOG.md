@@ -69,8 +69,11 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
 - **아키텍처**: 공용 셸 위젯 `AppMainScaffold`(신설 예정, B안 채택 — 화면이 이걸 쓰기만 하면 뒤로가기/토글/그룹바를 빠뜨릴 수 없는 구조)가 뒤로가기(`FrostedBackButton` 추출)·카테고리 토글(`CategoryToggleDropdown` 추출+파라미터화)·`groupingBar` 슬롯(그룹형 드릴다운용)을 소유. Add/Create 3화면은 자체 취소/저장 헤더 유지, 이 셸 미사용.
 - **화면별 규칙 표 확정**(스펙 §1) — 그룹형 드릴다운은 옷장/코디 메인만(스타일일지는 기존 스펙대로 플랫+필터 유지, 이전 세션 기록의 "3개 전부" 충돌 해소됨), 선택 모달은 원 화면과 동일 사양(옷장/코디 모달은 그룹형, 스타일일지 모달은 플랫).
 - **개발 프로세스 8단계로 재편**(Task 8~15 대체) — ①전체 화면 Skeleton → ②Component Library 구축(후보 리스트업→사용자 검수→제작) → ③Main 3개 적용 → ④Detail 적용 → ⑤Editor 적용 → ⑥나머지 적용 → ⑦기능 구현 → ⑧디테일 튜닝.
-- **다음 세션 작업**: Step①(스켈레톤) 착수 — `superpowers:writing-plans`로 구체 플랜 작성부터 시작(스펙 §3 Step① 범위 참고: 컴포넌트 없이 12개 화면 전부의 페이지 타입/레이아웃 리전만 먼저 정의).
-- **중단 시점 정리 완료**: 이전에 남아있던 uncommitted 변경(`app_router.dart` placeholder AppBar 수정, `placeholder_back_button_test.dart`)은 stash로 보관 후 Step①로 흡수하기로 하고 stash drop 완료 — 재작업 불필요, 새로 시작.
+- **(2026-07-13 완료) Step① 플랜 작성 + 사용자 검토 반영 완료**: `superpowers:writing-plans`로 `docs/superpowers/plans/2026-07-13-cross-screen-skeleton-step1.md` 작성(Task A~F, 6개). 사용자 검토로 빠진 부분 하나 발견·보강: 옷장 메인은 이미 실구현이라 처음엔 이 Plan 대상에서 뺐었으나, §1 표의 Main-그룹형 페이지 타입이 요구하는 "그룹형 드릴다운" 리전이 옷장 메인엔 아예 없었음(계절 드롭다운은 플랫 필터일 뿐 `GroupedMainViewMode` 드릴다운이 아님) — Task B로 그 리전만 별도 보강(기존 헤더/뒤로가기/FAB 등은 안 건드림, 22개 통합테스트 회귀 확인 포함). 이제 §1 표 13행 전부 처리 경로 확보.
+  - **Task 구성**: A(스켈레톤 헬퍼+코디 메인) → B(옷장 메인 그룹형 드릴다운 리전 보강) → C(스타일일지 메인+휴지통, 라우트 분리 `settingsTrash`→`settingsMain`+`trashMain`) → D(상세 3종) → E(Add/Create 3종) → F(설정). 전부 Worker→Review만(Tester 생략 — 스펙 §4, 실동작 없는 순수 구조 코드라서).
+  - 선택 모달 2종(옷장/코디용, 스타일일지용)은 이 Plan 대상 아님 — "기존 메인 화면 재사용" 원칙상 새 파일이 없고, Step⑥에서 모달 프레젠테이션으로 다룸.
+  - **다음 세션 작업**: 이 플랜 파일을 그대로 실행 — Task A부터 순서대로 PM이 Worker→Review 디스패치(플랜 파일이 자기완결적이라 이 문서 + 위 요약만으로 충분, 스펙/체크리스트/페이지타입정의 등 원본 문서를 다시 훑을 필요 없음). Task 완료마다 BACKLOG.md Current 갱신 관행 유지. Plan 전체 완료 시 §13.4 dev-sync 수행.
+  - **세션 전환 판단(토큰 효율)**: 이 플랜을 쓰는 과정에서 탐색용으로 읽은 자료(스펙/체크리스트/원본 플랜 등)가 이미 상당한 컨텍스트를 차지했고, 실행 단계(Task A~F × Worker+Review 디스패치)는 그 탐색 컨텍스트가 필요 없음 — 플랜 파일 자체가 완결적이므로. 실행은 **새 세션**에서 이어가는 쪽이 다 턴에 걸친 캐시 비용 누적을 줄여 더 유리하다고 판단, 새 세션으로 인계함.
 - **하네스 확장(부수, 완료)**: 이 재설계를 계기로 `.claude/agents/audit.md`(Feature Audit 역할, 프로젝트 전체 홀리스틱 검토) 신설 — L/XL 태스크 완료 시마다 자동으로 돎, review 서브에이전트 사전 검증 거침. `Workflow_Project.md` §15 "Worktree Placement" 정책도 신설(worktree는 저장소 바깥 형제 디렉토리로만 생성 — 이 환경 Grep/Glob이 `.gitignore`를 안 지키는 게 확인돼 유일한 구조적 해법으로 확정) + 고아 worktree 디렉토리 2개 정리. 상세: `docs/history/Decision.md`.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
