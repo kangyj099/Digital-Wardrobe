@@ -3,11 +3,13 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
+import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/theme/app_colors.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
@@ -36,6 +38,13 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// (commit 399d3ef) 재검증 시 신설한 테스트(16~19번). 기존 1~15번은 위 이력 그대로이며
 /// 재확인 결과(2026-07-12) 현재 코드(Season 3종, AppDensity.levels=[1,2,4]) 기준으로도
 /// 그대로 유효해 별도 갱신이 필요하지 않았다.
+///
+/// 아래는 하단 좌측 뒤로가기 버튼(`_FrostedBackButton`, Review 통과분 P2 2건 비차단) 검증 시
+/// 신설한 테스트(20~22번). Review가 지적한 대로 `app_router.dart`가 flat GoRoute 목록이라
+/// 정상 UI 플로우에서는 `ClosetMainScreen` 위에 아무것도 push되지 않아 `canPop()`이 평소
+/// 항상 false다(체크리스트에 기록된 의도된 임시 상태). 20번은 이 평소 상태를 확인하고,
+/// 21~22번은 `GoRouter.of(context).push(AppRoute.closetMain)`으로 `canPop()==true` 상황을
+/// 인위적으로 만들어 버튼 노출·pop 동작·기존 컨트롤과의 회귀 없음을 확인한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -511,6 +520,103 @@ void main() {
       );
       final decoration = tileContainer.decoration as BoxDecoration;
       expect(decoration.color, const Color(0xFFCBC0B0));
+    },
+  );
+
+  // ── 아래부터 하단 좌측 뒤로가기 버튼(_FrostedBackButton) 검증 ─────────────────
+
+  Finder backButtonFinder() => find.byTooltip('뒤로가기');
+
+  testWidgets(
+    '평소 상태(앱 최초 진입, 스택 최상단이면서 canPop()==false)에서는 뒤로가기 버튼이 '
+    '위젯 트리에 렌더링되지 않는다',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      expect(backButtonFinder(), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '옷장 메인 위에 다른 화면이 push된 상태에서 그 위에 옷장 메인을 다시 push하면 '
+    '(canPop()==true) 뒤로가기 버튼이 나타나고, 탭하면 실제 context.pop()이 동작해 '
+    '바로 아래 화면(옷 상세)으로 돌아간다',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      // 1) 정상 UI 플로우로 상세 화면을 push한다. 이 시점에는 옷장 메인이 스택 최하단이라
+      // 뒤로가기 버튼이 검증 대상이 아니다 — 아래 2)에서 canPop()==true 상황을 만들기 위한
+      // 준비 단계(옷장 메인 "아래"에 화면을 하나 깔아 둠).
+      await tester.tap(find.byKey(const ValueKey('c01')));
+      await tester.pumpAndSettle();
+      expect(find.text('옷 상세 c01'), findsOneWidget);
+
+      // 2) Review가 지적한 라우터 토폴로지 문제(flat GoRoute 목록, 카테고리 전환은
+      // context.go()로 스택을 교체) 때문에 정상 UI 플로우만으로는 옷장 메인 위에 아무것도
+      // 쌓이지 않는다. 옷 상세 화면(현재 최상단) 위에 옷장 메인을 인위적으로 한 번 더
+      // push해, "옷장 메인이 최상단이면서 아래에 다른 화면이 있는" 상황을 만든다.
+      final detailContext = tester.element(find.text('옷 상세 c01'));
+      GoRouter.of(detailContext).push(AppRoute.closetMain);
+      await tester.pumpAndSettle();
+
+      // 3) 새로 push된 옷장 메인 인스턴스가 최상단에 보이고, 뒤로가기 버튼이 정확히 1개
+      // 나타난다(스택 아래 깔린 이전 옷장 메인 인스턴스가 아니라 최상단 인스턴스만).
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      expect(backButtonFinder(), findsOneWidget);
+
+      // 4) 탭하면 context.pop()이 실제로 동작해 바로 아래(옷 상세 c01)로 돌아간다.
+      await tester.tap(backButtonFinder());
+      await tester.pumpAndSettle();
+
+      expect(find.text('옷 상세 c01'), findsOneWidget);
+      expect(find.byType(SelectableGalleryTile), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '뒤로가기 버튼이 보이는 상태(canPop()==true)에서도 기존 FAB 펼침/접힘, 밀도 토글, '
+    '계절 필터, 카테고리 이동이 회귀 없이 그대로 동작한다',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      await tester.tap(find.byKey(const ValueKey('c01')));
+      await tester.pumpAndSettle();
+      final detailContext = tester.element(find.text('옷 상세 c01'));
+      GoRouter.of(detailContext).push(AppRoute.closetMain);
+      await tester.pumpAndSettle();
+
+      expect(backButtonFinder(), findsOneWidget);
+
+      // FAB 펼침 — 뒤로가기 버튼(좌하단)과 FAB(우하단)는 서로 다른 위치라 레이아웃
+      // 충돌 없이 공존해야 한다.
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      expect(find.text('한 장 추가하기'), findsOneWidget);
+      expect(find.text('여러 장 추가하기'), findsOneWidget);
+      expect(backButtonFinder(), findsOneWidget);
+
+      // FAB 접힘.
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+      expect(find.text('한 장 추가하기'), findsNothing);
+      expect(backButtonFinder(), findsOneWidget);
+
+      // 밀도 토글 정상 동작(기본값 2 → 1).
+      expect(crossAxisCount(tester), 2);
+      await tester.tap(find.byTooltip('그리드 밀도 전환'));
+      await tester.pumpAndSettle();
+      expect(crossAxisCount(tester), 1);
+      expect(backButtonFinder(), findsOneWidget);
+
+      // 계절 필터 정상 동작(여름 선택 시 3개로 축소).
+      await selectSeason(tester, '여름');
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
+      expect(backButtonFinder(), findsOneWidget);
+
+      // 카테고리 드롭다운으로 다른 화면 이동(context.go, 스택 전체 교체)도 회귀 없이 동작.
+      await selectCategory(tester, '코디');
+      expect(find.text('코디 메인'), findsOneWidget);
+      expect(find.byType(SelectableGalleryTile), findsNothing);
     },
   );
 }
