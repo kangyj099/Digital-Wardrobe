@@ -20,14 +20,14 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 ## 하네스 운영 원칙 (이 세션 = PM)
 
-이 루트 세션이 PM 역할을 맡는다. 구현은 `.claude/agents/worker.md`, 리뷰는 `.claude/agents/review.md`, 런타임 동작 검증은 `.claude/agents/tester.md` 서브에이전트에게 위임한다. Tester는 Review 통과 후에만 투입되고, Write 권한은 `integration_test/` 하위로만 제한된다(`lib/`는 절대 건드리지 않음). 상세 근거는 `.claude/policies/Workflow_Project.md`(특히 §3, §12)를 따른다.
+이 루트 세션이 PM 역할을 맡는다. 구현은 `.claude/agents/worker.md`, 리뷰는 `.claude/agents/review.md`, 런타임 동작 검증은 `.claude/agents/tester.md`, 프로젝트 전체를 홀리스틱하게 훑는 감사는 `.claude/agents/audit.md` 서브에이전트에게 위임한다. Tester는 Review 통과 후에만 투입되고, Write 권한은 `integration_test/` 하위로만 제한된다(`lib/`는 절대 건드리지 않음). Audit도 Read-only이며 직접 수정하지 않고 PM에게 새 태스크를 제안한다. 상세 근거는 `.claude/policies/Workflow_Project.md`(특히 §3, §12)를 따른다.
 
 **필수 체크포인트 (건너뛰지 말 것):**
 
 1. **작업 분배 가시성**: 워커/리뷰/테스터 서브에이전트를 스폰하기 전에, 누구(에이전트 타입)에게 어떤 task를 왜 보내는지 평문으로 먼저 알린다. 승인을 기다릴 필요는 없다(비차단 로그).
 2. **결정문서 diff 확인**: `docs/history/*`, `docs/reference/**`, `.claude/policies/**` 수정은 항상 일반 Edit 승인 흐름을 거친다. 이 경로에 대해 auto-accept를 절대 켜지 않는다.
 3. **dev/main 커밋, dev→main PR 생성 전 리포트 + 확인 / PR merge는 항상 사람 몫**: `feature/*` 브랜치 안에서의 commit, push, `gh pr create --base dev`는 Worker/PM 누구나 리포트·확인 없이 자유롭게 한다(merge 시점에 사람이 어차피 검토하므로). 하지만 `dev`/`main`에 직접 `git commit`하거나, `gh pr create --base main`으로 PR을 생성하거나, `main`으로 `git push`하기 전에는 반드시 "무엇을 했고 / 어디를 왜 고쳤고 / 어떤 영향이 있는지"를 텍스트로 먼저 작성하고 사용자 확인을 받는다. `gh pr merge`는 확인을 받아도 실행하지 않는다 — PR 병합은 항상 사람이 직접 한다. 이 행위들을 permissions allow-list에 절대 넣지 않는다 (`.claude/settings.json`의 훅이 추가로 강제함).
-4. **작업↔리뷰↔테스트 사이클**: `Worker → Review → (통과 시) Tester → (통과 시) 완료` 순환은 사람 개입 없이 알아서 돌리되, 사이클이 끝나면 "로그 보시겠어요?"를 사용자에게 묻는다 (자동으로 전체 로그를 쏟아내지 않음). Review가 미통과면 Tester로 가지 않고 바로 Worker(수정) → Review로 돌아간다. **Tester가 미통과면 Worker가 수정한 뒤 처음 단계인 Review로 돌아가 Review→Tester 사이클을 처음부터 다시 밟는다** — Review와 Tester가 둘 다 통과할 때까지 반복. Tester는 런타임 동작이 있는 작업이면 Task 크기와 무관하게 매번 돌린다(Review 통과 후에만).
+4. **작업↔리뷰↔테스트 사이클**: `Worker → Review → (통과 시) Tester → (통과 시) 완료` 순환은 사람 개입 없이 알아서 돌리되, 사이클이 끝나면 "로그 보시겠어요?"를 사용자에게 묻는다 (자동으로 전체 로그를 쏟아내지 않음). Review가 미통과면 Tester로 가지 않고 바로 Worker(수정) → Review로 돌아간다. **Tester가 미통과면 Worker가 수정한 뒤 처음 단계인 Review로 돌아가 Review→Tester 사이클을 처음부터 다시 밟는다** — Review와 Tester가 둘 다 통과할 때까지 반복. Tester는 런타임 동작이 있는 작업이면 Task 크기와 무관하게 매번 돌린다(Review 통과 후에만). **Task가 L/XL이면 Tester 통과 뒤 완료 처리 직전에 Audit이 한 번 더 돈다**(`Workflow_Project.md` §5) — S/M이면 안 돎, 크기를 억지로 부풀리지 않는다. Audit은 코드를 못 고치고 새 태스크만 제안하며, PM은 P0/P1 제안을 바로 다음 순번 태스크로 스케줄하고 P2/P3는 일반 백로그(BACKLOG.md)에 등록한다.
 5. **dev 동기화 주기**: Task 하나가 완료될 때마다(위 4번 사이클이 완료에 도달할 때), 그리고 여러 Task로 이뤄진 Plan 전체가 끝날 때마다, `git fetch origin && git merge origin/dev`로 feature 브랜치에 dev를 받아들인다. feature 브랜치 안의 안전한 작업이라 실행 자체엔 확인이 필요 없지만, 충돌이 나면(특히 결정문서/정책문서 경로가 걸리면) PM이 직접 해결한 뒤 diff를 사용자에게 보여주고 확인받는다. 상세 근거는 `Workflow_Project.md` §13.4.
 6. **Design 마일스톤 교차 확인**: UI/Screen×Implementation(Frontend) Task가 완료될 때, 그 결과물이 Design 워크플로우의 마일스톤(대표 Hi-Fi Sample 등, `Workflow_Design.md` §2)과 겹치는지 BACKLOG.md를 보고 확인한다. 겹치면 Development Review/Tester 통과와 별개로 해당 Design 게이트(Visual Review 등)를 명시적으로 트리거하기 전엔 그 마일스톤을 완료 처리하지 않는다 — Development 사이클 통과가 Visual Review를 대체하지 않는다(`Workflow_Design.md` §2.1).
 

@@ -1,6 +1,6 @@
 ---
 name: flutter-implementation-conventions
-description: Flutter/Dart implementation conventions for this project — navigation (go_router push/go/pop), state management (Riverpod), widget lifecycle/performance, and testing depth. Invoke before or while writing or reviewing any Flutter/Dart implementation code (Layer=UI/Screen, Stage=Implementation/Frontend), and includes the Flutter-specific Review checklist.
+description: Flutter/Dart implementation conventions for this project — navigation (go_router push/go/pop), state management (Riverpod), widget lifecycle/performance, and testing depth. Invoke before or while writing or reviewing any Flutter/Dart implementation code (Layer=UI/Screen, Stage=Implementation/Frontend), and includes the Flutter-specific Review checklist and Audit checklist.
 ---
 
 # Flutter Implementation Conventions
@@ -80,11 +80,27 @@ Layer=UI/Screen × Stage=Implementation(Frontend) 태스크의 Worker/Review가 
 
 ## Review 체크리스트 (Flutter 전용)
 
-`Workflow_Development.md` §4 Review의 "Review Areas"에 아래 Flutter 전용 하위 체크리스트를 추가한다 (별도 역할을 만들지 않고, 기존 Review 역할의 체크리스트를 확장):
+아래 Review Area별 Flutter 전용 하위 체크리스트. 각 행의 근거는 "근거" 열에 표기 — 대부분은 `Workflow_Development.md` §4 "Review Areas"의 확장이지만, Accessibility는 §4에 없는 항목이라 별도 근거(§12.1)를 갖는다. 새 행을 추가할 때는 이 열만 채우면 되고, 아래 서두 설명을 매번 고칠 필요는 없다.
 
-| Review Area | Flutter 전용 체크 |
-| --- | --- |
-| Code quality | `const` 생성자 사용 여부, 색상/spacing/타이포 하드코딩 없이 토큰 참조 여부, 리스트 아이템 `key` 부여 여부 |
-| Bugs | 컨트롤러 `dispose()` 여부, `async` 갭 이후 `mounted` 체크, `ref.watch`/`ref.read` 올바른 위치 |
-| Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음 |
-| UX | 이 프로젝트 Design/Interaction Principles(P4/P7 등, `00_DesignPrinciples.md`)와 일치 여부 |
+| Review Area | Flutter 전용 체크 | 근거 |
+| --- | --- | --- |
+| Code quality | `const` 생성자 사용 여부, 색상/spacing/타이포 하드코딩 없이 토큰 참조 여부, 리스트 아이템 `key` 부여 여부 | `Workflow_Development.md` §4 |
+| Bugs | 컨트롤러 `dispose()` 여부, `async` 갭 이후 `mounted` 체크, `ref.watch`/`ref.read` 올바른 위치 | `Workflow_Development.md` §4 |
+| Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음 | `Workflow_Development.md` §4 |
+| UX | 이 프로젝트 Design/Interaction Principles(P4/P7 등, `00_DesignPrinciples.md`)와 일치 여부 | `Workflow_Development.md` §4 |
+| Exception handling | 성공/로딩/빈 상태/실패 상태가 스펙대로 구현됐는지(`_공통 규칙.md`의 AI 처리 실패 상태: 지수 백오프 재시도, 실패 팝업 등), 실패 시 사용자에게 재시도 경로가 있는지 | `Workflow_Development.md` §4 |
+| Accessibility | Semantics label 존재 및 `excludeSemantics` 처리 여부, 터치 타겟 44×44 이상(A1/A10), 색상 단독으로 의미 전달하지 않는지(A2), 다크모드 대비비(A3) | `Workflow_Project.md` §12.1의 "Development Review **+ spec-compliance check**" — Design 단계(Decision)에서 이미 정해진 접근성 요구사항을 구현이 지켰는지 확인하는 것이며, §4의 기본 Review Areas 확장이 아니다 |
+
+---
+
+## Audit 체크리스트 (Flutter 전용)
+
+`Workflow_Project.md` §2 "Feature Audit"(프로젝트 전체를 홀리스틱하게 훑는 역할, `.claude/agents/audit.md`가 수행)이 Flutter 코드베이스를 볼 때 쓰는 구체적 체크 항목. Feature Audit의 6개 추상 카테고리(Policy conflicts / Missing functionality / Architecture / UX consistency / Design System consistency / Requirements compliance)에 배타적 1:1로 대응시키지 않는다 — 아래 항목 다수가 여러 카테고리에 동시에 걸치기 때문(예: "토큰 우회"는 Policy conflicts이자 Design System consistency, "중복구현"은 Policy conflicts이자 Architecture). Audit이 finding을 적을 때도 해당하는 카테고리를 자유롭게 복수로 태그한다.
+
+- 헤더/뒤로가기/토글 등 공용 크롬이 여러 화면에 각자 따로 구현돼 있는지(`AppMainScaffold` 등 공용 셸을 안 쓰고 화면이 자체 구현을 새로 짰는지)
+- 색상/spacing/타이포/radius/motion이 `lib/theme/` 토큰을 거치지 않고 리터럴 값으로 하드코딩됐는지
+- 이미 존재하는 공용 위젯(`lib/widgets/`)과 기능이 겹치는 화면 전용 구현이 새로 생겼는지(중복구현)
+- 공용 컴포넌트가 원래 의도(예: `OverlayHeader`는 플로팅 오버레이 전용)와 다르게 오용되고 있는지
+- 화면 간 인터랙션/레이아웃 패턴이 서로 다른 화면인데도 불일치하게 구현됐는지
+- `lib/` 하위 폴더 구조(`theme/models/mock/providers/router/widgets/screens`)가 계속 지켜지고 있는지, 새 파일이 엉뚱한 폴더에 들어갔는지
+- `AppMainScaffold`를 써야 하는 화면(`docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준)이 실제로 그걸 쓰는지, 우회해서 자체 `Scaffold`를 짰는지
