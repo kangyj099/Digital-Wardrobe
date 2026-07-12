@@ -61,8 +61,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
   - `399d3ef`(팔레트)는 Review 1차 통과(Pass, 이슈 없음) — Decision.md의 "색이 바뀐 것은 아니다" 불변조건을 diff 레벨에서 검증 완료.
   - Tester가 통합테스트 19개(기존 15개 + 라벨 크기조절/팔레트 회귀 신규 4개) 전부 Pass 확인 — 커밋 `0471265`. 짧은/긴 카테고리 라벨이 밀도 1/2/4 전 구간에서 타일 안에 들어맞고, 팔레트 리팩터 후 실제 런타임 색상값이 이전과 동일함을 확인.
   - 뒤로가기 버튼(요청받음, 미착수), Task 4(검색필드+스크롤바, 뒤로 미룸)는 체크리스트 문서에 상세 기록.
+- **(2026-07-12 완료) 하단 좌측 뒤로가기 버튼**: `context.canPop()` 기반 노출 + `OverlayHeader`와 동일한 프로스티드글래스 톤(블러/보더/그림자) 재사용해 구현 — 커밋 `31b42b0`. Review Pass(P0/P1 없음, P2 2건은 비차단 — 톤 값이 `OverlayHeader`와 별개 리터럴로 중복돼있는 점과 safe-area 미처리, 체크리스트 "후속 필요"에 기록). Tester가 라우터가 flat `GoRoute`라 평소 `canPop()`이 늘 false임을 확인하고 인위적으로 push해 검증(체크리스트에 기록된 의도된 임시 상태, 결함 아님) — 통합테스트 22/22 Pass(신규 3 + 기존 19).
 
-**다음 할 일**: 뒤로가기 버튼(Tier 2, 작음) → Task 8(스타일일지 열람) 등 나머지 8개 화면으로 이어감. Task 4(검색필드+스크롤바)는 이미 동작하는 화면 위의 UX 장식이라, 나머지 8개 화면(Task 8~15) 확보가 더 급해 뒤로 미룸 — Task 8~15는 이번 재설계로 확정된 토큰(Typography/Density/Season enum/AppRadius/AppMotion/ColorPalette)을 그대로 적용하면 되므로 Task 7만큼의 디자인 탐색은 필요 없을 것으로 예상. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
+**다음 할 일**: Task 8(스타일일지 열람) 등 나머지 8개 화면으로 이어감. Task 4(검색필드+스크롤바)는 이미 동작하는 화면 위의 UX 장식이라, 나머지 8개 화면(Task 8~15) 확보가 더 급해 뒤로 미룸 — Task 8~15는 이번 재설계로 확정된 토큰(Typography/Density/Season enum/AppRadius/AppMotion/ColorPalette)을 그대로 적용하면 되므로 Task 7만큼의 디자인 탐색은 필요 없을 것으로 예상. `lib/router/app_router.dart`의 라우트 순서 원칙(정적 경로를 `:id` 동적 라우트보다 먼저 선언, Task 7에서 확립)은 계속 유의.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
 
