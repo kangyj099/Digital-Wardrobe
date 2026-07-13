@@ -12,6 +12,7 @@ import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
+import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_colors.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
@@ -47,6 +48,12 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// 항상 false다(체크리스트에 기록된 의도된 임시 상태). 20번은 이 평소 상태를 확인하고,
 /// 21~22번은 `GoRouter.of(context).push(AppRoute.closetMain)`으로 `canPop()==true` 상황을
 /// 인위적으로 만들어 버튼 노출·pop 동작·기존 컨트롤과의 회귀 없음을 확인한다.
+///
+/// 아래는 `/trash`(TrashMainScreen) 검증 시 신설한 테스트(23번). commit 8a0db69에서
+/// `/trash` 라우트와 화면이 추가됐지만, 플랜에 명시된 의도된 상태대로 아직 이 화면으로
+/// 진입하는 실제 UI(카테고리 드롭다운 옵션 등)가 없어 정상 UI 플로우로는 도달 불가능하다.
+/// 20~22번과 같은 패턴(`GoRouter.of(context).push(...)`로 인위적으로 push)을 그대로 적용해,
+/// 화면이 실제로 렌더링되는지·두 스켈레톤 박스(헤더/그리드)가 모두 나타나는지를 확인한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -619,6 +626,26 @@ void main() {
       await selectCategory(tester, '코디');
       expect(find.byType(CompositionMainScreen), findsOneWidget);
       expect(find.byType(SelectableGalleryTile), findsNothing);
+    },
+  );
+
+  // ── 아래부터 /trash(TrashMainScreen) 검증 ─────────────────────────────────
+
+  testWidgets(
+    '옷장 메인 위에 /trash 를 인위적으로 push하면 TrashMainScreen이 실제로 렌더링되고, '
+    '헤더/그리드 두 스켈레톤 박스가 모두 화면에 나타난다 (정상 UI 플로우로는 아직 도달 '
+    '불가능한 화면 — 카테고리 드롭다운에 옵션이 없는 것이 플랜에 명시된 의도된 상태)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      GoRouter.of(context).push(AppRoute.trashMain);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TrashMainScreen), findsOneWidget);
+      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.textContaining('썸네일 그리드'), findsOneWidget);
     },
   );
 }
