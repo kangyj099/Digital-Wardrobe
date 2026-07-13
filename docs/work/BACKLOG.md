@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**전체 화면 Skeleton (8단계 프로세스 Step①) 완료 (2026-07-13).** 옷장 메인을 제외한 신규 화면 10개(코디/스타일일지/휴지통 메인, 상세 3종, Add/Create 3종, 설정) 골격 신설 + 옷장 메인 그룹형 드릴다운 리전 보강, `app_router.dart` 전체 placeholder 승격. Task A~F 전부 Worker→Review 사이클 통과(Tester는 Plan 전체 생략 — 실동작 없는 순수 구조 코드), 통합테스트 28개로 회귀 고정. 진행 중 발견한 하네스 결함 2건(Worker/Review 역할 경계 이탈)도 그 자리에서 수정 — `.claude/agents/worker.md`/`review.md`/`audit.md`. 세부 근거: `docs/history/Decision.md` 최상단, 세부 커밋 이력은 `git log feature/flutter-hifi-screens`.
+**Step②(Component Library) 1차 라운드 전체 완료 — Task 2-B(`AppMainScaffold` 조립) 포함 (2026-07-13).** Header를 Leading/Title/Actions 슬롯으로 분리하고 Detail 재사용을 전제로 Actions를 범용 `List<Widget>`으로 설계, 옷장 메인을 그 위로 마이그레이션. Worker→Review(findings 없음)→Tester(PASS) 전부 통과, 기존 통합테스트 32개+신규 위젯/통합테스트 9개 전부 통과, `lib/` 회귀 없음(Size M, Audit 생략). 세부 근거: `docs/history/Decision.md` 최상단, 커밋 `b9d0674`.
 
 ---
 
@@ -28,7 +28,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(아키텍처 전환 후 정식 스펙 — 지금은 이쪽을 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목 — 2번째 항목, Step② 범위 확정 항목이 그 위에 새로 추가됨)
 
-**다음 세션 작업**: Step②(Component Library) 진행 중. 사용자 검수로 이번 라운드 제작 범위 확정 완료 — Task 2-A(Header/Detail/Primitive 7종: FrostedBackButton/CategoryToggleDropdown/DetailHeaderActions/EditorHeader/AutoSaveIndicator/CrossReferenceLinkBar/FadingScrollEdge + Gallery는 `AppGalleryGrid` 레이아웃만 분리·Tile은 Clothing 전용 유지)가 Worker→Review→Tester 전부 통과(회귀 없음, Size M이라 Audit 생략) — 옷장 메인에 FrostedBackButton/CategoryToggleDropdown/FadingScrollEdge/AppGalleryGrid 마이그레이션 완료, 나머지 4개(DetailHeaderActions/EditorHeader/AutoSaveIndicator/CrossReferenceLinkBar)는 위젯만 존재하고 화면 연결은 Step③~⑤ 몫. `CrossReferenceLinkBar.height=64` 로컬 const는 `docs/history/TechnicalDebt.md` 최상단에 등록. 다음은 **Task 2-B: `AppMainScaffold` 조립** — **`docs/history/Decision.md` 최상단 항목("Step②(Component Library) 1차 라운드...")의 내부 슬롯 구조 지시(Header→Leading/Title/Actions슬롯, DetailHeaderActions는 Actions 슬롯에 꽂는 별도 composite, Detail 전용 별도 Scaffold 금지)를 반드시 따를 것** + 옷장 메인을 그 위로 전환.
+**다음 세션 작업**: Step②(Component Library) 1차 라운드가 Task 2-A+2-B로 전부 완료됨(위 Last Completed 참고) — 확정된 8개 컴포넌트(`AppMainScaffold`/`FrostedBackButton`/`CategoryToggleDropdown`/`EditorHeader`/`AutoSaveIndicator`/`DetailHeaderActions`/`CrossReferenceLinkBar`/`FadingScrollEdge` + `AppGalleryGrid` 레이아웃 분리) 전부 제작·검증됨. 옷장 메인은 `AppMainScaffold` 위로 완전히 마이그레이션 완료, 나머지 위젯(`DetailHeaderActions`/`EditorHeader`/`AutoSaveIndicator`/`CrossReferenceLinkBar`)은 아직 위젯만 존재하고 실제 화면 연결은 Step③~⑤ 몫. `CrossReferenceLinkBar.height=64` 로컬 const는 `docs/history/TechnicalDebt.md`에 계속 등록 상태(미해소). 다음은 **Step③: Main 화면 3개 적용** — 옷장 메인은 이미 처리됐으므로 **코디 메인 / 스타일일지 메인** 2개 화면에 `AppMainScaffold`+`CategoryToggleDropdown`+`FadingScrollEdge`+`AppGalleryGrid`(또는 그룹형인 코디는 `GroupedGalleryGrid`)를 연결하는 작업이 남음(`docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준 화면별 규칙 적용).
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함, 추후 Component Library 확장 시 검토(사용자 확정, 2026-07-13).
 
 ---
