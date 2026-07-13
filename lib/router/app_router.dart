@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../screens/closet_add_screen.dart';
 import '../screens/closet_item_detail_screen.dart';
 import '../screens/closet_main_screen.dart';
 import '../screens/composition_detail_screen.dart';
+import '../screens/composition_editor_screen.dart';
 import '../screens/composition_main_screen.dart';
+import '../screens/style_log_add_screen.dart';
 import '../screens/style_log_main_screen.dart';
 import '../screens/style_log_viewer_screen.dart';
 import '../screens/trash_main_screen.dart';
@@ -37,7 +40,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.closetAdd,
-        builder: (context, state) => _placeholder('옷 추가하기'),
+        builder: (context, state) => const ClosetAddScreen(),
       ),
       GoRoute(
         path: AppRoute.closetItemDetail,
@@ -50,7 +53,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.compositionEditor,
-        builder: (context, state) => _placeholder('코디 만들기'),
+        builder: (context, state) => const CompositionEditorScreen(),
       ),
       GoRoute(
         path: AppRoute.compositionDetail,
@@ -63,7 +66,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.styleLogAdd,
-        builder: (context, state) => _placeholder('스타일일지 추가'),
+        builder: (context, state) => const StyleLogAddScreen(),
       ),
       GoRoute(
         path: AppRoute.styleLogViewer,

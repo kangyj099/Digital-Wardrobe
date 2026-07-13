@@ -10,9 +10,12 @@ import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
+import 'package:digittal_wardrobe/screens/closet_add_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/composition_editor_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_add_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
@@ -66,6 +69,13 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// 적용하되, 두 라우트는 `:id` 세그먼트가 있으므로 상수(`AppRoute.compositionMain`/
 /// `AppRoute.styleLogMain`)에 테스트 픽스처 id를 이어붙인 경로 문자열을 push해, 화면이
 /// 렌더링되고 id가 실제로 화면에 보간되는지까지 함께 확인한다.
+///
+/// 아래는 `CompositionEditorScreen`/`StyleLogAddScreen`(Task E) 검증 시 신설한
+/// 테스트(26~27번). 두 화면 모두 상위 메인 화면(코디 메인/스타일일지 메인)의 FAB가
+/// 아직 no-op(`onPressed: () {}`, Plan Global Constraints 명시)이라 진입 UI가 없어
+/// 정상 UI 플로우로는 도달 불가능하다(반면 `ClosetAddScreen`은 옷장 메인 FAB가 실동작해
+/// 336번 테스트로 이미 검증됨). `/trash`·상세화면 검증과 같은 인위적 push 패턴을 그대로
+/// 적용해 화면이 실제로 렌더링되는지 확인한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -342,7 +352,7 @@ void main() {
     await tester.tap(find.text('한 장 추가하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('옷 추가하기'), findsOneWidget);
+    expect(find.byType(ClosetAddScreen), findsOneWidget);
     expect(find.byType(SelectableGalleryTile), findsNothing);
   });
 
@@ -698,6 +708,48 @@ void main() {
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
       expect(find.textContaining('헤더'), findsOneWidget);
       expect(find.textContaining('test-id'), findsOneWidget);
+    },
+  );
+
+  // ── 아래부터 CompositionEditorScreen/StyleLogAddScreen(Task E) 검증 ──────────
+
+  testWidgets(
+    '옷장 메인 위에 /composition/editor 를 인위적으로 push하면 CompositionEditorScreen이 '
+    '실제로 렌더링되고, 헤더/아트보드/저장 버튼 스켈레톤 박스가 모두 화면에 나타난다 '
+    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 코디 메인 FAB가 아직 no-op인 것이 플랜에 '
+    '명시된 의도된 상태)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      GoRouter.of(context).push(AppRoute.compositionEditor);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionEditorScreen), findsOneWidget);
+      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.textContaining('아트보드'), findsOneWidget);
+      expect(find.textContaining('저장 버튼'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '옷장 메인 위에 /style-log/add 를 인위적으로 push하면 StyleLogAddScreen이 실제로 '
+    '렌더링되고, 헤더/슬롯 카드 입력/저장 버튼 스켈레톤 박스가 모두 화면에 나타난다 '
+    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 스타일일지 메인 FAB가 아직 no-op인 것이 '
+    '플랜에 명시된 의도된 상태)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      GoRouter.of(context).push(AppRoute.styleLogAdd);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogAddScreen), findsOneWidget);
+      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.textContaining('슬롯 카드 입력'), findsOneWidget);
+      expect(find.textContaining('저장 버튼'), findsOneWidget);
     },
   );
 }
