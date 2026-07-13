@@ -10,7 +10,7 @@ Flutter 프로젝트 (`digittal_wardrobe`).
   - `docs/reference/Glossary.md` — 전 영역 공통 용어집 (특정 카테고리에 속하지 않음)
   - `docs/history/Decision.md` — 의사결정 기록
   - `docs/history/TechnicalDebt.md` — 기술부채 기록
-  - `docs/work/` — 작업 중 체크리스트 등
+  - `docs/work/` — 작업 중 체크리스트 등. `docs/work/TODO.md`는 애매한 개선 아이디어 파킹 로트(Decision/TechnicalDebt/BACKLOG 어디에도 안 맞는, 급하지 않은 "언젠가 생각해볼 것")
 - `.claude/policies/` — 워크플로우 정책 4종 (Project/Design/Development/Frontend)
 - `.claude/skills/` — 재사용 가능한 원칙/컨벤션 스킬 정의 (예: `engineering-principles`, `flutter-implementation-conventions`)
 - `참고자료/` — 디자인 목업/스크린샷 원본 덤프. `.gitignore` 처리되어 있고, 기본적으로 안 봐도 됨. 필요하면(예: "이 목업 보고 디자인해줘") 요청 시에만 열어볼 것.
