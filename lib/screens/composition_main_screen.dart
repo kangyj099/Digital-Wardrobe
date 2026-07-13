@@ -6,8 +6,10 @@ import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_main_scaffold.dart';
+import '../widgets/app_scroll_container.dart';
 import '../widgets/composition_gallery_grid.dart';
-import '../widgets/fading_scroll_edge.dart';
+import '../widgets/glass_circle_button.dart';
+import '../widgets/glass_pill.dart';
 import 'skeleton_region.dart';
 
 /// Main-그룹형(옷장 메인과 동일 페이지 타입) — `closet_main_screen.dart` 패턴을 그대로 이식.
@@ -21,16 +23,23 @@ class CompositionMainScreen extends ConsumerWidget {
     final season = ref.watch(selectedCompositionSeasonFilterProvider);
     final density = ref.watch(compositionDensityProvider);
 
+    // Content Spacer(스펙 §4) — closet_main_screen.dart와 동일 계산(Row1+Row2+groupingBar).
+    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(
+      hasSecondaryRow: true,
+      groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
+    );
+
     return AppMainScaffold(
       current: AppCategory.composition,
       headerActions: [
-        TextButton(onPressed: () {}, child: const Text('선택')),
+        GlassPill(child: TextButton(onPressed: () {}, child: const Text('선택'))),
       ],
-      headerTitle: Row(
-        children: [
-          DropdownButton<Season?>(
+      secondaryControlsLeft: [
+        GlassPill(
+          child: DropdownButton<Season?>(
             value: season,
             hint: const Text('계절'),
+            underline: const SizedBox.shrink(),
             items: [
               const DropdownMenuItem<Season?>(value: null, child: Text('전체')),
               ...Season.values.map(
@@ -40,36 +49,36 @@ class CompositionMainScreen extends ConsumerWidget {
             onChanged: (value) =>
                 ref.read(selectedCompositionSeasonFilterProvider.notifier).state = value,
           ),
-          const Spacer(),
-          IconButton(
-            icon: Icon(_densityIcon(density)),
-            tooltip: '그리드 밀도 전환',
-            onPressed: () {
-              final current = ref.read(compositionDensityProvider);
-              final currentIndex = AppDensity.levels.indexOf(current);
-              final previousIndex = currentIndex - 1 < 0
-                  ? AppDensity.levels.length - 1
-                  : currentIndex - 1;
-              final next = AppDensity.levels[previousIndex];
-              ref.read(compositionDensityProvider.notifier).state = next;
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            tooltip: '정렬 기준',
-            onPressed: () {},
-          ),
-        ],
-      ),
+        ),
+      ],
+      secondaryControlsRight: [
+        GlassCircleButton(
+          icon: _densityIcon(density),
+          tooltip: '그리드 밀도 전환',
+          onTap: () {
+            final current = ref.read(compositionDensityProvider);
+            final currentIndex = AppDensity.levels.indexOf(current);
+            final previousIndex = currentIndex - 1 < 0
+                ? AppDensity.levels.length - 1
+                : currentIndex - 1;
+            final next = AppDensity.levels[previousIndex];
+            ref.read(compositionDensityProvider.notifier).state = next;
+          },
+        ),
+        GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
+      ],
       groupingBar: skeletonRegion(
         context,
         '분류 선택 바 (그룹형 드릴다운) — Step⑦(기능 구현)에서 실제 드릴다운으로 대체 예정',
-        height: 48,
+        height: AppMainScaffold.defaultGroupingBarHeight,
       ),
-      body: FadingScrollEdge(
-        child: CompositionGalleryGrid(
+      groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
+      body: AppScrollContainer(
+        builder: (context, controller) => CompositionGalleryGrid(
           compositions: compositions,
           density: density,
+          controller: controller,
+          topSpacing: contentTopSpacing,
           onItemTap: (c) =>
               context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id)),
         ),

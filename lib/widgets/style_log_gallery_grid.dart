@@ -13,16 +13,26 @@ class StyleLogGalleryGrid extends StatelessWidget {
     super.key,
     required this.logs,
     required this.onItemTap,
+    this.controller,
+    this.topSpacing = 0,
   });
 
   final List<StyleLog> logs;
   final void Function(StyleLog styleLog) onItemTap;
+
+  /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
+  final ScrollController? controller;
+
+  /// Content Spacer(스펙 §4) — [AppGalleryGrid.topSpacing]으로 그대로 전달.
+  final double topSpacing;
 
   @override
   Widget build(BuildContext context) {
     return AppGalleryGrid(
       itemCount: logs.length,
       density: AppDensity.mid,
+      controller: controller,
+      topSpacing: topSpacing,
       itemBuilder: (context, index) {
         final log = logs[index];
         return StyleLogGalleryTile(

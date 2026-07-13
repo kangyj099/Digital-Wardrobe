@@ -1,0 +1,296 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/main.dart';
+import 'package:digittal_wardrobe/models/enums.dart';
+import 'package:digittal_wardrobe/providers/closet_providers.dart';
+import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
+import 'package:digittal_wardrobe/theme/app_spacing.dart';
+import 'package:digittal_wardrobe/widgets/bottom_gradient_overlay.dart';
+import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/top_gradient_overlay.dart';
+
+/// Header/HUD Stack 아키텍처 재설계(`AppMainScaffold` Column→Stack,
+/// `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`) Tester
+/// 검증. 기존 5개 통합테스트(`app_smoke_test`/`closet_main_screen_test`/
+/// `app_main_scaffold_shell_migration_test`/`closet_main_shell_widgets_regression_test`/
+/// `composition_style_log_main_screen_test`)가 이미 Column 시절부터 다뤄온 계절/밀도/FAB/
+/// 카테고리 이동/뒤로가기 시나리오는 중복 작성하지 않는다. 이 파일은 이번 Stack 전환에서만
+/// 새로 생긴 위험만 다룬다: (1) 스크롤 위치 기반 그라디언트 오버레이의 실제 표시/숨김 전이,
+/// (2) 콘텐츠가 화면 전체를 차지하는 Stack 구조에서 floating control의 히트테스트 우선순위,
+/// (3) groupingBar의 실제 배치 좌표, (4) 스크롤+플로팅 오버레이 동시 존재 시 크래시 여부.
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  // 실제 모바일 폭에 가까우면서, 옷장 메인(mock 12개, 기본 밀도 mid=2컬럼)이 확실히
+  // 스크롤 가능해지도록 세로를 짧게 잡은 뷰포트.
+  const scrollableSize = Size(390, 800);
+
+  Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = scrollableSize}) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const DigitalWardrobeApp()),
+    );
+    await tester.pumpAndSettle();
+    return container;
+  }
+
+  Finder categoryDropdownFinder() =>
+      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+
+  Future<void> goToCategory(WidgetTester tester, String label) async {
+    await tester.tap(categoryDropdownFinder());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  double topOpacity(WidgetTester tester) {
+    return tester
+        .widget<AnimatedOpacity>(
+          find.descendant(of: find.byType(TopGradientOverlay), matching: find.byType(AnimatedOpacity)),
+        )
+        .opacity;
+  }
+
+  double bottomOpacity(WidgetTester tester) {
+    return tester
+        .widget<AnimatedOpacity>(
+          find.descendant(
+              of: find.byType(BottomGradientOverlay), matching: find.byType(AnimatedOpacity)),
+        )
+        .opacity;
+  }
+
+  // ── 1) 스크롤 위치 기반 그라디언트 실제 동작 ──────────────────────────────────
+
+  group('스크롤 그라디언트', () {
+    testWidgets(
+      '옷장 메인(스크롤 가능)에서 최상단일 때 TopGradientOverlay는 숨김(0), '
+      'BottomGradientOverlay는 표시(0.85)되고, 아래로 스크롤하면 Top이 나타나며, '
+      '맨 아래까지 스크롤하면 Bottom이 사라지고, 다시 맨 위로 돌아오면 원상태로 복귀한다',
+      (tester) async {
+        await pumpApp(tester);
+        expect(find.byType(ClosetMainScreen), findsOneWidget);
+
+        final scrollable = tester.state<ScrollableState>(find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)));
+        expect(
+          scrollable.position.maxScrollExtent,
+          greaterThan(0),
+          reason: '이 시나리오는 실제로 스크롤 가능해야 의미가 있다(뷰포트/mock 데이터 전제 확인)',
+        );
+
+        // 최상단: Top 숨김, Bottom 표시.
+        expect(topOpacity(tester), 0);
+        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+
+        // 아래로 조금 스크롤(경계에 닿지 않는 정도) — Top이 나타나야 하고, Bottom은 아직 표시.
+        await tester.drag(find.byType(GridView), const Offset(0, -150));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(topOpacity(tester), closeTo(0.85, 0.001));
+        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+
+        // 맨 아래까지 강하게 스크롤 — Bottom이 사라져야 한다.
+        await tester.fling(find.byType(GridView), const Offset(0, -3000), 3000);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
+        expect(topOpacity(tester), closeTo(0.85, 0.001));
+        expect(bottomOpacity(tester), 0);
+
+        // 다시 맨 위로 — Top이 사라지고 Bottom이 재등장.
+        await tester.fling(find.byType(GridView), const Offset(0, 3000), 3000);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(scrollable.position.pixels, closeTo(0, 1));
+        expect(topOpacity(tester), 0);
+        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+      },
+    );
+
+    testWidgets(
+      '콘텐츠가 적어(mock 스타일일지 2개) 애초에 스크롤이 불가능한 화면에서는 '
+      'TopGradientOverlay/BottomGradientOverlay가 계속 숨김 상태를 유지하고, '
+      '드래그를 시도해도 아무 변화가 없다',
+      (tester) async {
+        await pumpApp(tester);
+        await goToCategory(tester, '스타일일지');
+        expect(find.byType(StyleLogMainScreen), findsOneWidget);
+
+        final scrollable = tester.state<ScrollableState>(find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)));
+        expect(
+          scrollable.position.maxScrollExtent,
+          lessThanOrEqualTo(0),
+          reason: '스타일일지 메인은 mock 2개뿐이라 스크롤 불가능해야 의미가 있다',
+        );
+
+        expect(topOpacity(tester), 0);
+        expect(bottomOpacity(tester), 0);
+
+        await tester.drag(find.byType(GridView), const Offset(0, -300));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(scrollable.position.pixels, 0);
+        expect(topOpacity(tester), 0);
+        expect(bottomOpacity(tester), 0);
+      },
+    );
+  });
+
+  // ── 2) 독립 floating control들의 히트테스트 우선순위 ──────────────────────────
+
+  group('floating control 히트테스트', () {
+    testWidgets(
+      '스크롤로 그리드 타일이 Row2(계절/밀도/원형 버튼) 영역까지 올라와 시각적으로 겹쳐도, '
+      '그 위치를 탭하면 아래 타일이 아니라 위에 뜬 GlassCircleButton(밀도 버튼)이 반응한다 '
+      '(상세 화면 이동 없이 밀도만 바뀜)',
+      (tester) async {
+        final container = await pumpApp(tester);
+        expect(container.read(closetDensityProvider), AppDensity.mid);
+
+        // 타일이 헤더 근처까지 올라오도록 충분히 스크롤.
+        await tester.drag(find.byType(GridView), const Offset(0, -150));
+        await tester.pumpAndSettle();
+
+        final buttonCenter = tester.getCenter(find.byTooltip('그리드 밀도 전환'));
+
+        // sanity check: 실제로 그 좌표에 타일이 시각적으로 겹쳐 있는지 확인(그렇지 않으면
+        // 이 테스트가 검증하려는 "겹침 상황에서의 우선순위"가 애초에 재현되지 않은 것).
+        final tileFinder = find.byType(SelectableGalleryTile);
+        final tileCount = tester.widgetList(tileFinder).length;
+        var overlapFound = false;
+        for (var i = 0; i < tileCount; i++) {
+          if (tester.getRect(tileFinder.at(i)).contains(buttonCenter)) {
+            overlapFound = true;
+            break;
+          }
+        }
+        expect(
+          overlapFound,
+          isTrue,
+          reason: '밀도 버튼 좌표(${buttonCenter}) 아래에 그리드 타일이 겹쳐 있어야 이 테스트가 '
+              '실제로 히트테스트 우선순위를 검증하는 것이 된다',
+        );
+
+        await tester.tapAt(buttonCenter);
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        // 밀도 버튼이 먼저 반응 — 밀도가 바뀌었고, 상세 화면으로는 이동하지 않았다.
+        expect(container.read(closetDensityProvider), isNot(AppDensity.mid));
+        expect(find.byType(ClosetMainScreen), findsOneWidget);
+        expect(find.byType(ClosetItemDetailScreen), findsNothing);
+      },
+    );
+
+    testWidgets(
+      '동일한 겹침 상황에서 Row1의 카테고리 토글 좌표를 탭해도 아래 타일이 아니라 '
+      '카테고리 드롭다운이 반응한다(패널이 열림, 상세 화면 이동 없음)',
+      (tester) async {
+        await pumpApp(tester);
+
+        await tester.drag(find.byType(GridView), const Offset(0, -150));
+        await tester.pumpAndSettle();
+
+        final dropdownCenter = tester.getCenter(categoryDropdownFinder());
+        final tileFinder = find.byType(SelectableGalleryTile);
+        final tileCount = tester.widgetList(tileFinder).length;
+        var overlapFound = false;
+        for (var i = 0; i < tileCount; i++) {
+          if (tester.getRect(tileFinder.at(i)).contains(dropdownCenter)) {
+            overlapFound = true;
+            break;
+          }
+        }
+        expect(
+          overlapFound,
+          isTrue,
+          reason: '카테고리 토글 좌표 아래에도 그리드 타일이 겹쳐 있어야 한다',
+        );
+
+        await tester.tapAt(dropdownCenter);
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        // 드롭다운 패널이 열려 다른 카테고리 옵션 텍스트가 보여야 한다(탭이 타일로 새지 않았음).
+        expect(find.text('코디'), findsWidgets);
+        expect(find.byType(ClosetItemDetailScreen), findsNothing);
+      },
+    );
+  });
+
+  // ── 3) groupingBar 배치 회귀 ─────────────────────────────────────────────
+
+  testWidgets(
+    'groupingBar(skeleton) 밴드가 Row2 버튼들 아래·그리드 첫 타일 위에 겹치지 않고 순서대로 '
+    '배치된다(Content Spacer 계산이 실제 렌더 좌표와 일치)',
+    (tester) async {
+      await pumpApp(tester);
+
+      final row2ButtonRect = tester.getRect(find.byTooltip('그리드 밀도 전환'));
+      final groupingBarRect = tester.getRect(
+        find.ancestor(of: find.textContaining('분류 선택 바'), matching: find.byType(Container)).first,
+      );
+      final firstTileRect = tester.getRect(find.byType(SelectableGalleryTile).first);
+
+      expect(tester.takeException(), isNull);
+      // Row2 버튼이 groupingBar보다 위에 있어야 하고, 서로 겹치지 않아야 한다.
+      expect(
+        row2ButtonRect.bottom,
+        lessThanOrEqualTo(groupingBarRect.top),
+        reason: 'Row2=$row2ButtonRect, groupingBar=$groupingBarRect',
+      );
+      // groupingBar가 첫 타일보다 위에 있어야 하고, 서로 겹치지 않아야 한다.
+      expect(
+        groupingBarRect.bottom,
+        lessThanOrEqualTo(firstTileRect.top),
+        reason: 'groupingBar=$groupingBarRect, firstTile=$firstTileRect',
+      );
+      // groupingBar가 화면 폭 전체를 차지하는 밴드인지(좌우 여백 없이 전체 폭).
+      expect(groupingBarRect.width, closeTo(scrollableSize.width, 1));
+    },
+  );
+
+  // ── 4) 비정형 흐름: 스크롤 도중 드롭다운 여닫기 ────────────────────────────────
+
+  testWidgets(
+    '[비정형 사용 흐름] 스크롤 도중(그라디언트 오버레이가 표시된 상태) 계절 드롭다운을 '
+    '열었다가 옵션을 고르지 않고 바깥을 탭해 닫아도 크래시 없이 처리되고, 스크롤 위치는 '
+    '그대로 유지된다',
+    (tester) async {
+      await pumpApp(tester);
+
+      final scrollable = tester.state<ScrollableState>(find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)));
+      await tester.drag(find.byType(GridView), const Offset(0, -150));
+      await tester.pumpAndSettle();
+      final pixelsBeforeDropdown = scrollable.position.pixels;
+      expect(topOpacity(tester), closeTo(0.85, 0.001));
+
+      await tester.tap(find.byWidgetPredicate((w) => w is DropdownButton<Season?>));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('겨울'), findsWidgets); // 드롭다운 오버레이 열림 확인
+
+      // 옵션을 고르지 않고 화면 바깥(좌상단 빈 공간)을 탭해 모달 배리어로 닫는다.
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClosetMainScreen), findsOneWidget);
+      // 드롭다운을 여닫는 동안 스크롤 위치/그라디언트 상태가 어긋나지 않았어야 한다.
+      expect(scrollable.position.pixels, closeTo(pixelsBeforeDropdown, 1));
+      expect(topOpacity(tester), closeTo(0.85, 0.001));
+    },
+  );
+}

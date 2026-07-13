@@ -8,8 +8,8 @@ import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
+import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
-import 'package:digittal_wardrobe/widgets/fading_scroll_edge.dart';
 import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 
@@ -116,13 +116,14 @@ void main() {
   );
 
   testWidgets(
-    '옷장 메인 실제 렌더 트리에서 FadingScrollEdge가 그리드를 감싸고 있다(구조적 확인)',
+    '옷장 메인 실제 렌더 트리에서 AppScrollContainer가 그리드를 감싸고 있다(구조적 확인 — '
+    'ShaderMask 기반 FadingScrollEdge는 폐기되고 스크롤 위치 기반 Overlay 컨테이너로 교체됨)',
     (tester) async {
       await pumpApp(tester);
 
-      expect(find.byType(FadingScrollEdge), findsOneWidget);
+      expect(find.byType(AppScrollContainer), findsOneWidget);
       expect(
-        find.descendant(of: find.byType(FadingScrollEdge), matching: find.byType(GridView)),
+        find.descendant(of: find.byType(AppScrollContainer), matching: find.byType(GridView)),
         findsOneWidget,
       );
     },

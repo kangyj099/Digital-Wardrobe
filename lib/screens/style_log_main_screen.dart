@@ -6,7 +6,9 @@ import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_main_scaffold.dart';
-import '../widgets/fading_scroll_edge.dart';
+import '../widgets/app_scroll_container.dart';
+import '../widgets/glass_circle_button.dart';
+import '../widgets/glass_pill.dart';
 import '../widgets/style_log_gallery_grid.dart';
 
 /// Main-플랫+필터형 — 그룹 드릴다운 없음(기존 스펙대로 날짜 기준 최신순 고정). FAB는
@@ -26,24 +28,24 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
   Widget build(BuildContext context) {
     final logs = ref.watch(filteredStyleLogsProvider);
 
+    // Content Spacer(스펙 §4) — 스타일일지는 groupingBar가 없다(플랫+필터형, Decision.md
+    // "그리드 밀도 토글은 그룹형 Main 전용" 항목과 같은 근거로 season/density도 없음). Row2에는
+    // 정렬 아이콘 하나만 있어 hasSecondaryRow=true.
+    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
+
     return AppMainScaffold(
       current: AppCategory.styleLog,
       headerActions: [
-        TextButton(onPressed: () {}, child: const Text('선택')),
+        GlassPill(child: TextButton(onPressed: () {}, child: const Text('선택'))),
       ],
-      headerTitle: Row(
-        children: [
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            tooltip: '정렬 기준',
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: FadingScrollEdge(
-        child: StyleLogGalleryGrid(
+      secondaryControlsRight: [
+        GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
+      ],
+      body: AppScrollContainer(
+        builder: (context, controller) => StyleLogGalleryGrid(
           logs: logs,
+          controller: controller,
+          topSpacing: contentTopSpacing,
           onItemTap: (l) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', l.id)),
         ),
       ),

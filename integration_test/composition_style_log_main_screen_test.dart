@@ -5,7 +5,6 @@ import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/composition_providers.dart';
-import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_editor_screen.dart';
@@ -13,9 +12,9 @@ import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_add_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
+import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
-import 'package:digittal_wardrobe/widgets/fading_scroll_edge.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 
 /// Step③(코디 메인/스타일일지 메인 → `AppMainScaffold` 마이그레이션, Review 통과분) Tester
@@ -375,20 +374,21 @@ void main() {
   );
 
   testWidgets(
-    '코디 그리드 아이템 폭 오버플로 없이, FadingScrollEdge가 코디/스타일일지 메인 그리드를 '
-    '모두 감싸고 있다(구조적 회귀 확인 — 옷장 메인과 동일 패턴 유지)',
+    '코디 그리드 아이템 폭 오버플로 없이, AppScrollContainer가 코디/스타일일지 메인 그리드를 '
+    '모두 감싸고 있다(구조적 회귀 확인 — 옷장 메인과 동일 패턴 유지, ShaderMask 기반 '
+    'FadingScrollEdge는 폐기됨)',
     (tester) async {
       await pumpApp(tester);
 
       await goToCategory(tester, '코디');
       expect(
-        find.descendant(of: find.byType(FadingScrollEdge), matching: find.byType(GridView)),
+        find.descendant(of: find.byType(AppScrollContainer), matching: find.byType(GridView)),
         findsOneWidget,
       );
 
       await goToCategory(tester, '스타일일지');
       expect(
-        find.descendant(of: find.byType(FadingScrollEdge), matching: find.byType(GridView)),
+        find.descendant(of: find.byType(AppScrollContainer), matching: find.byType(GridView)),
         findsOneWidget,
       );
     },

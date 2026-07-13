@@ -12,17 +12,27 @@ class CompositionGalleryGrid extends StatelessWidget {
     required this.compositions,
     required this.density,
     required this.onItemTap,
+    this.controller,
+    this.topSpacing = 0,
   });
 
   final List<Composition> compositions;
   final int density;
   final void Function(Composition composition) onItemTap;
 
+  /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
+  final ScrollController? controller;
+
+  /// Content Spacer(스펙 §4) — [AppGalleryGrid.topSpacing]으로 그대로 전달.
+  final double topSpacing;
+
   @override
   Widget build(BuildContext context) {
     return AppGalleryGrid(
       itemCount: compositions.length,
       density: density,
+      controller: controller,
+      topSpacing: topSpacing,
       itemBuilder: (context, index) {
         final composition = compositions[index];
         return CompositionGalleryTile(
