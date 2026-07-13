@@ -9,13 +9,12 @@ import 'glass_pill.dart';
 /// 즉시 이동한다(`_공통 규칙.md` "네비게이션 > 상단 헤더"). 화면 간 수평 전환이라
 /// `context.go()`를 쓴다(드릴다운이 아님).
 ///
-/// [current]로 호출 화면이 어느 카테고리인지 받는다 — 예전엔 `AppCategory.closet`이
-/// 하드코딩돼 있어 옷장 메인 밖에서는 재사용 자체가 불가능한 버그가 있었다(원래
-/// `closet_main_screen.dart`의 private `_buildCategoryDropdown`을 추출하며 함께 해소).
+/// [current]로 호출 화면이 어느 카테고리인지 파라미터로 받는다 — 하드코딩하지 않아야
+/// 옷장/코디/스타일일지 어디서든 재사용 가능하다.
 ///
-/// [GlassPill]로 감싸 독립된 floating pill로 렌더링한다 — 이제 `AppMainScaffold`가 다른
-/// 조작 요소(선택 버튼 등)와 하나의 Row/Container로 묶지 않고 이 위젯 자체를 물리적으로
-/// 독립된 Positioned로 배치한다(`docs/history/Decision.md` Header/HUD Pinned Rule).
+/// [GlassPill]로 감싸 독립된 floating pill로 렌더링한다 — `AppMainScaffold`는 이 위젯을
+/// 다른 조작 요소(선택 버튼 등)와 하나의 Row/Container로 묶지 않고 물리적으로 독립된
+/// Positioned로 배치한다(`docs/history/Decision.md` Header/HUD Pinned Rule).
 class CategoryToggleDropdown extends StatelessWidget {
   const CategoryToggleDropdown({super.key, required this.current});
 

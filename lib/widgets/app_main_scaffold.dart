@@ -10,12 +10,10 @@ import 'frosted_back_button.dart';
 /// 구현하지 않고 이 Scaffold 하나가 소유한다
 /// (`docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §2 "B안").
 ///
-/// **Stack 기반 재설계(2026-07-13)**: 예전엔 `Column`이 상태바/헤더(`OverlayHeader`)/
-/// groupingBar/body를 순서대로 도킹시켜 헤더가 레이아웃 공간을 차지했다. 이제
-/// `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`
-/// §1/§6에 따라 `Stack`으로 전환한다 — `body`(보통 [AppScrollContainer]로 감싼 스크롤
-/// 콘텐츠)가 상태표시줄 바로 아래부터 화면 전체를 차지하고, Header/HUD 조작 요소는 그
-/// 위에 `Positioned`로 뜬다. Header가 차지하던 자리는 이제 `body` 내부의 Content
+/// `Stack` 기반 구조 — `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`
+/// §1/§6 계약대로, `body`(보통 [AppScrollContainer]로 감싼 스크롤 콘텐츠)가 상태표시줄 바로
+/// 아래부터 화면 전체를 차지하고, Header/HUD 조작 요소는 그 위에 `Positioned`로 뜬다(레이아웃
+/// 공간을 차지하지 않음). Header가 차지하는 시각적 자리는 `body` 내부의 Content
 /// Spacer([contentSpacerHeight])가 담당한다 — 실제 렌더링 위치가 어긋나지 않으려면
 /// `body`를 구성하는 화면이 이 정적 메서드로 계산한 값을 스크롤 콘텐츠 상단 padding으로
 /// 그대로 써야 한다(`lib/screens/closet_main_screen.dart` 등 사용례 참고).
@@ -34,7 +32,7 @@ import 'frosted_back_button.dart';
 ///   등에 쓰인다. 둘 다 비어 있으면 이 행 자체가 렌더링되지 않는다.
 /// - [groupingBar]는 그룹형 드릴다운 전용 슬롯(옷장/코디 메인만 사용, 그 외 화면은 null로
 ///   비워둔다 — Detail도 이 방식으로 처리). 아직 skeleton placeholder 상태라 floating
-///   pill로 전환하지 않고, 기존처럼 전체 폭을 차지하는 독립 밴드로 Positioned된다.
+///   pill로 전환하지 않고, 전체 폭을 차지하는 독립 밴드로 Positioned된다.
 ///   [groupingBarHeight]는 이 밴드의 실제 렌더 높이 — [contentSpacerHeight] 계산에
 ///   그대로 반영되므로 `groupingBar`를 만들 때 쓴 높이와 반드시 일치해야 한다.
 class AppMainScaffold extends StatelessWidget {
@@ -94,7 +92,7 @@ class AppMainScaffold extends StatelessWidget {
   /// 상태바/Row1/Row2/groupingBar 밴드 사이의 간격.
   static const double rowGap = AppSpacing.xs;
 
-  /// Step① 이후 화면들이 공통으로 써 온 groupingBar skeleton 높이 — 이 상수를
+  /// groupingBar skeleton의 공용 높이 — 이 상수를
   /// `skeletonRegion(..., height: AppMainScaffold.defaultGroupingBarHeight)`와
   /// [contentSpacerHeight]의 `groupingBarHeight` 인자 양쪽에 동일하게 써서 두 값이
   /// 어긋나지 않게 한다.
@@ -203,8 +201,8 @@ class AppMainScaffold extends StatelessWidget {
                 ),
               ),
 
-            // groupingBar — 아직 skeleton, Step⑦에서 실제 그룹형 드릴다운으로 대체 예정.
-            // floating pill이 아니라 기존처럼 전체 폭을 차지하는 밴드로 배치된다.
+            // groupingBar — 아직 skeleton placeholder 상태(실제 그룹형 드릴다운 미구현).
+            // floating pill이 아니라 전체 폭을 차지하는 밴드로 배치된다.
             if (groupingBar != null)
               Positioned(top: groupingBarTop, left: 0, right: 0, child: groupingBar!),
 

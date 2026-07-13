@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 ///
 /// 지름은 Flutter Material이 정의하는 최소 탭 타깃 상수([kMinInteractiveDimension], 48)를
 /// 그대로 채택 — 접근성 표준을 그대로 쓰는 것이라 뷰포트 역산 등 금지된 하드코딩 패턴에
-/// 해당하지 않으며(기존 `FrostedBackButton` 주석과 동일 근거), [GlassPill]과 높이를
-/// 맞춰야 `AppMainScaffold`의 Content Spacer 고정값 계산이 어긋나지 않는다.
+/// 해당하지 않으며, [GlassPill]과 높이를 맞춰야 `AppMainScaffold`의 Content Spacer 고정값
+/// 계산이 어긋나지 않는다.
 class GlassCircleButton extends StatelessWidget {
   const GlassCircleButton({
     super.key,

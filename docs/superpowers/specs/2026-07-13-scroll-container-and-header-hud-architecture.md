@@ -222,3 +222,104 @@ Stack
 - **회귀 위험**: 기존 통합테스트(`closet_main_screen_test.dart` 32개, `app_main_scaffold_shell_migration_test.dart`, `composition_style_log_main_screen_test.dart` 등)가 현재 Column 기반 위젯 트리 구조(`OverlayHeader` 존재, `FadingScrollEdge` 존재)를 전제로 finder를 쓰고 있어 다수 깨질 것으로 예상 — Worker가 구조 변경과 함께 테스트도 갱신해야 함.
 - **스코프 경계**: 이번 스펙은 헤더/HUD 배치 구조 + 스크롤 그라디언트만 다룬다. 옷장 메인 주문서에 함께 포함된 **선택 모드(다중 선택/삭제→휴지통/토스트+실행취소)** 는 실제 상호작용·데이터 흐름이 필요한 별도 스코프(Step⑦ 성격)로, 이 태스크에 포함하지 않고 후속 태스크로 분리한다.
 - **Scrollbar 실제 구현**: 이 스펙의 §3/§6이 계약(Overlay, 레이아웃 비침습)을 정의하지만, 실제 Scrollbar 위젯 제작은 BACKLOG 파킹로트에 남겨두고 이번 스코프에 넣지 않는다 — 구조상 나중에 끼워 넣을 자리만 확보한다.
+
+## Class Diagram (구조 확정 후 기록)
+
+`lib/widgets/` 아래 이 스펙을 구현하는 위젯들의 실제 합성(composition) 관계. `AppMainScaffold`/`AppScrollContainer`는
+필드 타입상 `Widget`을 받는 슬롯이라, 슬롯 자체는 어떤 위젯이든 채울 수 있지만 Header/HUD Pinned Rule을 만족하려면
+실제로는 `GlassPill`/`GlassCircleButton`(또는 그 어댑터)만 채워야 한다 — 아래 다이어그램은 그 "슬롯 계약"과 "화면들이
+실제로 채우는 값" 둘 다 표시한다.
+
+```mermaid
+classDiagram
+    class AppMainScaffold {
+      +AppCategory current
+      +Widget body
+      +bool showBackButton
+      +bool showCategoryToggle
+      +List~Widget~ headerActions
+      +List~Widget~ secondaryControlsLeft
+      +List~Widget~ secondaryControlsRight
+      +Widget groupingBar
+      +double groupingBarHeight
+      +Widget floatingActionButton
+      +double statusBarHeight$
+      +double controlHeight$
+      +contentSpacerHeight()$ double
+    }
+
+    class AppScrollContainer {
+      +builder(BuildContext, ScrollController) Widget
+    }
+
+    class TopGradientOverlay {
+      +bool visible
+      +double height$
+    }
+
+    class BottomGradientOverlay {
+      +bool visible
+      +double height$
+    }
+
+    class GlassPill {
+      +Widget child
+      +EdgeInsetsGeometry padding
+    }
+
+    class GlassCircleButton {
+      +IconData icon
+      +VoidCallback onTap
+      +String tooltip
+    }
+
+    class CategoryToggleDropdown {
+      +AppCategory current
+    }
+
+    class FrostedBackButton {
+      +VoidCallback onTap
+    }
+
+    class ClosetMainScreen
+    class CompositionMainScreen
+    class StyleLogMainScreen
+
+    class DetailHeaderActions {
+      <<미마이그레이션>>
+      +AppCategory current
+      +VoidCallback onMenuTap
+    }
+
+    class EditorHeader {
+      <<미마이그레이션>>
+      +VoidCallback onCancel
+      +VoidCallback onHelpTap
+    }
+
+    AppMainScaffold *-- CategoryToggleDropdown : showCategoryToggle=true 시 내부 생성
+    AppMainScaffold *-- FrostedBackButton : 뒤로가기 표시 조건 충족 시 내부 생성
+    AppMainScaffold ..> AppScrollContainer : body 슬롯(전형적 채움)
+    AppMainScaffold ..> GlassPill : headerActions/secondaryControlsLeft 슬롯(전형적 채움)
+    AppMainScaffold ..> GlassCircleButton : secondaryControlsRight 슬롯(전형적 채움)
+
+    AppScrollContainer *-- TopGradientOverlay
+    AppScrollContainer *-- BottomGradientOverlay
+
+    CategoryToggleDropdown *-- GlassPill : 항상 감쌈
+    FrostedBackButton *-- GlassCircleButton : 항상 감쌈
+
+    ClosetMainScreen ..> AppMainScaffold : build()
+    CompositionMainScreen ..> AppMainScaffold : build()
+    StyleLogMainScreen ..> AppMainScaffold : build()
+
+    DetailHeaderActions *-- CategoryToggleDropdown : 항상 감쌈
+
+    note for AppMainScaffold "Header/HUD Pinned Rule(docs/history/Decision.md): headerActions/secondaryControlsLeft/secondaryControlsRight/groupingBar는 각각 독립 Positioned이며 하나의 Row/Container로 병합하지 않는다."
+    note for AppScrollContainer "builder가 만든 스크롤 위젯에 연결한 ScrollController를 관찰해 scrollTop으로 TopGradientOverlay/BottomGradientOverlay의 visible을 계산한다(스펙 §2)."
+    note for ClosetMainScreen "슬롯: headerActions=[GlassPill+선택 버튼], secondaryControlsLeft=[GlassPill+계절 Dropdown], secondaryControlsRight=[GlassCircleButton 밀도, GlassCircleButton(미정 스텁)], groupingBar=skeletonRegion, body=AppScrollContainer+GroupedGalleryGrid."
+    note for CompositionMainScreen "슬롯: headerActions=[GlassPill+선택 버튼], secondaryControlsLeft=[GlassPill+계절 Dropdown], secondaryControlsRight=[GlassCircleButton 밀도, GlassCircleButton 정렬], groupingBar=skeletonRegion, body=AppScrollContainer+CompositionGalleryGrid."
+    note for StyleLogMainScreen "슬롯: headerActions=[GlassPill+선택 버튼], secondaryControlsRight=[GlassCircleButton 정렬], groupingBar/secondaryControlsLeft 없음(플랫+필터형), body=AppScrollContainer+StyleLogGalleryGrid."
+    note for DetailHeaderActions "CategoryToggleDropdown과 ⋯더보기 IconButton이 스타일 없는 하나의 Row에 함께 담겨 있어 그 자체로 Header/HUD Pinned Rule 위반이다(Audit P1, docs/history/TechnicalDebt.md) — 아직 AppMainScaffold에 연결되지 않아 화면엔 안 드러나지만, Detail 3화면(옷/코디/스타일일지 상세)에 꽂기 전에 두 요소를 독립 Positioned로 분리하는 재작업이 필요하다."
+    note for EditorHeader "아직 AppMainScaffold와 연결되지 않고, GlassPill/GlassCircleButton도 쓰지 않는 원시 TextButton/IconButton 구현이다(Audit P1) — Pinned Rule을 적용해 Glass primitive로 재구성해야 하는지는 아직 미확정인 Decision-stage 질문이다(docs/history/TechnicalDebt.md 3~10번째 줄 참고) — PM/사용자 확인 전에는 임의로 재구성하지 말 것."
+```
