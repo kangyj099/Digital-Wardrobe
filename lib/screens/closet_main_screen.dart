@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,11 +5,9 @@ import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../widgets/category_toggle_dropdown.dart';
+import '../widgets/app_main_scaffold.dart';
 import '../widgets/fading_scroll_edge.dart';
-import '../widgets/frosted_back_button.dart';
 import '../widgets/grouped_gallery_grid.dart';
-import '../widgets/overlay_header.dart';
 import 'skeleton_region.dart';
 
 class ClosetMainScreen extends ConsumerStatefulWidget {
@@ -28,109 +25,60 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     final items = ref.watch(filteredClosetItemsProvider);
     final season = ref.watch(selectedSeasonFilterProvider);
     final density = ref.watch(closetDensityProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     final singleLabel = season == null ? '한 장 추가하기' : '이 분류에 한 장 추가하기';
     final multiLabel = season == null ? '여러 장 추가하기' : '이 분류에 여러 장 추가하기';
 
-    return Scaffold(
-      body: Container(
-        color: colorScheme.surface,
-        child: Stack(
-          children: [
-            // 우상단 세이지 틴트 — 장식용 배경 오버레이(스크롤/상호작용에 반응하지 않는 정적 레이어).
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                width: 240,
-                height: 240,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      colorScheme.secondary.withValues(alpha: 0.15),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+    return AppMainScaffold(
+      current: AppCategory.closet,
+      headerActions: [
+        TextButton(onPressed: () {}, child: const Text('선택')),
+      ],
+      headerTitle: Row(
+        children: [
+          DropdownButton<Season?>(
+            value: season,
+            hint: const Text('계절'),
+            items: [
+              const DropdownMenuItem<Season?>(value: null, child: Text('전체')),
+              ...Season.values.map(
+                (s) => DropdownMenuItem<Season?>(value: s, child: Text(s.label)),
               ),
-            ),
-            Column(
-              children: [
-                // 디버그 빌드에서만 목업 상태바를 그린다. 릴리즈에서도 동일한 높이를 예약해
-                // 레이아웃(children 개수)이 빌드 모드에 따라 흔들리지 않게 한다.
-                SizedBox(
-                  height: 24,
-                  child: kDebugMode ? _buildDebugStatusBar(context) : null,
-                ),
-                OverlayHeader(
-                  actions: [
-                    TextButton(onPressed: () {}, child: const Text('선택')),
-                  ],
-                  child: Row(
-                    children: [
-                      const CategoryToggleDropdown(current: AppCategory.closet),
-                      const SizedBox(width: AppSpacing.md),
-                      DropdownButton<Season?>(
-                        value: season,
-                        hint: const Text('계절'),
-                        items: [
-                          const DropdownMenuItem<Season?>(value: null, child: Text('전체')),
-                          ...Season.values.map(
-                            (s) => DropdownMenuItem<Season?>(value: s, child: Text(s.label)),
-                          ),
-                        ],
-                        onChanged: (value) =>
-                            ref.read(selectedSeasonFilterProvider.notifier).state = value,
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: Icon(_densityIcon(density)),
-                        tooltip: '그리드 밀도 전환',
-                        onPressed: () {
-                          final current = ref.read(closetDensityProvider);
-                          final currentIndex = AppDensity.levels.indexOf(current);
-                          final previousIndex = currentIndex - 1 < 0
-                              ? AppDensity.levels.length - 1
-                              : currentIndex - 1;
-                          final next = AppDensity.levels[previousIndex];
-                          ref.read(closetDensityProvider.notifier).state = next;
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.sort),
-                        tooltip: '정렬 기준',
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ),
-                skeletonRegion(
-                  context,
-                  '분류 선택 바 (그룹형 드릴다운) — Step②에서 AppMainScaffold groupingBar 슬롯으로 대체 예정',
-                  height: 48,
-                ),
-                Expanded(
-                  child: FadingScrollEdge(
-                    child: GroupedGalleryGrid(
-                      items: items,
-                      density: density,
-                      onItemTap: (item) =>
-                          context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // 뒤로 갈 곳이 있을 때만 렌더링(스택 최상단에 없으면 자리 자체를 차지하지 않음).
-            // 우측은 이미 floatingActionButton(추가 FAB)이 쓰고 있어 좌측에 배치.
-            if (context.canPop())
-              Positioned(
-                left: AppSpacing.md,
-                bottom: AppSpacing.md,
-                child: FrostedBackButton(onTap: () => context.pop()),
-              ),
-          ],
+            ],
+            onChanged: (value) => ref.read(selectedSeasonFilterProvider.notifier).state = value,
+          ),
+          const Spacer(),
+          IconButton(
+            icon: Icon(_densityIcon(density)),
+            tooltip: '그리드 밀도 전환',
+            onPressed: () {
+              final current = ref.read(closetDensityProvider);
+              final currentIndex = AppDensity.levels.indexOf(current);
+              final previousIndex = currentIndex - 1 < 0
+                  ? AppDensity.levels.length - 1
+                  : currentIndex - 1;
+              final next = AppDensity.levels[previousIndex];
+              ref.read(closetDensityProvider.notifier).state = next;
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort),
+            tooltip: '정렬 기준',
+            onPressed: () {},
+          ),
+        ],
+      ),
+      groupingBar: skeletonRegion(
+        context,
+        '분류 선택 바 (그룹형 드릴다운) — Step②에서 AppMainScaffold groupingBar 슬롯으로 대체 예정',
+        height: 48,
+      ),
+      body: FadingScrollEdge(
+        child: GroupedGalleryGrid(
+          items: items,
+          density: density,
+          onItemTap: (item) =>
+              context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
         ),
       ),
       floatingActionButton: Column(
@@ -188,27 +136,6 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           child: Text(label, style: Theme.of(context).textTheme.labelMedium),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDebugStatusBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Text('9:41', style: TextStyle(fontSize: 12)),
-          Row(
-            children: [
-              Icon(Icons.signal_cellular_alt, size: 14),
-              SizedBox(width: AppSpacing.xxs),
-              Icon(Icons.wifi, size: 14),
-              SizedBox(width: AppSpacing.xxs),
-              Icon(Icons.battery_full, size: 14),
-            ],
-          ),
-        ],
       ),
     );
   }
