@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Step②(Component Library) 1차 라운드 제작 범위 확정 + `AppMainScaffold` 내부 슬롯 구조 지시
+
+결정:
+- 이번 라운드(Task 2-A, 2026-07-13 완료) 제작 대상을 8개로 확정: Layout `AppMainScaffold`(Task 2-B로 이월), Header 계열 `FrostedBackButton`/`CategoryToggleDropdown`/`EditorHeader`/`AutoSaveIndicator`/`DetailHeaderActions`, Detail `CrossReferenceLinkBar`, Primitive `FadingScrollEdge`. Task 2-A에서 실제로 만든 건 `AppMainScaffold`를 뺀 7개 + Gallery 레이아웃 분리(`AppGalleryGrid`).
+- **`AppMainScaffold` 내부 구조 지시(Task 2-B가 따라야 할 구속 조건)**: Scaffold는 레이아웃 조립만 담당하고, `Header`는 `Leading`/`Title`/`Actions(slot)`로 나뉘며 `Actions` 슬롯에 `DetailHeaderActions`(드롭다운+⋯메뉴, 재사용 가능한 별도 composite)가 꽂히는 구조로 만든다. 화면마다 Header를 따로 구현하거나 Detail 전용 별도 Scaffold를 새로 만드는 방향은 명시적으로 금지 — Detail은 Main과 동일한 셸에서 `groupingBar` 슬롯만 비우는 방식으로 처리한다.
+- **Gallery 제네릭화는 이번 라운드에 전체로 하지 않음**: Grid 레이아웃(`AppGalleryGrid`)만 공용 컴포넌트로 분리하고, Tile(`SelectableGalleryTile`)은 Clothing 전용 구현을 유지 — Composition/Style Log/Trash로의 확장은 Step③ 몫으로 이월.
+- **Scrollbar/Scroll Hint(`<`/`>`)는 이번 라운드에 제작하지 않고 향후 Component Library 확장 후보로만 유지**(프로젝트 전반 공통 디자인 예정).
+- Component Hierarchy 참고 모델(사용자 제시, 향후 라운드에도 적용): `Primitive(Button/Scrollbar/Badge/Divider/FadeEdge) → Composite(GalleryTile/DetailHeaderActions/CrossReferenceLinkBar) → Layout(AppMainScaffold/EditorScaffold) → Screen`. 이번 라운드는 이 중 Primitive 일부 + Composite + Header 계열까지만 해당, Layout(`AppMainScaffold`/`EditorScaffold`)은 Task 2-B 이후.
+
+사유:
+Step①(전체 화면 Skeleton) 완료 후 PM이 스켈레톤을 훑어 후보를 리스트업했고, 사용자가 검수하며 범위를 확정 — 특히 Detail 헤더를 별도 Scaffold로 분기하지 않고 기존 `AppMainScaffold`의 슬롯 구조 안에서 흡수하도록 명시적으로 지시(불필요한 셸 중복 방지).
+
+Impact:
+- Task 2-A 산출물: `lib/widgets/{frosted_back_button,category_toggle_dropdown,detail_header_actions,editor_header,auto_save_indicator,cross_reference_link_bar,fading_scroll_edge,app_gallery_grid}.dart`, `grouped_gallery_grid.dart` 리팩터, `closet_main_screen.dart` 마이그레이션. 커밋 `56eb828`.
+- `CrossReferenceLinkBar.height=64` 로컬 const는 `TechnicalDebt.md`에 등록(추후 `AppSpacing` 승격 검토).
+- 다음 착수 대상: Task 2-B(`AppMainScaffold` 조립, 위 구속 조건 그대로 적용) — 상세: `docs/work/BACKLOG.md` Current.
+
+---
+
 [Decision] 화면 관통 공용 UI 셸 아키텍처로 전환, Task 8~15(화면별 순차 구현) 폐기 → 8단계 프로세스로 대체
 
 결정:
