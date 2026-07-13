@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../screens/closet_item_detail_screen.dart';
 import '../screens/closet_main_screen.dart';
+import '../screens/composition_detail_screen.dart';
 import '../screens/composition_main_screen.dart';
 import '../screens/style_log_main_screen.dart';
+import '../screens/style_log_viewer_screen.dart';
 import '../screens/trash_main_screen.dart';
 
 class AppRoute {
@@ -38,7 +41,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.closetItemDetail,
-        builder: (context, state) => _placeholder('옷 상세 ${state.pathParameters['id']}'),
+        builder: (context, state) =>
+            ClosetItemDetailScreen(itemId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoute.compositionMain,
@@ -50,7 +54,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.compositionDetail,
-        builder: (context, state) => _placeholder('코디 상세 ${state.pathParameters['id']}'),
+        builder: (context, state) =>
+            CompositionDetailScreen(compositionId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoute.styleLogMain,
@@ -62,7 +67,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.styleLogViewer,
-        builder: (context, state) => _placeholder('스타일일지 열람 ${state.pathParameters['id']}'),
+        builder: (context, state) =>
+            StyleLogViewerScreen(styleLogId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoute.settingsMain,

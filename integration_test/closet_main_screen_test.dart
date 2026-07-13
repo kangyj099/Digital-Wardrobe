@@ -10,6 +10,7 @@ import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
+import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
@@ -341,7 +342,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('c01')));
     await tester.pumpAndSettle();
 
-    expect(find.text('옷 상세 c01'), findsOneWidget);
+    expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
   });
 
   testWidgets('그리드 타일 라벨이 상품명이 아닌 옷 종류(카테고리)로 표시된다', (tester) async {
@@ -558,13 +559,13 @@ void main() {
       // 준비 단계(옷장 메인 "아래"에 화면을 하나 깔아 둠).
       await tester.tap(find.byKey(const ValueKey('c01')));
       await tester.pumpAndSettle();
-      expect(find.text('옷 상세 c01'), findsOneWidget);
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
 
       // 2) Review가 지적한 라우터 토폴로지 문제(flat GoRoute 목록, 카테고리 전환은
       // context.go()로 스택을 교체) 때문에 정상 UI 플로우만으로는 옷장 메인 위에 아무것도
       // 쌓이지 않는다. 옷 상세 화면(현재 최상단) 위에 옷장 메인을 인위적으로 한 번 더
       // push해, "옷장 메인이 최상단이면서 아래에 다른 화면이 있는" 상황을 만든다.
-      final detailContext = tester.element(find.text('옷 상세 c01'));
+      final detailContext = tester.element(find.byType(ClosetItemDetailScreen));
       GoRouter.of(detailContext).push(AppRoute.closetMain);
       await tester.pumpAndSettle();
 
@@ -577,7 +578,7 @@ void main() {
       await tester.tap(backButtonFinder());
       await tester.pumpAndSettle();
 
-      expect(find.text('옷 상세 c01'), findsOneWidget);
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
       expect(find.byType(SelectableGalleryTile), findsNothing);
     },
   );
@@ -590,7 +591,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('c01')));
       await tester.pumpAndSettle();
-      final detailContext = tester.element(find.text('옷 상세 c01'));
+      final detailContext = tester.element(find.byType(ClosetItemDetailScreen));
       GoRouter.of(detailContext).push(AppRoute.closetMain);
       await tester.pumpAndSettle();
 
