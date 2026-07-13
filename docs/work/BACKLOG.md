@@ -18,19 +18,22 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step③(Main 화면 3개 적용) 전체 완료 (2026-07-13).** 옷장 메인(Task 2-B에서 이미 완료)에 이어 코디 메인/스타일일지 메인을 `AppMainScaffold`로 마이그레이션, `CompositionGalleryTile`/`CompositionGalleryGrid`/`StyleLogGalleryTile`/`StyleLogGalleryGrid` 신설(기존 `SelectableGalleryTile`이 Clothing 전용이던 것을 Composition/StyleLog로 처음 확장). Worker→Review(P0/P1 없음)→Tester(PASS, 회귀 테스트 1건 최신화)→Audit(P0 없음, P1 1건) 전부 완료. 커밋 `2e96445`. Audit이 낸 P1(코디 타일이 아직 텍스트만 표시 — UX명세서의 "옷장과 동일한 레이아웃" 요구와 어긋남)은 시각 표현 방식 자체가 사용자 판단이 필요한 디자인 결정이라 아래 Current에서 확인 대기 중. P2/P3는 `docs/history/TechnicalDebt.md`·`Decision.md`에 기록.
+**Header/HUD Stack 아키텍처 재설계 전체 완료 (2026-07-13).** Visual Review 도중 사용자가 지적한 헤더 반복 회귀·Scroll Edge Gradient 결함을 계기로, `AppMainScaffold`를 Column(헤더 도킹)→Stack(콘텐츠 full-bleed + 헤더/HUD floating overlay)로 전면 재설계. `OverlayHeader`/`FadingScrollEdge` 폐기, `GlassPill`/`GlassCircleButton`(독립 floating control 공용 primitive), `TopGradientOverlay`/`BottomGradientOverlay`/`AppScrollContainer`(스크롤 위치 기반 조건부 그라디언트) 신설. 3개 Main 화면 전부 반영. Worker→Review(findings 없음)→Tester(스크롤별 opacity 전이·플로팅 컨트롤 히트테스트 우선순위 등 신규 시나리오 전부 통과)→Audit(P0 없음, P1 1건+P2 1건) 전부 완료. 커밋 `76ead4d`. 근거: `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`, Decision.md의 Header/HUD Pinned Rule. Audit P1(`DetailHeaderActions`/`EditorHeader`가 이 재설계보다 먼저 만들어져 Step④/⑤ 착수 시 Pinned Rule 위반 재발 위험)·P2(Glass 두 위젯의 스타일 값 중복)는 `docs/history/TechnicalDebt.md`에 기록 — P1은 Step④ 착수 시 최우선으로 먼저 처리.
 
 ---
 
 # Current
 
 Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev 1차 병합 완료, 같은 브랜치에서 계속 진행)에서 Subagent-Driven으로 진행 중.
-- 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(아키텍처 전환 후 정식 스펙 — 지금은 이쪽을 따를 것)
+- 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(화면 관통 공용 셸 스펙), `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`(Header/HUD·스크롤 컨테이너 정식 스펙 — 지금은 이 3개를 함께 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**진행 중 (최우선, Visual Review를 인터럽트함)**: Main 3화면 Visual Review 도중 사용자가 Header/HUD 구조 결함(반복 회귀)과 Scroll Edge Gradient 결함을 지적, PM이 "근본 원인 = `AppMainScaffold`의 Column 도킹 구조"로 진단 → 사용자가 정식 Scroll Container/Header-HUD 스펙 원문 제공(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`). **Header/HUD Pinned Rule**(Decision.md 최상단 — 조작 요소는 독립 floating control, 병합 금지, 변경 시 사용자 승인 필수)도 함께 기록됨. `AppMainScaffold`/`OverlayHeader`/`FadingScrollEdge`를 Stack 기반으로 재설계하는 Size XL Worker 태스크 진행 중(선택 모드 실제 동작·Scrollbar 실제 제작은 스코프 제외 — 별도 후속). 옷장 메인 하이파이 주문서(2026-07-13, 사용자 제공)의 레이아웃 세부(2번째 툴바 행 등)도 이 태스크에 포함.
-**다음 세션 작업**: 이 XL 태스크 Worker→Review→Tester→Audit 완료 후 → (1) 새 구조 기준으로 스크린샷 재캡처해 Visual Review 재개(Typography Pass 3 확정 포함), (2) 사용자 요청한 코드 주석 정리 + Mermaid 클래스 다이어그램 작성(구조가 곧 바뀔 예정이라 이 태스크 완료 후로 미룸), (3) 이후 Step④: Detail 화면 적용.
-- Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 단, 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 문서 §3/§6에 이미 정의됨.
+**다음 세션 작업 (순서대로)**:
+1. 새 Header/HUD Stack 구조 기준으로 Main 3화면 스크린샷 재캡처 → Visual Review 재개(보류 중이던 Typography Pass 3 확정 포함).
+2. 사용자 요청한 코드 주석 정리 + Mermaid 클래스 다이어그램 작성(구조 전환이 막 끝나 지금이 적기).
+3. **Step④(Detail 화면 적용) 착수 직전에 먼저** `DetailHeaderActions` 재작업(위 Audit P1) — 그 다음 옷 상세/코디 상세/스타일일지 열람 3화면에 연결.
+- 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
+- Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
 
 ---
 
