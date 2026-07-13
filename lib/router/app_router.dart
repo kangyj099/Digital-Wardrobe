@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/closet_main_screen.dart';
+import '../screens/composition_main_screen.dart';
 
 class AppRoute {
   AppRoute._();
@@ -38,7 +39,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.compositionMain,
-        builder: (context, state) => _placeholder('코디 메인'),
+        builder: (context, state) => const CompositionMainScreen(),
       ),
       GoRoute(
         path: AppRoute.compositionEditor,
