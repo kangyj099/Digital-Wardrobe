@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 화면 관통 공용 UI 셸 아키텍처로 전환, Task 8~15(화면별 순차 구현) 폐기 → 8단계 프로세스로 대체
+
+결정:
+- 뒤로가기 버튼/카테고리 토글/그룹형 드릴다운을 화면마다 개별 구현하던 기존 계획(플랜 Task 8~15)을 폐기하고, 공용 셸 위젯 `AppMainScaffold`(신설 예정)가 이 세 가지를 소유하는 구조로 전환 — 화면이 이 셸을 쓰기만 하면 뒤로가기/토글/그룹바를 빠뜨릴 수 없음(B안 채택). `FrostedBackButton`/`CategoryToggleDropdown`을 기존 코드에서 추출해 셸 하위 컴포넌트로 재사용, `groupingBar` 슬롯을 그룹형 드릴다운용으로 신설. Add/Create 3화면(옷 추가/코디 만들기/스타일일지 추가)은 이 셸을 쓰지 않고 자체 취소/저장 헤더 유지.
+- 화면별 규칙 표(스펙 §1) 확정 — 그룹형 드릴다운은 옷장 메인/코디 메인 두 곳만 적용(스타일일지는 플랫+필터 유지). 선택 모달은 원 화면과 동일 사양으로 원 화면을 재사용(신규 화면 없음).
+- 개발 프로세스를 화면별 Task 8~15에서 8단계로 재편: ①전체 화면 Skeleton → ②Component Library 구축 → ③Main 3개 적용 → ④Detail 적용 → ⑤Editor 적용 → ⑥나머지 적용 → ⑦기능 구현 → ⑧디테일 튜닝.
+- 산출물: `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(정식 스펙). `docs/work/전체화면_아키텍처_재설계_체크리스트.md`는 은퇴(append-only 보존, 내용은 스펙으로 이관).
+
+사유:
+옷장 메인 뒤로가기 버튼을 개별 구현하던 중 사용자가 "뒤로가기/카테고리 토글/그룹형 드릴다운은 화면 하나씩이 아니라 앱을 관통하는 공용 UI여야 한다"고 지적 — 화면별 순차 구현 방식이 이 전제를 반영하지 못해 같은 로직이 반복 구현·검증될 위험이 있었음.
+
+Impact:
+- 플랜 `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`의 Task 8~15는 더 이상 유효하지 않음(Task 1~7은 유효).
+- Step①(전체 화면 Skeleton)은 별도 플랜(`docs/superpowers/plans/2026-07-13-cross-screen-skeleton-step1.md`)으로 작성, 2026-07-13 Task A~F 전부 완료(상세: `feature/flutter-hifi-screens` 브랜치 커밋 `4778316`~`5ad6561`).
+- 다음 착수 대상은 Step②(Component Library 구축).
+
+---
+
 [Decision] Worktree는 저장소 바깥 형제 디렉토리로만 생성 — `.claude/worktrees/`(기본 위치)는 검색 중복의 원인으로 확인돼 신규 생성 금지
 
 결정:

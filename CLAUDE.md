@@ -41,4 +41,6 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 **진행 중 작업 상태**: 세션 시작 시 `docs/work/BACKLOG.md`(프로젝트 전체 현재 상태 스냅샷)부터 확인한다. 하네스 구축처럼 별도로 추적할 만한 하위 작업은 `docs/work/`에 개별 체크리스트 파일을 두고 BACKLOG.md에서 링크한다. **BACKLOG.md Current 갱신은 각 작업 스텝을 완료 처리하는 행위 자체의 일부다(세션 종료 시에만 하는 후속 조치가 아님) — 미완료 상태로 중단되거나 세션이 끝날 때도 마찬가지로 그 시점까지의 핵심 결정·다음 계획을 반드시 BACKLOG.md(필요시 Decision.md)에 직접 적는다.** 스킬이 쓰는 gitignore된 임시 장부(예: `.superpowers/sdd/*`)는 세션 내부 복구용 캐시일 뿐 공식 인계 수단이 아니다. 상세 규칙은 `Workflow_Project.md` §3 "Skill-Internal Ledgers vs. Official Handoff" 참고.
 
+**Last Completed/Current/Next 갱신 원칙**: `Current`에 있던 작업이 끝나면 그 내용을 1~3줄로 압축해 `Last Completed`를 교체한다(추가 아님) — 이전 내용은 지운다, 세부 근거는 이미 `Decision.md`/git log에 남아있으므로 안전하다. `Current`도 같은 원칙을 따르되 구성이 다르다: 마감/브랜치/스펙 포인터 같은 상위 개요는 그 작업 전체가 끝나기 전까진 유지하고, "지금 뭘 하면 되는지"를 가리키는 동적인 한 줄만 교체 대상이다. **`Current→Last Completed`는 작업 단위가 끝날 때마다 기계적으로 일어나지만, `Next→Current`는 자동이 아니다** — `Next`는 메인 작업 줄기와 별개인 독립 백로그라 그 항목을 실제로 착수하기로 결정할 때만 Current로 승격되고, 보통은 메인 작업 자체의 다음 내부 단계(예: 8단계 프로세스의 Step②)가 먼저 Current를 차지한다.
+
 **BACKLOG.md 커밋 승인 차등**: 섹션 구조·배치를 바꾸는 **포맷 수정**은 일반 Edit 승인 흐름을 그대로 거친다. 반면 Current/Last Completed 등에 방금 끝난 작업을 반영하는 **진행 기록용 내용 수정**은 그 자체로 별도 확인을 구하지 않고 자유롭게 단독 커밋한다 — 다른 작업 커밋에 묶어야 한다는 제약은 없다(Worker 커밋이 Review 판정보다 먼저 확정되는 구조상 묶을 대상이 없는 경우가 잦아, 억지로 묶으려 하기보다 단독 커밋을 원칙으로 삼는 편이 단순하다).
