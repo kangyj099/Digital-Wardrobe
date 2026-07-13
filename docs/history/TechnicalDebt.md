@@ -2,11 +2,10 @@
 
 [TechDebt] `FadingScrollEdge`가 정적 상단 마스크뿐 — 조건부(남은 콘텐츠 있을 때만)·하단 페이드 미구현
 
-상태: 미해결
+상태: 구현 완료, Review 대기 중 (2026-07-13)
 
 내용:
-사용자가 2026-07-13에 직접 지적: 의도한 스펙은 "스크롤 가능한 영역에서 콘텐츠가 상/하단으로 더 있을 때만" Edge Gradient가 보이는 것인데, 현재 `lib/widgets/fading_scroll_edge.dart`는 `ScrollController`/`ScrollNotification` 등 스크롤 상태를 전혀 보지 않는 고정 `ShaderMask`(`LinearGradient` stops `[0.0, 0.06]`, 상단만) 하나뿐이다 — 하단 페이드는 구현 자체가 없다. 또한 `AppMainScaffold`의 `body` 슬롯(헤더/툴바 아래)에만 적용돼 상태표시줄 바로 아래가 아니라 헤더보다 아래에서 시작한다.
-**해소 경로 확정**: 같은 날 사용자가 정식 스펙(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`)을 제공 — `ShaderMask` 방식은 그 스펙 §5 "AI Constraints"에서 명시적으로 금지되며, `TopGradientOverlay`/`BottomGradientOverlay`(스크롤 위치 기반 조건부 오버레이)로 완전히 교체될 예정. 이 TechDebt 항목은 그 Implementation 태스크가 완료되면 해소됨 — 별도 대응 불필요, 스펙 문서가 Source of Truth.
+사용자가 2026-07-13에 직접 지적한 뒤, 같은 날 정식 스펙(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`)을 제공 — Header/HUD Stack 재설계 Worker 태스크에서 `lib/widgets/fading_scroll_edge.dart`(ShaderMask 기반) 자체를 삭제하고 `TopGradientOverlay`/`BottomGradientOverlay`(스크롤 위치 기반 조건부 오버레이, `AppScrollContainer`가 조립)로 교체. Tester 성격의 통합테스트 5개 파일 전부 통과(구조 확인 포함) — Review 통과 후 "해소됨"으로 최종 확정.
 
 ---
 
@@ -24,9 +23,8 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 상태: 미해결
 
 내용:
-1. `lib/widgets/app_main_scaffold.dart:29`와 `lib/screens/closet_main_screen.dart:73`의 groupingBar 관련 주석이 "실제 그룹형 드릴다운은 Step③ 몫"이라고 적혀있는데, Step③(2026-07-13)이 실제로 끝나며 groupingBar는 여전히 skeleton placeholder로 남고 실제 드릴다운은 Step⑦(기능 구현)로 확정됐다 — `composition_main_screen.dart`의 대응 주석("Step⑦에서 실제 드릴다운으로 대체 예정")만 최신 상태. 두 주석을 Step⑦ 기준으로 맞출 것.
-2. `integration_test/composition_style_log_main_screen_test.dart:8`에 미사용 import(`package:digittal_wardrobe/router/app_router.dart`) — `flutter analyze` 경고 1건.
-둘 다 기능에는 영향 없는 문서/lint 수준 이슈라 별도 사이클 없이 다음에 해당 파일을 건드릴 때 같이 정리하면 됨.
+1. `lib/widgets/app_main_scaffold.dart:29`와 `lib/screens/closet_main_screen.dart:73`의 groupingBar 관련 주석이 "실제 그룹형 드릴다운은 Step③ 몫"이라고 적혀있는데, Step③(2026-07-13)이 실제로 끝나며 groupingBar는 여전히 skeleton placeholder로 남고 실제 드릴다운은 Step⑦(기능 구현)로 확정됐다 — `composition_main_screen.dart`의 대응 주석("Step⑦에서 실제 드릴다운으로 대체 예정")만 최신 상태. 두 주석을 Step⑦ 기준으로 맞출 것. **미해결** — Header/HUD Stack 재설계(2026-07-13)로 `app_main_scaffold.dart`가 전면 재작성됐으니 이 참에 확인 필요.
+2. ~~`integration_test/composition_style_log_main_screen_test.dart:8`에 미사용 import~~ — Header/HUD Stack 재설계 Worker 태스크(2026-07-13)가 같이 정리함. **해소됨.**
 
 ---
 
@@ -62,7 +60,7 @@ Step②(Component Library) Task 2-A에서 `lib/widgets/cross_reference_link_bar.
 상태: 미해결
 
 내용:
-`closet_main_screen.dart`에 추가한 세이지 틴트 컨테이너 크기(240x240)/alpha(0.15), `ShaderMask` stops([0.0, 0.06]), 디버그 상태바 높이(24)·아이콘 크기(14)·도트 크기(6)·폰트 크기(12) 등이 리터럴로 남아있음. 이번 스코프(코너 반경/duration 토큰화)와는 별개라 이번 라운드에서는 토큰화하지 않았으나, 추후 Design Tokens 확정 시 반영 검토 필요.
+`closet_main_screen.dart`에 추가한 세이지 틴트 컨테이너 크기(240x240)/alpha(0.15), ~~`ShaderMask` stops([0.0, 0.06])~~(Header/HUD Stack 재설계로 `FadingScrollEdge` 자체가 삭제돼 이 항목은 대상이 사라짐), 디버그 상태바 높이(24)·아이콘 크기(14)·도트 크기(6)·폰트 크기(12) 등이 리터럴로 남아있음. 이번 스코프(코너 반경/duration 토큰화)와는 별개라 이번 라운드에서는 토큰화하지 않았으나, 추후 Design Tokens 확정 시 반영 검토 필요.
 
 ---
 
