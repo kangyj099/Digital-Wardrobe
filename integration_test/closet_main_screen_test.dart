@@ -15,6 +15,7 @@ import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_editor_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
+import 'package:digittal_wardrobe/screens/settings_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_add_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
@@ -74,8 +75,16 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// 테스트(26~27번). 두 화면 모두 상위 메인 화면(코디 메인/스타일일지 메인)의 FAB가
 /// 아직 no-op(`onPressed: () {}`, Plan Global Constraints 명시)이라 진입 UI가 없어
 /// 정상 UI 플로우로는 도달 불가능하다(반면 `ClosetAddScreen`은 옷장 메인 FAB가 실동작해
-/// 336번 테스트로 이미 검증됨). `/trash`·상세화면 검증과 같은 인위적 push 패턴을 그대로
-/// 적용해 화면이 실제로 렌더링되는지 확인한다.
+/// "FAB 펼침 메뉴에서 옵션을 탭하면 /closet/add 로 이동한다" 테스트로 이미 검증됨).
+/// `/trash`·상세화면 검증과 같은 인위적 push 패턴을 그대로 적용해 화면이 실제로
+/// 렌더링되는지 확인한다.
+///
+/// 아래는 `SettingsScreen`(Task F, commit 예정) 검증 시 신설한 테스트(28번). `/settings`
+/// 라우트는 Task C에서 상수(`AppRoute.settingsMain`)와 placeholder가 먼저 생겼고 Task F가
+/// 실제 화면으로 교체했지만, 카테고리 드롭다운/설정 진입 버튼 등 이 화면으로 이어지는 UI가
+/// 아직 없어 정상 UI 플로우로는 도달 불가능하다. `/trash` 검증과 같은 인위적 push 패턴을
+/// 그대로 적용해 화면이 실제로 렌더링되는지, 헤더/리스트-로우 두 스켈레톤 박스가 모두
+/// 나타나는지를 확인한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -750,6 +759,26 @@ void main() {
       expect(find.textContaining('헤더'), findsOneWidget);
       expect(find.textContaining('슬롯 카드 입력'), findsOneWidget);
       expect(find.textContaining('저장 버튼'), findsOneWidget);
+    },
+  );
+
+  // ── 아래부터 SettingsScreen(Task F) 검증 ────────────────────────────────────
+
+  testWidgets(
+    '옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 실제로 렌더링되고, '
+    '헤더/리스트-로우 두 스켈레톤 박스가 모두 화면에 나타난다 (정상 UI 플로우로는 아직 도달 '
+    '불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 플랜에 명시된 의도된 상태)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      GoRouter.of(context).push(AppRoute.settingsMain);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.textContaining('리스트-로우'), findsOneWidget);
     },
   );
 }

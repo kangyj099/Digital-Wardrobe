@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/closet_add_screen.dart';
@@ -7,6 +6,7 @@ import '../screens/closet_main_screen.dart';
 import '../screens/composition_detail_screen.dart';
 import '../screens/composition_editor_screen.dart';
 import '../screens/composition_main_screen.dart';
+import '../screens/settings_screen.dart';
 import '../screens/style_log_add_screen.dart';
 import '../screens/style_log_main_screen.dart';
 import '../screens/style_log_viewer_screen.dart';
@@ -27,8 +27,6 @@ class AppRoute {
   static const settingsMain = '/settings';
   static const trashMain = '/trash';
 }
-
-Widget _placeholder(String label) => Scaffold(body: Center(child: Text(label)));
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -75,7 +73,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.settingsMain,
-        builder: (context, state) => _placeholder('설정'),
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: AppRoute.trashMain,
