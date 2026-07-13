@@ -5,6 +5,7 @@ import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
 import '../widgets/glass_circle_button.dart';
@@ -43,7 +44,12 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     return AppMainScaffold(
       current: AppCategory.closet,
       headerActions: [
-        GlassPill(child: TextButton(onPressed: () {}, child: const Text('선택'))),
+        GlassPill(
+          child: TextButton(
+            onPressed: () {},
+            child: const Text('선택', style: AppTypography.actionMinimal),
+          ),
+        ),
       ],
       // 두 번째 툴바 행 — 옷장 메인 하이파이 디자인 주문서 기준(계절 세그먼트/밀도 버튼/
       // 우측 원형 버튼 3개가 각각 독립 floating, Header/HUD Pinned Rule).

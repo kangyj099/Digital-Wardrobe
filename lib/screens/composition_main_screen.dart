@@ -5,6 +5,7 @@ import '../models/enums.dart';
 import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
 import '../widgets/composition_gallery_grid.dart';
@@ -32,7 +33,12 @@ class CompositionMainScreen extends ConsumerWidget {
     return AppMainScaffold(
       current: AppCategory.composition,
       headerActions: [
-        GlassPill(child: TextButton(onPressed: () {}, child: const Text('선택'))),
+        GlassPill(
+          child: TextButton(
+            onPressed: () {},
+            child: const Text('선택', style: AppTypography.actionMinimal),
+          ),
+        ),
       ],
       secondaryControlsLeft: [
         GlassPill(

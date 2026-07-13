@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Typography Pass 3 확정 (Type Scale) + Brand Guide §3 코드 동기화
+
+결정:
+- **Brand Guide 동기화**: `docs/reference/design/01_BrandGuid.md` §3 "Font Families"가 "Body: KoPub돋움"을 확정으로 표시하고 있었으나, 실제로는 옷장 메인 재설계 때(위 "옷장 메인 재설계 — Design Tokens 확정" 결정) Body도 Pretendard로 단일화되고 KoPubDotum이 코드/`pubspec.yaml`에서 제거된 상태였다 — Decision.md엔 남아있었지만 Brand Guide 문서 자체가 갱신되지 않아 living document 원칙을 어기고 있었다. Header/HUD Stack 재설계 후 재개한 Visual Review에서 발견, 사용자 확인 하에 Brand Guide를 코드에 맞춰 "전 역할 Pretendard"로 수정.
+- **Type Scale 확정**: 그동안 잠정값(Material 3 기본 스케일)으로 미확정 표시돼 있던 사이즈/굵기를 정식 확정값으로 승격. 사용자가 실제 3개 메인 화면(옷장/코디/스타일일지) 스크린샷을 보고 다음 2가지 조정을 지시:
+  1. 갤러리 타일 배지/태그 텍스트(`labelSmall`, 원피스/하의 등 카테고리 태그·"미완성" 배지) — 11 → **13**으로 확대.
+  2. "선택" 보조 액션 버튼 텍스트가 **앱 전체에서 가장 작은 텍스트**가 되도록 — 기존 `labelSmall`(11)이 비운 값을 재사용해 신규 역할 `actionMinimal`(**11**, M3 표준 15-role 밖의 추가 역할)을 도입, "선택" 버튼에 명시 적용. 나머지 역할(`display*`/`headline*`/`title*`/`body*`/`labelLarge`/`labelMedium`)은 기존 M3 기본값 그대로 확정.
+- 확정값 전체 표는 `01_BrandGuid.md` §3에 기록(이 문서에 중복 전사하지 않음 — Reference 문서가 Source of Truth).
+
+사유:
+BACKLOG.md "다음 세션 작업" 1번(Header/HUD Stack 재설계 후 Main 3화면 스크린샷 재캡처 → Visual Review 재개, 보류 중이던 Typography Pass 3 포함)에 따라 재개한 Visual Review 중 사용자 직접 지시.
+
+Impact:
+- `docs/reference/design/01_BrandGuid.md` §3/§4 갱신 완료(이 세션에서 직접 수정).
+- 코드 반영은 별도 Implementation 태스크: `lib/theme/app_typography.dart`(`labelSmall` 11→13, `actionMinimal` 11 신설)과 옷장/코디/스타일일지 메인 3개 화면의 "선택" `TextButton`(`lib/screens/closet_main_screen.dart`, `composition_main_screen.dart`, `style_log_main_screen.dart`)에 `actionMinimal` 명시 적용 필요 — Worker→Review→Tester 사이클로 진행 예정.
+- `labelSmall`을 참조하는 다른 위젯(`status_badge.dart`, `selectable_gallery_tile.dart`, `style_log_gallery_tile.dart`, `composition_gallery_tile.dart`)은 role 참조만 하고 있어 자동으로 커진 값이 반영됨(별도 수정 불필요).
+
+---
+
 [Decision] Header/HUD Pinned Rule — 모든 조작 요소는 독립된 Floating Control, 단일 Toolbar/Capsule Bar/NavigationBar/SegmentedContainer로 병합 금지 (Layout Principle, 변경 시 사용자 승인 필수)
 
 결정:

@@ -60,19 +60,38 @@
 
 | 역할 | 폰트 |
 | --- | --- |
-| Body | KoPub돋움 |
-| Display · Title · Label | Pretendard |
+| 전 역할(Body 포함) | Pretendard |
 
-### Type Scale (미확정)
+Body에 KoPub돋움을 쓰던 초기안은 옷장 메인 재설계 중 Pretendard로 단일화됨(`Decision.md` 참고) — KoPubDotum은 코드/`pubspec.yaml`에서 제거된 상태.
 
-사이즈/굵기 값은 하이파이 샘플 화면(2개) 제작 후 육안 확인하여 확정 예정. 현재 값 없음.
+### Type Scale (확정)
+
+하이파이 샘플(옷장/코디/스타일일지 메인) 육안 확인 후 Material 3 기본 스케일을 기준값으로 확정. 굵기는 전부 Pretendard.
+
+| Role | Size | Weight |
+| --- | --- | --- |
+| displayLarge | 57 | w400 |
+| displayMedium | 45 | w400 |
+| displaySmall | 36 | w400 |
+| headlineLarge | 32 | w600 |
+| headlineMedium | 28 | w600 |
+| headlineSmall | 24 | w600 |
+| titleLarge | 22 | w600 |
+| titleMedium | 16 | w600 |
+| titleSmall | 14 | w600 |
+| bodyLarge | 16 | w500 |
+| bodyMedium | 14 | w500 |
+| bodySmall | 12 | w500 |
+| labelLarge | 14 | w500 |
+| labelMedium | 12 | w500 |
+| labelSmall (배지/태그) | 13 | w500 |
+| actionMinimal (보조 액션 버튼 전용, 예: "선택") | 11 | w500 |
+
+`actionMinimal`은 M3 기본 15-role에 없는 역할로, 앱 전체에서 가장 작은 텍스트가 되도록 별도 고정한 값(`labelSmall`이 배지/태그용으로 커지면서 생긴 자리를 재사용). 갤러리 타일 배지/태그는 눈에 잘 띄어야 해서 키우고, "선택" 같은 보조 액션 버튼은 최소 크기로 눌러 시각적 위계를 분리한다.
 
 ---
 
 ## 4. 미확정 항목
 
-- 타입 스케일(사이즈/굵기) — 하이파이 샘플 제작 후 확정
 - T2 Gray 스케일 세부 단계 재보간
 - Warning / Accent 조합 대비 전수 검증
-- KoPub돋움 라이선스 조건 확인
-- Body(KoPub돋움) / Emphasis(Pretendard) 인접 배치 시 굵기 체감 육안 검수

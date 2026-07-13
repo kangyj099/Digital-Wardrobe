@@ -5,6 +5,7 @@ import '../models/enums.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
 import '../widgets/glass_circle_button.dart';
@@ -36,7 +37,12 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
     return AppMainScaffold(
       current: AppCategory.styleLog,
       headerActions: [
-        GlassPill(child: TextButton(onPressed: () {}, child: const Text('선택'))),
+        GlassPill(
+          child: TextButton(
+            onPressed: () {},
+            child: const Text('선택', style: AppTypography.actionMinimal),
+          ),
+        ),
       ],
       secondaryControlsRight: [
         GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),

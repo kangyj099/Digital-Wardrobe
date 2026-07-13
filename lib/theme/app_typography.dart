@@ -5,8 +5,21 @@ import 'package:flutter/material.dart';
 class AppTypography {
   AppTypography._();
 
+  static const String _pretendard = 'Pretendard';
+
+  /// `actionMinimal` — M3 표준 15-role `TextTheme`에 없는 보조 역할.
+  /// "선택" 같은 보조 액션 버튼 전용, 앱 전체에서 가장 작은 텍스트가 되도록 고정
+  /// (Brand Guide `01_BrandGuid.md` §3, `Decision.md` "Typography Pass 3 확정" 참고).
+  /// color는 의도적으로 지정하지 않는다 — 이 role을 쓰는 `Text`가 상위 위젯(예: `TextButton`의
+  /// foreground color)의 색을 그대로 상속하도록 비워둔다.
+  static const TextStyle actionMinimal = TextStyle(
+    fontFamily: _pretendard,
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+  );
+
   static TextTheme textTheme(Color onSurface) {
-    const pretendard = 'Pretendard';
+    const pretendard = _pretendard;
 
     TextStyle style(String family, double size, FontWeight weight) {
       return TextStyle(
@@ -32,7 +45,7 @@ class AppTypography {
       bodySmall: style(pretendard, 12, FontWeight.w500),
       labelLarge: style(pretendard, 14, FontWeight.w500),
       labelMedium: style(pretendard, 12, FontWeight.w500),
-      labelSmall: style(pretendard, 11, FontWeight.w500),
+      labelSmall: style(pretendard, 13, FontWeight.w500),
     );
   }
 }
