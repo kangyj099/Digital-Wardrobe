@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step②(Component Library) 1차 라운드 전체 완료 — Task 2-B(`AppMainScaffold` 조립) 포함 (2026-07-13).** Header를 Leading/Title/Actions 슬롯으로 분리하고 Detail 재사용을 전제로 Actions를 범용 `List<Widget>`으로 설계, 옷장 메인을 그 위로 마이그레이션. Worker→Review(findings 없음)→Tester(PASS) 전부 통과, 기존 통합테스트 32개+신규 위젯/통합테스트 9개 전부 통과, `lib/` 회귀 없음(Size M, Audit 생략). 세부 근거: `docs/history/Decision.md` 최상단, 커밋 `b9d0674`.
+**Step③(Main 화면 3개 적용) 전체 완료 (2026-07-13).** 옷장 메인(Task 2-B에서 이미 완료)에 이어 코디 메인/스타일일지 메인을 `AppMainScaffold`로 마이그레이션, `CompositionGalleryTile`/`CompositionGalleryGrid`/`StyleLogGalleryTile`/`StyleLogGalleryGrid` 신설(기존 `SelectableGalleryTile`이 Clothing 전용이던 것을 Composition/StyleLog로 처음 확장). Worker→Review(P0/P1 없음)→Tester(PASS, 회귀 테스트 1건 최신화)→Audit(P0 없음, P1 1건) 전부 완료. 커밋 `2e96445`. Audit이 낸 P1(코디 타일이 아직 텍스트만 표시 — UX명세서의 "옷장과 동일한 레이아웃" 요구와 어긋남)은 시각 표현 방식 자체가 사용자 판단이 필요한 디자인 결정이라 아래 Current에서 확인 대기 중. P2/P3는 `docs/history/TechnicalDebt.md`·`Decision.md`에 기록.
 
 ---
 
@@ -26,9 +26,9 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev 1차 병합 완료, 같은 브랜치에서 계속 진행)에서 Subagent-Driven으로 진행 중.
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(아키텍처 전환 후 정식 스펙 — 지금은 이쪽을 따를 것)
-- 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목 — 2번째 항목, Step② 범위 확정 항목이 그 위에 새로 추가됨)
+- 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**다음 세션 작업**: Step②(Component Library) 1차 라운드가 Task 2-A+2-B로 전부 완료됨(위 Last Completed 참고) — 확정된 8개 컴포넌트(`AppMainScaffold`/`FrostedBackButton`/`CategoryToggleDropdown`/`EditorHeader`/`AutoSaveIndicator`/`DetailHeaderActions`/`CrossReferenceLinkBar`/`FadingScrollEdge` + `AppGalleryGrid` 레이아웃 분리) 전부 제작·검증됨. 옷장 메인은 `AppMainScaffold` 위로 완전히 마이그레이션 완료, 나머지 위젯(`DetailHeaderActions`/`EditorHeader`/`AutoSaveIndicator`/`CrossReferenceLinkBar`)은 아직 위젯만 존재하고 실제 화면 연결은 Step③~⑤ 몫. `CrossReferenceLinkBar.height=64` 로컬 const는 `docs/history/TechnicalDebt.md`에 계속 등록 상태(미해소). 다음은 **Step③: Main 화면 3개 적용** — 옷장 메인은 이미 처리됐으므로 **코디 메인 / 스타일일지 메인** 2개 화면에 `AppMainScaffold`+`CategoryToggleDropdown`+`FadingScrollEdge`+`AppGalleryGrid`(또는 그룹형인 코디는 `GroupedGalleryGrid`)를 연결하는 작업이 남음(`docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준 화면별 규칙 적용).
+**다음 세션 작업**: 사용자에게 코디 메인 갤러리 타일의 시각 표현 방식(대표 아이템 이미지 1장 / 미니 아트보드 합성 렌더 / 별도 커버이미지 필드 신설 / 현행 텍스트 유지)을 확인 대기 중 — 답이 오면 그 결정에 따라 소규모 Implementation 태스크로 반영. 그 후 **Step④: Detail 화면 적용**(옷 상세/코디 상세/스타일일지 열람 3개, `DetailHeaderActions`/`CrossReferenceLinkBar`를 `AppMainScaffold`의 groupingBar 슬롯을 비운 형태로 연결)으로 진행.
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함, 추후 Component Library 확장 시 검토(사용자 확정, 2026-07-13).
 
 ---

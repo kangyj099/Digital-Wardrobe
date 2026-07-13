@@ -1,5 +1,34 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] Step③ Audit(2026-07-13)에서 발견된 소소한 주석/lint 이슈 3건 — 다음 해당 파일 터치 시 함께 정리
+
+상태: 미해결
+
+내용:
+1. `lib/widgets/app_main_scaffold.dart:29`와 `lib/screens/closet_main_screen.dart:73`의 groupingBar 관련 주석이 "실제 그룹형 드릴다운은 Step③ 몫"이라고 적혀있는데, Step③(2026-07-13)이 실제로 끝나며 groupingBar는 여전히 skeleton placeholder로 남고 실제 드릴다운은 Step⑦(기능 구현)로 확정됐다 — `composition_main_screen.dart`의 대응 주석("Step⑦에서 실제 드릴다운으로 대체 예정")만 최신 상태. 두 주석을 Step⑦ 기준으로 맞출 것.
+2. `integration_test/composition_style_log_main_screen_test.dart:8`에 미사용 import(`package:digittal_wardrobe/router/app_router.dart`) — `flutter analyze` 경고 1건.
+둘 다 기능에는 영향 없는 문서/lint 수준 이슈라 별도 사이클 없이 다음에 해당 파일을 건드릴 때 같이 정리하면 됨.
+
+---
+
+[TechDebt] `StyleLog` 모델에 정렬/필터 기준 필드(날씨/옷 종류/계절) 자체가 없어 스타일일지 메인 다중 필터 UI를 구현할 수 없음
+
+상태: 미해결
+
+내용:
+`03_스타일 일지.md` UX명세서는 스타일일지 메인의 정렬/필터로 "날짜, 옷 종류, 날씨, 계절 기준 지원(역순 보기 옵션 포함)"을 요구하지만, `StyleLog`(`lib/models/style_log.dart`) 모델에 `season`/`weather`/착용 옷 종류에 대응하는 필드가 전혀 없다(날짜만 `wornDate`로 존재). Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 `style_log_main_screen.dart`를 `AppMainScaffold`로 마이그레이션하며 Review가 이 사실을 지적 — 이전 Step①(전체 화면 Skeleton) 단계엔 "헤더 (스타일 일지 ▾ + 필터 칩)"이라는 placeholder 주석이라도 있었으나, 이번 마이그레이션에서 비기능 정렬 아이콘 하나만 남기고 그 흔적이 사라졌다. 실제 필터 구현은 `StyleLog` 모델 확장(Data/Architecture 레이어 결정) 없이는 불가능 — 모델 필드 추가가 선행돼야 함.
+
+---
+
+[TechDebt] 화면 간 반복 복제된 UI 블록 3종 — Step④ 이후 화면이 늘기 전에 공용 컴포넌트/헬퍼로 추출 검토 필요
+
+상태: 미해결
+
+내용:
+Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적: (1) FAB 펼침 애니메이션 스캐폴딩(`_buildFabOption`/`_onFabOptionTap`/`AnimatedSize` 블록, 약 35줄)이 `closet_main_screen.dart`와 `style_log_main_screen.dart`에 텍스트만 바꿔 그대로 복제됨. (2) `_densityIcon(int density)` private 메서드가 `closet_main_screen.dart`와 `composition_main_screen.dart`에 코드 100% 동일하게 존재. (3) 갤러리 타일의 "좌하단 반투명 pill + `ConstrainedBox`+ellipsis" 라벨 블록이 `selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart` 3곳에 동일 패턴으로 존재. 각 경우 모두 기존 패턴을 정확히 따른 것이라 지금 당장 문제는 아니지만(Review 판정: P2, 논블로킹), Step④~⑥에서 Detail/Editor/휴지통 화면이 추가되면 동일 블록이 계속 늘어날 것 — `ExpandableAddFab` 공용 위젯, `AppDensity.iconFor(density)` 헬퍼, `GalleryMetaLabel` 위젯 등으로의 추출을 다음 Step 진입 전에 검토 권장.
+
+---
+
 [TechDebt] `CrossReferenceLinkBar.height`(64)가 `AppSpacing`이 아니라 위젯 파일 로컬 const로 남아있음
 
 상태: 미해결

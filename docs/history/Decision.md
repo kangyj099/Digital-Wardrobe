@@ -1,5 +1,20 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 그리드 밀도(`AppDensity`) 토글은 그룹형 Main 화면(옷장/코디) 전용 — 스타일일지 메인은 밀도 토글 없이 고정 밀도 사용
+
+결정:
+- `AppDensity`(`lib/theme/app_spacing.dart`)의 3단계 밀도 토글 UI는 옷장/코디 메인에만 적용한다. 스타일일지 메인(`style_log_main_screen.dart`)은 밀도 토글 아이콘/provider 없이 `StyleLogGalleryGrid` 내부에서 `AppDensity.mid`를 고정값으로 사용한다.
+- 근거: `AppDensity` 클래스 자체의 기존 주석("T6(Density) — Grouped Main 그리드(옷장/코디) 전용 열 개수")이 이미 이 범위를 명시하고 있었고, `03_스타일 일지.md` UX명세서도 밀도 토글을 요구하지 않는다(플랫+필터형이라는 페이지 타입 확정과는 별개 개념).
+
+사유:
+Step③(코디/스타일일지 메인 적용, 2026-07-13) Worker가 이 기존 주석 근거로 스타일일지에 밀도 provider를 추가하지 않았고, Review·Audit이 코드-스펙 일치를 확인했다. 다만 이 판단이 코드 주석에만 있고 Decision.md에는 없어 Audit이 "다음 Worker/Reviewer가 오인할 위험"을 지적 — 그 근거로 이번에 정식 기록한다(코드 변경 없음, 문서화만).
+
+Impact:
+- 코드 변경 없음(이미 Step③ 커밋에 반영된 상태를 사후 문서화).
+- 이후 Step⑥(휴지통 등 나머지 화면 적용) 때도 같은 기준(그룹형 여부로 밀도 토글 유무 판단)을 따를 것.
+
+---
+
 [Decision] Step②(Component Library) 1차 라운드 제작 범위 확정 + `AppMainScaffold` 내부 슬롯 구조 지시
 
 결정:
