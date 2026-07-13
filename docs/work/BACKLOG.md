@@ -49,6 +49,13 @@ Flutter Hi-Fi 스프린트 Task 1~6 + 하드코딩 원칙 정립(category/season
 
 # Current
 
+**⚠ 새 세션 필독 — 병합 대기 중인 사이드 브랜치 2개 (2026-07-13).** 이번 세션에서 하네스 결함 수정 + BACKLOG.md/CLAUDE.md/Decision.md 간결화 작업을 이 브랜치(`feature/flutter-hifi-screens`)가 아닌 별도 브랜치 2개에 나눠 커밋·푸시하고 PR도 열어뒀다 — 아직 병합 전이라 지금 보고 있는 이 브랜치의 CLAUDE.md/BACKLOG.md는 옛(긴) 버전 그대로다.
+- PR #14 `feature/harness-agent-readonly-guard` → `dev` (worker.md/review.md 역할 경계 가드 수정, dev 기준으로 만듦)
+- PR #15 `feature/backlog-conciseness` → `feature/flutter-hifi-screens`(이 브랜치, `dev` 아님) — BACKLOG.md Last Completed/Current 압축판 + Decision.md 크로스스크린 셸 결정 항목 + CLAUDE.md 갱신 원칙. **PR #15가 병합되면 이 파일 자체가 압축판으로 교체된다.**
+- **병합 순서 주의**: PR #15가 이 브랜치에 먼저 들어오고, 그 후 이 브랜치를 dev로 병합할 때 PR #14가 이미 dev에 들어가 있으면 `worker.md`/`review.md`에서 같은 내용을 서로 다른 부모로부터 수정한 충돌이 날 수 있다 — 그때 PM이 직접 해소.
+
+---
+
 Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 정정** — 기존 2026-07-10에서 연장, 2026-07-11 사용자 확정. 옷장 메인 재설계가 예상보다 커져 스코프 안정화 위해 조정) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev에 한 차례 병합 완료, **같은 브랜치에서 계속 작업 이어감** — 새 브랜치 불필요)에서 Subagent-Driven으로 진행 중.
 - 스펙(스프린트 전체 범위): `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`
 - 플랜: `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md` — **Task 1~7은 유효, Task 8~15는 아래 "8단계 프로세스"로 대체됨(더 이상 이 플랜대로 진행하지 말 것)**. 지금 당장 뭘 할지는 아래 "Current" 맨 아래 문단(2026-07-13 항목)의 "다음 세션 작업"을 따를 것.
@@ -78,11 +85,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (**마감 2026-07-24로 
   - **(2026-07-13 완료) Task E(Add/Create 3종 스켈레톤) — Review Pass.** `ClosetAddScreen`/`CompositionEditorScreen`/`StyleLogAddScreen` 신설 + 라우트 3개 교체 — 커밋 `bfe45f5`. Worker가 Task D 선례를 미리 적용해, 코디 만들기/스타일일지 추가(상위 메인 FAB가 아직 no-op이라 도달 불가)에 대한 인위적 push 검증 테스트를 선제적으로 같은 커밋에 포함시켜 P1 재발 없이 Review 1차 통과. `flutter analyze` 클린, 통합테스트 27/27 Pass. P3(비차단) 주석 라인번호 오기 1건은 Task F에서 함께 정정.
   - **(2026-07-13 완료) Task F(설정 화면, Utility) — Review Pass. Plan A~F(전체 화면 Skeleton, Step①) 전체 완료.** `SettingsScreen` 신설 + `settingsMain` 라우트 교체, 더 이상 안 쓰이는 `_placeholder` 헬퍼·미사용 import 정리, `/settings` 인위적 push 검증 테스트 추가, Task E의 P3 주석 오기 동시 정정 — 커밋 `5ad6561`. 프로젝트 전체 `flutter analyze` 클린, `integration_test/closet_main_screen_test.dart` **최종 28/28 Pass**(Worker 최초 보고 "27개+28번"은 자기모순적 오기였음 — Review가 직접 재실행해 28이 맞음을 확정, 기록 정정). §1 표 13행(신규 화면 10 + 옷장메인 보강 1 + 선택모달 2행 스코프아웃) 전부 처리 경로 확보를 Review가 최종 재확인.
   - **세션 전환 판단(토큰 효율)**: 이 플랜을 쓰는 과정에서 탐색용으로 읽은 자료(스펙/체크리스트/원본 플랜 등)가 이미 상당한 컨텍스트를 차지했고, 실행 단계(Task A~F × Worker+Review 디스패치)는 그 탐색 컨텍스트가 필요 없음 — 플랜 파일 자체가 완결적이므로. 실행은 **새 세션**에서 이어가는 쪽이 다 턴에 걸친 캐시 비용 누적을 줄여 더 유리하다고 판단, 새 세션으로 인계함.
-  - **다음 세션 작업**: Step①(스켈레톤) 완료. 다음은 8단계 프로세스의 Step②(Component Library 구축 — 공용 컴포넌트 후보 리스트업→사용자 검수→제작, `AppMainScaffold`/`FrostedBackButton`/`CategoryToggleDropdown`/모달 래퍼 포함). 사용자가 "일시정지" 지시해 이번 세션은 여기서 종료 — dev-sync(§13.4)까지 수행 완료.
-  - **주의(병합 대기 중인 사이드 브랜치 2개, 새 세션이 반드시 확인할 것)**: 이번 세션에서 하네스 결함 수정 + BACKLOG.md/CLAUDE.md/Decision.md 간결화 작업을 이 브랜치(`feature/flutter-hifi-screens`)가 아닌 별도 브랜치 2개에 나눠 커밋·푸시하고 PR도 열어뒀다 — 아직 병합 전이라 이 브랜치의 CLAUDE.md/BACKLOG.md는 옛(긴) 버전 그대로다.
-    - PR #14 `feature/harness-agent-readonly-guard` → `dev` (worker.md/review.md 역할 경계 가드 수정, dev 기준으로 만듦)
-    - PR #15 `feature/backlog-conciseness` → `feature/flutter-hifi-screens`(이 브랜치, `dev` 아님) — BACKLOG.md Last Completed/Current 압축판 + Decision.md 크로스스크린 셸 결정 항목 + CLAUDE.md 갱신 원칙. **PR #15가 이 브랜치에 병합되면 BACKLOG.md/CLAUDE.md가 압축판으로 교체된다** — 그 전까지는 지금 보고 있는 이 긴 버전이 맞다.
-    - 병합 순서 주의: PR #15가 이 브랜치(`feature/flutter-hifi-screens`)에 먼저 들어오고, 그 후 이 브랜치를 dev로 병합할 때 PR #14가 이미 dev에 들어가 있으면 `worker.md`/`review.md`에서 같은 내용을 서로 다른 부모로부터 수정한 충돌이 날 수 있다 — 그때 PM이 직접 해소.
+  - **다음 세션 작업**: Step①(스켈레톤) 완료. 다음은 8단계 프로세스의 Step②(Component Library 구축 — 공용 컴포넌트 후보 리스트업→사용자 검수→제작, `AppMainScaffold`/`FrostedBackButton`/`CategoryToggleDropdown`/모달 래퍼 포함). 사용자가 "일시정지" 지시해 이번 세션은 여기서 종료 — dev-sync(§13.4)까지 수행 완료. (병합 대기 중인 사이드 브랜치 2개는 이 섹션 맨 위 "⚠ 새 세션 필독" 참고.)
 - **하네스 확장(부수, 완료)**: 이 재설계를 계기로 `.claude/agents/audit.md`(Feature Audit 역할, 프로젝트 전체 홀리스틱 검토) 신설 — L/XL 태스크 완료 시마다 자동으로 돎, review 서브에이전트 사전 검증 거침. `Workflow_Project.md` §15 "Worktree Placement" 정책도 신설(worktree는 저장소 바깥 형제 디렉토리로만 생성 — 이 환경 Grep/Glob이 `.gitignore`를 안 지키는 게 확인돼 유일한 구조적 해법으로 확정) + 고아 worktree 디렉토리 2개 정리. 상세: `docs/history/Decision.md`.
 
 **(참고, 완료됨)** skill-extraction 파일럿(별도 worktree `Digital-Wardrobe-testbed`)은 채택 권고로 종료됐고, 그 결과가 아래 항목에 반영된 실제 채택 작업임 — 더 이상 진행 중인 별개 작업 아님.
