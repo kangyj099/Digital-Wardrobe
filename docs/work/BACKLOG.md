@@ -28,7 +28,8 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(아키텍처 전환 후 정식 스펙 — 지금은 이쪽을 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md` 최상단)
 
-**다음 세션 작업**: 8단계 프로세스의 Step②(Component Library 구축) — 공용 컴포넌트 후보 리스트업(`AppMainScaffold`/`FrostedBackButton`/`CategoryToggleDropdown`/모달 래퍼 등) → 사용자 검수 → 제작. Step①은 완료됐고 dev-sync도 완료된 상태(§13.4). 하네스 결함 수정 + 문서 간결화 브랜치 2개(`feature/harness-agent-readonly-guard`, `feature/backlog-conciseness`)는 이 브랜치에 병합 완료.
+**다음 세션 작업**: Step②(Component Library) 진행 중. 사용자 검수로 이번 라운드 제작 범위 확정 완료 — Task 2-A(Header/Detail/Primitive 7종: FrostedBackButton/CategoryToggleDropdown/DetailHeaderActions/EditorHeader/AutoSaveIndicator/CrossReferenceLinkBar/FadingScrollEdge + Gallery는 `AppGalleryGrid` 레이아웃만 분리·Tile은 Clothing 전용 유지)가 Worker→Review→Tester 전부 통과(회귀 없음, Size M이라 Audit 생략) — 옷장 메인에 FrostedBackButton/CategoryToggleDropdown/FadingScrollEdge/AppGalleryGrid 마이그레이션 완료, 나머지 4개(DetailHeaderActions/EditorHeader/AutoSaveIndicator/CrossReferenceLinkBar)는 위젯만 존재하고 화면 연결은 Step③~⑤ 몫. `CrossReferenceLinkBar.height=64` 로컬 const는 `docs/history/TechnicalDebt.md` 최상단에 등록. 다음은 **Task 2-B: `AppMainScaffold` 조립**(위 조각들을 슬롯으로 합성하는 셸, DetailHeaderActions는 actions 슬롯용) + 옷장 메인을 그 위로 전환.
+- Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함, 추후 Component Library 확장 시 검토(사용자 확정, 2026-07-13).
 
 ---
 

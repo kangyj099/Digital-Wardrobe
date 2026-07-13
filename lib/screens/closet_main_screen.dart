@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +6,9 @@ import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/category_toggle_dropdown.dart';
+import '../widgets/fading_scroll_edge.dart';
+import '../widgets/frosted_back_button.dart';
 import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/overlay_header.dart';
 import 'skeleton_region.dart';
@@ -68,7 +69,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
                   ],
                   child: Row(
                     children: [
-                      _buildCategoryDropdown(context),
+                      const CategoryToggleDropdown(current: AppCategory.closet),
                       const SizedBox(width: AppSpacing.md),
                       DropdownButton<Season?>(
                         value: season,
@@ -110,14 +111,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
                   height: 48,
                 ),
                 Expanded(
-                  child: ShaderMask(
-                    blendMode: BlendMode.dstIn,
-                    shaderCallback: (rect) => const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black],
-                      stops: [0.0, 0.06],
-                    ).createShader(rect),
+                  child: FadingScrollEdge(
                     child: GroupedGalleryGrid(
                       items: items,
                       density: density,
@@ -134,7 +128,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
               Positioned(
                 left: AppSpacing.md,
                 bottom: AppSpacing.md,
-                child: _FrostedBackButton(onTap: () => context.pop()),
+                child: FrostedBackButton(onTap: () => context.pop()),
               ),
           ],
         ),
@@ -176,43 +170,6 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
   void _onFabOptionTap() {
     setState(() => _fabExpanded = false);
     context.push(AppRoute.closetAdd);
-  }
-
-  Widget _buildCategoryDropdown(BuildContext context) {
-    return DropdownButton<AppCategory>(
-      value: AppCategory.closet,
-      underline: const SizedBox.shrink(),
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      items: AppCategory.values
-          .map(
-            (c) => DropdownMenuItem<AppCategory>(
-              value: c,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (c == AppCategory.closet) ...[
-                    const Icon(Icons.circle, size: 6),
-                    const SizedBox(width: AppSpacing.xxs),
-                  ],
-                  Text(c.label),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: (value) {
-        switch (value) {
-          case AppCategory.composition:
-            context.go(AppRoute.compositionMain);
-          case AppCategory.styleLog:
-            context.go(AppRoute.styleLogMain);
-          case AppCategory.closet:
-          case null:
-            // '옷장' 선택은 이미 이 화면이므로 아무 동작도 하지 않는다.
-            break;
-        }
-      },
-    );
   }
 
   Widget _buildFabOption(
@@ -260,52 +217,5 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     if (density == AppDensity.max) return Icons.grid_view;
     if (density == AppDensity.mid) return Icons.view_comfy;
     return Icons.crop_square;
-  }
-}
-
-/// 하단 좌측 뒤로가기 버튼 — OverlayHeader와 동일한 프로스티드글래스 톤(블러/보더/그림자 값)을
-/// 원형 버튼에 맞춰 재구성한 것. 지름은 임의값이 아니라 Flutter Material이 정의하는 최소 탭
-/// 타깃 상수(kMinInteractiveDimension, 48)를 그대로 채택 — 접근성 표준을 그대로 쓰는 것이므로
-/// 뷰포트 역산 등 금지된 하드코딩 패턴에 해당하지 않는다.
-class _FrostedBackButton extends StatelessWidget {
-  const _FrostedBackButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: kMinInteractiveDimension,
-      height: kMinInteractiveDimension,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(
-                width: kMinInteractiveDimension,
-                height: kMinInteractiveDimension,
-              ),
-              onPressed: onTap,
-              icon: const Icon(Icons.arrow_back),
-              tooltip: '뒤로가기',
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

@@ -1,5 +1,14 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `CrossReferenceLinkBar.height`(64)가 `AppSpacing`이 아니라 위젯 파일 로컬 const로 남아있음
+
+상태: 미해결
+
+내용:
+Step②(Component Library) Task 2-A에서 `lib/widgets/cross_reference_link_bar.dart`를 신설하며 Detail 3화면(옷 상세/코디 상세/스타일일지 열람) skeleton의 `height: 64`(상호 참조 링크 바) 값을 그대로 가져왔으나, 이번 태스크의 Edit 대상에 `lib/theme/app_spacing.dart`가 포함되지 않아 `AppSpacing` 토큰으로 승격하지 못하고 위젯 파일 로컬 `static const`로 남겼다. Review(2026-07-13)에서 하드코딩 원칙 위반은 아니라고 판정(이름 있는 const + 출처 주석 확인)했으나, `app_spacing.dart`가 다음에 Edit 대상에 포함될 때 정식 토큰으로 승격 검토 필요.
+
+---
+
 [TechDebt] 옷장 메인 재설계 중 추가된 시각적 매직넘버(스크롤마스크/틴트/디버그 상태바 치수) 토큰화 필요
 
 상태: 미해결
