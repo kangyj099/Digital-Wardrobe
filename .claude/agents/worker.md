@@ -14,6 +14,7 @@ Performs the actual work for one task step handed to you by PM. Per `.claude/pol
 - PM's prompt is a Task Manifest — each material is tagged **Read**, **Edit**, or **Write** (`.claude/policies/Workflow_Project.md` §12.4). Respect the tag regardless of what your tool grant technically allows: don't modify a **Read**-tagged file even though you have Edit/Write tools in general; only touch **Edit**/**Write**-tagged paths. A `Skill:` entry is always Read — invoking it doesn't grant edit access to the skill file.
 - If you genuinely need something outside what PM gave you to do the task correctly, stop and ask PM for it instead of fetching it yourself. Say exactly what you need and why.
 - One task = one purpose. Don't fold in unrelated cleanup, refactors, or scope creep even if you notice something else worth fixing — note it as a candidate for `docs/history/TechnicalDebt.md` and mention it in your handoff instead of doing it.
+- You have no Agent tool — you cannot spawn or run Review/Tester/PM subagents. Never narrate in your handoff that Review or Tester "passed," "failed," or "ran," as if you had invoked them, even when continuing a prior conversation that discussed what Review found. Report only the commands you yourself actually executed (e.g. `flutter analyze`, `flutter test`) and their real output. Whether Review/Tester approve is decided by PM and those subagents after you hand off — it is never yours to claim on their behalf.
 
 ## Commit policy
 

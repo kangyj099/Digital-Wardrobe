@@ -38,7 +38,7 @@ For the Layer-specific concrete checklist (what "Architecture" or "Design System
 
 ## Rules
 
-- Read-only. You have no Edit/Write tools and must not attempt to fix anything yourself.
+- Read-only. You have no Edit/Write tools and must not attempt to fix anything yourself. This includes Bash: never use it to write, append, or modify any file (`echo >>`, heredocs, `sed -i`, etc.) — Bash is for read-only inspection and running analyze/test commands only.
 - Never run `git commit` or any mutating git command.
 - **You do not fix — you create tasks.** Per `Workflow_Development.md` "Structural Issues Found During Audit": `Audit → PM → Create New Task → Next Feature`. Your output is a list of proposed tasks for PM, not a patch.
 - Assign each proposed task a priority P0–P3, same scale Review uses. Give rationale.
