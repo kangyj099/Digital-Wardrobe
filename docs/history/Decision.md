@@ -1,5 +1,39 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Header/HUD Pinned Rule — 모든 조작 요소는 독립된 Floating Control, 단일 Toolbar/Capsule Bar/NavigationBar/SegmentedContainer로 병합 금지 (Layout Principle, 변경 시 사용자 승인 필수)
+
+결정:
+- 헤더/HUD의 조작 요소(카테고리 드롭다운, 계절 드롭다운, 밀도 버튼, 선택 버튼, ⋯더보기, 검색 등)는 **각각 물리적으로 독립된 컨테이너**(개별 프로스티드글래스 pill/circle)여야 한다. 시각적 스타일(블러/보더/그림자 톤)은 공유할 수 있지만, 하나의 Container/Row 안에 여러 요소를 함께 담아 하나의 Bar처럼 렌더링하는 것은 **프로젝트 전체에서 금지**한다.
+- 현재 `lib/widgets/overlay_header.dart`(`OverlayHeader`)가 정확히 이 금지된 패턴이다 — 배경/블러/보더/그림자를 가진 단일 `Container`가 `child`(드롭다운+타이틀)와 `actions`(선택 버튼 등)를 한 Row에 모두 담고 있다. `AppMainScaffold`가 모든 Main 화면에서 이 `OverlayHeader`를 공용으로 쓰고 있어, 화면 단위로 개별 수정해도 셸 자체가 이 패턴이면 계속 재발한다 — 이번 결정은 **셸 컴포넌트 자체의 재설계**를 요구한다(화면별 땜질 금지).
+- **Layer 분류**(`uiux-design-conventions` Layer Boundary Rule 기준): 이 규칙은 "헤더가 어떻게 배치되는가"를 정의하므로 **Layout Principle**에 속한다(Golden Question: UI가 어떻게 배치되는지 정의하는가? → YES → Layout).
+- **변경 절차 고정**: 이 규칙과 다른 형태(요소를 하나의 컨테이너로 합치는 등)를 제안하려면, 먼저 "기존 Pinned Rule을 변경하는 제안"임을 명시하고 사용자 승인을 받은 뒤에만 반영한다 — Worker/PM이 임의로 되돌릴 수 없다.
+- 이 규칙과 별개로, 사용자가 제공한 "옷장 메인 하이파이 디자인 주문서"(2026-07-13)의 세부 레이아웃(2번째 툴바 행, 계절 세그먼트, 원형 자리표시 버튼, 삭제 바, 토스트 등)은 `docs/reference/plan/03_화면별UX명세서/01_옷장.md`와 대조해 반영 — 세부 사항은 별도 Implementation 태스크에서 처리.
+- **후속 확정(같은 날)**: 이 Pinned Rule과 Scroll Edge Gradient 문제(아래 TechDebt, 이후 이 항목과 통합)를 PM이 종합해 "헤더가 Column으로 콘텐츠를 도킹시키는 구조 자체가 근본 원인"이라고 진단했고, 사용자가 이를 확인하며 정식 스펙 원문(Scroll Container + Header/HUD 아키텍처)을 전달 — `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`에 그대로 기록. 이 Decision 항목의 상세 구현 지침은 이제 그 스펙 문서가 Source of Truth이며, 여기서는 "규칙이 언제/왜 생겼는지"만 남긴다.
+
+사유:
+사용자가 여러 차례 "독립된 Floating Control" 형태로 수정 요청했음에도 Bar 형태로 반복 회귀 — 근본 원인이 화면별 구현이 아니라 공용 셸 컴포넌트(`OverlayHeader`) 자체의 설계였음을 이번에 확인. 재발 방지를 위해 Pinned Rule로 명문화하고 변경 절차를 고정.
+
+Impact:
+- 상세 구현 지침·Impact 평가는 `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`로 이관(중복 방지) — `lib/widgets/app_main_scaffold.dart`/`overlay_header.dart`/`fading_scroll_edge.dart` 재설계, 옷장/코디/스타일일지 메인 3화면 전부 영향.
+- 상세 구현은 별도 Implementation 태스크로 진행.
+
+---
+
+[Decision] 갤러리 그리드는 화면 가로폭 끝까지 사용(edge-to-edge) — HUD Scrollbar는 향후 Stack 기반 overlay로만 구현, Grid padding/inset 확장으로 자리 확보 금지
+
+결정:
+- `AppGalleryGrid`(`lib/widgets/app_gallery_grid.dart`)는 좌우 padding 없이 화면 가로폭을 끝까지 채운다. 수직 padding(상/하 여백)은 유지 가능하며, 타일 간 간격은 기존 `AppSpacing.galleryGap`(crossAxisSpacing/mainAxisSpacing)로 그대로 유지한다.
+- 아직 미착수 상태인 HUD Scrollbar(`docs/work/BACKLOG.md` 파킹로트 항목 — "Scrollbar / Scroll Hint(`<`/`>`)")는 향후 구현 시 반드시 **Stack 기반 overlay**로 그리드 위에 얹는 방식으로 만든다. Grid의 padding이나 top inset을 늘려 스크롤바 자리를 미리 확보하는 방식은 금지 — 스크롤바 유무가 갤러리 콘텐츠의 레이아웃(타일 크기/위치)에 영향을 줘서는 안 된다.
+
+사유:
+사용자 지시(2026-07-13, Step③ 완료 후 대표 3화면 Visual Review 착수 중 발견).
+
+Impact:
+- `lib/widgets/app_gallery_grid.dart` 좌우 padding 제거 필요 — 소규모 Implementation 태스크로 진행.
+- 이후 Scrollbar를 Component Library에 추가할 때(BACKLOG 파킹로트) 이 규칙(Stack overlay, Grid 비침습)을 따를 것.
+
+---
+
 [Decision] 그리드 밀도(`AppDensity`) 토글은 그룹형 Main 화면(옷장/코디) 전용 — 스타일일지 메인은 밀도 토글 없이 고정 밀도 사용
 
 결정:

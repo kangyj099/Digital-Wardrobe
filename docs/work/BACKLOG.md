@@ -28,7 +28,8 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(아키텍처 전환 후 정식 스펙 — 지금은 이쪽을 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**다음 세션 작업**: 사용자에게 코디 메인 갤러리 타일의 시각 표현 방식(대표 아이템 이미지 1장 / 미니 아트보드 합성 렌더 / 별도 커버이미지 필드 신설 / 현행 텍스트 유지)을 확인 대기 중 — 답이 오면 그 결정에 따라 소규모 Implementation 태스크로 반영. 그 후 **Step④: Detail 화면 적용**(옷 상세/코디 상세/스타일일지 열람 3개, `DetailHeaderActions`/`CrossReferenceLinkBar`를 `AppMainScaffold`의 groupingBar 슬롯을 비운 형태로 연결)으로 진행.
+**진행 중**: Main 3화면(옷장/코디/스타일일지) 완성으로 대표 Hi-Fi Sample(3~5화면) 하한을 채워 `Workflow_Design.md` §2.1 트리거 조건 충족 — 사용자 확정(2026-07-13)으로 Step④ 착수 전에 **Visual Review**를 지금 진행한다. 코디 타일 표시 방식(Audit P1)은 `coverImagePath` 필드 신설로 방향만 확정하고 착수는 보류(상세: `docs/history/TechnicalDebt.md`).
+**다음 세션 작업**: Visual Review 완료 후 **Step④: Detail 화면 적용**(옷 상세/코디 상세/스타일일지 열람 3개, `DetailHeaderActions`/`CrossReferenceLinkBar`를 `AppMainScaffold`의 groupingBar 슬롯을 비운 형태로 연결)으로 진행.
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함, 추후 Component Library 확장 시 검토(사용자 확정, 2026-07-13).
 
 ---

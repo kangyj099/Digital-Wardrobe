@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `FadingScrollEdge`가 정적 상단 마스크뿐 — 조건부(남은 콘텐츠 있을 때만)·하단 페이드 미구현
+
+상태: 미해결
+
+내용:
+사용자가 2026-07-13에 직접 지적: 의도한 스펙은 "스크롤 가능한 영역에서 콘텐츠가 상/하단으로 더 있을 때만" Edge Gradient가 보이는 것인데, 현재 `lib/widgets/fading_scroll_edge.dart`는 `ScrollController`/`ScrollNotification` 등 스크롤 상태를 전혀 보지 않는 고정 `ShaderMask`(`LinearGradient` stops `[0.0, 0.06]`, 상단만) 하나뿐이다 — 하단 페이드는 구현 자체가 없다. 또한 `AppMainScaffold`의 `body` 슬롯(헤더/툴바 아래)에만 적용돼 상태표시줄 바로 아래가 아니라 헤더보다 아래에서 시작한다.
+**해소 경로 확정**: 같은 날 사용자가 정식 스펙(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`)을 제공 — `ShaderMask` 방식은 그 스펙 §5 "AI Constraints"에서 명시적으로 금지되며, `TopGradientOverlay`/`BottomGradientOverlay`(스크롤 위치 기반 조건부 오버레이)로 완전히 교체될 예정. 이 TechDebt 항목은 그 Implementation 태스크가 완료되면 해소됨 — 별도 대응 불필요, 스펙 문서가 Source of Truth.
+
+---
+
+[TechDebt] `CompositionGalleryTile`이 아직 텍스트만 표시 — 향후 `Composition.coverImagePath` 필드 신설로 해소 예정(사용자 확정)
+
+상태: 미해결 (방향 확정, 미착수)
+
+내용:
+Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widgets/composition_gallery_tile.dart`)이 코디 이름+계절 텍스트만 표시해 `02_코디 (가상 조합).md`의 "옷장과 동일한 레이아웃/버튼 패턴"(실제 사진 타일) 요구와 어긋난다. 대응 방식 3가지(대표 아이템 이미지 1장 재사용 / 미니 아트보드 합성 렌더 / `StyleLog`처럼 `coverImagePath` 필드 신설)를 검토한 결과 사용자가 **`coverImagePath` 필드 신설**로 확정(2026-07-13) — 단, 지금 당장 착수하지 않고 현행 텍스트 표시를 유지한 채 이후 라운드로 미룬다. 필드 신설 시 사용자가 대표 이미지를 지정/캡처하는 로직(신규 기능)이 선행돼야 하므로 순수 Frontend 표시 변경이 아니라 Data/Architecture 결정 + Editor(Step⑤) 연동이 함께 필요.
+
+---
+
 [TechDebt] Step③ Audit(2026-07-13)에서 발견된 소소한 주석/lint 이슈 3건 — 다음 해당 파일 터치 시 함께 정리
 
 상태: 미해결
