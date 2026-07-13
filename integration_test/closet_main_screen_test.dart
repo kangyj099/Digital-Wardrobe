@@ -11,6 +11,7 @@ import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_colors.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
@@ -264,7 +265,7 @@ void main() {
 
     await selectCategory(tester, '스타일일지');
 
-    expect(find.text('스타일일지 메인'), findsOneWidget);
+    expect(find.byType(StyleLogMainScreen), findsOneWidget);
     expect(find.byType(SelectableGalleryTile), findsNothing);
   });
 

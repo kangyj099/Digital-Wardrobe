@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/closet_main_screen.dart';
 import '../screens/composition_main_screen.dart';
+import '../screens/style_log_main_screen.dart';
+import '../screens/trash_main_screen.dart';
 
 class AppRoute {
   AppRoute._();
@@ -16,7 +18,8 @@ class AppRoute {
   static const styleLogMain = '/style-log';
   static const styleLogViewer = '/style-log/:id';
   static const styleLogAdd = '/style-log/add';
-  static const settingsTrash = '/settings';
+  static const settingsMain = '/settings';
+  static const trashMain = '/trash';
 }
 
 Widget _placeholder(String label) => Scaffold(body: Center(child: Text(label)));
@@ -51,7 +54,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoute.styleLogMain,
-        builder: (context, state) => _placeholder('스타일일지 메인'),
+        builder: (context, state) => const StyleLogMainScreen(),
       ),
       GoRoute(
         path: AppRoute.styleLogAdd,
@@ -62,8 +65,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => _placeholder('스타일일지 열람 ${state.pathParameters['id']}'),
       ),
       GoRoute(
-        path: AppRoute.settingsTrash,
-        builder: (context, state) => _placeholder('설정/휴지통'),
+        path: AppRoute.settingsMain,
+        builder: (context, state) => _placeholder('설정'),
+      ),
+      GoRoute(
+        path: AppRoute.trashMain,
+        builder: (context, state) => const TrashMainScreen(),
       ),
     ],
   );
