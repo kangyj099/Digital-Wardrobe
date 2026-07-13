@@ -10,6 +10,7 @@ import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
+import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_colors.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
@@ -254,7 +255,7 @@ void main() {
 
     await selectCategory(tester, '코디');
 
-    expect(find.text('코디 메인'), findsOneWidget);
+    expect(find.byType(CompositionMainScreen), findsOneWidget);
     expect(find.byType(SelectableGalleryTile), findsNothing);
   });
 
@@ -615,7 +616,7 @@ void main() {
 
       // 카테고리 드롭다운으로 다른 화면 이동(context.go, 스택 전체 교체)도 회귀 없이 동작.
       await selectCategory(tester, '코디');
-      expect(find.text('코디 메인'), findsOneWidget);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
       expect(find.byType(SelectableGalleryTile), findsNothing);
     },
   );
