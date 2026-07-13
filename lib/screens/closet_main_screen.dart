@@ -10,6 +10,7 @@ import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/overlay_header.dart';
+import 'skeleton_region.dart';
 
 class ClosetMainScreen extends ConsumerStatefulWidget {
   const ClosetMainScreen({super.key});
@@ -102,6 +103,11 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
                       ),
                     ],
                   ),
+                ),
+                skeletonRegion(
+                  context,
+                  '분류 선택 바 (그룹형 드릴다운) — Step②에서 AppMainScaffold groupingBar 슬롯으로 대체 예정',
+                  height: 48,
                 ),
                 Expanded(
                   child: ShaderMask(
