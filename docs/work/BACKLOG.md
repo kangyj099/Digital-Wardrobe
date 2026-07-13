@@ -28,9 +28,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(아키텍처 전환 후 정식 스펙 — 지금은 이쪽을 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**진행 중**: Main 3화면(옷장/코디/스타일일지) 완성으로 대표 Hi-Fi Sample(3~5화면) 하한을 채워 `Workflow_Design.md` §2.1 트리거 조건 충족 — 사용자 확정(2026-07-13)으로 Step④ 착수 전에 **Visual Review**를 지금 진행한다. 코디 타일 표시 방식(Audit P1)은 `coverImagePath` 필드 신설로 방향만 확정하고 착수는 보류(상세: `docs/history/TechnicalDebt.md`).
-**다음 세션 작업**: Visual Review 완료 후 **Step④: Detail 화면 적용**(옷 상세/코디 상세/스타일일지 열람 3개, `DetailHeaderActions`/`CrossReferenceLinkBar`를 `AppMainScaffold`의 groupingBar 슬롯을 비운 형태로 연결)으로 진행.
-- Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함, 추후 Component Library 확장 시 검토(사용자 확정, 2026-07-13).
+**진행 중 (최우선, Visual Review를 인터럽트함)**: Main 3화면 Visual Review 도중 사용자가 Header/HUD 구조 결함(반복 회귀)과 Scroll Edge Gradient 결함을 지적, PM이 "근본 원인 = `AppMainScaffold`의 Column 도킹 구조"로 진단 → 사용자가 정식 Scroll Container/Header-HUD 스펙 원문 제공(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`). **Header/HUD Pinned Rule**(Decision.md 최상단 — 조작 요소는 독립 floating control, 병합 금지, 변경 시 사용자 승인 필수)도 함께 기록됨. `AppMainScaffold`/`OverlayHeader`/`FadingScrollEdge`를 Stack 기반으로 재설계하는 Size XL Worker 태스크 진행 중(선택 모드 실제 동작·Scrollbar 실제 제작은 스코프 제외 — 별도 후속). 옷장 메인 하이파이 주문서(2026-07-13, 사용자 제공)의 레이아웃 세부(2번째 툴바 행 등)도 이 태스크에 포함.
+**다음 세션 작업**: 이 XL 태스크 Worker→Review→Tester→Audit 완료 후 → (1) 새 구조 기준으로 스크린샷 재캡처해 Visual Review 재개(Typography Pass 3 확정 포함), (2) 사용자 요청한 코드 주석 정리 + Mermaid 클래스 다이어그램 작성(구조가 곧 바뀔 예정이라 이 태스크 완료 후로 미룸), (3) 이후 Step④: Detail 화면 적용.
+- Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 단, 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 문서 §3/§6에 이미 정의됨.
 
 ---
 
