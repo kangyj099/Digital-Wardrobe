@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `integration_test/typography_pass3_test.dart`에 미사용 import 2건 (`closet_main_screen.dart`, `style_log_gallery_tile.dart`)
+
+상태: 미해결 (사소함)
+
+내용:
+Typography Pass 3 코드 반영 Review 중 발견 — Tester가 작성한 `integration_test/typography_pass3_test.dart`에 `flutter analyze` 기준 unused_import 경고 2건이 있다. 테스트 통과에는 영향 없고 순수 lint 이슈.
+
+해결 방향: 다음에 이 파일을 손댈 일이 생기면 (`import` 2줄 제거) 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
+
+---
+
 [TechDebt] `DetailHeaderActions`/`EditorHeader`가 Header/HUD Pinned Rule·Glass primitive보다 먼저 만들어져, Step④/⑤ 착수 시 그대로 쓰면 금지된 패턴이 재발함 (P1, Step④ 착수 전 처리 필요)
 
 상태: 미해결 (Step④ 착수 전 필수 확인)

@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Header/HUD Stack 아키텍처 재설계 전체 완료 (2026-07-13).** Visual Review 도중 사용자가 지적한 헤더 반복 회귀·Scroll Edge Gradient 결함을 계기로, `AppMainScaffold`를 Column(헤더 도킹)→Stack(콘텐츠 full-bleed + 헤더/HUD floating overlay)로 전면 재설계. `OverlayHeader`/`FadingScrollEdge` 폐기, `GlassPill`/`GlassCircleButton`(독립 floating control 공용 primitive), `TopGradientOverlay`/`BottomGradientOverlay`/`AppScrollContainer`(스크롤 위치 기반 조건부 그라디언트) 신설. 3개 Main 화면 전부 반영. Worker→Review(findings 없음)→Tester(스크롤별 opacity 전이·플로팅 컨트롤 히트테스트 우선순위 등 신규 시나리오 전부 통과)→Audit(P0 없음, P1 1건+P2 1건) 전부 완료. 커밋 `76ead4d`. 근거: `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`, Decision.md의 Header/HUD Pinned Rule. Audit P1(`DetailHeaderActions`/`EditorHeader`가 이 재설계보다 먼저 만들어져 Step④/⑤ 착수 시 Pinned Rule 위반 재발 위험)·P2(Glass 두 위젯의 스타일 값 중복)는 `docs/history/TechnicalDebt.md`에 기록 — P1은 Step④ 착수 시 최우선으로 먼저 처리.
+**Header/HUD Stack 재설계 후 Visual Review 재개 + Typography Pass 3 확정 + 주석 정리/다이어그램 완료 (2026-07-14).** 새 구조 기준 Main 3화면 스크린샷 재캡처 후 Visual Review 진행 — Brand Guide §3(Body 폰트가 실제 코드와 어긋나 있던 것)를 Pretendard로 동기화하고, Type Scale을 정식 확정(`labelSmall` 11→13px, 신규 `actionMinimal` 11px 역할 도입 — "선택" 버튼이 앱 내 최소 텍스트가 되도록). Worker→Review→Tester(회귀 79개 포함 전부 Pass) 완료, 커밋 `fad986a`. 이어서 Header/HUD Stack 위젯 5개의 개발사 서사 주석을 현재형 불변식으로 정리하고, 아키텍처 스펙에 Mermaid 클래스 다이어그램 신설 — Worker→Review(P1 1건: EditorHeader 노트가 미확정 Decision을 확정처럼 서술 → 수정 → Re-Review 통과) 완료, 커밋 `e30e1c4`. 사소한 TechDebt 1건(`typography_pass3_test.dart` unused import 2건) 기록.
 
 ---
 
@@ -28,10 +28,8 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(화면 관통 공용 셸 스펙), `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`(Header/HUD·스크롤 컨테이너 정식 스펙 — 지금은 이 3개를 함께 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**다음 세션 작업 (순서대로)**:
-1. 새 Header/HUD Stack 구조 기준으로 Main 3화면 스크린샷 재캡처 → Visual Review 재개(보류 중이던 Typography Pass 3 확정 포함).
-2. 사용자 요청한 코드 주석 정리 + Mermaid 클래스 다이어그램 작성(구조 전환이 막 끝나 지금이 적기).
-3. **Step④(Detail 화면 적용) 착수 직전에 먼저** `DetailHeaderActions` 재작업(위 Audit P1) — 그 다음 옷 상세/코디 상세/스타일일지 열람 3화면에 연결.
+**다음 세션 작업**:
+1. **Step④(Detail 화면 적용) 착수 직전에 먼저** `DetailHeaderActions` 재작업(위 Audit P1, `docs/history/TechnicalDebt.md`) — 카테고리 드롭다운과 ⋯더보기가 스타일 없는 Row에 합쳐진 Pinned Rule 위반 해소. `EditorHeader`의 Glass화 여부는 아직 Decision-stage 미확정 질문(PM/사용자 확인 필요, 임의로 정하지 말 것). 재작업 후 옷 상세/코디 상세/스타일일지 열람 3화면에 연결.
 - 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
 
