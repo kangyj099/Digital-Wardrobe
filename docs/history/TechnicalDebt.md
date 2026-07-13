@@ -1,11 +1,33 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
-[TechDebt] `FadingScrollEdge`가 정적 상단 마스크뿐 — 조건부(남은 콘텐츠 있을 때만)·하단 페이드 미구현
+[TechDebt] `DetailHeaderActions`/`EditorHeader`가 Header/HUD Pinned Rule·Glass primitive보다 먼저 만들어져, Step④/⑤ 착수 시 그대로 쓰면 금지된 패턴이 재발함 (P1, Step④ 착수 전 처리 필요)
 
-상태: 구현 완료, Review 대기 중 (2026-07-13)
+상태: 미해결 (Step④ 착수 전 필수 확인)
 
 내용:
-사용자가 2026-07-13에 직접 지적한 뒤, 같은 날 정식 스펙(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`)을 제공 — Header/HUD Stack 재설계 Worker 태스크에서 `lib/widgets/fading_scroll_edge.dart`(ShaderMask 기반) 자체를 삭제하고 `TopGradientOverlay`/`BottomGradientOverlay`(스크롤 위치 기반 조건부 오버레이, `AppScrollContainer`가 조립)로 교체. Tester 성격의 통합테스트 5개 파일 전부 통과(구조 확인 포함) — Review 통과 후 "해소됨"으로 최종 확정.
+Header/HUD Stack 재설계(2026-07-13) 완료 후 Audit이 발견: `lib/widgets/detail_header_actions.dart`(Step②-A, `GlassPill`/`GlassCircleButton`/Pinned Rule보다 먼저 제작)가 `CategoryToggleDropdown`(이제 내부적으로 `GlassPill`)과 맨 아이콘버튼(⋯더보기)을 **하나의 스타일 없는 `Row`에 함께 담고 있다** — 이건 정확히 Pinned Rule이 금지하는 패턴("하나의 Container/Row 안에 여러 요소를 함께 담아 렌더링 금지")이고, 드롭다운과 ⋯더보기는 Pinned Rule 원문이 직접 예시로 든 컨트롤이다. 지금 화면에 실제로 꽂혀있지 않아(Detail 3화면 전부 아직 Step① skeleton) 당장 눈에 보이는 버그는 아니지만, Step④가 이걸 그대로 `AppMainScaffold.headerActions`에 연결하면 방금 없앤 회귀가 그대로 재발한다. `lib/widgets/editor_header.dart`도 `GlassPill`/`GlassCircleButton`을 안 쓰지만, Decision.md대로 Editor는 애초에 `AppMainScaffold`를 안 쓰는 자체 헤더라 Pinned Rule 적용 여부 자체가 별도 확인 필요(단순 미적용 위험은 낮음).
+
+해결 방향(Audit 제안): Step④ 착수 시(또는 직전) `DetailHeaderActions`를 카테고리 드롭다운과 ⋯더보기가 각각 독립 `Positioned`/`GlassCircleButton`이 되도록 재작업 — 아마 `DetailHeaderActions`라는 단일 composite 위젯 자체를 없애고, Detail 화면들이 `AppMainScaffold.headerActions`에 두 개의 독립 요소를 따로 넘기는 구조로 바뀔 가능성이 큼. `EditorHeader`의 취소/도움말 버튼이 Pinned Rule 예외(자체 헤더라 면제)인지 다른 화면과의 시각적 일관성을 위해 똑같이 Glass화해야 하는지는 Decision-stage 질문 — Worker가 임의로 정하지 말고 PM/사용자 확인 필요.
+
+---
+
+[TechDebt] `GlassPill`/`GlassCircleButton`이 프로스티드글래스 스타일 값(블러/보더/그림자/투명도) 5개를 서로 복붙 — 공유 소스 없음
+
+상태: 미해결
+
+내용:
+Header/HUD Stack 재설계(2026-07-13) 후 Audit이 발견: `lib/widgets/glass_pill.dart`/`glass_circle_button.dart`가 `border: Colors.white.withValues(alpha: 0.2)`, `blurRadius: 8`, `shadow Offset(0,2)/alpha 0.05`, `ImageFilter.blur(sigmaX: 12, sigmaY: 12)`, `fill alpha: 0.38` 값을 각각 독립적으로 하드코딩하고 있다. `GlassCircleButton` 주석 자체가 "`GlassPill`과 동일한 톤을 재사용하기 위함"이라고 밝히면서도 실제로는 값을 복붙한 것 — Step④~⑥에서 floating control이 더 늘어나면 한쪽만 수정되고 다른 쪽이 안 바뀌는 드리프트 위험이 있다.
+
+해결 방향: 두 위젯이 공유하는 decoration/상수 홀더(예: private `_glassDecoration()` 헬퍼, 또는 `AppRadius`/`AppMotion` 옆에 `AppGlassStyle` 같은 이름 있는 토큰 클래스)로 추출 — 이 블러/투명도 값들도 `AppRadius.pill`처럼 "코드에서 먼저 정의되고 나중에 Design Tokens에 등재된" 전례를 따를 후보.
+
+---
+
+[TechDebt] `FadingScrollEdge`가 정적 상단 마스크뿐 — 조건부(남은 콘텐츠 있을 때만)·하단 페이드 미구현
+
+상태: **해소됨 (2026-07-13)**
+
+내용:
+사용자가 2026-07-13에 직접 지적한 뒤, 같은 날 정식 스펙(`docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`)을 제공 — Header/HUD Stack 재설계 Worker 태스크에서 `lib/widgets/fading_scroll_edge.dart`(ShaderMask 기반) 자체를 삭제하고 `TopGradientOverlay`/`BottomGradientOverlay`(스크롤 위치 기반 조건부 오버레이, `AppScrollContainer`가 조립)로 교체. Worker→Review(findings 없음)→Tester(스크롤 위치별 opacity 전이 실측 포함 전체 통과)→Audit(P0 없음) 전부 완료, 커밋 `76ead4d`.
 
 ---
 
@@ -18,12 +40,12 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 
 ---
 
-[TechDebt] Step③ Audit(2026-07-13)에서 발견된 소소한 주석/lint 이슈 3건 — 다음 해당 파일 터치 시 함께 정리
+[TechDebt] Step③ Audit(2026-07-13)에서 발견된 소소한 주석/lint 이슈 2건 — 다음 해당 파일 터치 시 함께 정리
 
-상태: 미해결
+상태: **해소됨 (2026-07-13)** — 아래 2건 모두 Header/HUD Stack 재설계 작업 중 해소
 
 내용:
-1. `lib/widgets/app_main_scaffold.dart:29`와 `lib/screens/closet_main_screen.dart:73`의 groupingBar 관련 주석이 "실제 그룹형 드릴다운은 Step③ 몫"이라고 적혀있는데, Step③(2026-07-13)이 실제로 끝나며 groupingBar는 여전히 skeleton placeholder로 남고 실제 드릴다운은 Step⑦(기능 구현)로 확정됐다 — `composition_main_screen.dart`의 대응 주석("Step⑦에서 실제 드릴다운으로 대체 예정")만 최신 상태. 두 주석을 Step⑦ 기준으로 맞출 것. **미해결** — Header/HUD Stack 재설계(2026-07-13)로 `app_main_scaffold.dart`가 전면 재작성됐으니 이 참에 확인 필요.
+1. ~~`lib/widgets/app_main_scaffold.dart:29`와 `lib/screens/closet_main_screen.dart:73`의 groupingBar 관련 주석 불일치~~ — Header/HUD Stack 재설계(2026-07-13, 커밋 `76ead4d`)로 `app_main_scaffold.dart`가 전면 재작성되며 groupingBar skeleton 주석이 3화면 전부 "Step⑦(기능 구현)에서 실제 그룹형 드릴다운으로 대체 예정"으로 일치(Audit 확인). **해소됨.**
 2. ~~`integration_test/composition_style_log_main_screen_test.dart:8`에 미사용 import~~ — Header/HUD Stack 재설계 Worker 태스크(2026-07-13)가 같이 정리함. **해소됨.**
 
 ---
