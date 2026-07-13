@@ -20,10 +20,13 @@ import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 /// 실제 앱 실행에서 아직 검증되지 않았던 항목만 추가한다:
 /// 1) 옷장 메인에서 자기 자신(옷장)을 재선택하면 실제 무동작인지(자기 자신 재선택 무시)가
 ///    real app router 컨텍스트에서도 유지되는지.
-/// 2) 코디로 이동한 뒤 실제로 옷장으로 되돌아올 UI 경로가 현재 존재하는지 실측 확인
-///    (`CompositionMainScreen`이 아직 Step① skeleton이라 `CategoryToggleDropdown`
-///    자체가 없다 — 코드 추측이 아니라 실제 위젯 트리로 확인. 발견 사항, Worker 스코프
-///    밖의 기존 상태).
+/// 2) 코디로 이동한 뒤 실제로 옷장으로 되돌아올 UI 경로가 현재 존재하는지 실측 확인.
+///    작성 당시(Step② 시점)에는 `CompositionMainScreen`이 Step① skeleton이라
+///    `CategoryToggleDropdown` 자체가 없어 '경로 없음'이 사실이었지만, Step③(코디/
+///    스타일일지 메인 `AppMainScaffold` 마이그레이션)로 실제 배선되어 이 전제가 바뀌었다 —
+///    아래 테스트를 그 최신 동작(경로가 실제로 있음)으로 갱신한다. 이 화면 쌍에 대한
+///    나머지 상세 시나리오(계절/밀도/FAB/그리드 탭 등)는
+///    `composition_style_log_main_screen_test.dart`가 담당한다.
 /// 3) 그리드 아이템 탭으로 진입한 실제 옷 상세 화면(`ClosetItemDetailScreen`)에
 ///    FrostedBackButton이 (아직) 존재하는지 실측 확인 — Step④ 미착수 상태를 코드
 ///    추측이 아니라 실제 위젯 트리로 확인.
@@ -68,8 +71,9 @@ void main() {
   );
 
   testWidgets(
-    '[발견 사항] 코디로 이동한 뒤에는 실제로 옷장으로 되돌아올 UI 경로가 현재 없다 '
-    '(CompositionMainScreen이 아직 Step① skeleton이라 CategoryToggleDropdown 자체가 없음 — 실측 확인, Worker 스코프 밖의 기존 상태)',
+    '[갱신됨, Step③ 재검증] 코디로 이동한 뒤 실제로 옷장으로 되돌아올 UI 경로가 이제 존재한다 '
+    '(CompositionMainScreen이 AppMainScaffold로 마이그레이션되며 CategoryToggleDropdown이 '
+    '실제 배선됨 — 과거 "발견 사항"이었던 부재 상태는 해소됨)',
     (tester) async {
       await pumpApp(tester);
 
@@ -79,9 +83,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(CompositionMainScreen), findsOneWidget);
-      // 코디 메인엔 아직 CategoryToggleDropdown이 배선되지 않아 옷장으로 돌아갈 UI가 없다.
-      expect(find.byType(CategoryToggleDropdown), findsNothing);
-      expect(categoryDropdownFinder(), findsNothing);
+      expect(find.byType(CategoryToggleDropdown), findsOneWidget);
+
+      await tester.tap(categoryDropdownFinder());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('옷장').last);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClosetMainScreen), findsOneWidget);
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
     },
   );
 
