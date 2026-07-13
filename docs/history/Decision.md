@@ -4,7 +4,7 @@
 
 결정:
 - 헤더/HUD의 조작 요소(카테고리 드롭다운, 계절 드롭다운, 밀도 버튼, 선택 버튼, ⋯더보기, 검색 등)는 **각각 물리적으로 독립된 컨테이너**(개별 프로스티드글래스 pill/circle)여야 한다. 시각적 스타일(블러/보더/그림자 톤)은 공유할 수 있지만, 하나의 Container/Row 안에 여러 요소를 함께 담아 하나의 Bar처럼 렌더링하는 것은 **프로젝트 전체에서 금지**한다.
-- 현재 `lib/widgets/overlay_header.dart`(`OverlayHeader`)가 정확히 이 금지된 패턴이다 — 배경/블러/보더/그림자를 가진 단일 `Container`가 `child`(드롭다운+타이틀)와 `actions`(선택 버튼 등)를 한 Row에 모두 담고 있다. `AppMainScaffold`가 모든 Main 화면에서 이 `OverlayHeader`를 공용으로 쓰고 있어, 화면 단위로 개별 수정해도 셸 자체가 이 패턴이면 계속 재발한다 — 이번 결정은 **셸 컴포넌트 자체의 재설계**를 요구한다(화면별 땜질 금지).
+- 이 결정 당시(2026-07-13) `lib/widgets/overlay_header.dart`(`OverlayHeader`)가 정확히 이 금지된 패턴이었다 — 배경/블러/보더/그림자를 가진 단일 `Container`가 `child`(드롭다운+타이틀)와 `actions`(선택 버튼 등)를 한 Row에 모두 담고 있었다. `AppMainScaffold`가 모든 Main 화면에서 이 `OverlayHeader`를 공용으로 쓰고 있어, 화면 단위로 개별 수정해도 셸 자체가 이 패턴이면 계속 재발하는 구조였다 — 이번 결정은 **셸 컴포넌트 자체의 재설계**를 요구했다(화면별 땜질 금지). **(주: `OverlayHeader`는 같은 날 Header/HUD Stack 재설계 작업으로 삭제됐다 — 이 문단은 그 시점의 문제 상황을 기록한 것이지 현재 코드 상태가 아니다.)**
 - **Layer 분류**(`uiux-design-conventions` Layer Boundary Rule 기준): 이 규칙은 "헤더가 어떻게 배치되는가"를 정의하므로 **Layout Principle**에 속한다(Golden Question: UI가 어떻게 배치되는지 정의하는가? → YES → Layout).
 - **변경 절차 고정**: 이 규칙과 다른 형태(요소를 하나의 컨테이너로 합치는 등)를 제안하려면, 먼저 "기존 Pinned Rule을 변경하는 제안"임을 명시하고 사용자 승인을 받은 뒤에만 반영한다 — Worker/PM이 임의로 되돌릴 수 없다.
 - 이 규칙과 별개로, 사용자가 제공한 "옷장 메인 하이파이 디자인 주문서"(2026-07-13)의 세부 레이아웃(2번째 툴바 행, 계절 세그먼트, 원형 자리표시 버튼, 삭제 바, 토스트 등)은 `docs/reference/plan/03_화면별UX명세서/01_옷장.md`와 대조해 반영 — 세부 사항은 별도 Implementation 태스크에서 처리.
