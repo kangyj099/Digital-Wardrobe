@@ -11,8 +11,10 @@ import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_colors.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
@@ -55,6 +57,15 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// 진입하는 실제 UI(카테고리 드롭다운 옵션 등)가 없어 정상 UI 플로우로는 도달 불가능하다.
 /// 20~22번과 같은 패턴(`GoRouter.of(context).push(...)`로 인위적으로 push)을 그대로 적용해,
 /// 화면이 실제로 렌더링되는지·두 스켈레톤 박스(헤더/그리드)가 모두 나타나는지를 확인한다.
+///
+/// 아래는 `CompositionDetailScreen`/`StyleLogViewerScreen`(Task D, commit f48ac88) 검증 시
+/// 신설한 테스트(24~25번). 두 화면 모두 상위 메인 화면(코디 메인/스타일일지 메인)이 아직
+/// 스켈레톤이라 진입 UI가 없어 정상 UI 플로우로는 도달 불가능하고, 화면 내부에서
+/// `state.pathParameters['id']!`로 강제 non-null 처리한 id가 실제로 위젯에 전달·보간되는지도
+/// 검증된 적이 없었다(Review P1 지적). `/trash` 검증과 같은 인위적 push 패턴을 그대로
+/// 적용하되, 두 라우트는 `:id` 세그먼트가 있으므로 상수(`AppRoute.compositionMain`/
+/// `AppRoute.styleLogMain`)에 테스트 픽스처 id를 이어붙인 경로 문자열을 push해, 화면이
+/// 렌더링되고 id가 실제로 화면에 보간되는지까지 함께 확인한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -647,6 +658,46 @@ void main() {
       expect(find.byType(TrashMainScreen), findsOneWidget);
       expect(find.textContaining('헤더'), findsOneWidget);
       expect(find.textContaining('썸네일 그리드'), findsOneWidget);
+    },
+  );
+
+  // ── 아래부터 CompositionDetailScreen/StyleLogViewerScreen(Task D) 검증 ────────
+
+  testWidgets(
+    '옷장 메인 위에 /composition/:id 를 인위적으로 push하면 CompositionDetailScreen이 실제로 '
+    '렌더링되고, 헤더가 나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 '
+    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 코디 메인이 스켈레톤이라 상세로 가는 진입 '
+    'UI가 없는 것이 플랜에 명시된 의도된 상태)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      GoRouter.of(context).push('${AppRoute.compositionMain}/test-id');
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.textContaining('test-id'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '옷장 메인 위에 /style-log/:id 를 인위적으로 push하면 StyleLogViewerScreen이 실제로 '
+    '렌더링되고, 헤더가 나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 '
+    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 스타일일지 메인이 스켈레톤이라 뷰어로 가는 '
+    '진입 UI가 없는 것이 플랜에 명시된 의도된 상태)',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      final context = tester.element(find.byType(SelectableGalleryTile).first);
+      GoRouter.of(context).push('${AppRoute.styleLogMain}/test-id');
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.textContaining('test-id'), findsOneWidget);
     },
   );
 }
