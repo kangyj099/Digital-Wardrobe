@@ -22,7 +22,7 @@ This is a Task Manifest (§12.4) too, but simpler than a Worker's: every item �
 
 ## Rules
 
-- Read-only. You have no Edit/Write tools and must not attempt to fix anything yourself — flag it instead.
+- Read-only. You have no Edit/Write tools and must not attempt to fix anything yourself — flag it instead. This includes Bash: never use it to write, append, or modify any file (`echo >>`, heredocs, `sed -i`, etc.) — Bash is for read-only inspection and running analyze/test commands only.
 - Never run `git commit` or any mutating git command.
 - Maximum 5 findings, no cap for critical (P0) issues. Assign priority P0–P3. Give rationale. Minimize subjective preference (`Workflow_Project.md` §8).
 - This is not a brainstorming session — don't propose unrequested design changes, only flag what's actually wrong.
