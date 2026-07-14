@@ -26,6 +26,7 @@ import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/editor_header.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
+import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 
 /// Task 7(옷장 메인 화면) 검증. Review 통과분(commit 8145d3f) 대상 Tester 시나리오.
 /// Task 1(Season enum 4종→3종 개편, commit fb15a84) 재검증 시 계절 드롭다운 순서 assertion 추가.
@@ -86,6 +87,14 @@ import 'package:digittal_wardrobe/widgets/status_badge.dart';
 /// 아직 없어 정상 UI 플로우로는 도달 불가능하다. `/trash` 검증과 같은 인위적 push 패턴을
 /// 그대로 적용해 화면이 실제로 렌더링되는지, 헤더/리스트-로우 두 스켈레톤 박스가 모두
 /// 나타나는지를 확인한다.
+///
+/// [Step⑥-A 재검증, 2026-07-15] `SettingsScreen`/`TrashMainScreen`이 skeleton placeholder에서
+/// 실제 화면(`AppMainScaffold` 연결, 리스트-로우/썸네일 그리드 구현)으로 교체되면서, 23번/28번
+/// 테스트가 찾던 skeletonRegion 텍스트("헤더"/"썸네일 그리드"/"리스트-로우")가 화면에서 사라져
+/// 실패하게 됐다. 두 테스트를 실제 렌더 요소(GlassPill 헤더 액션, TrashGalleryTile 그리드,
+/// 리스트-로우 라벨 텍스트) 기준으로 갱신한다. 두 화면의 실제 동작(뒤로가기, 헤더 액션 독립성,
+/// 파괴적 액션 확인 다이얼로그, 타일 탭 정보 팝업, 스크롤 힌트 등)은 이 파일이 아니라 전용 파일
+/// `settings_trash_shell_test.dart`에서 검증한다(대형 회귀축 파일에 중복 작성하지 않음).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -664,9 +673,11 @@ void main() {
   // ── 아래부터 /trash(TrashMainScreen) 검증 ─────────────────────────────────
 
   testWidgets(
-    '옷장 메인 위에 /trash 를 인위적으로 push하면 TrashMainScreen이 실제로 렌더링되고, '
-    '헤더/그리드 두 스켈레톤 박스가 모두 화면에 나타난다 (정상 UI 플로우로는 아직 도달 '
-    '불가능한 화면 — 카테고리 드롭다운에 옵션이 없는 것이 플랜에 명시된 의도된 상태)',
+    '[갱신됨, Step⑥-A 재검증] 옷장 메인 위에 /trash 를 인위적으로 push하면 TrashMainScreen이 '
+    '실제로 렌더링되고, 헤더 액션("선택"/"비우기" GlassPill)과 mock 4개 썸네일 그리드가 모두 '
+    '화면에 나타난다 (정상 UI 플로우로는 아직 도달 불가능한 화면 — 카테고리 드롭다운에 옵션이 '
+    '없는 것이 플랜에 명시된 의도된 상태. Step⑥-A 이전엔 skeletonRegion 텍스트 "헤더"/"썸네일 '
+    '그리드"로 확인했으나, 실제 화면 구현 후 그 텍스트가 사라져 실제 렌더 요소로 확인 대상을 갱신)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -676,8 +687,9 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(TrashMainScreen), findsOneWidget);
-      expect(find.textContaining('헤더'), findsOneWidget);
-      expect(find.textContaining('썸네일 그리드'), findsOneWidget);
+      expect(find.text('선택'), findsOneWidget);
+      expect(find.text('비우기'), findsOneWidget);
+      expect(find.byType(TrashGalleryTile), findsNWidgets(4));
     },
   );
 
@@ -772,9 +784,11 @@ void main() {
   // ── 아래부터 SettingsScreen(Task F) 검증 ────────────────────────────────────
 
   testWidgets(
-    '옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 실제로 렌더링되고, '
-    '헤더/리스트-로우 두 스켈레톤 박스가 모두 화면에 나타난다 (정상 UI 플로우로는 아직 도달 '
-    '불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 플랜에 명시된 의도된 상태)',
+    '[갱신됨, Step⑥-A 재검증] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
+    '실제로 렌더링되고, 리스트-로우(알림/다크모드/프로필 편집/전체 데이터 삭제)가 모두 화면에 '
+    '나타난다 (정상 UI 플로우로는 아직 도달 불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 '
+    '플랜에 명시된 의도된 상태. Step⑥-A 이전엔 skeletonRegion 텍스트 "헤더"/"리스트-로우"로 확인했으나, '
+    '실제 화면 구현 후 그 텍스트가 사라져 실제 렌더 요소로 확인 대상을 갱신)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -784,8 +798,10 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.textContaining('헤더'), findsOneWidget);
-      expect(find.textContaining('리스트-로우'), findsOneWidget);
+      expect(find.text('알림'), findsOneWidget);
+      expect(find.text('다크 모드'), findsOneWidget);
+      expect(find.text('프로필 편집'), findsOneWidget);
+      expect(find.text('전체 데이터 삭제'), findsOneWidget);
     },
   );
 }

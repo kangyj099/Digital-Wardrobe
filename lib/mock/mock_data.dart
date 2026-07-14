@@ -2,6 +2,7 @@ import '../models/clothing_item.dart';
 import '../models/composition.dart';
 import '../models/enums.dart';
 import '../models/style_log.dart';
+import '../models/trash_entry.dart';
 
 final List<ClothingItem> mockClothingItems = [
   const ClothingItem(id: 'c01', name: '플로럴 원피스', category: ClothingCategory.dress, color: 'pink', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png', location: '옷장 2단', wearCount: 3),
@@ -57,4 +58,13 @@ final List<StyleLog> mockStyleLogs = [
     linkedCompositionId: 'comp02',
     location: '회사',
   ),
+];
+
+// 휴지통 mock — 실제로는 위 세 리스트를 `isDeleted`로 필터링한 집계 뷰가 되어야 하지만
+// (Step⑦ 몫), 지금은 이 화면 전용 고정 목록만 채운다.
+final List<TrashEntry> mockTrashEntries = [
+  const TrashEntry(id: 't1', category: AppCategory.closet, imagePath: '', remainingDays: 12),
+  const TrashEntry(id: 't2', category: AppCategory.composition, imagePath: '', remainingDays: 5),
+  const TrashEntry(id: 't3', category: AppCategory.styleLog, imagePath: '', remainingDays: 27),
+  const TrashEntry(id: 't4', category: AppCategory.closet, imagePath: '', remainingDays: 1),
 ];
