@@ -11,14 +11,23 @@ Typography Pass 3 코드 반영 Review 중 발견 — Tester가 작성한 `integ
 
 ---
 
-[TechDebt] `DetailHeaderActions`/`EditorHeader`가 Header/HUD Pinned Rule·Glass primitive보다 먼저 만들어져, Step④/⑤ 착수 시 그대로 쓰면 금지된 패턴이 재발함 (P1, Step④ 착수 전 처리 필요)
+[TechDebt] `DetailHeaderActions`가 Header/HUD Pinned Rule·Glass primitive보다 먼저 만들어져 금지된 패턴을 담고 있던 문제
 
-상태: 미해결 (Step④ 착수 전 필수 확인)
+상태: **해소됨 (2026-07-14)**
 
 내용:
-Header/HUD Stack 재설계(2026-07-13) 완료 후 Audit이 발견: `lib/widgets/detail_header_actions.dart`(Step②-A, `GlassPill`/`GlassCircleButton`/Pinned Rule보다 먼저 제작)가 `CategoryToggleDropdown`(이제 내부적으로 `GlassPill`)과 맨 아이콘버튼(⋯더보기)을 **하나의 스타일 없는 `Row`에 함께 담고 있다** — 이건 정확히 Pinned Rule이 금지하는 패턴("하나의 Container/Row 안에 여러 요소를 함께 담아 렌더링 금지")이고, 드롭다운과 ⋯더보기는 Pinned Rule 원문이 직접 예시로 든 컨트롤이다. 지금 화면에 실제로 꽂혀있지 않아(Detail 3화면 전부 아직 Step① skeleton) 당장 눈에 보이는 버그는 아니지만, Step④가 이걸 그대로 `AppMainScaffold.headerActions`에 연결하면 방금 없앤 회귀가 그대로 재발한다. `lib/widgets/editor_header.dart`도 `GlassPill`/`GlassCircleButton`을 안 쓰지만, Decision.md대로 Editor는 애초에 `AppMainScaffold`를 안 쓰는 자체 헤더라 Pinned Rule 적용 여부 자체가 별도 확인 필요(단순 미적용 위험은 낮음).
+Header/HUD Stack 재설계(2026-07-13) 완료 후 Audit이 발견: `lib/widgets/detail_header_actions.dart`(Step②-A, `GlassPill`/`GlassCircleButton`/Pinned Rule보다 먼저 제작)가 `CategoryToggleDropdown`과 맨 아이콘버튼(⋯더보기)을 **하나의 스타일 없는 `Row`에 함께 담고 있었다** — Pinned Rule이 금지하는 패턴("하나의 Container/Row 안에 여러 요소를 함께 담아 렌더링 금지")에 정확히 해당.
 
-해결 방향(Audit 제안): Step④ 착수 시(또는 직전) `DetailHeaderActions`를 카테고리 드롭다운과 ⋯더보기가 각각 독립 `Positioned`/`GlassCircleButton`이 되도록 재작업 — 아마 `DetailHeaderActions`라는 단일 composite 위젯 자체를 없애고, Detail 화면들이 `AppMainScaffold.headerActions`에 두 개의 독립 요소를 따로 넘기는 구조로 바뀔 가능성이 큼. `EditorHeader`의 취소/도움말 버튼이 Pinned Rule 예외(자체 헤더라 면제)인지 다른 화면과의 시각적 일관성을 위해 똑같이 Glass화해야 하는지는 Decision-stage 질문 — Worker가 임의로 정하지 말고 PM/사용자 확인 필요.
+해소: Step④(Detail 3화면 적용, 2026-07-14) Worker 태스크에서 `DetailHeaderActions` 위젯 자체를 삭제 — `AppMainScaffold`가 `showCategoryToggle`(기본 true)로 `CategoryToggleDropdown`을 이미 독립 `Positioned`로 자동 배치하므로, 남는 "⋯더보기"만 각 Detail 화면이 독립 `GlassCircleButton`으로 감싸 `headerActions`에 직접 넘기는 구조로 대체했다. Worker→Review(P0/P1 없음)→Tester(Pinned Rule 준수를 겹침 여부까지 실측하는 신규 통합테스트 16개 포함 전부 Pass)→Audit(코드 기준 완전 해소 확인) 완료, 커밋 `0f20a46`.
+
+---
+
+[TechDebt] `EditorHeader`가 Glass primitive(`GlassPill`/`GlassCircleButton`)를 쓰지 않는 원시 구현이며, Pinned Rule 적용 여부가 미확정인 Decision-stage 질문
+
+상태: 미해결 (Step⑤ 착수 전 PM/사용자 확인 필요)
+
+내용:
+`lib/widgets/editor_header.dart`는 `GlassPill`/`GlassCircleButton`을 쓰지 않는 원시 `TextButton`/`IconButton` 구현이다. Decision.md대로 Editor는 애초에 `AppMainScaffold`를 안 쓰는 자체 헤더라 Pinned Rule이 그대로 적용되는지(면제되는 자체 헤더인지) 자체가 확인 필요. 취소/도움말 버튼이 Pinned Rule 예외로 면제되는지, 아니면 다른 화면과의 시각적 일관성을 위해 똑같이 Glass화해야 하는지는 Decision-stage 질문 — Worker가 임의로 정하지 말고 PM/사용자 확인 필요. (2026-07-14, Step④ 완료 시 이 항목이 원래 `DetailHeaderActions`와 묶여 있던 항목에서 분리됨 — `DetailHeaderActions` 쪽은 해소됨, 위 항목 참고.)
 
 ---
 
@@ -70,12 +79,14 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 
 ---
 
-[TechDebt] 화면 간 반복 복제된 UI 블록 3종 — Step④ 이후 화면이 늘기 전에 공용 컴포넌트/헬퍼로 추출 검토 필요
+[TechDebt] 화면 간 반복 복제된 UI 블록 — Step④에서 4번째 사례가 실제로 발생, 추출 임계점 재검토 필요 (P2)
 
 상태: 미해결
 
 내용:
-Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적: (1) FAB 펼침 애니메이션 스캐폴딩(`_buildFabOption`/`_onFabOptionTap`/`AnimatedSize` 블록, 약 35줄)이 `closet_main_screen.dart`와 `style_log_main_screen.dart`에 텍스트만 바꿔 그대로 복제됨. (2) `_densityIcon(int density)` private 메서드가 `closet_main_screen.dart`와 `composition_main_screen.dart`에 코드 100% 동일하게 존재. (3) 갤러리 타일의 "좌하단 반투명 pill + `ConstrainedBox`+ellipsis" 라벨 블록이 `selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart` 3곳에 동일 패턴으로 존재. 각 경우 모두 기존 패턴을 정확히 따른 것이라 지금 당장 문제는 아니지만(Review 판정: P2, 논블로킹), Step④~⑥에서 Detail/Editor/휴지통 화면이 추가되면 동일 블록이 계속 늘어날 것 — `ExpandableAddFab` 공용 위젯, `AppDensity.iconFor(density)` 헬퍼, `GalleryMetaLabel` 위젯 등으로의 추출을 다음 Step 진입 전에 검토 권장.
+Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적: (1) FAB 펼침 애니메이션 스캐폴딩(`_buildFabOption`/`_onFabOptionTap`/`AnimatedSize` 블록, 약 35줄)이 `closet_main_screen.dart`와 `style_log_main_screen.dart`에 텍스트만 바꿔 그대로 복제됨. (2) `_densityIcon(int density)` private 메서드가 `closet_main_screen.dart`와 `composition_main_screen.dart`에 코드 100% 동일하게 존재. (3) 갤러리 타일의 "좌하단 반투명 pill + `ConstrainedBox`+ellipsis" 라벨 블록이 `selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart` 3곳에 동일 패턴으로 존재. 당시 Review 판정은 P2(논블로킹) — Step④~⑥에서 화면이 늘면 계속 늘어날 것이라 추출을 "다음 Step 진입 전 검토 권장"으로 남겼었음.
+
+**Step④(Detail 3화면 적용, 2026-07-14) Audit이 4번째 사례 확인**: `closet_item_detail_screen.dart`/`composition_detail_screen.dart`/`style_log_viewer_screen.dart`가 `_placeholderContentHeight = 400` 로컬 상수, `GlassCircleButton(icon: Icons.more_horiz, tooltip: '더보기 메뉴', onTap: () {})` headerActions 블록, `AppScrollContainer`+`SingleChildScrollView`+`Column` 래퍼, 라벨 문자열만 다른 `CrossReferenceLinkBar` 단일 placeholder entry까지 거의 동일한 구조로 3번 복제됐다. Step⑤(Editor 3화면)·Step⑥(나머지 화면)이 아직 남아있어 이 패턴이 최소 한 번 더 반복될 가능성이 높음 — 추출 임계점을 넘었다고 판단되면 다음 Worker 태스크(Layer=UI/Screen, Stage=Implementation)로 `ExpandableAddFab`/`AppDensity.iconFor`/`GalleryMetaLabel`과 함께 Detail 3화면용 공용 컴포넌트(카테고리/id/placeholder 라벨/cross-reference entries를 파라미터로 받는)도 같이 검토.
 
 ---
 
@@ -85,6 +96,8 @@ Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적
 
 내용:
 Step②(Component Library) Task 2-A에서 `lib/widgets/cross_reference_link_bar.dart`를 신설하며 Detail 3화면(옷 상세/코디 상세/스타일일지 열람) skeleton의 `height: 64`(상호 참조 링크 바) 값을 그대로 가져왔으나, 이번 태스크의 Edit 대상에 `lib/theme/app_spacing.dart`가 포함되지 않아 `AppSpacing` 토큰으로 승격하지 못하고 위젯 파일 로컬 `static const`로 남겼다. Review(2026-07-13)에서 하드코딩 원칙 위반은 아니라고 판정(이름 있는 const + 출처 주석 확인)했으나, `app_spacing.dart`가 다음에 Edit 대상에 포함될 때 정식 토큰으로 승격 검토 필요.
+
+**추가 관찰(Step④ Audit, 2026-07-14, P3)**: Detail 3화면이 `CrossReferenceLinkBar`에 넣은 Step④ placeholder entry(`onTap: () {}`, "…Step⑦에서 연동 예정" 라벨)가 `_CrossReferenceLinkChip`(Material+InkWell+`gray100` pill 채움)을 그대로 통과해 렌더링된다 — Main 화면들의 `groupingBar` skeleton(`skeletonRegion()`, 외곽선 박스+텍스트로 명백히 "가짜"임을 표시)과 달리, 실제 완성된 인터랙션 컨트롤과 시각적으로 구분이 안 된다. 의도적 선택(완성된 Step②-A 컴포넌트를 그대로 재사용)이라 문제는 아니지만, Step⑦ 전에 Visual Review를 하는 사람이 "이미 연동된 컨트롤"로 착각할 위험이 있음. 우선순위 낮음 — 픽업 시 placeholder entry에 비활성 느낌(투명도 낮춤 등) 스타일을 주거나, 현재 관례를 그대로 인정하고 주석으로 근거만 남기는 것 중 택1 검토.
 
 ---
 

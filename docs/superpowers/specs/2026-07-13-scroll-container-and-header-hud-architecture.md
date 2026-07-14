@@ -284,12 +284,9 @@ classDiagram
     class ClosetMainScreen
     class CompositionMainScreen
     class StyleLogMainScreen
-
-    class DetailHeaderActions {
-      <<미마이그레이션>>
-      +AppCategory current
-      +VoidCallback onMenuTap
-    }
+    class ClosetItemDetailScreen
+    class CompositionDetailScreen
+    class StyleLogViewerScreen
 
     class EditorHeader {
       <<미마이그레이션>>
@@ -312,14 +309,17 @@ classDiagram
     ClosetMainScreen ..> AppMainScaffold : build()
     CompositionMainScreen ..> AppMainScaffold : build()
     StyleLogMainScreen ..> AppMainScaffold : build()
-
-    DetailHeaderActions *-- CategoryToggleDropdown : 항상 감쌈
+    ClosetItemDetailScreen ..> AppMainScaffold : build()
+    CompositionDetailScreen ..> AppMainScaffold : build()
+    StyleLogViewerScreen ..> AppMainScaffold : build()
 
     note for AppMainScaffold "Header/HUD Pinned Rule(docs/history/Decision.md): headerActions/secondaryControlsLeft/secondaryControlsRight/groupingBar는 각각 독립 Positioned이며 하나의 Row/Container로 병합하지 않는다."
     note for AppScrollContainer "builder가 만든 스크롤 위젯에 연결한 ScrollController를 관찰해 scrollTop으로 TopGradientOverlay/BottomGradientOverlay의 visible을 계산한다(스펙 §2)."
     note for ClosetMainScreen "슬롯: headerActions=[GlassPill+선택 버튼], secondaryControlsLeft=[GlassPill+계절 Dropdown], secondaryControlsRight=[GlassCircleButton 밀도, GlassCircleButton(미정 스텁)], groupingBar=skeletonRegion, body=AppScrollContainer+GroupedGalleryGrid."
     note for CompositionMainScreen "슬롯: headerActions=[GlassPill+선택 버튼], secondaryControlsLeft=[GlassPill+계절 Dropdown], secondaryControlsRight=[GlassCircleButton 밀도, GlassCircleButton 정렬], groupingBar=skeletonRegion, body=AppScrollContainer+CompositionGalleryGrid."
     note for StyleLogMainScreen "슬롯: headerActions=[GlassPill+선택 버튼], secondaryControlsRight=[GlassCircleButton 정렬], groupingBar/secondaryControlsLeft 없음(플랫+필터형), body=AppScrollContainer+StyleLogGalleryGrid."
-    note for DetailHeaderActions "CategoryToggleDropdown과 ⋯더보기 IconButton이 스타일 없는 하나의 Row에 함께 담겨 있어 그 자체로 Header/HUD Pinned Rule 위반이다(Audit P1, docs/history/TechnicalDebt.md) — 아직 AppMainScaffold에 연결되지 않아 화면엔 안 드러나지만, Detail 3화면(옷/코디/스타일일지 상세)에 꽂기 전에 두 요소를 독립 Positioned로 분리하는 재작업이 필요하다."
-    note for EditorHeader "아직 AppMainScaffold와 연결되지 않고, GlassPill/GlassCircleButton도 쓰지 않는 원시 TextButton/IconButton 구현이다(Audit P1) — Pinned Rule을 적용해 Glass primitive로 재구성해야 하는지는 아직 미확정인 Decision-stage 질문이다(docs/history/TechnicalDebt.md 3~10번째 줄 참고) — PM/사용자 확인 전에는 임의로 재구성하지 말 것."
+    note for ClosetItemDetailScreen "Step④(2026-07-14) 완료. 슬롯: headerActions=[GlassCircleButton ⋯더보기](CategoryToggleDropdown은 showCategoryToggle 기본값으로 Scaffold가 자동 배치), secondaryControlsLeft/Right·groupingBar 없음, body=AppScrollContainer+skeletonRegion(본문)+CrossReferenceLinkBar(placeholder entry 1개). 옛 DetailHeaderActions composite 위젯은 삭제됨(TechnicalDebt.md 해소 기록 참고) — CompositionDetailScreen/StyleLogViewerScreen도 동일 구조."
+    note for CompositionDetailScreen "ClosetItemDetailScreen과 동일 구조(위 노트 참고), current=AppCategory.composition."
+    note for StyleLogViewerScreen "ClosetItemDetailScreen과 동일 구조(위 노트 참고), current=AppCategory.styleLog."
+    note for EditorHeader "아직 AppMainScaffold와 연결되지 않고, GlassPill/GlassCircleButton도 쓰지 않는 원시 TextButton/IconButton 구현이다(Audit P1) — Pinned Rule을 적용해 Glass primitive로 재구성해야 하는지는 아직 미확정인 Decision-stage 질문이다(docs/history/TechnicalDebt.md 참고) — PM/사용자 확인 전에는 임의로 재구성하지 말 것."
 ```
