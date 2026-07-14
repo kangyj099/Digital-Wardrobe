@@ -93,6 +93,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
       ),
       groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
       body: AppScrollContainer(
+        topHintThreshold: contentTopSpacing,
         builder: (context, controller) => GroupedGalleryGrid(
           items: items,
           density: density,

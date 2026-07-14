@@ -48,6 +48,7 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
         GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
       ],
       body: AppScrollContainer(
+        topHintThreshold: contentTopSpacing,
         builder: (context, controller) => StyleLogGalleryGrid(
           logs: logs,
           controller: controller,

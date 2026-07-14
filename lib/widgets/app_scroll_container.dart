@@ -14,9 +14,10 @@ import 'top_gradient_overlay.dart';
 /// Scrollbar Overlay(스펙 §3/§6)는 이번 스코프에 포함하지 않는다(`docs/work/BACKLOG.md`
 /// 파킹로트) — 향후 추가 시 이 Stack의 children에 layer 하나만 더하면 된다.
 class AppScrollContainer extends StatefulWidget {
-  const AppScrollContainer({super.key, required this.builder});
+  const AppScrollContainer({super.key, required this.builder, this.topHintThreshold = 2});
 
   final Widget Function(BuildContext context, ScrollController controller) builder;
+  final double topHintThreshold;
 
   @override
   State<AppScrollContainer> createState() => _AppScrollContainerState();
@@ -41,7 +42,7 @@ class _AppScrollContainerState extends State<AppScrollContainer> {
     final position = _controller.position;
     // 스펙 §2 표시 조건 그대로: top은 "조금이라도 내렸으면", bottom은 "아래로 더 스크롤
     // 가능한 경우에만".
-    final showTop = position.pixels > 2;
+    final showTop = position.pixels > widget.topHintThreshold;
     final showBottom = position.pixels < position.maxScrollExtent - 2;
     if (showTop != _showTop || showBottom != _showBottom) {
       setState(() {

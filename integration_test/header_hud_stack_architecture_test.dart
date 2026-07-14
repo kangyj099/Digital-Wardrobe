@@ -12,6 +12,7 @@ import 'package:digittal_wardrobe/theme/app_spacing.dart';
 import 'package:digittal_wardrobe/widgets/bottom_gradient_overlay.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/top_gradient_overlay.dart';
+import 'package:digittal_wardrobe/widgets/app_main_scaffold.dart';
 
 /// Header/HUD Stack 아키텍처 재설계(`AppMainScaffold` Column→Stack,
 /// `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`) Tester
@@ -74,50 +75,67 @@ void main() {
   // ── 1) 스크롤 위치 기반 그라디언트 실제 동작 ──────────────────────────────────
 
   group('스크롤 그라디언트', () {
-    testWidgets(
-      '옷장 메인(스크롤 가능)에서 최상단일 때 TopGradientOverlay는 숨김(0), '
-      'BottomGradientOverlay는 표시(0.85)되고, 아래로 스크롤하면 Top이 나타나며, '
-      '맨 아래까지 스크롤하면 Bottom이 사라지고, 다시 맨 위로 돌아오면 원상태로 복귀한다',
-      (tester) async {
-        await pumpApp(tester);
-        expect(find.byType(ClosetMainScreen), findsOneWidget);
+  testWidgets(
+  '옷장 메인(스크롤 가능)에서 헤더 영역 높이만큼 내리기 전엔 TopGradientOverlay가 '
+  '계속 숨김 상태고, 그 높이를 넘어서야 나타난다. BottomGradientOverlay는 대칭적으로 '
+  '아래로 더 스크롤 가능한 동안만 표시된다',
+  (tester) async {
+    await pumpApp(tester);
+    expect(find.byType(ClosetMainScreen), findsOneWidget);
 
-        final scrollable = tester.state<ScrollableState>(find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)));
-        expect(
-          scrollable.position.maxScrollExtent,
-          greaterThan(0),
-          reason: '이 시나리오는 실제로 스크롤 가능해야 의미가 있다(뷰포트/mock 데이터 전제 확인)',
-        );
-
-        // 최상단: Top 숨김, Bottom 표시.
-        expect(topOpacity(tester), 0);
-        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
-
-        // 아래로 조금 스크롤(경계에 닿지 않는 정도) — Top이 나타나야 하고, Bottom은 아직 표시.
-        await tester.drag(find.byType(GridView), const Offset(0, -150));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(topOpacity(tester), closeTo(0.85, 0.001));
-        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
-
-        // 맨 아래까지 강하게 스크롤 — Bottom이 사라져야 한다.
-        await tester.fling(find.byType(GridView), const Offset(0, -3000), 3000);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
-        expect(topOpacity(tester), closeTo(0.85, 0.001));
-        expect(bottomOpacity(tester), 0);
-
-        // 다시 맨 위로 — Top이 사라지고 Bottom이 재등장.
-        await tester.fling(find.byType(GridView), const Offset(0, 3000), 3000);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(scrollable.position.pixels, closeTo(0, 1));
-        expect(topOpacity(tester), 0);
-        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
-      },
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)),
     );
 
+    // ClosetMainScreen이 AppScrollContainer에 넘기는 것과 동일한 계산 —
+    // 화면 쪽 헤더 구성(Row1+Row2+groupingBar)이 바뀌면 이 값도 같이 따라간다.
+    final topThreshold = AppMainScaffold.contentSpacerHeight(
+      hasSecondaryRow: true,
+      groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
+    );
+
+    expect(
+      scrollable.position.maxScrollExtent,
+      greaterThan(topThreshold + 50),
+      reason: '이 시나리오는 threshold를 넘어서도 스크롤할 여유가 있어야 의미가 있다',
+    );
+
+    // 최상단: Top 숨김, Bottom 표시.
+    expect(topOpacity(tester), 0);
+    expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+
+    // 헤더 영역 높이보다 적게 스크롤 — 아직 화면 밖으로 진짜 가려진 콘텐츠가 없으므로
+    // Top은 계속 숨김이어야 한다(이번 수정의 핵심 시나리오).
+    await tester.drag(find.byType(GridView), Offset(0, -(topThreshold - 20)));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(topOpacity(tester), 0, reason: '헤더 높이만큼 안 내려갔으면 아직 안 보여야 한다');
+    expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+
+    // 헤더 영역 높이를 넘어서 스크롤 — 이제 Top이 나타나야 한다.
+    await tester.drag(find.byType(GridView), const Offset(0, -40));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(topOpacity(tester), closeTo(0.85, 0.001));
+    expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+
+    // 맨 아래까지 강하게 스크롤 — Bottom이 사라져야 한다.
+    await tester.fling(find.byType(GridView), const Offset(0, -3000), 3000);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
+    expect(topOpacity(tester), closeTo(0.85, 0.001));
+    expect(bottomOpacity(tester), 0);
+
+    // 다시 맨 위로 — Top이 사라지고 Bottom이 재등장.
+    await tester.fling(find.byType(GridView), const Offset(0, 3000), 3000);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(scrollable.position.pixels, closeTo(0, 1));
+    expect(topOpacity(tester), 0);
+    expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+  },
+);
     testWidgets(
       '콘텐츠가 적어(mock 스타일일지 2개) 애초에 스크롤이 불가능한 화면에서는 '
       'TopGradientOverlay/BottomGradientOverlay가 계속 숨김 상태를 유지하고, '
@@ -272,7 +290,11 @@ void main() {
       await pumpApp(tester);
 
       final scrollable = tester.state<ScrollableState>(find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)));
-      await tester.drag(find.byType(GridView), const Offset(0, -150));
+      final topThreshold = AppMainScaffold.contentSpacerHeight(
+        hasSecondaryRow: true,
+        groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
+      );
+      await tester.drag(find.byType(GridView), Offset(0, -(topThreshold + 20)));
       await tester.pumpAndSettle();
       final pixelsBeforeDropdown = scrollable.position.pixels;
       expect(topOpacity(tester), closeTo(0.85, 0.001));

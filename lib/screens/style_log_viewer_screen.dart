@@ -30,6 +30,7 @@ class StyleLogViewerScreen extends StatelessWidget {
         ),
       ],
       body: AppScrollContainer(
+        topHintThreshold: contentTopSpacing,
         builder: (context, controller) => SingleChildScrollView(
           controller: controller,
           padding: EdgeInsets.only(top: contentTopSpacing),

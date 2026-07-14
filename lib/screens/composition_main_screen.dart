@@ -80,6 +80,7 @@ class CompositionMainScreen extends ConsumerWidget {
       ),
       groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
       body: AppScrollContainer(
+        topHintThreshold: contentTopSpacing,
         builder: (context, controller) => CompositionGalleryGrid(
           compositions: compositions,
           density: density,
