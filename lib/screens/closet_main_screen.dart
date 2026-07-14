@@ -8,13 +8,27 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
+import '../widgets/frosted_close_button.dart';
 import '../widgets/glass_circle_button.dart';
 import '../widgets/glass_pill.dart';
 import '../widgets/grouped_gallery_grid.dart';
 import 'skeleton_region.dart';
 
+/// [selectionMode]가 true면 별도 화면을 새로 만들지 않고 이 Main 화면을 "선택 모달"로
+/// 재호출한다 — 기능 재사용 원칙(`_공통 규칙.md`), 표는
+/// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 "선택 모달(옷장/
+/// 코디 재호출)" 행. 뒤로가기/카테고리 토글/FAB은 숨기고 헤더 우상단은 "선택"(다중선택)
+/// 대신 닫기(X) 버튼으로 바뀐다. 그룹형 드릴다운(`groupingBar`)은 원 화면과 동일 사양으로
+/// 유지된다(표에 명시된 예외).
 class ClosetMainScreen extends ConsumerStatefulWidget {
-  const ClosetMainScreen({super.key});
+  const ClosetMainScreen({super.key, this.selectionMode = false, this.onItemSelected});
+
+  /// true면 선택 모달로 동작 — 실제 호출부(Composition Editor 등) 연결은 Step⑦ 몫.
+  final bool selectionMode;
+
+  /// [selectionMode]일 때 타일 탭 시 호출되는 선택 콜백(선택된 항목 id). 실제 바인딩
+  /// 로직(go_router result 반환 등)은 아직 없음 — Step⑦ 위임.
+  final ValueChanged<String>? onItemSelected;
 
   @override
   ConsumerState<ClosetMainScreen> createState() => _ClosetMainScreenState();
@@ -43,13 +57,18 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
 
     return AppMainScaffold(
       current: AppCategory.closet,
+      showBackButton: !widget.selectionMode,
+      showCategoryToggle: !widget.selectionMode,
       headerActions: [
-        GlassPill(
-          child: TextButton(
-            onPressed: () {},
-            child: const Text('선택', style: AppTypography.actionMinimal),
+        if (widget.selectionMode)
+          FrostedCloseButton(onTap: () => context.pop())
+        else
+          GlassPill(
+            child: TextButton(
+              onPressed: () {},
+              child: const Text('선택', style: AppTypography.actionMinimal),
+            ),
           ),
-        ),
       ],
       // 두 번째 툴바 행 — 옷장 메인 하이파이 디자인 주문서 기준(계절 세그먼트/밀도 버튼/
       // 우측 원형 버튼 3개가 각각 독립 floating, Header/HUD Pinned Rule).
@@ -99,41 +118,58 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
           density: density,
           controller: controller,
           topSpacing: contentTopSpacing,
-          onItemTap: (item) =>
-              context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
+          onItemTap: (item) {
+            if (widget.selectionMode) {
+              widget.onItemSelected?.call(item.id);
+            } else {
+              context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id));
+            }
+          },
+          // selectionMode에서만 미완성 항목 탭을 되살려 완성 화면으로 이동시킨다
+          // (네이티브 진입 시에는 null → 기존처럼 비활성화 유지).
+          onIncompleteTap: widget.selectionMode
+              ? (item) {
+                  // TODO(Step⑦): closetAdd가 기존 미완성 레코드(item.id)를 이어서
+                  // 열도록 확장되면 여기서 id를 넘긴다. 지금은 화면 자체가 그 기능이
+                  // 없어(스켈레톤 상태) 새 추가 화면으로만 이동.
+                  context.push(AppRoute.closetAdd);
+                }
+              : null,
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          AnimatedSize(
-            duration: AppMotion.fast,
-            child: _fabExpanded
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _buildFabOption(context, label: singleLabel, onTap: _onFabOptionTap),
-                        const SizedBox(height: AppSpacing.xs),
-                        _buildFabOption(context, label: multiLabel, onTap: _onFabOptionTap),
-                      ],
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          FloatingActionButton(
-            onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
-            child: AnimatedRotation(
-              turns: _fabExpanded ? 0.125 : 0,
-              duration: AppMotion.fast,
-              child: const Icon(Icons.add),
+      floatingActionButton: widget.selectionMode
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AnimatedSize(
+                  duration: AppMotion.fast,
+                  child: _fabExpanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              _buildFabOption(context, label: singleLabel, onTap: _onFabOptionTap),
+                              const SizedBox(height: AppSpacing.xs),
+                              _buildFabOption(context, label: multiLabel, onTap: _onFabOptionTap),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                FloatingActionButton(
+                  onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
+                  child: AnimatedRotation(
+                    turns: _fabExpanded ? 0.125 : 0,
+                    duration: AppMotion.fast,
+                    child: const Icon(Icons.add),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

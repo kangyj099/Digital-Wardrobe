@@ -9,14 +9,28 @@ import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
 import '../widgets/composition_gallery_grid.dart';
+import '../widgets/frosted_close_button.dart';
 import '../widgets/glass_circle_button.dart';
 import '../widgets/glass_pill.dart';
 import 'skeleton_region.dart';
 
 /// Main-그룹형(옷장 메인과 동일 페이지 타입) — `closet_main_screen.dart` 패턴을 그대로 이식.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1/§3 참고.
+///
+/// [selectionMode]가 true면 이 화면이 "선택 모달(코디 재호출)"로 동작한다 —
+/// `closet_main_screen.dart`의 selectionMode 문서 주석과 동일 원칙. `Composition` 모델에는
+/// 아직 `isIncomplete` 같은 미완성 필드가 없어(`lib/models/composition.dart`), 미완성
+/// 항목→완성 화면 이동 분기는 만들지 않았다 — Step⑦에서 그 필드가 생기면
+/// `closet_main_screen.dart`의 `onIncompleteTap` 패턴을 그대로 이식하면 된다.
 class CompositionMainScreen extends ConsumerWidget {
-  const CompositionMainScreen({super.key});
+  const CompositionMainScreen({super.key, this.selectionMode = false, this.onItemSelected});
+
+  /// true면 선택 모달로 동작 — 실제 호출부(Composition Editor 등) 연결은 Step⑦ 몫.
+  final bool selectionMode;
+
+  /// [selectionMode]일 때 타일 탭 시 호출되는 선택 콜백(선택된 항목 id). 실제 바인딩
+  /// 로직(go_router result 반환 등)은 아직 없음 — Step⑦ 위임.
+  final ValueChanged<String>? onItemSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,13 +46,18 @@ class CompositionMainScreen extends ConsumerWidget {
 
     return AppMainScaffold(
       current: AppCategory.composition,
+      showBackButton: !selectionMode,
+      showCategoryToggle: !selectionMode,
       headerActions: [
-        GlassPill(
-          child: TextButton(
-            onPressed: () {},
-            child: const Text('선택', style: AppTypography.actionMinimal),
+        if (selectionMode)
+          FrostedCloseButton(onTap: () => context.pop())
+        else
+          GlassPill(
+            child: TextButton(
+              onPressed: () {},
+              child: const Text('선택', style: AppTypography.actionMinimal),
+            ),
           ),
-        ),
       ],
       secondaryControlsLeft: [
         GlassPill(
@@ -86,14 +105,21 @@ class CompositionMainScreen extends ConsumerWidget {
           density: density,
           controller: controller,
           topSpacing: contentTopSpacing,
-          onItemTap: (c) =>
-              context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id)),
+          onItemTap: (c) {
+            if (selectionMode) {
+              onItemSelected?.call(c.id);
+            } else {
+              context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
+            }
+          },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(AppRoute.compositionEditor),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: selectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => context.push(AppRoute.compositionEditor),
+              child: const Icon(Icons.add),
+            ),
     );
   }
 

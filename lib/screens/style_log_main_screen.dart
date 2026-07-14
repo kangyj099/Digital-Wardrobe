@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
+import '../widgets/frosted_close_button.dart';
 import '../widgets/glass_circle_button.dart';
 import '../widgets/glass_pill.dart';
 import '../widgets/style_log_gallery_grid.dart';
@@ -15,8 +16,21 @@ import '../widgets/style_log_gallery_grid.dart';
 /// Main-플랫+필터형 — 그룹 드릴다운 없음(기존 스펙대로 날짜 기준 최신순 고정). FAB는
 /// `closet_main_screen.dart`의 2-옵션 팝업 패턴을 그대로 이식.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 참고.
+///
+/// [selectionMode]가 true면 이 화면이 "선택 모달(스타일일지 재호출)"로 동작한다 —
+/// `closet_main_screen.dart`의 selectionMode 문서 주석과 동일 원칙. `StyleLog` 모델에는
+/// `isIncomplete` 필드가 없어(`lib/models/style_log.dart`) 미완성 항목 분기는 만들지
+/// 않았다 — Step⑦에서 그 필드가 생기면 `closet_main_screen.dart`의 `onIncompleteTap`
+/// 패턴을 그대로 이식하면 된다. 원래도 그룹형이 아니므로 groupingBar는 변경 없음.
 class StyleLogMainScreen extends ConsumerStatefulWidget {
-  const StyleLogMainScreen({super.key});
+  const StyleLogMainScreen({super.key, this.selectionMode = false, this.onItemSelected});
+
+  /// true면 선택 모달로 동작 — 실제 호출부 연결은 Step⑦ 몫.
+  final bool selectionMode;
+
+  /// [selectionMode]일 때 타일 탭 시 호출되는 선택 콜백(선택된 항목 id). 실제 바인딩
+  /// 로직(go_router result 반환 등)은 아직 없음 — Step⑦ 위임.
+  final ValueChanged<String>? onItemSelected;
 
   @override
   ConsumerState<StyleLogMainScreen> createState() => _StyleLogMainScreenState();
@@ -36,13 +50,18 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
 
     return AppMainScaffold(
       current: AppCategory.styleLog,
+      showBackButton: !widget.selectionMode,
+      showCategoryToggle: !widget.selectionMode,
       headerActions: [
-        GlassPill(
-          child: TextButton(
-            onPressed: () {},
-            child: const Text('선택', style: AppTypography.actionMinimal),
+        if (widget.selectionMode)
+          FrostedCloseButton(onTap: () => context.pop())
+        else
+          GlassPill(
+            child: TextButton(
+              onPressed: () {},
+              child: const Text('선택', style: AppTypography.actionMinimal),
+            ),
           ),
-        ),
       ],
       secondaryControlsRight: [
         GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
@@ -53,40 +72,52 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
           logs: logs,
           controller: controller,
           topSpacing: contentTopSpacing,
-          onItemTap: (l) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', l.id)),
+          onItemTap: (l) {
+            if (widget.selectionMode) {
+              widget.onItemSelected?.call(l.id);
+            } else {
+              context.push(AppRoute.styleLogViewer.replaceFirst(':id', l.id));
+            }
+          },
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          AnimatedSize(
-            duration: AppMotion.fast,
-            child: _fabExpanded
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _buildFabOption(context, label: '1카드 추가', onTap: _onFabOptionTap),
-                        const SizedBox(height: AppSpacing.xs),
-                        _buildFabOption(context, label: '여러카드에 분할 추가', onTap: _onFabOptionTap),
-                      ],
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          FloatingActionButton(
-            onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
-            child: AnimatedRotation(
-              turns: _fabExpanded ? 0.125 : 0,
-              duration: AppMotion.fast,
-              child: const Icon(Icons.add),
+      floatingActionButton: widget.selectionMode
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AnimatedSize(
+                  duration: AppMotion.fast,
+                  child: _fabExpanded
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              _buildFabOption(context, label: '1카드 추가', onTap: _onFabOptionTap),
+                              const SizedBox(height: AppSpacing.xs),
+                              _buildFabOption(
+                                context,
+                                label: '여러카드에 분할 추가',
+                                onTap: _onFabOptionTap,
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                FloatingActionButton(
+                  onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
+                  child: AnimatedRotation(
+                    turns: _fabExpanded ? 0.125 : 0,
+                    duration: AppMotion.fast,
+                    child: const Icon(Icons.add),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
