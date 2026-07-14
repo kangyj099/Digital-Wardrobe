@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step④ 착수: `DetailHeaderActions` 재작업(삭제) + Detail 3화면(옷 상세/코디 상세/스타일일지 열람) `AppMainScaffold` 연결 완료 (2026-07-14).** `DetailHeaderActions`가 카테고리 드롭다운+⋯더보기를 스타일 없는 Row에 합쳐 Header/HUD Pinned Rule을 위반하던 문제를 해소 — `AppMainScaffold.showCategoryToggle`이 카테고리 드롭다운을 이미 자동 배치하므로 이 composite 위젯 자체를 삭제하고, 남은 "⋯더보기"만 각 Detail 화면이 독립 `GlassCircleButton`으로 `headerActions`에 직접 전달하는 구조로 대체. 3개 Detail 화면을 Step① skeleton에서 `AppMainScaffold`+`AppScrollContainer`(기본 플래그: 뒤로가기 O/카테고리 토글 O/그룹형 드릴다운 X)로 마이그레이션, 하단 상호참조 링크는 `CrossReferenceLinkBar`(Step⑦ 연동 대기 placeholder entry)로 교체. Worker→Review(P0/P1 없음)→Tester(Pinned Rule 겹침 검증 포함 신규 통합테스트 16개 전부 Pass)→Audit(블로킹 이슈 없음, P2 반복 UI 블록 4번째 사례/P3 placeholder 스타일 구분 두 건은 TechnicalDebt.md에 기록) 완료, 커밋 `0f20a46`.
+**Step⑤ 완료: Editor(Add/Create) 3화면(옷 추가하기/코디 만들기/스타일일지 추가)에 `EditorHeader` 연결 (2026-07-14).** 착수 전 Decision-stage 질문(EditorHeader가 Pinned Rule 적용 대상인지)을 목업 재확인으로 해소 — Editor 상단바는 목업상 "고정 불투명 앱바"라 스크롤 콘텐츠 위 글래스 오버레이 전용인 Pinned Rule 적용 대상이 아님을 확정, 원시 `TextButton`/`IconButton` 스타일 그대로 유지(TechnicalDebt.md 해소 기록). 3개 화면의 skeleton 헤더 리전을 실제 `EditorHeader`로 교체(`onCancel`=실제 `context.pop()`, `onHelpTap`=Step⑦ 연동 대기 stub), 본문/저장 버튼은 skeleton 유지. Worker→Review(P0/P1 없음)→Tester에서 기존 `closet_main_screen_test.dart` 2건 회귀 발견 → Worker 수정(Step④ 전례 패턴 그대로 적용) → Review→Tester 사이클 재실행 전부 Pass(신규 `editor_header_navigation_test.dart` 11개 포함). Task 크기 M이라 Audit 미실시.
 
 ---
 
@@ -29,7 +29,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **Step⑤(Editor/Add·Create 3화면 적용) 착수**. 착수 전 확인할 것: `EditorHeader`가 Glass primitive(`GlassPill`/`GlassCircleButton`)를 안 쓰는 원시 구현이고 Pinned Rule 적용 여부가 아직 Decision-stage 미확정 질문(`docs/history/TechnicalDebt.md`) — PM/사용자 확인 없이 Worker가 임의로 Glass화하지 말 것.
+1. **Step⑥(나머지 화면 적용 — 설정/휴지통/선택 모달 등) 착수**. §1 표의 플래그 매핑을 그대로 사용.
 - Detail 3화면 보일러플레이트 중복(P2, Step④ Audit 발견, `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목) — Step⑤까지 마치고 나면 공용 컴포넌트 추출 임계점을 넘었는지 재검토.
 - `CrossReferenceLinkBar` Step④ placeholder가 완성된 컨트롤처럼 보여 Visual Review 시 혼동 위험(P3, 위 TechDebt 항목 하단 참고) — 우선순위 낮음, 픽업 시 비활성 스타일 검토.
 - 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
