@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step⑤ 완료: Editor(Add/Create) 3화면(옷 추가하기/코디 만들기/스타일일지 추가)에 `EditorHeader` 연결 (2026-07-14).** 착수 전 Decision-stage 질문(EditorHeader가 Pinned Rule 적용 대상인지)을 목업 재확인으로 해소 — Editor 상단바는 목업상 "고정 불투명 앱바"라 스크롤 콘텐츠 위 글래스 오버레이 전용인 Pinned Rule 적용 대상이 아님을 확정, 원시 `TextButton`/`IconButton` 스타일 그대로 유지(TechnicalDebt.md 해소 기록). 3개 화면의 skeleton 헤더 리전을 실제 `EditorHeader`로 교체(`onCancel`=실제 `context.pop()`, `onHelpTap`=Step⑦ 연동 대기 stub), 본문/저장 버튼은 skeleton 유지. Worker→Review(P0/P1 없음)→Tester에서 기존 `closet_main_screen_test.dart` 2건 회귀 발견 → Worker 수정(Step④ 전례 패턴 그대로 적용) → Review→Tester 사이클 재실행 전부 Pass(신규 `editor_header_navigation_test.dart` 11개 포함). Task 크기 M이라 Audit 미실시.
+**스크롤 힌트 상단(Top) 그래디언트 표시 조건 수정 완료 (2026-07-15).** 사용자가 "상단 그래디언트가 항상 깔려 보인다"고 지적 → PM이 실측(스크린샷 2장)·기존 통합테스트로 재현 시도했으나 재현 안 됨, 대신 진짜 문제(고정 `scrollTop > 2px`가 헤더/HUD 높이를 무시해 헤더 뒤에 가려져 있던 여백만으로도 조건이 충족됨)를 코드 리딩으로 특정. `AppScrollContainer`에 `topHintThreshold`(기본 2, 화면별 `AppMainScaffold.contentSpacerHeight(...)` 전달) 파라미터를 추가하는 저결합 방향(raw threshold)을 권고 — 헤더 슬롯 정보를 직접 받는 대안은 결합도만 높이고 반복 작업은 줄이지 못함을 비교 설명. 사용자가 직접 구현+커밋(`380d5b4`, Worker/Review/Tester 하네스 밖에서 PM과 페어로 진행). `header_hud_stack_architecture_test.dart`의 스크롤 그라디언트 테스트 2건을 새 threshold 기준으로 갱신(컴파일 에러 1건·미사용 import 1건은 PM이 발견해 알려주고 사용자가 수정), `detail_screens_header_hud_test.dart`(고정 100px 드래그, Detail 화면 threshold 64px이라 우연히 그대로 통과, 16/16 Pass)까지 재검증 완료. 스펙 문서(`2026-07-13-scroll-container-and-header-hud-architecture.md`) Top Gradient 표시 조건도 새 규칙으로 갱신(Bottom은 의도적으로 2px 유지). **로컬 커밋만 있고 origin에 미푸시(26 커밋 ahead) — 다음 세션에서 확인 필요.**
 
 ---
 

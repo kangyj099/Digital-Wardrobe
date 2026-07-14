@@ -94,10 +94,20 @@ Opacity
 표시 조건
 
 ```
-scrollTop > 2px
+scrollTop > Content Spacer Height (헤더/HUD가 차지하는 높이 — 화면마다 다름)
 ```
 
-즉, 스크롤을 조금이라도 내렸다면 표시한다. 최상단에서는 숨긴다.
+즉, 헤더/HUD 영역 높이만큼 스크롤해야 실제로 화면 밖으로 밀려난 콘텐츠가 생긴다. 그 전엔
+콘텐츠가 아직 헤더 뒤(원래도 안 보이던 자리)에 있을 뿐이라 숨긴다.
+
+**(2026-07-15 갱신)** 최초 스펙은 고정 `2px`를 표시 조건으로 정의했으나, 실사용 중 헤더/HUD가
+콘텐츠 위에 Positioned로 얹혀 있어 스크롤 초반 구간(헤더 높이만큼)은 애초에 헤더에 가려져
+있던 여백이지 "화면 밖으로 가려진 콘텐츠"가 아니라는 지적으로 조건을 교체 — `AppScrollContainer`가
+`topHintThreshold`(기본값 2, 각 화면이 `AppMainScaffold.contentSpacerHeight(...)`로 계산한 값을
+넘겨줌)를 기준으로 쓴다. 정확한 계산식은 `lib/widgets/app_main_scaffold.dart`의
+`contentSpacerHeight`가 Source of Truth(이 문서는 값을 중복 기재하지 않음). Bottom Gradient의
+`2px` 조건은 하단엔 이런 플로팅 헤더가 없어 원래 취지 그대로 유효하므로 변경하지 않았다(아래
+참고 — 의도적 비대칭, 실수 아님).
 
 ```
 opacity 0 ↔ 0.85
@@ -136,7 +146,9 @@ Opacity
 scrollTop < scrollHeight - clientHeight - 2px
 ```
 
-즉, 아래로 더 스크롤 가능한 경우에만 표시한다. 맨 아래에서는 숨긴다.
+즉, 아래로 더 스크롤 가능한 경우에만 표시한다. 맨 아래에서는 숨긴다. (2026-07-15: Top Gradient와
+달리 이 조건은 그대로 유지됨 — 하단엔 콘텐츠를 가리는 플로팅 헤더가 없어 고정 `2px`가 원래
+취지에 계속 맞는다. 위 Top Gradient 갱신 이력 참고.)
 
 ```
 opacity 0 ↔ 0.85
