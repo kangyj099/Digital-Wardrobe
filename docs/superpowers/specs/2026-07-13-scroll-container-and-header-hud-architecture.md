@@ -321,5 +321,5 @@ classDiagram
     note for ClosetItemDetailScreen "Step④(2026-07-14) 완료. 슬롯: headerActions=[GlassCircleButton ⋯더보기](CategoryToggleDropdown은 showCategoryToggle 기본값으로 Scaffold가 자동 배치), secondaryControlsLeft/Right·groupingBar 없음, body=AppScrollContainer+skeletonRegion(본문)+CrossReferenceLinkBar(placeholder entry 1개). 옛 DetailHeaderActions composite 위젯은 삭제됨(TechnicalDebt.md 해소 기록 참고) — CompositionDetailScreen/StyleLogViewerScreen도 동일 구조."
     note for CompositionDetailScreen "ClosetItemDetailScreen과 동일 구조(위 노트 참고), current=AppCategory.composition."
     note for StyleLogViewerScreen "ClosetItemDetailScreen과 동일 구조(위 노트 참고), current=AppCategory.styleLog."
-    note for EditorHeader "아직 AppMainScaffold와 연결되지 않고, GlassPill/GlassCircleButton도 쓰지 않는 원시 TextButton/IconButton 구현이다(Audit P1) — Pinned Rule을 적용해 Glass primitive로 재구성해야 하는지는 아직 미확정인 Decision-stage 질문이다(docs/history/TechnicalDebt.md 참고) — PM/사용자 확인 전에는 임의로 재구성하지 말 것."
+    note for EditorHeader "아직 AppMainScaffold와 연결되지 않고, GlassPill/GlassCircleButton도 쓰지 않는 원시 TextButton/IconButton 구현이다. 2026-07-14 PM/사용자 확인으로 Pinned Rule 적용 대상이 아님을 확정(docs/history/TechnicalDebt.md 해소 기록 참고) — 목업(코디 제작 화면.txt)이 이 헤더를 '고정 불투명 앱바'로 명시해, 원시 스타일 유지가 의도된 예외. Step⑤는 이 헤더를 그대로 3개 Add/Create 화면에 연결한다."
 ```

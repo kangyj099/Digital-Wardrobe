@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/editor_header.dart';
 import 'skeleton_region.dart';
 
 /// Step①(전체 화면 Skeleton) 산출물. Add/Create형 — 뒤로가기 없음(자체 취소
 /// 버튼이 대체), 카테고리 토글 없음. AppMainScaffold를 아예 쓰지 않는 화면군이라
 /// Step②/③ 이후에도 자체 헤더를 유지한다.
+///
+/// Step⑤(Editor 적용) 산출물 — 헤더가 [EditorHeader]로 연결됨. 본문/저장 버튼은
+/// 아직 skeleton placeholder 상태(Step⑦ 몫).
 class ClosetAddScreen extends StatelessWidget {
   const ClosetAddScreen({super.key});
 
@@ -12,10 +17,9 @@ class ClosetAddScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          skeletonRegion(
-            context,
-            '헤더 (취소 버튼 + "?" 코치마크 도움말)',
-            height: 56,
+          EditorHeader(
+            onCancel: () => context.pop(),
+            onHelpTap: () {}, // Step⑦(기능 구현)에서 실제 도움말/코치마크 연결 예정
           ),
           skeletonRegion(
             context,

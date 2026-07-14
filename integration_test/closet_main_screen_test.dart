@@ -23,6 +23,7 @@ import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_colors.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
+import 'package:digittal_wardrobe/widgets/editor_header.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
 
@@ -727,10 +728,11 @@ void main() {
   // ── 아래부터 CompositionEditorScreen/StyleLogAddScreen(Task E) 검증 ──────────
 
   testWidgets(
-    '옷장 메인 위에 /composition/editor 를 인위적으로 push하면 CompositionEditorScreen이 '
-    '실제로 렌더링되고, 헤더/아트보드/저장 버튼 스켈레톤 박스가 모두 화면에 나타난다 '
-    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 코디 메인 FAB가 아직 no-op인 것이 플랜에 '
-    '명시된 의도된 상태)',
+    '[갱신됨, Step⑤ 재검증] 옷장 메인 위에 /composition/editor 를 인위적으로 push하면 '
+    'CompositionEditorScreen이 실제로 렌더링되고, 헤더(EditorHeader)/아트보드/저장 버튼이 모두 '
+    '화면에 나타난다 (정상 UI 플로우로는 아직 도달 불가능한 화면 — 코디 메인 FAB가 아직 no-op인 '
+    '것이 플랜에 명시된 의도된 상태. Step⑤ 이전엔 skeletonRegion 텍스트 "헤더"로 확인했으나, '
+    'EditorHeader 연결 후 그 텍스트가 사라져 EditorHeader 위젯 존재로 확인 대상을 갱신)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -740,17 +742,18 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionEditorScreen), findsOneWidget);
-      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.byType(EditorHeader), findsOneWidget);
       expect(find.textContaining('아트보드'), findsOneWidget);
       expect(find.textContaining('저장 버튼'), findsOneWidget);
     },
   );
 
   testWidgets(
-    '옷장 메인 위에 /style-log/add 를 인위적으로 push하면 StyleLogAddScreen이 실제로 '
-    '렌더링되고, 헤더/슬롯 카드 입력/저장 버튼 스켈레톤 박스가 모두 화면에 나타난다 '
-    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 스타일일지 메인 FAB가 아직 no-op인 것이 '
-    '플랜에 명시된 의도된 상태)',
+    '[갱신됨, Step⑤ 재검증] 옷장 메인 위에 /style-log/add 를 인위적으로 push하면 StyleLogAddScreen이 '
+    '실제로 렌더링되고, 헤더(EditorHeader)/슬롯 카드 입력/저장 버튼이 모두 화면에 나타난다 '
+    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 스타일일지 메인 FAB가 아직 no-op인 것이 플랜에 '
+    '명시된 의도된 상태. Step⑤ 이전엔 skeletonRegion 텍스트 "헤더"로 확인했으나, EditorHeader 연결 '
+    '후 그 텍스트가 사라져 EditorHeader 위젯 존재로 확인 대상을 갱신)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -760,7 +763,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogAddScreen), findsOneWidget);
-      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.byType(EditorHeader), findsOneWidget);
       expect(find.textContaining('슬롯 카드 입력'), findsOneWidget);
       expect(find.textContaining('저장 버튼'), findsOneWidget);
     },

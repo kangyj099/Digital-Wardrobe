@@ -24,10 +24,12 @@ Header/HUD Stack 재설계(2026-07-13) 완료 후 Audit이 발견: `lib/widgets/
 
 [TechDebt] `EditorHeader`가 Glass primitive(`GlassPill`/`GlassCircleButton`)를 쓰지 않는 원시 구현이며, Pinned Rule 적용 여부가 미확정인 Decision-stage 질문
 
-상태: 미해결 (Step⑤ 착수 전 PM/사용자 확인 필요)
+상태: **해소됨 (2026-07-14) — Pinned Rule 예외로 확정, 원시 스타일 유지**
 
 내용:
 `lib/widgets/editor_header.dart`는 `GlassPill`/`GlassCircleButton`을 쓰지 않는 원시 `TextButton`/`IconButton` 구현이다. Decision.md대로 Editor는 애초에 `AppMainScaffold`를 안 쓰는 자체 헤더라 Pinned Rule이 그대로 적용되는지(면제되는 자체 헤더인지) 자체가 확인 필요. 취소/도움말 버튼이 Pinned Rule 예외로 면제되는지, 아니면 다른 화면과의 시각적 일관성을 위해 똑같이 Glass화해야 하는지는 Decision-stage 질문 — Worker가 임의로 정하지 말고 PM/사용자 확인 필요. (2026-07-14, Step④ 완료 시 이 항목이 원래 `DetailHeaderActions`와 묶여 있던 항목에서 분리됨 — `DetailHeaderActions` 쪽은 해소됨, 위 항목 참고.)
+
+해소: PM이 `참고자료/목업/코디 제작/코디 제작 화면.txt`(핸드오프 문서)와 `코디 제작.png`를 사용자와 함께 재확인 — 목업이 Editor 상단바를 "상단 네비게이션 바(고정, 54px)"로 명시하고, 비주얼 스타일 섹션은 블러/프로스티드글래스를 바텀시트에만 언급(상단바는 언급 없음)한다는 근거로 "Editor 상단바는 스크롤 콘텐츠 위에 뜨는 글래스 오버레이가 아니라 고정 불투명 앱바"라고 판단, 사용자가 2026-07-14 확정. **`EditorHeader`는 Pinned Rule 적용 대상이 아니며, 현재의 원시 `TextButton`/`IconButton` 스타일이 의도된 예외** — Step⑤는 이 헤더를 Glass화하지 않고 3개 Add/Create 화면에 그대로 연결한다.
 
 ---
 
