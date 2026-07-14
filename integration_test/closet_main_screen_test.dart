@@ -683,10 +683,12 @@ void main() {
   // ── 아래부터 CompositionDetailScreen/StyleLogViewerScreen(Task D) 검증 ────────
 
   testWidgets(
-    '옷장 메인 위에 /composition/:id 를 인위적으로 push하면 CompositionDetailScreen이 실제로 '
-    '렌더링되고, 헤더가 나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 '
-    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 코디 메인이 스켈레톤이라 상세로 가는 진입 '
-    'UI가 없는 것이 플랜에 명시된 의도된 상태)',
+    '[갱신됨, Step④ 재검증] 옷장 메인 위에 /composition/:id 를 인위적으로 push하면 '
+    'CompositionDetailScreen이 실제로 렌더링되고, AppMainScaffold 헤더(⋯더보기 GlassCircleButton)가 '
+    '나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 (정상 UI 플로우로는 아직 도달 '
+    '불가능한 화면 — 코디 메인이 스켈레톤이라 상세로 가는 진입 UI가 없는 것이 플랜에 명시된 의도된 '
+    '상태. Step④ 이전엔 skeletonRegion 텍스트 "헤더"로 확인했으나, AppMainScaffold 마이그레이션 후 '
+    '그 텍스트가 사라져 "더보기 메뉴" 툴팁으로 확인 대상을 갱신)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -696,16 +698,18 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
-      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.byTooltip('더보기 메뉴'), findsOneWidget);
       expect(find.textContaining('test-id'), findsOneWidget);
     },
   );
 
   testWidgets(
-    '옷장 메인 위에 /style-log/:id 를 인위적으로 push하면 StyleLogViewerScreen이 실제로 '
-    '렌더링되고, 헤더가 나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 '
-    '(정상 UI 플로우로는 아직 도달 불가능한 화면 — 스타일일지 메인이 스켈레톤이라 뷰어로 가는 '
-    '진입 UI가 없는 것이 플랜에 명시된 의도된 상태)',
+    '[갱신됨, Step④ 재검증] 옷장 메인 위에 /style-log/:id 를 인위적으로 push하면 '
+    'StyleLogViewerScreen이 실제로 렌더링되고, AppMainScaffold 헤더(⋯더보기 GlassCircleButton)가 '
+    '나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 (정상 UI 플로우로는 아직 도달 '
+    '불가능한 화면 — 스타일일지 메인이 스켈레톤이라 뷰어로 가는 진입 UI가 없는 것이 플랜에 명시된 '
+    '의도된 상태. Step④ 이전엔 skeletonRegion 텍스트 "헤더"로 확인했으나, AppMainScaffold 마이그레이션 '
+    '후 그 텍스트가 사라져 "더보기 메뉴" 툴팁으로 확인 대상을 갱신)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -715,7 +719,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-      expect(find.textContaining('헤더'), findsOneWidget);
+      expect(find.byTooltip('더보기 메뉴'), findsOneWidget);
       expect(find.textContaining('test-id'), findsOneWidget);
     },
   );

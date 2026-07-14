@@ -1,0 +1,406 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/main.dart';
+import 'package:digittal_wardrobe/models/enums.dart';
+import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
+import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
+import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
+import 'package:digittal_wardrobe/widgets/bottom_gradient_overlay.dart';
+import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
+import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
+import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/top_gradient_overlay.dart';
+
+/// Step④(DetailHeaderActions 재작업 + Detail 3화면 AppMainScaffold 연결) Tester 검증.
+///
+/// 기존 대형 회귀축(계절/밀도/FAB/카테고리 이동 등, `closet_main_screen_test.dart`
+/// `composition_style_log_main_screen_test.dart` `header_hud_stack_architecture_test.dart`)는
+/// 중복 작성하지 않는다. 이 파일은 이번 변경으로 새로 생긴 위험만 다룬다:
+/// 1) Detail 3화면(옷 상세/코디 상세/스타일일지 열람) 실제 진입 가능 여부.
+/// 2) Header/HUD Pinned Rule — 카테고리 드롭다운과 "더보기" 버튼이 물리적으로 독립된
+///    위젯으로 겹치지 않고 각자 반응하는지.
+/// 3) FrostedBackButton이 Detail 3화면 전부에서 실제로 나타나고 pop이 동작하는지.
+/// 4) CrossReferenceLinkBar placeholder entry가 실제로 렌더링되는지.
+/// 5) 짧은 뷰포트에서 AppScrollContainer 콘텐츠가 스크롤 가능하고 그라디언트 오버레이가
+///    크래시 없이 전환되는지.
+/// 6) Detail 화면에서 카테고리 드롭다운으로 다른 메인 화면 이동이 실제로 동작하는지.
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  const defaultSize = Size(390, 800);
+  // Detail 화면 콘텐츠(Content Spacer 64 + skeletonRegion 400 + CrossReferenceLinkBar 64 = 528)가
+  // 확실히 스크롤 가능해지도록 세로를 짧게 잡은 뷰포트.
+  const scrollableDetailSize = Size(390, 450);
+
+  Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = defaultSize}) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const DigitalWardrobeApp()),
+    );
+    await tester.pumpAndSettle();
+    return container;
+  }
+
+  Finder categoryDropdownFinder() =>
+      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+
+  Future<void> goToCategory(WidgetTester tester, String label) async {
+    await tester.tap(categoryDropdownFinder());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  double topOpacity(WidgetTester tester) {
+    return tester
+        .widget<AnimatedOpacity>(
+          find.descendant(of: find.byType(TopGradientOverlay), matching: find.byType(AnimatedOpacity)),
+        )
+        .opacity;
+  }
+
+  double bottomOpacity(WidgetTester tester) {
+    return tester
+        .widget<AnimatedOpacity>(
+          find.descendant(
+              of: find.byType(BottomGradientOverlay), matching: find.byType(AnimatedOpacity)),
+        )
+        .opacity;
+  }
+
+  // ── 1) Detail 3화면 실제 진입 ─────────────────────────────────────────────
+
+  group('Detail 3화면 진입', () {
+    testWidgets('옷장 메인에서 아이템 탭 → ClosetItemDetailScreen이 크래시 없이 렌더링된다', (tester) async {
+      await pumpApp(tester);
+      final tile = find.byType(SelectableGalleryTile).first;
+      final item = tester.widget<SelectableGalleryTile>(tile).item;
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+      expect(find.textContaining(item.id), findsOneWidget);
+    });
+
+    testWidgets('코디 메인에서 코디 탭 → CompositionDetailScreen이 크래시 없이 렌더링된다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+
+      final tile = find.byType(CompositionGalleryTile).first;
+      final composition = tester.widget<CompositionGalleryTile>(tile).composition;
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+      expect(find.textContaining(composition.id), findsOneWidget);
+    });
+
+    testWidgets('스타일일지 메인에서 카드 탭 → StyleLogViewerScreen이 크래시 없이 렌더링된다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '스타일일지');
+      expect(find.byType(StyleLogMainScreen), findsOneWidget);
+
+      final tile = find.byType(StyleLogGalleryTile).first;
+      final log = tester.widget<StyleLogGalleryTile>(tile).styleLog;
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+      expect(find.textContaining(log.id), findsOneWidget);
+    });
+  });
+
+  // ── 2) Header/HUD Pinned Rule ────────────────────────────────────────────
+
+  group('Header/HUD Pinned Rule — 카테고리 토글 + 더보기 버튼', () {
+    testWidgets(
+      '옷 상세 화면에서 카테고리 드롭다운과 더보기 버튼이 서로 독립된 위젯으로 겹치지 않게 배치되고, '
+      '각자 탭에 반응한다(더보기 탭 → 화면 전환 없이 예외 없이 처리, 드롭다운 탭 → 메뉴 열림)',
+      (tester) async {
+        await pumpApp(tester);
+        await tester.tap(find.byType(SelectableGalleryTile).first);
+        await tester.pumpAndSettle();
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+
+        expect(categoryDropdownFinder(), findsOneWidget);
+        final moreButton = find.byTooltip('더보기 메뉴');
+        expect(moreButton, findsOneWidget);
+
+        final dropdownRect = tester.getRect(categoryDropdownFinder());
+        final moreButtonRect = tester.getRect(moreButton);
+        expect(
+          dropdownRect.overlaps(moreButtonRect),
+          isFalse,
+          reason: 'dropdown=$dropdownRect, more=$moreButtonRect',
+        );
+
+        // 더보기 탭 — onTap이 빈 함수라도 예외 없이 처리되고 화면 전환은 없어야 한다.
+        await tester.tap(moreButton);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+
+        // 카테고리 드롭다운 탭 — 패널이 열려야 한다.
+        await tester.tap(categoryDropdownFinder());
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('코디'), findsWidgets);
+
+        // 옵션을 고르지 않고 바깥을 탭해 닫아도 예외가 없어야 한다.
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets('코디 상세 화면에서도 카테고리 드롭다운과 더보기 버튼이 겹치지 않고 각각 존재하며 더보기 탭이 예외 없이 처리된다',
+        (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      await tester.tap(find.byType(CompositionGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+
+      final dropdownRect = tester.getRect(categoryDropdownFinder());
+      final moreButtonRect = tester.getRect(find.byTooltip('더보기 메뉴'));
+      expect(dropdownRect.overlaps(moreButtonRect), isFalse);
+
+      await tester.tap(find.byTooltip('더보기 메뉴'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('스타일일지 상세 화면에서도 카테고리 드롭다운과 더보기 버튼이 겹치지 않고 각각 존재하며 더보기 탭이 예외 없이 처리된다',
+        (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '스타일일지');
+      await tester.tap(find.byType(StyleLogGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+
+      final dropdownRect = tester.getRect(categoryDropdownFinder());
+      final moreButtonRect = tester.getRect(find.byTooltip('더보기 메뉴'));
+      expect(dropdownRect.overlaps(moreButtonRect), isFalse);
+
+      await tester.tap(find.byTooltip('더보기 메뉴'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+    });
+
+    testWidgets(
+      '[비정형 흐름] 더보기 버튼을 pumpAndSettle 없이 연속으로 두 번 빠르게 탭해도 크래시 없이 처리된다',
+      (tester) async {
+        await pumpApp(tester);
+        await tester.tap(find.byType(SelectableGalleryTile).first);
+        await tester.pumpAndSettle();
+
+        final moreButton = find.byTooltip('더보기 메뉴');
+        await tester.tap(moreButton);
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.tap(moreButton);
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+      },
+    );
+  });
+
+  // ── 3) 뒤로가기 버튼 ──────────────────────────────────────────────────────
+
+  group('뒤로가기 버튼 — Detail 3화면', () {
+    testWidgets('옷 상세 화면에서 FrostedBackButton 탭 → 옷장 메인으로 pop된다', (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.byType(SelectableGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+      expect(find.byType(FrostedBackButton), findsOneWidget);
+
+      await tester.tap(find.byTooltip('뒤로가기'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClosetMainScreen), findsOneWidget);
+      expect(find.byType(ClosetItemDetailScreen), findsNothing);
+    });
+
+    testWidgets('코디 상세 화면에서 FrostedBackButton 탭 → 코디 메인으로 pop된다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      await tester.tap(find.byType(CompositionGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+      expect(find.byType(FrostedBackButton), findsOneWidget);
+
+      await tester.tap(find.byTooltip('뒤로가기'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expect(find.byType(CompositionDetailScreen), findsNothing);
+    });
+
+    testWidgets('스타일일지 상세 화면에서 FrostedBackButton 탭 → 스타일일지 메인으로 pop된다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '스타일일지');
+      await tester.tap(find.byType(StyleLogGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+      expect(find.byType(FrostedBackButton), findsOneWidget);
+
+      await tester.tap(find.byTooltip('뒤로가기'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogMainScreen), findsOneWidget);
+      expect(find.byType(StyleLogViewerScreen), findsNothing);
+    });
+  });
+
+  // ── 4) CrossReferenceLinkBar placeholder 렌더링 ──────────────────────────
+
+  group('CrossReferenceLinkBar placeholder 렌더링', () {
+    testWidgets('옷 상세 화면 하단에 상호 참조 링크 placeholder가 실제로 보인다(빈 화면처럼 보이지 않음)',
+        (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.byType(SelectableGalleryTile).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      expect(find.textContaining('연결된 코디/스타일일지'), findsOneWidget);
+      final barRect = tester.getRect(find.byType(CrossReferenceLinkBar));
+      expect(barRect.height, CrossReferenceLinkBar.height);
+    });
+
+    testWidgets('코디 상세 화면 하단에도 상호 참조 링크 placeholder가 보인다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      await tester.tap(find.byType(CompositionGalleryTile).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      expect(find.textContaining('연결된 스타일일지'), findsOneWidget);
+    });
+
+    testWidgets('스타일일지 상세 화면 하단에도 상호 참조 링크 placeholder가 보인다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '스타일일지');
+      await tester.tap(find.byType(StyleLogGalleryTile).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      expect(find.textContaining('연결된 코디'), findsOneWidget);
+    });
+  });
+
+  // ── 5) 스크롤 동작 ────────────────────────────────────────────────────────
+
+  group('스크롤 동작', () {
+    testWidgets(
+      '옷 상세 화면 콘텐츠(Content Spacer 64 + placeholder 400 + CrossReferenceLinkBar 64)가 '
+      '짧은 뷰포트에서 스크롤 가능하고, TopGradientOverlay/BottomGradientOverlay가 스크롤 위치에 '
+      '따라 크래시 없이 전환된다',
+      (tester) async {
+        await pumpApp(tester, size: scrollableDetailSize);
+        await tester.tap(find.byType(SelectableGalleryTile).first);
+        await tester.pumpAndSettle();
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+        expect(find.byType(AppScrollContainer), findsOneWidget);
+
+        // 주의: CrossReferenceLinkBar 내부의 가로 ListView도 SingleChildScrollView 하위에
+        // 있는 별개의 Scrollable이라, 바깥쪽(세로) 스크롤을 특정하려면 첫 번째 매치(트리
+        // 순서상 SingleChildScrollView 자신의 Scrollable)만 골라야 한다.
+        final scrollable = tester.state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(SingleChildScrollView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(
+          scrollable.position.maxScrollExtent,
+          greaterThan(0),
+          reason: '이 시나리오는 실제로 스크롤 가능해야 의미가 있다(뷰포트/placeholder 높이 전제 확인)',
+        );
+
+        // 최상단: Top 숨김, Bottom 표시(더 스크롤할 여지가 있으므로).
+        expect(topOpacity(tester), 0);
+        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
+
+        await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -100));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(scrollable.position.pixels, greaterThan(0));
+        expect(topOpacity(tester), closeTo(0.85, 0.001));
+
+        // 맨 아래까지 스크롤 — CrossReferenceLinkBar까지 크래시 없이 도달해야 하고,
+        // Bottom 오버레이는 사라져야 한다.
+        await tester.fling(find.byType(SingleChildScrollView), const Offset(0, -2000), 2000);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+        expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
+        expect(bottomOpacity(tester), 0);
+      },
+    );
+  });
+
+  // ── 6) Detail 화면에서 카테고리 드롭다운으로 다른 메인 이동 ─────────────────
+
+  group('Detail 화면에서 카테고리 드롭다운으로 다른 메인 이동', () {
+    testWidgets('옷 상세 화면에서 카테고리 드롭다운으로 "코디"를 선택하면 코디 메인으로 이동한다', (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.byType(SelectableGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+
+      await tester.tap(categoryDropdownFinder());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('코디').last);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expect(find.byType(ClosetItemDetailScreen), findsNothing);
+    });
+
+    testWidgets('스타일일지 상세 화면에서 카테고리 드롭다운으로 "옷장"을 선택하면 옷장 메인으로 이동한다', (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '스타일일지');
+      await tester.tap(find.byType(StyleLogGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+
+      await tester.tap(categoryDropdownFinder());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('옷장').last);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClosetMainScreen), findsOneWidget);
+      expect(find.byType(SelectableGalleryTile), findsWidgets);
+    });
+  });
+}

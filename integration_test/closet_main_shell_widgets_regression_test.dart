@@ -28,8 +28,9 @@ import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 ///    나머지 상세 시나리오(계절/밀도/FAB/그리드 탭 등)는
 ///    `composition_style_log_main_screen_test.dart`가 담당한다.
 /// 3) 그리드 아이템 탭으로 진입한 실제 옷 상세 화면(`ClosetItemDetailScreen`)에
-///    FrostedBackButton이 (아직) 존재하는지 실측 확인 — Step④ 미착수 상태를 코드
-///    추측이 아니라 실제 위젯 트리로 확인.
+///    FrostedBackButton이 실제로 나타나는지 실측 확인 — Step④(Detail 3화면
+///    `AppMainScaffold` 마이그레이션) 완료 후 갱신된 동작을 코드 추측이 아니라 실제
+///    위젯 트리로 확인.
 /// 4) FadingScrollEdge가 실제 옷장 메인 렌더 트리에서 그리드를 감싸고 있는지 구조적 확인.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -97,8 +98,9 @@ void main() {
   );
 
   testWidgets(
-    '그리드 아이템 탭으로 진입한 실제 옷 상세 화면에서는 FrostedBackButton이 아직 나타나지 않는다 '
-    '(ClosetItemDetailScreen이 Step① skeleton 그대로이고 이번 라운드는 옷장 메인에만 배선됨 — 실측 확인)',
+    '그리드 아이템 탭으로 진입한 실제 옷 상세 화면에서는 FrostedBackButton이 실제로 나타난다 '
+    '(ClosetItemDetailScreen이 Step④에서 AppMainScaffold로 마이그레이션되어 canPop()이 '
+    'true인 이 상황에서 뒤로가기가 렌더링됨 — 실측 확인)',
     (tester) async {
       await pumpApp(tester);
 
@@ -110,8 +112,8 @@ void main() {
 
       expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
       expect(find.textContaining(tappedItem.id), findsOneWidget);
-      expect(find.byType(FrostedBackButton), findsNothing);
-      expect(find.byTooltip('뒤로가기'), findsNothing);
+      expect(find.byType(FrostedBackButton), findsOneWidget);
+      expect(find.byTooltip('뒤로가기'), findsOneWidget);
     },
   );
 
