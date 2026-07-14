@@ -29,7 +29,9 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **Step⑥(나머지 화면 적용 — 설정/휴지통/선택 모달 등) 착수**. §1 표의 플래그 매핑을 그대로 사용.
+1. **Step⑥(나머지 화면 적용 — 설정/휴지통/선택 모달 등) 진행 중**. §1 표의 플래그 매핑을 그대로 사용.
+- Step⑥-A(설정/휴지통) 완료(커밋 `c1d1961`) — Worker→Review(P1 선택버튼 누락·P2 mock 구조 지적 후 재작업→Pass)→Tester(설정 Switch 완전 비활성 지적→재작업→Pass, 통합테스트 40/40) 사이클 완주.
+- **다음: Step⑥-B(선택 모달 — 옷장/코디/스타일일지 재호출) 착수**. 별도 화면 신설이 아니라 기존 Main 화면을 모달로 재호출하는 재사용 메커니즘(선택모드 플래그: 뒤로가기→닫기 X버튼, 카테고리 토글 항상 X, 그룹형 드릴다운은 옷장/코디만 유지)이 필요 — 실제 바인딩 호출부(Composition Editor 등에서 여는 지점)는 Step⑦ 몫.
 - Detail 3화면 보일러플레이트 중복(P2, Step④ Audit 발견, `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목) — Step⑤까지 마치고 나면 공용 컴포넌트 추출 임계점을 넘었는지 재검토.
 - `CrossReferenceLinkBar` Step④ placeholder가 완성된 컨트롤처럼 보여 Visual Review 시 혼동 위험(P3, 위 TechDebt 항목 하단 참고) — 우선순위 낮음, 픽업 시 비활성 스타일 검토.
 - 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
