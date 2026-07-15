@@ -28,20 +28,21 @@ class CrossReferenceLinkBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return SizedBox(
       height: height,
-      child: entries.isEmpty
-          ? const SizedBox.shrink()
-          : ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-              itemCount: entries.length,
-              separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final entry = entries[index];
-                return _CrossReferenceLinkChip(entry: entry);
-              },
-            ),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        itemCount: entries.length,
+        separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          return _CrossReferenceLinkChip(entry: entry);
+        },
+      ),
     );
   }
 }
