@@ -1,5 +1,28 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Editor 저장 모델 전환 — Record Real-time Save + Editor Draft/Commit/Cancel (Data/Architecture, Editor Draft 구현은 Step⑦ 이후 별도 후속 작업으로 분리)
+
+결정:
+- 기존 "상시 저장(드래프트 없음)" 정책을 **Record(실 데이터)와 Editor 세션(편집 버퍼)의 분리**로 대체한다:
+  1. **일반 정보(Real-time Save, 기존과 동일)**: Detail 화면에서 이뤄지는 일반 필드 수정(옷 태그/계절/위치/메모, 코디 제목/계절, 스타일 일지 메모/연결 코디 등)은 지금처럼 즉시 실제 Record에 저장. 별도 저장 버튼/사용자 관리 Draft 없음 — 이 부분은 변경 없음.
+  2. **Editor Draft(신규)**: 옷 추가(배경제거/크롭/마스킹), 코디 만들기(아트보드 배치/이동/회전/크기) 등 전용 Editor 화면의 편집은 더 이상 Record를 직접 수정하지 않는다. Editor 진입 시 해당 Record에 연결된 Editor Draft를 생성(또는 기존 미커밋 Draft가 있으면 재사용)하고, 이후 모든 변경은 Draft에만 실시간 자동저장.
+  3. **Commit/Cancel**: 우상단 완료(✔)는 Draft → Record 반영(Commit) 후 Draft 삭제. 취소(✕)/뒤로가기는 Draft를 폐기(Record는 Editor 진입 이전 상태 그대로 유지) — 진짜 의미의 편집 취소(Rollback)가 됨.
+  4. **"미완성" 배지 판정 기준 변경**: 기존엔 "필드 미입력"이 판정 대상이었으나, 앞으로는 **해당 Record에 연결된 미커밋 Editor Draft가 존재하는가**만이 기준이다(제목/태그/계절/메모 미입력은 더 이상 미완성 사유 아님). `ClothingItem.isIncomplete`/(신설 예정) `Composition.isIncomplete`/`StyleLog.isIncomplete` 저장 필드 자체는 유지 — 값을 채우는 로직만 이 기준으로 재정의.
+- **작업 분리**: BACKLOG "Flutter Hi-Fi 화면" 스프린트의 Step⑦(기능 구현)은 이 Editor Draft/Commit/Cancel 메커니즘을 포함하지 않는다. Editor 3화면(옷 추가/코디 만들기/스타일일지 추가)의 실제 저장 로직 배선은 Step⑦ 완료 후 **별도 후속 작업("Editor Draft 구현")**으로 진행한다(사용자 제안 원문의 "Phase 1.5"에 해당 — `00_MVP.md`가 이미 쓰고 있는 프로젝트 로드맵 Phase 1/1.5/2/3 번호 체계와 이름이 겹쳐 혼동을 피하려고 문서에는 별도 명칭으로 기록). Gallery "미완성" 배지 UI 및 "이어서 편집" 진입 UX는 그다음 후속 작업으로, Draft 버전 관리/다중 Draft/Editor 공통화는 더 뒤로 유지(사용자 원 제안 Phase 2/Phase 3에 각각 대응).
+- **Recovery 범위 축소**: 앱 강제종료 후 복원(사용자 원 제안 §5)은 "Editor Draft 구현" 후속 작업의 필수 목표에서 제외한다 — 현재 프로젝트에 영속 계층 자체가 없어(모든 Record가 인메모리 Riverpod 상태) Draft만 강제종료 후 살아남게 만드는 건 의미가 약함. 대신 **인터페이스는 나중에 로컬/Firestore 영속화 어댑터로 교체 가능하게 준비**해둔다(아래 Draft 구조 참고) — 이번엔 실제 로컬 저장 패키지(Hive 등)는 추가하지 않음. 세션 내 복원(에디터 재진입 시 기존 Draft 로드)은 Riverpod 상태만으로 자동 충족되므로 별도 구현 불필요.
+- **Draft 데이터 구조**: 기존 Record notifier(`closetItemsProvider` 등)에 필드를 얹지 않고, 도메인별 독립 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`, `Map<recordId, Draft>` 형태)를 신설한다 — Draft는 조회 패턴(갤러리 목록/필터 대상 아님, 휘발성, 단일 소유자)이 Record와 근본적으로 달라 분리가 맞고, 향후 Firestore에서도 별도 컬렉션(`editor_drafts`, `{recordType, recordId}` 키)으로 갈 것이므로 지금부터 그 경계를 맞춘다.
+
+사유:
+사용자가 "Policy Revision Proposal — Editor Draft Strategy & Save Model"로 직접 제안(2026-07-15). 기존 "상시 저장(드래프트 없음)" 정책이 Record와 편집 세션을 동일시해 실제 편집 취소(Rollback)가 불가능했던 구조적 한계를 해결하기 위함. PM 조사 결과 Editor 3화면이 아직 전부 skeleton 상태(Step①/⑤ 산출물만 존재, 실제 저장 로직 없음)라 마이그레이션 비용 없이 지금 방향을 바꾸는 게 가장 저렴하다고 판단, 세부 설계(Recovery 범위/Draft 구조/작업 분리 시점)를 PM이 정리해 사용자에게 확인받음.
+
+Impact:
+- `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md` "상시 저장(드래프트 없음)" 섹션 리라이트(이 커밋에서 함께 처리).
+- `docs/history/TechnicalDebt.md`의 "Composition/StyleLog isIncomplete 필드 부재" 항목 — 필드 신설 자체는 이 결정과 별개로 이미 확정(저장 필드, ClothingItem과 동일 패턴), 값 설정/해제 로직만 이 Draft 기준으로 갱신 필요하다고 함께 업데이트.
+- `docs/work/BACKLOG.md` Current 섹션 — Step⑦ 스코프에서 Editor 3화면 저장 로직 배선 제외 명시, "Editor Draft 구현"을 Step⑦ 이후 후속 작업으로 별도 등록.
+- 코드 영향은 전부 "Editor Draft 구현" 착수 시점 Implementation 태스크(신규 `lib/providers/*_drafts_provider.dart` 3종, `EditorHeader.onCancel`/`AutoSaveIndicator` 배선, Editor 3화면 실제 로직)로 예정 — 이번 라운드(Step⑦ 착수 전)는 모델 필드/문서만 정리.
+
+---
+
 [Decision] Typography Pass 3 확정 (Type Scale) + Brand Guide §3 코드 동기화
 
 결정:

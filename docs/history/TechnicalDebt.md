@@ -19,16 +19,18 @@ Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `doc
 
 ---
 
-[TechDebt] `Composition`/`StyleLog` 모델에 `isIncomplete` 등가 필드 부재 — `05_삭제 & 휴지통.md` 캐스케이드 요구사항 미충족 (P1, Decision 필요)
+[TechDebt] `Composition`/`StyleLog` 모델에 `isIncomplete` 등가 필드 부재 — `05_삭제 & 휴지통.md` 캐스케이드 요구사항 미충족 (P1, 필드 신설은 확정·값 로직은 후속 작업)
 
-상태: 미해결 — Step⑦ 착수 시점에 Decision 진행 예정(사용자 확정)
+상태: 부분 해결 — 필드 신설 방식 확정(2026-07-15), 실제 값 설정/해제 로직은 "Editor Draft 구현" 후속 작업으로 이관
 
 내용:
-Step⑥ 완료 시점 Audit(2026-07-15)이 발견: `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`가 "옷 삭제 시 코디 캐스케이드 처리"로 "정리 후 0개 남으면 기존 '미완성' 처리 재사용"을 명시하는데, 이는 `Composition` 모델이 이미 `isIncomplete`(또는 동등 개념) 필드를 가져야 함을 스펙이 요구하는 것 — 나중에 생기면 좋은 기능이 아니라 Data/Architecture 레이어의 미확정 Decision이다. 현재 `lib/models/composition.dart`엔 그 필드가 없음(`isDeleted`만 있음). `StyleLog`도 Add/Create형 공통 원칙("상시 저장 — 진입 즉시 레코드 생성, 이후 편집으로 채워짐")과 `03_스타일 일지.md`의 바인딩 흐름을 보면 구조적으로 같은 문제가 있을 개연성이 있어 함께 검토 필요.
+Step⑥ 완료 시점 Audit(2026-07-15)이 발견: `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`가 "옷 삭제 시 코디 캐스케이드 처리"로 "정리 후 0개 남으면 기존 '미완성' 처리 재사용"을 명시하는데, 이는 `Composition` 모델이 이미 `isIncomplete`(또는 동등 개념) 필드를 가져야 함을 스펙이 요구하는 것. 현재 `lib/models/composition.dart`엔 그 필드가 없음(`isDeleted`만 있음). `StyleLog`도 구조적으로 같은 문제가 있을 개연성이 있어 함께 검토했음.
 
-Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)만 실제 "미완성 항목 탭 → 완성 화면 이동" 분기를 구현하고, 코디/스타일일지는 필드 부재로 TODO 주석만 남겨둔 상태(과설계 회피).
+**Decision(2026-07-15, 사용자 확정)**: 두 모델 모두 `ClothingItem.isIncomplete`와 동일하게 **저장 필드**(`bool isIncomplete = false`)로 추가한다(파생 계산 방식 기각). 같은 날 이어진 "Editor 저장 모델 전환"(`Decision.md` 참고) 논의로 판정 기준 자체가 바뀜 — 값을 채우는 로직은 더 이상 "필드 미입력"이나 "캐스케이드로 0개 남음" 같은 데이터 완결성이 아니라 **해당 레코드에 연결된 미커밋 Editor Draft가 존재하는가**로 재정의됨. 이 토글 로직은 Editor 3화면(옷 추가/코디 만들기/스타일일지 추가) 저장 배선과 묶여 있어 Step⑦ 범위 밖, "Editor Draft 구현" 후속 작업에서 함께 처리.
 
-조치 방향(착수 조건): 사용자 확정 — Step⑦(기능 구현) 착수 시점에 Data/Architecture Decision 태스크로 먼저 처리. Composition에 필드 추가 여부/방식(저장 필드 vs 파생 계산)과 StyleLog 필요 여부를 확정한 뒤에야 캐스케이드 삭제 로직·선택 모달 완성화면 분기 이식 가능.
+Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)만 실제 "미완성 항목 탭 → 완성 화면 이동" 분기를 구현하고, 코디/스타일일지는 필드 부재로 TODO 주석만 남겨둔 상태(과설계 회피) — 이 TODO는 필드 신설 후에도 Editor Draft 구현 전까지는 유지.
+
+조치 방향(착수 조건): Step⑦ 착수 시 Data/Architecture Implementation 태스크로 `Composition`/`StyleLog`에 `bool isIncomplete = false` 필드만 우선 추가(기본값 false, 토글 로직 없음) — 캐스케이드 삭제 로직의 "0개 남으면 미완성 재사용" 서술과 선택 모달 완성화면 분기는 Editor Draft 구현 후속 작업까지 계속 보류.
 
 ---
 
@@ -115,7 +117,7 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 
 [TechDebt] 화면 간 반복 복제된 UI 블록 — Step④에서 4번째 사례가 실제로 발생, 추출 임계점 재검토 필요 (P2)
 
-상태: 미해결
+상태: **1~5번 사례 해소됨(2026-07-15)** — Step⑦ 착수 전 선행 작업(b)로 Worker→Review→Tester→Audit 전부 통과. 6번째 사례(Editor 3화면)는 신규 발견, 미해결(P3, 의도적 보류)
 
 내용:
 Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적: (1) FAB 펼침 애니메이션 스캐폴딩(`_buildFabOption`/`_onFabOptionTap`/`AnimatedSize` 블록, 약 35줄)이 `closet_main_screen.dart`와 `style_log_main_screen.dart`에 텍스트만 바꿔 그대로 복제됨. (2) `_densityIcon(int density)` private 메서드가 `closet_main_screen.dart`와 `composition_main_screen.dart`에 코드 100% 동일하게 존재. (3) 갤러리 타일의 "좌하단 반투명 pill + `ConstrainedBox`+ellipsis" 라벨 블록이 `selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart` 3곳에 동일 패턴으로 존재. 당시 Review 판정은 P2(논블로킹) — Step④~⑥에서 화면이 늘면 계속 늘어날 것이라 추출을 "다음 Step 진입 전 검토 권장"으로 남겼었음.
@@ -123,6 +125,14 @@ Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적
 **Step④(Detail 3화면 적용, 2026-07-14) Audit이 4번째 사례 확인**: `closet_item_detail_screen.dart`/`composition_detail_screen.dart`/`style_log_viewer_screen.dart`가 `_placeholderContentHeight = 400` 로컬 상수, `GlassCircleButton(icon: Icons.more_horiz, tooltip: '더보기 메뉴', onTap: () {})` headerActions 블록, `AppScrollContainer`+`SingleChildScrollView`+`Column` 래퍼, 라벨 문자열만 다른 `CrossReferenceLinkBar` 단일 placeholder entry까지 거의 동일한 구조로 3번 복제됐다. Step⑤(Editor 3화면)·Step⑥(나머지 화면)이 아직 남아있어 이 패턴이 최소 한 번 더 반복될 가능성이 높음 — 추출 임계점을 넘었다고 판단되면 다음 Worker 태스크(Layer=UI/Screen, Stage=Implementation)로 `ExpandableAddFab`/`AppDensity.iconFor`/`GalleryMetaLabel`과 함께 Detail 3화면용 공용 컴포넌트(카테고리/id/placeholder 라벨/cross-reference entries를 파라미터로 받는)도 같이 검토.
 
 **Step⑥-B(선택 모달, 2026-07-15) Audit이 5번째 사례 확인**: `if (selectionMode) FrostedCloseButton(...) else GlassPill(선택 TextButton)` 헤더 분기와 `floatingActionButton: selectionMode ? null : ...` 분기가 `closet_main_screen.dart`/`composition_main_screen.dart`/`style_log_main_screen.dart` 3곳에 거의 동일하게 반복됐다. 또한 갤러리 타일 좌하단 라벨 pill 패턴(위 항목 (3))도 `trash_gallery_tile.dart`까지 4곳으로 늘었다. Step⑦이 이 파일들을 다시 열어 실제 동작을 붙일 예정이라, 지금 추출하지 않으면 드리프트 위험(한 곳만 고치고 나머지를 놓침)이 Step⑦에서 최대화된다 — Step⑦ 착수 전 추출을 권장(Audit 제안).
+
+**해소(2026-07-15)**: 1~5번 사례 전부 공용 위젯으로 추출 완료 — `ExpandableAddFab`(`lib/widgets/expandable_add_fab.dart`, FAB 펼침), `GalleryMetaLabel`(`lib/widgets/gallery_meta_label.dart`, 갤러리 타일 좌하단 라벨 pill, 4곳), `buildSelectionAwareHeaderActions`(`lib/widgets/selection_aware_header_actions.dart`, selectionMode 헤더 분기), `AppDensity.iconFor`(`lib/theme/app_spacing.dart`, 밀도 아이콘), `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`, Detail 3화면 공용 셸 — 4번째 사례도 함께 해소). Worker→Review(P0 없음)→Tester(12개 통합테스트 파일, 130+ 케이스 전부 Pass, `TrashGalleryTile` 신규 폭 제약 버그 잡아냄)→Audit(P0 없음) 전부 완료.
+
+**Audit(2026-07-15)이 새로 발견한 후속 항목**(별도 우선순위):
+- (P1) `AppDetailScaffold`의 파라미터가 너무 좁다(`placeholderLabel`/`crossReferenceLabel` 단일 문자열뿐, `body` 슬롯도 실제 cross-reference entry 리스트도 없음) — `02_코디 (가상 조합).md`가 요구하는 실제 Detail 바디(사용된 옷 목록/연결된 스타일일지 목록 등)를 Step⑦에서 바인딩하려면 이 계약을 먼저 넓혀야 한다. Step⑦의 Detail 3화면 착수 시 가장 먼저 처리(호출부 3곳이 아직 적을 때 고치는 게 저렴).
+- (P2) `AppDetailScaffold`가 `lib/widgets/`가 아니라 `lib/screens/`에 배치됨 — 같은 역할(Layout-tier 셸)인 `AppMainScaffold`는 `lib/widgets/`에 있어 관례가 어긋난다. 근거로 든 "widgets/ → screens/ 역의존 금지"는 `skeleton_region.dart`(Step②에 은퇴 예정이라고 스스로 명시한 임시 파일) 의존을 피하려던 것이라 오히려 근거가 약함. Editor Draft 구현 이전 아무 때나 낮은 비용으로 정리 가능.
+- (P2) `AutoSaveIndicator`(`lib/widgets/auto_save_indicator.dart`) 독스트링과 Editor 3화면(`closet_add_screen.dart`/`composition_editor_screen.dart`/`style_log_add_screen.dart`)의 skeleton 라벨이 여전히 "상시 저장(드래프트 없음)" 구 정책을 서술 — "Editor 저장 모델 전환" Decision(같은 날) 이후로 내용이 안 맞음. 위젯 자체는 아직 어디서도 호출 안 됨(unwired)이라 지금 당장 화면에 영향은 없음 — "Editor Draft 구현" 착수 시 함께 정리.
+- (P3, 의도적 보류) Editor 3화면(옷 추가/코디 만들기/스타일일지 추가)이 `EditorHeader`+`skeletonRegion` 2개로 구성된 동일 구조를 텍스트만 바꿔 반복하는 **6번째 사례**를 발견했으나, 이 3화면은 "Editor Draft 구현" 착수 시 통째로 실제 로직으로 재작성될 예정이라 지금 추출하면 이중작업 위험 — Audit 권고대로 지금은 추출하지 않고 기록만.
 
 ---
 

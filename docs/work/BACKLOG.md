@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step⑥(나머지 화면 적용 — 설정/휴지통/선택 모달) 완료 (2026-07-15, 커밋 `c1d1961`/`2d4240f`/`c086556` + 후속 수정).** 설정/휴지통(Step⑥-A)·선택 모달 3종(Step⑥-B) 모두 Worker→Review→Tester 사이클(각 1~2회 재작업 후 Pass) 완주. Step⑥ 완료 시점 Audit이 P1 3건 발견 → `docs/history/TechnicalDebt.md`에 전부 기록: (1) Settings 화면이 이미 승인된 `04_설정.md` 스펙과 어긋남(로그아웃/Toast+Undo 없음, 스펙에 없는 로우 존재) — 사용자 확인으로 "전체 데이터 삭제" 로우만 우선 제거, 나머지는 보류, (2) `Composition`/`StyleLog`에 `isIncomplete` 등가 필드 부재로 캐스케이드 삭제 요구사항 미충족 — Step⑦ 착수 시점 Decision 예정(사용자 확정), (3) `selectionMode` 헤더/FAB 분기 패턴이 "화면 간 반복 복제된 UI 블록" TechDebt에 5번째 사례로 추가.
+**Step⑦ 착수 전 선행 작업 2건 완료 (2026-07-15).** (a) `Composition`/`StyleLog` `isIncomplete` 필드 Decision 확정(저장 필드 방식) — 그 논의 중 사용자 제안으로 "상시 저장" 정책이 Record Real-time Save + Editor Draft/Commit/Cancel로 분리되는 더 큰 정책 전환(`docs/history/Decision.md` "Editor 저장 모델 전환")까지 함께 확정, Editor 3화면 실배선은 "Editor Draft 구현" 후속 작업으로 이관. (b) "화면 간 반복 복제된 UI 블록" 5개 사례를 공용 위젯(`ExpandableAddFab`/`GalleryMetaLabel`/`buildSelectionAwareHeaderActions`/`AppDetailScaffold`/`AppDensity.iconFor`)으로 추출, Worker→Review→Tester→Audit(L 사이즈) 전부 통과. Audit이 후속 항목 몇 건 추가 발견 — 상세는 `docs/history/TechnicalDebt.md`.
 
 ---
 
@@ -29,11 +29,13 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **8단계 프로세스 Step①~⑥ 전부 완료 — 다음은 Step⑦(기능 구현) 착수 전 선행 작업 2건**:
-   - (a) `Composition`/`StyleLog`의 `isIncomplete` 등가 필드 Data/Architecture Decision(`docs/history/TechnicalDebt.md` 참고) — 캐스케이드 삭제/선택 모달 완성화면 분기가 이 결정에 의존.
-   - (b) "화면 간 반복 복제된 UI 블록" 추출 검토(누적 5개 사례, `docs/history/TechnicalDebt.md`) — Step⑦이 같은 파일들을 다시 열기 전에 정리하는 게 드리프트 비용이 가장 적음(Audit 권고).
-   - 두 선행 작업 이후 Step⑦ 착수.
-- Detail 3화면 보일러플레이트 중복(P2, Step④ Audit 발견, `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목) — 위 (b)와 함께 재검토.
+1. **8단계 프로세스 Step①~⑥ + 선행 작업 2건 전부 완료 — Step⑦(기능 구현) 착수부터 시작.** 착수 시 먼저 반영할 2건:
+   - `AppDetailScaffold` 파라미터 협소 문제(Audit 2026-07-15 발견) — Detail 3화면 실제 데이터 바인딩 전에 `body` 슬롯 + `crossReferenceEntries` 리스트로 계약을 넓힐 것(현재는 `placeholderLabel`/`crossReferenceLabel` 단일 문자열뿐).
+   - `Composition`/`StyleLog`에 `bool isIncomplete = false` 필드 추가(토글 로직 없이 — 값 판정 로직은 "Editor Draft 구현"에서 처리, `Decision.md` "Editor 저장 모델 전환" 참고).
+   - **"Editor Draft 구현"(신규 후속 작업, Step⑦ 이후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
+- ~~Detail 3화면 보일러플레이트 중복~~ **완료(2026-07-15)** — 위 (b)에서 `AppDetailScaffold`로 해소(단, 파라미터 협소 문제는 위 Step⑦ 착수 노트 참고).
+- (P2) `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`)가 같은 역할의 `AppMainScaffold`(`lib/widgets/`)와 달리 `lib/widgets/`가 아닌 `lib/screens/`에 배치됨 — Audit(2026-07-15) 발견, 근거가 약한 배치(상세는 `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목 하단). 호출부가 3곳뿐인 지금이 이동 비용이 가장 쌈, 급하지 않음.
+- 6번째 UI 블록 중복 사례(Editor 3화면 `EditorHeader`+`skeletonRegion` 보일러플레이트, P3, Audit 2026-07-15 발견) — "Editor Draft 구현" 착수로 어차피 재작성될 예정이라 의도적으로 추출 보류(`docs/history/TechnicalDebt.md` 참고).
 - `CrossReferenceLinkBar` Step④ placeholder가 완성된 컨트롤처럼 보여 Visual Review 시 혼동 위험(P3, 위 TechDebt 항목 하단 참고) — 우선순위 낮음, 픽업 시 비활성 스타일 검토.
 - 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
