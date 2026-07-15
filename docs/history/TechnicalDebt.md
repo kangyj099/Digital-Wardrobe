@@ -1,5 +1,37 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `SettingsScreen`이 이미 승인된 `04_설정.md` 스펙과 어긋남 — "전체 데이터 삭제"만 제거, 나머지는 보류 (P1)
+
+상태: 부분 해결 — 사용자 확인 필요한 부분 보류 중
+
+내용:
+Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `docs/reference/plan/03_화면별UX명세서/04_설정.md`는 2026-07-09 Design Review에서 승인 확정된 문서로, 로우 2개(알림 토글, 로그아웃/Toast+Undo — confirm 모달 명시적으로 미사용)만 규정하고, 프로필 아이콘 진입점은 옷장/코디/스타일일지 3개 Main 화면 헤더에 있어야 한다고 규정한다. 실제 Step⑥-A 구현(`lib/screens/settings_screen.dart`)은 이 스펙을 참고하지 않고 "다크 모드"/"프로필 편집"/"전체 데이터 삭제"(confirm 모달) 로우를 임의로 추가했다 — PM이 Worker 태스크 스코프 지정 시 이 화면 전용 스펙 문서를 놓치고 `00_페이지 타입 정의.md`의 일반 Utility형 규칙만 참조한 게 원인.
+
+사용자 확인(2026-07-15): "전체 데이터 삭제" 로우(스펙에 아예 없는 데다 존재하지 않는 위험 기능을 노출)만 제거, "다크 모드"/"프로필 편집" 로우는 이번엔 그대로 두고 전체 스펙 재작성 여부는 보류.
+
+남은 드리프트(미해결):
+- 로그아웃 로우 자체가 없음(스펙 핵심 요구사항).
+- "다크 모드"/"프로필 편집" 로우가 스펙에 없는데도 남아있음.
+- 로그아웃 confirm 모달 대신 Toast+Undo 패턴 미구현(애초에 로그아웃 로우가 없어 해당 없음).
+- 3개 Main 화면 헤더에 프로필 아이콘 진입점이 없어 `/settings`가 UI로는 도달 불가능한 라우트(직접 URL 진입만 가능).
+
+조치 방향(착수 조건): 이 화면을 다음에 다시 손댈 때, 04_설정.md 원문대로 재구현할지 아니면 현재 확장을 정식 스펙 갱신 대상으로 삼을지부터 사용자 확인 후 진행.
+
+---
+
+[TechDebt] `Composition`/`StyleLog` 모델에 `isIncomplete` 등가 필드 부재 — `05_삭제 & 휴지통.md` 캐스케이드 요구사항 미충족 (P1, Decision 필요)
+
+상태: 미해결 — Step⑦ 착수 시점에 Decision 진행 예정(사용자 확정)
+
+내용:
+Step⑥ 완료 시점 Audit(2026-07-15)이 발견: `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`가 "옷 삭제 시 코디 캐스케이드 처리"로 "정리 후 0개 남으면 기존 '미완성' 처리 재사용"을 명시하는데, 이는 `Composition` 모델이 이미 `isIncomplete`(또는 동등 개념) 필드를 가져야 함을 스펙이 요구하는 것 — 나중에 생기면 좋은 기능이 아니라 Data/Architecture 레이어의 미확정 Decision이다. 현재 `lib/models/composition.dart`엔 그 필드가 없음(`isDeleted`만 있음). `StyleLog`도 Add/Create형 공통 원칙("상시 저장 — 진입 즉시 레코드 생성, 이후 편집으로 채워짐")과 `03_스타일 일지.md`의 바인딩 흐름을 보면 구조적으로 같은 문제가 있을 개연성이 있어 함께 검토 필요.
+
+Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)만 실제 "미완성 항목 탭 → 완성 화면 이동" 분기를 구현하고, 코디/스타일일지는 필드 부재로 TODO 주석만 남겨둔 상태(과설계 회피).
+
+조치 방향(착수 조건): 사용자 확정 — Step⑦(기능 구현) 착수 시점에 Data/Architecture Decision 태스크로 먼저 처리. Composition에 필드 추가 여부/방식(저장 필드 vs 파생 계산)과 StyleLog 필요 여부를 확정한 뒤에야 캐스케이드 삭제 로직·선택 모달 완성화면 분기 이식 가능.
+
+---
+
 [TechDebt] `integration_test/typography_pass3_test.dart`에 미사용 import 2건 (`closet_main_screen.dart`, `style_log_gallery_tile.dart`)
 
 상태: 미해결 (사소함)
@@ -89,6 +121,8 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적: (1) FAB 펼침 애니메이션 스캐폴딩(`_buildFabOption`/`_onFabOptionTap`/`AnimatedSize` 블록, 약 35줄)이 `closet_main_screen.dart`와 `style_log_main_screen.dart`에 텍스트만 바꿔 그대로 복제됨. (2) `_densityIcon(int density)` private 메서드가 `closet_main_screen.dart`와 `composition_main_screen.dart`에 코드 100% 동일하게 존재. (3) 갤러리 타일의 "좌하단 반투명 pill + `ConstrainedBox`+ellipsis" 라벨 블록이 `selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart` 3곳에 동일 패턴으로 존재. 당시 Review 판정은 P2(논블로킹) — Step④~⑥에서 화면이 늘면 계속 늘어날 것이라 추출을 "다음 Step 진입 전 검토 권장"으로 남겼었음.
 
 **Step④(Detail 3화면 적용, 2026-07-14) Audit이 4번째 사례 확인**: `closet_item_detail_screen.dart`/`composition_detail_screen.dart`/`style_log_viewer_screen.dart`가 `_placeholderContentHeight = 400` 로컬 상수, `GlassCircleButton(icon: Icons.more_horiz, tooltip: '더보기 메뉴', onTap: () {})` headerActions 블록, `AppScrollContainer`+`SingleChildScrollView`+`Column` 래퍼, 라벨 문자열만 다른 `CrossReferenceLinkBar` 단일 placeholder entry까지 거의 동일한 구조로 3번 복제됐다. Step⑤(Editor 3화면)·Step⑥(나머지 화면)이 아직 남아있어 이 패턴이 최소 한 번 더 반복될 가능성이 높음 — 추출 임계점을 넘었다고 판단되면 다음 Worker 태스크(Layer=UI/Screen, Stage=Implementation)로 `ExpandableAddFab`/`AppDensity.iconFor`/`GalleryMetaLabel`과 함께 Detail 3화면용 공용 컴포넌트(카테고리/id/placeholder 라벨/cross-reference entries를 파라미터로 받는)도 같이 검토.
+
+**Step⑥-B(선택 모달, 2026-07-15) Audit이 5번째 사례 확인**: `if (selectionMode) FrostedCloseButton(...) else GlassPill(선택 TextButton)` 헤더 분기와 `floatingActionButton: selectionMode ? null : ...` 분기가 `closet_main_screen.dart`/`composition_main_screen.dart`/`style_log_main_screen.dart` 3곳에 거의 동일하게 반복됐다. 또한 갤러리 타일 좌하단 라벨 pill 패턴(위 항목 (3))도 `trash_gallery_tile.dart`까지 4곳으로 늘었다. Step⑦이 이 파일들을 다시 열어 실제 동작을 붙일 예정이라, 지금 추출하지 않으면 드리프트 위험(한 곳만 고치고 나머지를 놓침)이 Step⑦에서 최대화된다 — Step⑦ 착수 전 추출을 권장(Audit 제안).
 
 ---
 

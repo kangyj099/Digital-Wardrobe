@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**스크롤 힌트 상단(Top) 그래디언트 표시 조건 수정 완료 (2026-07-15).** 사용자가 "상단 그래디언트가 항상 깔려 보인다"고 지적 → PM이 실측(스크린샷 2장)·기존 통합테스트로 재현 시도했으나 재현 안 됨, 대신 진짜 문제(고정 `scrollTop > 2px`가 헤더/HUD 높이를 무시해 헤더 뒤에 가려져 있던 여백만으로도 조건이 충족됨)를 코드 리딩으로 특정. `AppScrollContainer`에 `topHintThreshold`(기본 2, 화면별 `AppMainScaffold.contentSpacerHeight(...)` 전달) 파라미터를 추가하는 저결합 방향(raw threshold)을 권고 — 헤더 슬롯 정보를 직접 받는 대안은 결합도만 높이고 반복 작업은 줄이지 못함을 비교 설명. 사용자가 직접 구현+커밋(`380d5b4`, Worker/Review/Tester 하네스 밖에서 PM과 페어로 진행). `header_hud_stack_architecture_test.dart`의 스크롤 그라디언트 테스트 2건을 새 threshold 기준으로 갱신(컴파일 에러 1건·미사용 import 1건은 PM이 발견해 알려주고 사용자가 수정), `detail_screens_header_hud_test.dart`(고정 100px 드래그, Detail 화면 threshold 64px이라 우연히 그대로 통과, 16/16 Pass)까지 재검증 완료. 스펙 문서(`2026-07-13-scroll-container-and-header-hud-architecture.md`) Top Gradient 표시 조건도 새 규칙으로 갱신(Bottom은 의도적으로 2px 유지). **로컬 커밋만 있고 origin에 미푸시(26 커밋 ahead) — 다음 세션에서 확인 필요.**
+**Step⑥(나머지 화면 적용 — 설정/휴지통/선택 모달) 완료 (2026-07-15, 커밋 `c1d1961`/`2d4240f`/`c086556` + 후속 수정).** 설정/휴지통(Step⑥-A)·선택 모달 3종(Step⑥-B) 모두 Worker→Review→Tester 사이클(각 1~2회 재작업 후 Pass) 완주. Step⑥ 완료 시점 Audit이 P1 3건 발견 → `docs/history/TechnicalDebt.md`에 전부 기록: (1) Settings 화면이 이미 승인된 `04_설정.md` 스펙과 어긋남(로그아웃/Toast+Undo 없음, 스펙에 없는 로우 존재) — 사용자 확인으로 "전체 데이터 삭제" 로우만 우선 제거, 나머지는 보류, (2) `Composition`/`StyleLog`에 `isIncomplete` 등가 필드 부재로 캐스케이드 삭제 요구사항 미충족 — Step⑦ 착수 시점 Decision 예정(사용자 확정), (3) `selectionMode` 헤더/FAB 분기 패턴이 "화면 간 반복 복제된 UI 블록" TechDebt에 5번째 사례로 추가.
 
 ---
 
@@ -29,13 +29,15 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **Step⑥(나머지 화면 적용 — 설정/휴지통/선택 모달 등) 진행 중**. §1 표의 플래그 매핑을 그대로 사용.
-- Step⑥-A(설정/휴지통) 완료(커밋 `c1d1961`) — Worker→Review(P1 선택버튼 누락·P2 mock 구조 지적 후 재작업→Pass)→Tester(설정 Switch 완전 비활성 지적→재작업→Pass, 통합테스트 40/40) 사이클 완주.
-- **다음: Step⑥-B(선택 모달 — 옷장/코디/스타일일지 재호출) 착수**. 별도 화면 신설이 아니라 기존 Main 화면을 모달로 재호출하는 재사용 메커니즘(선택모드 플래그: 뒤로가기→닫기 X버튼, 카테고리 토글 항상 X, 그룹형 드릴다운은 옷장/코디만 유지)이 필요 — 실제 바인딩 호출부(Composition Editor 등에서 여는 지점)는 Step⑦ 몫.
-- Detail 3화면 보일러플레이트 중복(P2, Step④ Audit 발견, `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목) — Step⑤까지 마치고 나면 공용 컴포넌트 추출 임계점을 넘었는지 재검토.
+1. **8단계 프로세스 Step①~⑥ 전부 완료 — 다음은 Step⑦(기능 구현) 착수 전 선행 작업 2건**:
+   - (a) `Composition`/`StyleLog`의 `isIncomplete` 등가 필드 Data/Architecture Decision(`docs/history/TechnicalDebt.md` 참고) — 캐스케이드 삭제/선택 모달 완성화면 분기가 이 결정에 의존.
+   - (b) "화면 간 반복 복제된 UI 블록" 추출 검토(누적 5개 사례, `docs/history/TechnicalDebt.md`) — Step⑦이 같은 파일들을 다시 열기 전에 정리하는 게 드리프트 비용이 가장 적음(Audit 권고).
+   - 두 선행 작업 이후 Step⑦ 착수.
+- Detail 3화면 보일러플레이트 중복(P2, Step④ Audit 발견, `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목) — 위 (b)와 함께 재검토.
 - `CrossReferenceLinkBar` Step④ placeholder가 완성된 컨트롤처럼 보여 Visual Review 시 혼동 위험(P3, 위 TechDebt 항목 하단 참고) — 우선순위 낮음, 픽업 시 비활성 스타일 검토.
 - 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
+- (P2, 급하지 않음) 휴지통 mock provider에 삭제 시각(`deletedAt`) 필드가 없어 실제 3-domain 집계 전환 시 "N일 남음" 계산 불가 — 모델에 필드 추가 필요. `mockTrashEntries`의 `t3` 항목이 `remainingDays: 27`로 15일 상한을 넘는 값이라 다음에 손댈 때 0~15 범위로 조정.
 
 ---
 
