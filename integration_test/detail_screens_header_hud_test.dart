@@ -10,14 +10,10 @@ import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
-import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
-import 'package:digittal_wardrobe/widgets/bottom_gradient_overlay.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
-import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
-import 'package:digittal_wardrobe/widgets/top_gradient_overlay.dart';
 
 /// Step④(DetailHeaderActions 재작업 + Detail 3화면 AppMainScaffold 연결) Tester 검증.
 ///
@@ -28,17 +24,12 @@ import 'package:digittal_wardrobe/widgets/top_gradient_overlay.dart';
 /// 2) Header/HUD Pinned Rule — 카테고리 드롭다운과 "더보기" 버튼이 물리적으로 독립된
 ///    위젯으로 겹치지 않고 각자 반응하는지.
 /// 3) FrostedBackButton이 Detail 3화면 전부에서 실제로 나타나고 pop이 동작하는지.
-/// 4) CrossReferenceLinkBar placeholder entry가 실제로 렌더링되는지.
-/// 5) 짧은 뷰포트에서 AppScrollContainer 콘텐츠가 스크롤 가능하고 그라디언트 오버레이가
-///    크래시 없이 전환되는지.
+/// 4) Detail 화면 skeleton body(Task 3~5 전까지 임시 문구)가 실제로 렌더링되는지.
 /// 6) Detail 화면에서 카테고리 드롭다운으로 다른 메인 화면 이동이 실제로 동작하는지.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   const defaultSize = Size(390, 800);
-  // Detail 화면 콘텐츠(Content Spacer 64 + skeletonRegion 400 + CrossReferenceLinkBar 64 = 528)가
-  // 확실히 스크롤 가능해지도록 세로를 짧게 잡은 뷰포트.
-  const scrollableDetailSize = Size(390, 450);
 
   Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = defaultSize}) async {
     tester.view.physicalSize = size;
@@ -63,23 +54,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
-  }
-
-  double topOpacity(WidgetTester tester) {
-    return tester
-        .widget<AnimatedOpacity>(
-          find.descendant(of: find.byType(TopGradientOverlay), matching: find.byType(AnimatedOpacity)),
-        )
-        .opacity;
-  }
-
-  double bottomOpacity(WidgetTester tester) {
-    return tester
-        .widget<AnimatedOpacity>(
-          find.descendant(
-              of: find.byType(BottomGradientOverlay), matching: find.byType(AnimatedOpacity)),
-        )
-        .opacity;
   }
 
   // ── 1) Detail 3화면 실제 진입 ─────────────────────────────────────────────
@@ -278,93 +252,35 @@ void main() {
     });
   });
 
-  // ── 4) CrossReferenceLinkBar placeholder 렌더링 ──────────────────────────
+  // ── 4) Detail 화면 skeleton body 렌더링 ──────────────────────────────────
 
-  group('CrossReferenceLinkBar placeholder 렌더링', () {
-    testWidgets('옷 상세 화면 하단에 상호 참조 링크 placeholder가 실제로 보인다(빈 화면처럼 보이지 않음)',
+  group('Detail 화면 skeleton body 렌더링(Task 3~5 전까지)', () {
+    testWidgets('옷 상세 화면 본문에 skeleton 안내 문구가 보인다(빈 화면처럼 보이지 않음)',
         (tester) async {
       await pumpApp(tester);
       await tester.tap(find.byType(SelectableGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-      expect(find.textContaining('연결된 코디/스타일일지'), findsOneWidget);
-      final barRect = tester.getRect(find.byType(CrossReferenceLinkBar));
-      expect(barRect.height, CrossReferenceLinkBar.height);
+      expect(find.textContaining('Task 3에서 실제 바인딩 예정'), findsOneWidget);
     });
 
-    testWidgets('코디 상세 화면 하단에도 상호 참조 링크 placeholder가 보인다', (tester) async {
+    testWidgets('코디 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tester.tap(find.byType(CompositionGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-      expect(find.textContaining('연결된 스타일일지'), findsOneWidget);
+      expect(find.textContaining('Task 4에서 실제 바인딩 예정'), findsOneWidget);
     });
 
-    testWidgets('스타일일지 상세 화면 하단에도 상호 참조 링크 placeholder가 보인다', (tester) async {
+    testWidgets('스타일일지 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
       await tester.tap(find.byType(StyleLogGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-      expect(find.textContaining('연결된 코디'), findsOneWidget);
+      expect(find.textContaining('Task 5에서 실제 바인딩 예정'), findsOneWidget);
     });
-  });
-
-  // ── 5) 스크롤 동작 ────────────────────────────────────────────────────────
-
-  group('스크롤 동작', () {
-    testWidgets(
-      '옷 상세 화면 콘텐츠(Content Spacer 64 + placeholder 400 + CrossReferenceLinkBar 64)가 '
-      '짧은 뷰포트에서 스크롤 가능하고, TopGradientOverlay/BottomGradientOverlay가 스크롤 위치에 '
-      '따라 크래시 없이 전환된다',
-      (tester) async {
-        await pumpApp(tester, size: scrollableDetailSize);
-        await tester.tap(find.byType(SelectableGalleryTile).first);
-        await tester.pumpAndSettle();
-        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
-        expect(find.byType(AppScrollContainer), findsOneWidget);
-
-        // 주의: CrossReferenceLinkBar 내부의 가로 ListView도 SingleChildScrollView 하위에
-        // 있는 별개의 Scrollable이라, 바깥쪽(세로) 스크롤을 특정하려면 첫 번째 매치(트리
-        // 순서상 SingleChildScrollView 자신의 Scrollable)만 골라야 한다.
-        final scrollable = tester.state<ScrollableState>(
-          find
-              .descendant(
-                of: find.byType(SingleChildScrollView),
-                matching: find.byType(Scrollable),
-              )
-              .first,
-        );
-        expect(
-          scrollable.position.maxScrollExtent,
-          greaterThan(0),
-          reason: '이 시나리오는 실제로 스크롤 가능해야 의미가 있다(뷰포트/placeholder 높이 전제 확인)',
-        );
-
-        // 최상단: Top 숨김, Bottom 표시(더 스크롤할 여지가 있으므로).
-        expect(topOpacity(tester), 0);
-        expect(bottomOpacity(tester), closeTo(0.85, 0.001));
-
-        await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -100));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(scrollable.position.pixels, greaterThan(0));
-        expect(topOpacity(tester), closeTo(0.85, 0.001));
-
-        // 맨 아래까지 스크롤 — CrossReferenceLinkBar까지 크래시 없이 도달해야 하고,
-        // Bottom 오버레이는 사라져야 한다.
-        await tester.fling(find.byType(SingleChildScrollView), const Offset(0, -2000), 2000);
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-        expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
-        expect(bottomOpacity(tester), 0);
-      },
-    );
   });
 
   // ── 6) Detail 화면에서 카테고리 드롭다운으로 다른 메인 이동 ─────────────────
