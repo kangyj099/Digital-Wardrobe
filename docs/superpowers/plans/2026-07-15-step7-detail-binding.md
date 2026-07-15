@@ -1214,6 +1214,11 @@ class StyleLogViewerScreen extends ConsumerWidget {
 
   Future<void> _bindComposition(BuildContext context, WidgetRef ref) async {
     final selectedCompositionId = await context.push<String>(AppRoute.compositionSelect);
+    // Task 4의 `_bindStyleLog`에 없던 mounted 가드를 여기서는 추가한다 — async 갭 이후
+    // ref를 쓰기 전에 위젯이 여전히 살아있는지 확인(Review가 Task 4에서 지적한 TechDebt,
+    // `docs/history/TechnicalDebt.md` 참고. `_bindStyleLog` 쪽은 별도로 정리 예정이라
+    // 이 Task에서 함께 고치지 않는다 — 이 함수만 새로 작성하므로 처음부터 바르게 작성).
+    if (!context.mounted) return;
     if (selectedCompositionId != null) {
       ref.read(styleLogsProvider.notifier).linkToComposition(styleLogId, selectedCompositionId);
     }

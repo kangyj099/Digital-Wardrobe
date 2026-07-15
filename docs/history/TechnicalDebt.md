@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] 코디↔스타일일지 바인딩 액션(`_bindStyleLog`/`_bindComposition`)에 `context.mounted` 가드 부재 (P2)
+
+상태: 미해결(리스크 낮음으로 판단, 착수 보류)
+
+내용:
+Step⑦ 1라운드(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Task 4 Review(2026-07-15)가 발견: `composition_detail_screen.dart`의 `_bindStyleLog`가 `await context.push<String>(...)` 이후 `context`를 직접 재사용하진 않지만, `ref.read(...)` 호출 전에 `context.mounted` 체크가 없다 — `.claude/skills/flutter-implementation-conventions/SKILL.md`가 요구하는 "async 작업 완료 후 context 사용 전 mounted 체크" 원칙의 문자 그대로의 위반. 이 async 갭 동안 화면이 실제로 dispose될 경로가 현재는 없어(같은 화면이 계속 떠 있는 상태에서 선택 모달만 push/pop) 런타임 크래시로 이어지지 않았고, Tester도 재현하지 못했다. Task 4 Worker의 결함이 아니라 Plan 코드 스니펫 자체에 있던 갭이라 그대로 구현됨. Task 5의 `style_log_viewer_screen.dart`(`_bindComposition`, 동일 패턴)에도 그대로 반복될 예정이라 함께 기록.
+
+조치 방향(착수 조건): 두 함수 모두 `ref.read(...)` 호출 직전에 `if (!context.mounted) return;` 한 줄만 추가하면 해소됨 — 다음에 이 두 파일 중 하나를 손댈 때(Editor Draft 구현 등) 함께 정리, 또는 별도로 픽업해도 비용이 매우 낮음.
+
+---
+
 [TechDebt] `SettingsScreen`이 이미 승인된 `04_설정.md` 스펙과 어긋남 — "전체 데이터 삭제"만 제거, 나머지는 보류 (P1)
 
 상태: 부분 해결 — 사용자 확인 필요한 부분 보류 중
