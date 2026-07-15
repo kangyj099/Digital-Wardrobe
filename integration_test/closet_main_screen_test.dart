@@ -95,6 +95,10 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 /// 리스트-로우 라벨 텍스트) 기준으로 갱신한다. 두 화면의 실제 동작(뒤로가기, 헤더 액션 독립성,
 /// 파괴적 액션 확인 다이얼로그, 타일 탭 정보 팝업, 스크롤 힌트 등)은 이 파일이 아니라 전용 파일
 /// `settings_trash_shell_test.dart`에서 검증한다(대형 회귀축 파일에 중복 작성하지 않음).
+///
+/// [갱신, 2026-07-15] Audit이 "전체 데이터 삭제" 로우가 승인된 `04_설정.md` 스펙에 없는
+/// 항목임을 지적해 Worker가 `SettingsScreen`에서 해당 로우를 완전히 제거했다. 28번 테스트가
+/// 이 로우의 존재를 단언하던 assertion을 제거한다(나머지 로우 확인은 그대로 유지).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -784,11 +788,11 @@ void main() {
   // ── 아래부터 SettingsScreen(Task F) 검증 ────────────────────────────────────
 
   testWidgets(
-    '[갱신됨, Step⑥-A 재검증] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
-    '실제로 렌더링되고, 리스트-로우(알림/다크모드/프로필 편집/전체 데이터 삭제)가 모두 화면에 '
-    '나타난다 (정상 UI 플로우로는 아직 도달 불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 '
-    '플랜에 명시된 의도된 상태. Step⑥-A 이전엔 skeletonRegion 텍스트 "헤더"/"리스트-로우"로 확인했으나, '
-    '실제 화면 구현 후 그 텍스트가 사라져 실제 렌더 요소로 확인 대상을 갱신)',
+    '[갱신됨, 2026-07-15] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
+    '실제로 렌더링되고, 리스트-로우(알림/다크모드/프로필 편집)가 모두 화면에 나타난다 (정상 UI '
+    '플로우로는 아직 도달 불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 플랜에 명시된 '
+    '의도된 상태. "전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되어 이 목록에서도 '
+    '함께 빠졌다 — 부재 자체는 `settings_trash_shell_test.dart`의 전용 회귀 테스트가 검증한다)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -801,7 +805,6 @@ void main() {
       expect(find.text('알림'), findsOneWidget);
       expect(find.text('다크 모드'), findsOneWidget);
       expect(find.text('프로필 편집'), findsOneWidget);
-      expect(find.text('전체 데이터 삭제'), findsOneWidget);
     },
   );
 }

@@ -36,6 +36,11 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 /// `StatefulWidget` + 로컬 `bool` state로 승격해 탭하면 실제로 토글되도록 고쳤고(영속화 자체는
 /// 여전히 Step⑦ 몫), 아래 테스트를 새 동작("탭하면 실제로 반전되고, 두 스위치는 독립적으로
 /// 반응한다") 기준으로 갱신한다.
+///
+/// [갱신, 2026-07-15] Audit이 "전체 데이터 삭제" 로우가 승인된 `04_설정.md` 스펙에 없는
+/// 항목임을 지적해 Worker가 `SettingsScreen`에서 해당 로우/확인 다이얼로그를 완전히
+/// 제거했다. 기존에 이 로우의 확인/취소 다이얼로그를 검증하던 테스트 2개는 대상 자체가
+/// 사라져 아래 회귀 테스트 1개(로우가 실제로 없음을 확인)로 교체한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -155,40 +160,19 @@ void main() {
     );
 
     testWidgets(
-      '"전체 데이터 삭제"는 파괴적 액션이라 즉시 실행되지 않고 확인 다이얼로그를 거치며, '
-      '확인을 눌러도 실제 삭제 없이 다이얼로그만 닫히고 같은 화면에 남는다(no-op)',
+      '"전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되었다 — 텍스트/다이얼로그 '
+      '모두 존재하지 않고, 나머지 화면은 크래시 없이 정상 렌더링된다(회귀 확인)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.settingsMain);
 
-        await tester.tap(find.text('전체 데이터 삭제').first);
-        await tester.pumpAndSettle();
-
-        expect(find.byType(AlertDialog), findsOneWidget);
-        expect(find.text('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'), findsOneWidget);
-
-        // 다이얼로그 내부의 확인 버튼(제목과 같은 텍스트의 두 번째 인스턴스).
-        await tester.tap(find.text('전체 데이터 삭제').last);
-        await tester.pumpAndSettle();
-
+        expect(tester.takeException(), isNull);
+        expect(find.text('전체 데이터 삭제'), findsNothing);
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.byType(SettingsScreen), findsOneWidget);
-        expect(find.text('전체 데이터 삭제'), findsOneWidget);
+        expect(find.text('알림'), findsOneWidget);
+        expect(find.text('다크 모드'), findsOneWidget);
+        expect(find.text('프로필 편집'), findsOneWidget);
       },
     );
-
-    testWidgets('"전체 데이터 삭제" 다이얼로그에서 취소를 누르면 아무 변화 없이 닫힌다', (tester) async {
-      await pumpAppAndPush(tester, AppRoute.settingsMain);
-
-      await tester.tap(find.text('전체 데이터 삭제').first);
-      await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsOneWidget);
-
-      await tester.tap(find.text('취소'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(AlertDialog), findsNothing);
-      expect(find.byType(SettingsScreen), findsOneWidget);
-    });
 
     testWidgets('"프로필 편집" 로우를 탭해도 크래시 없이 같은 화면에 남아있다(진입 로직 no-op, Step⑦ 몫)', (tester) async {
       await pumpAppAndPush(tester, AppRoute.settingsMain);
