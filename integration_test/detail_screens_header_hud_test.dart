@@ -10,7 +10,9 @@ import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
+import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
@@ -30,6 +32,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   const defaultSize = Size(390, 800);
+  const scrollableDetailSize = Size(390, 450);
 
   Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = defaultSize}) async {
     tester.view.physicalSize = size;
@@ -68,7 +71,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
-      expect(find.textContaining(item.id), findsOneWidget);
+      expect(find.text(item.name), findsOneWidget);
     });
 
     testWidgets('코디 메인에서 코디 탭 → CompositionDetailScreen이 크래시 없이 렌더링된다', (tester) async {
@@ -255,13 +258,17 @@ void main() {
   // ── 4) Detail 화면 skeleton body 렌더링 ──────────────────────────────────
 
   group('Detail 화면 skeleton body 렌더링(Task 3~5 전까지)', () {
-    testWidgets('옷 상세 화면 본문에 skeleton 안내 문구가 보인다(빈 화면처럼 보이지 않음)',
+    testWidgets('옷 상세 화면 하단에 연결된 코디/스타일일지 크로스 레퍼런스가 실제로 보인다(빈 화면처럼 보이지 않음)',
         (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.byType(SelectableGalleryTile).first);
+      final tile = find.byType(SelectableGalleryTile).first;
+      final item = tester.widget<SelectableGalleryTile>(tile).item;
+      await tester.tap(tile);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Task 3에서 실제 바인딩 예정'), findsOneWidget);
+      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      expect(item.id, 'c01'); // mock_data.dart 첫 항목은 comp01에 포함되어 크로스 레퍼런스가 비지 않음을 전제.
+      expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
 
     testWidgets('코디 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
@@ -281,6 +288,45 @@ void main() {
 
       expect(find.textContaining('Task 5에서 실제 바인딩 예정'), findsOneWidget);
     });
+  });
+
+  group('스크롤 동작', () {
+    testWidgets(
+      '옷 상세 화면 콘텐츠(이미지+메타데이터+크로스 레퍼런스)가 짧은 뷰포트에서 스크롤 가능하고, '
+      'TopGradientOverlay/BottomGradientOverlay가 스크롤 위치에 따라 크래시 없이 전환된다',
+      (tester) async {
+        await pumpApp(tester, size: scrollableDetailSize);
+        await tester.tap(find.byType(SelectableGalleryTile).first);
+        await tester.pumpAndSettle();
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+        expect(find.byType(AppScrollContainer), findsOneWidget);
+
+        final scrollable = tester.state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(SingleChildScrollView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        expect(
+          scrollable.position.maxScrollExtent,
+          greaterThan(0),
+          reason: '이 시나리오는 실제로 스크롤 가능해야 의미가 있다',
+        );
+
+        await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -100));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(scrollable.position.pixels, greaterThan(0));
+
+        await tester.fling(find.byType(SingleChildScrollView), const Offset(0, -2000), 2000);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+        expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
+      },
+    );
   });
 
   // ── 6) Detail 화면에서 카테고리 드롭다운으로 다른 메인 이동 ─────────────────
