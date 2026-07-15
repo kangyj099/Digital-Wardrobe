@@ -14,22 +14,16 @@ import '../widgets/selection_aware_header_actions.dart';
 import 'skeleton_region.dart';
 
 /// Main-그룹형(옷장 메인과 동일 페이지 타입) — `closet_main_screen.dart` 패턴을 그대로 이식.
-/// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1/§3 참고.
 ///
-/// [selectionMode]가 true면 이 화면이 "선택 모달(코디 재호출)"로 동작한다 —
-/// `closet_main_screen.dart`의 selectionMode 문서 주석과 동일 원칙. `Composition` 모델에는
-/// 아직 `isIncomplete` 같은 미완성 필드가 없어(`lib/models/composition.dart`), 미완성
-/// 항목→완성 화면 이동 분기는 만들지 않았다 — Step⑦에서 그 필드가 생기면
-/// `closet_main_screen.dart`의 `onIncompleteTap` 패턴을 그대로 이식하면 된다.
+/// [selectionMode]가 true면 이 화면이 "선택 모달(코디 재호출)"로 동작한다 — 타일 탭 시
+/// `context.pop(composition.id)`로 결과를 반환한다. 호출부는
+/// `context.push<String>(AppRoute.compositionSelect)`로 열고 반환값을 기다리면 된다
+/// (`lib/screens/style_log_viewer_screen.dart` 사용례 참고).
 class CompositionMainScreen extends ConsumerWidget {
-  const CompositionMainScreen({super.key, this.selectionMode = false, this.onItemSelected});
+  const CompositionMainScreen({super.key, this.selectionMode = false});
 
-  /// true면 선택 모달로 동작 — 실제 호출부(Composition Editor 등) 연결은 Step⑦ 몫.
+  /// true면 선택 모달로 동작 — 타일 탭 시 상세 화면 대신 `context.pop(id)`로 결과 반환.
   final bool selectionMode;
-
-  /// [selectionMode]일 때 타일 탭 시 호출되는 선택 콜백(선택된 항목 id). 실제 바인딩
-  /// 로직(go_router result 반환 등)은 아직 없음 — Step⑦ 위임.
-  final ValueChanged<String>? onItemSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -99,7 +93,7 @@ class CompositionMainScreen extends ConsumerWidget {
           topSpacing: contentTopSpacing,
           onItemTap: (c) {
             if (selectionMode) {
-              onItemSelected?.call(c.id);
+              context.pop(c.id);
             } else {
               context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
             }

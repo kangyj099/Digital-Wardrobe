@@ -131,12 +131,15 @@ void main() {
 
   testWidgets(
     '코디 선택 모달(/composition/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
-    '없으며 groupingBar는 그대로 노출된다. 타일 탭 시 상세 화면으로 이동하지 않는다',
+    '없으며 groupingBar는 그대로 노출된다. 타일 탭 시 context.pop(id)로 결과를 반환한다',
     (tester) async {
       await pumpApp(tester);
 
+      String? poppedResult;
       final context = tester.element(find.byType(SelectableGalleryTile).first);
-      GoRouter.of(context).push(AppRoute.compositionSelect);
+      GoRouter.of(context).push<String>(AppRoute.compositionSelect).then((value) {
+        poppedResult = value;
+      });
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -152,7 +155,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expect(poppedResult, 'comp01');
     },
   );
 

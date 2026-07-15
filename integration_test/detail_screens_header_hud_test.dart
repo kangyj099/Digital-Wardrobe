@@ -101,7 +101,8 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-      expect(find.textContaining(log.id), findsOneWidget);
+      expect(find.textContaining('${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'),
+          findsOneWidget);
     });
   });
 
@@ -282,13 +283,15 @@ void main() {
       expect(find.textContaining('2026.1.5'), findsOneWidget); // log01.wornDate
     });
 
-    testWidgets('스타일일지 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
+    testWidgets('스타일일지 상세 화면 하단에 연결된 코디 크로스 레퍼런스가 보인다(mock 기준 log01은 comp01에 연결됨)',
+        (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
       await tester.tap(find.byType(StyleLogGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Task 5에서 실제 바인딩 예정'), findsOneWidget);
+      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
   });
 
