@@ -4,6 +4,7 @@ import '../models/composition.dart';
 import '../models/enums.dart';
 import '../mock/mock_data.dart';
 import '../theme/app_spacing.dart';
+import 'closet_providers.dart';
 
 class CompositionsNotifier extends StateNotifier<List<Composition>> {
   CompositionsNotifier() : super(mockCompositions);
@@ -37,4 +38,15 @@ final compositionsContainingItemProvider =
       .watch(compositionsProvider)
       .where((c) => !c.isDeleted && c.items.any((p) => p.clothingItemId == itemId))
       .toList();
+});
+
+/// [compositionId]의 표시용 커버 이미지 경로 — `Composition.coverImagePath`가 있으면 그대로,
+/// 없으면 코디에 포함된 첫 번째 옷의 이미지로 폴백한다(둘 다 없으면 null).
+final compositionCoverImageProvider = Provider.family<String?, String>((ref, compositionId) {
+  final composition = ref.watch(compositionsProvider).firstWhere((c) => c.id == compositionId);
+  if (composition.coverImagePath != null) return composition.coverImagePath;
+  if (composition.items.isEmpty) return null;
+  final closetItems = ref.watch(closetItemsProvider);
+  final firstItemId = composition.items.first.clothingItemId;
+  return closetItems.firstWhere((item) => item.id == firstItemId).imagePath;
 });
