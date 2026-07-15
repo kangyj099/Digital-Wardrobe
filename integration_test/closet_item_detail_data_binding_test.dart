@@ -87,7 +87,7 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.byType(CompositionDetailScreen), findsOneWidget);
-        expect(find.textContaining('comp01'), findsOneWidget);
+        expect(find.text('데일리 룩'), findsOneWidget);
         expect(find.byType(ClosetItemDetailScreen), findsNothing);
 
         // 뒤로가기 → 옷 상세로 복귀, 이름/착용횟수 등 상태가 그대로 유지되어야 한다.
@@ -107,6 +107,9 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+        // 주의: StyleLogViewerScreen이 아직 skeleton이라 log01 원시 id를 그대로 검사한다.
+        // Task 5(스타일일지 열람 실데이터 바인딩) 완료 시 comp01 케이스처럼 실제 콘텐츠
+        // (예: 착용일자 2026.1.5)를 기준으로 이 assertion을 교체해야 한다.
         expect(find.textContaining('log01'), findsOneWidget);
       },
     );
