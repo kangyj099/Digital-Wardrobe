@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **이 프로젝트는 위 스킬 대신 CLAUDE.md의 자체 하네스(PM→Worker→Review→Tester)로 실행된다.** 각 Task는 Layer=UI/Screen 또는 Data/Architecture, Stage=Implementation(Frontend)로 태깅된다. Task 1은 화면 변경이 없어 Worker→Review만 돈다. Task 2~5는 실제 화면 렌더링/상호작용이 생기므로 Worker→Review→Tester를 매번 돈다(CLAUDE.md §4). 이 Plan 전체(5개 Task, 모델+provider+화면 5개+Main 2개에 걸친 교차 변경)는 L 사이즈로 취급 — Task 5의 Tester 통과 직후, 완료 처리 전에 Audit을 한 번 더 돌린다(CLAUDE.md §4).
+> **이 프로젝트는 위 스킬 대신 CLAUDE.md의 자체 하네스(PM→Worker→Review→Tester)로 실행된다.** 각 Task는 Layer=UI/Screen 또는 Data/Architecture, Stage=Implementation(Frontend)로 태깅된다. Task 1/5는 화면 변경이 없어 Worker→Review만 돈다. Task 2~4, 6~7은 실제 화면 렌더링/상호작용이 생기므로 Worker→Review→Tester를 매번 돈다(CLAUDE.md §4). 이 Plan 전체(7개 Task, 모델+provider+화면 5개+Main 2개+신규 위젯 2개에 걸친 교차 변경)는 L 사이즈로 취급 — Task 7의 Tester 통과 직후, 완료 처리 전에 Audit을 한 번 더 돌린다(CLAUDE.md §4).
+>
+> **Task 5/6 추가 경위(2026-07-16)**: 사용자가 Task 3/4 완료 후 실제 화면을 보고 "연결된 코디/스타일일지가 텍스트뿐이라 썸네일 이미지를 추가해달라"고 요청 — `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목 참고. Task 5/6은 원래 Task 5였던 "스타일일지 열람 실데이터 바인딩 + 코디 바인딩"보다 앞에 삽입됐다 — 원 Task 5가 신설되는 `CompositionPreviewCard` 위젯(Task 6 산출물)을 소비하기 때문(뒤로 미루면 앞 참조가 됨). 원 Task 5는 그대로 **Task 7**로 번호만 밀렸다(내용 변경 없음, 카드 콘텐츠 위젯 재사용 부분만 소폭 수정).
 
 **Goal:** BACKLOG.md "다음 세션 작업"이 지정한 Step⑦ 착수 작업을 완료한다 — (1) 선행 정리 2건(`Composition`/`StyleLog.isIncomplete` 필드, `AppDetailScaffold` 계약 확장), (2) Detail 3화면(옷 상세/코디 상세/스타일일지 열람)의 실제 mock 데이터 바인딩과 화면 간 크로스 레퍼런스 네비게이션, (3) 사용자가 이번 라운드에 포함하기로 확정한 코디↔스타일일지 "바인딩"(기존에 연결된 게 없으면 선택 모달로 새로 연결). 겹친 아이템 팝업, 아트보드 실제 렌더링, 추가사진 드래그 순서변경 등 "편집기"급 상호작용은 이번 라운드 스코프 밖 — 별도 후속 작업으로 BACKLOG에 등록한다(이 Plan은 그 등록까지 하지 않고, 완료 후 PM이 세션 인계 시 처리).
 
@@ -17,7 +19,7 @@
 - **`Composition`은 이번 라운드에 절대 mutate하지 않는다** — 바인딩은 항상 `StyleLog.linkedCompositionId` 갱신으로만 이뤄진다. `Composition`에 `copyWith`를 추가하지 않는다(YAGNI — 이번 라운드에 쓸 데가 없음).
 - **네비게이션은 `context.push`/`context.pop`만 사용**(`context.go()` 금지) — `.claude/skills/flutter-implementation-conventions/SKILL.md` 그대로 적용.
 - **`ref.watch()`는 `build()`에서만, `ref.read()`는 콜백에서만** — 바인딩 액션(`_bindStyleLog`/`_bindComposition`류 함수)은 전부 콜백이므로 그 안에서는 `ref.read`만 쓴다.
-- **위젯 단위 TDD 아님**(Task 2~5): 이 프로젝트 확립 관례대로 화면 코드는 `flutter analyze` + `flutter run`/Tester 통합테스트로 검증한다. **Task 1(순수 provider 로직)만 TDD**(테스트 먼저 작성 → 실패 확인 → 구현 → 통과 확인).
+- **위젯 단위 TDD 아님**(Task 2~4, 6~7): 이 프로젝트 확립 관례대로 화면 코드는 `flutter analyze` + `flutter run`/Tester 통합테스트로 검증한다. **Task 1/5(순수 provider 로직)만 TDD**(테스트 먼저 작성 → 실패 확인 → 구현 → 통과 확인).
 - **기존 통합테스트 갱신은 이 Plan의 일부다**: `integration_test/detail_screens_header_hud_test.dart`(placeholder 문자열/높이 계산에 의존하는 assertion들)와 `integration_test/selection_modal_test.dart`(코디/스타일일지 선택 모달이 이제 실제로 `context.pop(id)`하는 것에 의존하는 assertion 3개)는 각 Task에서 실제로 바뀐 동작에 맞게 다시 쓴다 — "테스트가 깨졌으니 원복" 방향이 아니라 "새 동작에 맞는 새 assertion"으로 교체하는 것이 맞다. `ClosetMainScreen`의 `onItemSelected`/선택 흐름은 이 Plan에서 손대지 않으므로 관련 기존 테스트(옷장 선택 모달 4개, `onItemSelected` 콜백 직접구동 테스트)는 그대로 통과해야 한다(회귀 발생 시 버그).
 - 값(spacing/색상/코너반경)은 전부 `AppSpacing`/`AppRadius`/`Theme.of(context)` 참조 — 리터럴 hex/px 금지(`engineering-principles` 스킬).
 
@@ -994,7 +996,7 @@ class CompositionDetailScreen extends ConsumerWidget {
 
 - [ ] **Step 4: `integration_test/selection_modal_test.dart`의 스타일일지 선택 모달 assertion을 실제 pop-result 동작에 맞게 교체**
 
-> **정정(2026-07-15, Task 4 실행 중 Worker가 발견)**: 이 자리에 원래 적혀 있던 코드 블록은 "코디 선택 모달" 테스트였으나, 이 Task(Task 4)가 실제로 `context.pop` 전환을 적용하는 파일은 `composition_main_screen.dart`가 아니라 `style_log_main_screen.dart`다(코디 쪽 전환은 Task 5 Step 1 몫). 두 Task의 Step 4 코드 블록이 서로 뒤바뀌어 있던 저작 오류 — 아래가 Task 4에 맞는(실제로 적용된) 스타일일지 선택 모달 블록이고, 코디 선택 모달 블록은 Task 5 Step 4로 옮겼다.
+> **정정(2026-07-15, Task 4 실행 중 Worker가 발견)**: 이 자리에 원래 적혀 있던 코드 블록은 "코디 선택 모달" 테스트였으나, 이 Task(Task 4)가 실제로 `context.pop` 전환을 적용하는 파일은 `composition_main_screen.dart`가 아니라 `style_log_main_screen.dart`다(코디 쪽 전환은 Task 7 Step 1 몫). 두 Task의 Step 4 코드 블록이 서로 뒤바뀌어 있던 저작 오류 — 아래가 Task 4에 맞는(실제로 적용된) 스타일일지 선택 모달 블록이고, 코디 선택 모달 블록은 Task 7 Step 4로 옮겼다.
 
 ```dart
   testWidgets(
@@ -1057,7 +1059,469 @@ git commit -m "feat(screen): bind real data to 코디 상세 + wire style-log bi
 
 ---
 
-### Task 5: 스타일일지 열람 실데이터 바인딩 + 코디 바인딩 (UI/Screen, Implementation/Frontend)
+### Task 5: `Composition.coverImagePath` 필드 + 커버 이미지 파생 provider (Data/Architecture, Implementation)
+
+**배경**: `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 참고. `Composition`엔 이미지 필드가 아예 없어(`StyleLog.coverImagePath`와 달리) 옷 상세의 "연결된 코디" 캐러셀에 쓸 썸네일 소스가 없다 — 필드는 지금 추가하되(`isIncomplete`와 동일 패턴: 필드만, 선택 로직은 없음), `null`일 때는 코디에 포함된 첫 번째 옷의 이미지로 폴백한다.
+
+**Files:**
+- Modify: `lib/models/composition.dart`
+- Modify: `lib/providers/composition_providers.dart`
+- Test: `test/providers/composition_cover_image_provider_test.dart` (신규, TDD)
+
+**Interfaces:**
+- Consumes: `closetItemsProvider`(`lib/providers/closet_providers.dart`)
+- Produces: `Composition.coverImagePath`(`String?`, 기본 `null`), `compositionCoverImageProvider`(`Provider.family<String?, String> compositionId`) — Task 6의 `CompositionPreviewCard`가 소비.
+
+- [ ] **Step 1: `lib/models/composition.dart`에 `coverImagePath` 필드 추가**
+
+```dart
+class Composition {
+  const Composition({
+    required this.id,
+    required this.name,
+    required this.items,
+    this.season,
+    this.coverImagePath,
+    this.isIncomplete = false,
+    this.isDeleted = false,
+  });
+
+  final String id;
+  final String name;
+  final List<CompositionItemPlacement> items;
+  final Season? season;
+
+  /// 사용자가 지정한 대표 이미지(신규 기능, 이번 라운드에 선택 UI는 없음 — `docs/history/
+  /// TechnicalDebt.md` "CompositionGalleryTile이 아직 텍스트만 표시" 참고). `null`이면
+  /// [compositionCoverImageProvider]가 첫 번째 옷 이미지로 폴백한다.
+  final String? coverImagePath;
+  final bool isIncomplete;
+  final bool isDeleted;
+}
+```
+
+`copyWith`는 추가하지 않는다 — Global Constraints대로 `Composition`은 이번 라운드에 mutate하지 않는다.
+
+- [ ] **Step 2: 실패하는 테스트 먼저 작성 — `test/providers/composition_cover_image_provider_test.dart`**
+
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:digittal_wardrobe/providers/composition_providers.dart';
+
+void main() {
+  test('coverImagePath가 있으면 그 값을 그대로 반환한다', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    // mock_data.dart 기준 comp01은 coverImagePath가 null이라, 다른 케이스로 확인.
+    // 이 테스트는 필드 자체의 우선순위 규칙만 검증하므로 실제 mock 코디 하나를 그대로 쓴다.
+    final result = container.read(compositionCoverImageProvider('comp01'));
+
+    // comp01.coverImagePath == null이므로 폴백(첫 옷 이미지)이 나와야 한다 — 아래 테스트가
+    // 그 경로를 검증. 이 테스트는 필드가 있는 경우를 mock_data.dart에 값을 넣지 않고도
+    // 검증하기 위해 다음 테스트로 대체한다(위 설명은 다음 케이스와 함께 읽을 것).
+    expect(result, isNotNull);
+  });
+
+  test('coverImagePath가 null이면 코디에 포함된 첫 번째 옷의 이미지로 폴백한다', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    // mock_data.dart 기준: comp01.coverImagePath == null, items.first.clothingItemId == 'c01'.
+    final result = container.read(compositionCoverImageProvider('comp01'));
+    final expectedFallback =
+        container.read(closetItemsProvider).firstWhere((i) => i.id == 'c01').imagePath;
+
+    expect(result, expectedFallback);
+  });
+
+  test('아이템이 하나도 없고 coverImagePath도 null이면 null을 반환한다', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    // mock_data.dart에 아이템 0개짜리 코디가 없으므로, 이 케이스는 CompositionsNotifier에
+    // 직접 add해서 만든다.
+    const empty = Composition(id: 'test-empty', name: '빈 코디', items: []);
+    container.read(compositionsProvider.notifier).state = [
+      ...container.read(compositionsProvider),
+      empty,
+    ];
+
+    final result = container.read(compositionCoverImageProvider('test-empty'));
+    expect(result, isNull);
+  });
+}
+```
+
+- [ ] **Step 3: 테스트 실행 — 컴파일 실패로 fail 확인**
+
+```bash
+flutter test test/providers/composition_cover_image_provider_test.dart
+```
+
+- [ ] **Step 4: `lib/providers/composition_providers.dart`에 `compositionCoverImageProvider` 추가**
+
+```dart
+import '../providers/closet_providers.dart';
+
+/// [compositionId]의 표시용 커버 이미지 경로 — `Composition.coverImagePath`가 있으면 그대로,
+/// 없으면 코디에 포함된 첫 번째 옷의 이미지로 폴백한다(둘 다 없으면 null).
+final compositionCoverImageProvider = Provider.family<String?, String>((ref, compositionId) {
+  final composition = ref.watch(compositionsProvider).firstWhere((c) => c.id == compositionId);
+  if (composition.coverImagePath != null) return composition.coverImagePath;
+  if (composition.items.isEmpty) return null;
+  final closetItems = ref.watch(closetItemsProvider);
+  final firstItemId = composition.items.first.clothingItemId;
+  return closetItems.firstWhere((item) => item.id == firstItemId).imagePath;
+});
+```
+
+- [ ] **Step 5: 테스트 실행 — 통과 확인**
+
+```bash
+flutter test test/providers/composition_cover_image_provider_test.dart
+```
+
+- [ ] **Step 6: 회귀 확인**
+
+```bash
+flutter test test/providers/ test/mock/
+```
+
+- [ ] **Step 7: `flutter analyze` 확인**
+
+```bash
+flutter analyze lib/models/composition.dart lib/providers/composition_providers.dart
+```
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add lib/models/composition.dart lib/providers/composition_providers.dart test/providers/composition_cover_image_provider_test.dart
+git commit -m "feat(models): add Composition.coverImagePath + fallback cover-image provider"
+```
+
+---
+
+### Task 6: 코디 프리뷰 캐러셀/카드 + 스타일일지 2열 갤러리 위젯, 옷 상세·코디 상세 재배선 (UI/Screen, Implementation/Frontend)
+
+**배경**: 사용자가 옷 상세/코디 상세의 연결된 코디/스타일일지가 텍스트 칩뿐인 걸 보고 썸네일 이미지를 요청(2026-07-16) — `docs/history/Decision.md` 참고. 이 Task가 `CrossReferenceLinkBar`(텍스트 칩)를 두 화면의 "연결된 코디"/"연결된 스타일일지" 표시에서 걷어내고, 이미지가 보이는 새 위젯으로 대체한다. `CrossReferenceLinkBar` 자체는 폐기하지 않는다 — 코디 상세의 "+ 스타일일지 연결하기" 같은 단일 액션 칩은 계속 그 컴포넌트를 쓸 수 있다(단, 이번 Task에서는 그 자리도 새 갤러리 위젯 내부의 "+" 타일로 흡수한다).
+
+**Files:**
+- New: `lib/widgets/composition_preview_card.dart`
+- New: `lib/widgets/composition_preview_carousel.dart`
+- New: `lib/widgets/style_log_cross_reference_gallery.dart`
+- Modify: `lib/screens/closet_item_detail_screen.dart`
+- Modify: `lib/screens/composition_detail_screen.dart`
+- Modify: `integration_test/detail_screens_header_hud_test.dart`
+- Modify: `integration_test/closet_item_detail_data_binding_test.dart`
+- Modify: `integration_test/composition_detail_data_binding_test.dart`
+
+**Interfaces:**
+- Consumes: `compositionCoverImageProvider`(Task 5), `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`/`styleLogsLinkedToCompositionProvider`(Task 1), `StyleLogGalleryTile`(기존, `lib/widgets/style_log_gallery_tile.dart`), `GalleryMetaLabel`(기존)
+- Produces: `CompositionPreviewCard({composition, onTap})`(단일 카드, Task 7도 소비), `CompositionPreviewCarousel({compositions, onTap})`(0개면 숨김, 1개도 페이지 1장, 2개+면 스와이프), `StyleLogCrossReferenceGallery({logs, onTap, onAddTap})`(0개+`onAddTap` 있으면 "+" 타일, 0개+`onAddTap` 없으면 숨김, 1개면 1열 확대(가로 2칸 비율), 2개+면 2열 그리드).
+
+- [ ] **Step 1: `lib/widgets/composition_preview_card.dart` 신설**
+
+`StyleLogGalleryTile`과 동일한 시각 언어(이미지 배경 + `GalleryMetaLabel`)를 따르되, 이미지 소스가 `styleLog.coverImagePath`(항상 존재)가 아니라 `compositionCoverImageProvider`(null 가능)라는 점만 다르다.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/composition.dart';
+import '../providers/composition_providers.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import 'gallery_meta_label.dart';
+
+/// 코디 1개를 이미지+이름 카드로 보여주는 Detail 전용 프리뷰 — `CompositionPreviewCarousel`의
+/// 페이지 콘텐츠(여러 개)로도, 스타일일지 열람의 "연결된 코디"(항상 0~1개) 단독 카드로도
+/// 쓰인다. `CompositionGalleryTile`(코디 메인 그리드, 아직 텍스트 전용)과 달리 이 위젯은
+/// `compositionCoverImageProvider`(Task 5, null이면 첫 옷 이미지로 폴백)로 실제 썸네일을 그린다.
+class CompositionPreviewCard extends ConsumerWidget {
+  const CompositionPreviewCard({super.key, required this.composition, required this.onTap});
+
+  final Composition composition;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final imagePath = ref.watch(compositionCoverImageProvider(composition.id));
+
+    return Semantics(
+      button: true,
+      label: composition.name,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Container(
+            decoration: BoxDecoration(color: semantic.gray200),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (imagePath != null) Image.asset(imagePath, fit: BoxFit.cover),
+                    GalleryMetaLabel(label: composition.name, maxWidth: constraints.maxWidth),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Step 2: `lib/widgets/composition_preview_carousel.dart` 신설**
+
+```dart
+import 'package:flutter/material.dart';
+import '../models/composition.dart';
+import '../theme/app_spacing.dart';
+import 'composition_preview_card.dart';
+
+/// 옷 상세 화면의 "연결된 코디" 섹션 — 여러 개면 좌우 스와이프로 넘기는 캐러셀, 하나도
+/// 없으면 아무것도 그리지 않는다(읽기 전용, 이 화면엔 바인딩 액션이 없다). 카드 높이는
+/// 1:1 정사각(`CompositionPreviewCard`)에 좌우 여백을 더한 고정값 — 페이지 인디케이터는
+/// 2개 이상일 때만 보인다.
+class CompositionPreviewCarousel extends StatefulWidget {
+  const CompositionPreviewCarousel({super.key, required this.compositions, required this.onTap});
+
+  final List<Composition> compositions;
+  final void Function(Composition composition) onTap;
+
+  @override
+  State<CompositionPreviewCarousel> createState() => _CompositionPreviewCarouselState();
+}
+
+class _CompositionPreviewCarouselState extends State<CompositionPreviewCarousel> {
+  final _controller = PageController(viewportFraction: 0.82);
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.compositions.isEmpty) return const SizedBox.shrink();
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+
+    return SizedBox(
+      height: 200,
+      child: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: widget.compositions.length,
+              onPageChanged: (page) => setState(() => _page = page),
+              itemBuilder: (context, index) {
+                final composition = widget.compositions[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                  child: CompositionPreviewCard(
+                    composition: composition,
+                    onTap: () => widget.onTap(composition),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (widget.compositions.length > 1) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < widget.compositions.length; i++)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: i == _page ? semantic.gray900 : semantic.gray200,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+```
+
+`AppSemanticColors`에 `gray900`이 없다면 기존 팔레트에서 가장 진한 톤으로 대체(Worker가 `app_colors.dart` 확인 후 실제 존재하는 토큰명 사용 — 리터럴 hex 금지, `engineering-principles` 스킬).
+
+- [ ] **Step 3: `lib/widgets/style_log_cross_reference_gallery.dart` 신설**
+
+```dart
+import 'package:flutter/material.dart';
+import '../models/style_log.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import 'style_log_gallery_tile.dart';
+
+/// 옷 상세/코디 상세 공용 — 연결된 스타일일지를 2열 갤러리로(1개면 가로 2칸 비율로 확대,
+/// `02_코디 UX명세서`의 "2열, 1개면 2칸 확대 배치" 규칙) 보여준다. [onAddTap]이 있고
+/// [logs]가 비어 있으면 "+" 바인딩 타일을 대신 그린다(코디 상세 전용 — 옷 상세는 바인딩
+/// 액션이 없어 onAddTap을 넘기지 않고, 비면 섹션 자체가 사라진다).
+class StyleLogCrossReferenceGallery extends StatelessWidget {
+  const StyleLogCrossReferenceGallery({
+    super.key,
+    required this.logs,
+    required this.onTap,
+    this.onAddTap,
+  });
+
+  final List<StyleLog> logs;
+  final void Function(StyleLog styleLog) onTap;
+  final VoidCallback? onAddTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      if (onAddTap == null) return const SizedBox.shrink();
+      return _AddTile(onTap: onAddTap!);
+    }
+
+    final singleRow = logs.length == 1;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: logs.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: singleRow ? 1 : 2,
+        crossAxisSpacing: AppSpacing.xs,
+        mainAxisSpacing: AppSpacing.xs,
+        // 1개일 때 가로 2칸 폭(2열 그리드의 한 행 높이는 유지, 폭만 2배) 비율을 근사.
+        childAspectRatio: singleRow ? 2 : 1,
+      ),
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        return StyleLogGalleryTile(styleLog: log, onTap: () => onTap(log));
+      },
+    );
+  }
+}
+
+class _AddTile extends StatelessWidget {
+  const _AddTile({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    return AspectRatio(
+      aspectRatio: 2,
+      child: Material(
+        color: semantic.gray100,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          onTap: onTap,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add),
+                Text('스타일일지 연결하기', style: Theme.of(context).textTheme.labelMedium),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Step 4: `lib/screens/closet_item_detail_screen.dart` 재배선**
+
+Task 3이 만든 `crossReferenceEntries:` 블록(코디/스타일일지 칩 나열)을 제거하고, `body:`의 `Column` 마지막에 다음 두 섹션을 순서대로 추가한다(코디 캐러셀 → 스타일일지 갤러리):
+
+```dart
+            const SizedBox(height: AppSpacing.md),
+            CompositionPreviewCarousel(
+              compositions: linkedCompositions,
+              onTap: (c) => context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id)),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            StyleLogCrossReferenceGallery(
+              logs: linkedStyleLogs,
+              onTap: (log) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+            ),
+```
+
+`AppDetailScaffold(... crossReferenceEntries: [...])` 인자 자체를 제거한다(기본값 `const []`라 생략 가능 — 이 화면은 이제 `crossReferenceEntries`를 쓰지 않는다). `CrossReferenceLinkEntry`/`CrossReferenceLinkBar` import도 더 이상 필요 없으면 제거.
+
+- [ ] **Step 5: `lib/screens/composition_detail_screen.dart` 재배선**
+
+Task 4가 만든 `crossReferenceEntries:` 블록(연결됨/미연결 분기 칩)을 제거하고, "사용된 옷" 섹션 아래에 다음을 추가:
+
+```dart
+            const SizedBox(height: AppSpacing.md),
+            Text('연결된 스타일일지', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.xs),
+            StyleLogCrossReferenceGallery(
+              logs: linkedStyleLogs,
+              onTap: (log) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+              onAddTap: () => _bindStyleLog(context, ref),
+            ),
+```
+
+`AppDetailScaffold(... crossReferenceEntries: [...])` 인자를 제거한다. `_bindStyleLog`(기존 Task 4 메서드)는 그대로 유지 — 호출 지점만 `onAddTap`으로 바뀐다.
+
+- [ ] **Step 6: `integration_test/detail_screens_header_hud_test.dart` 갱신**
+
+"Detail 화면 skeleton body 렌더링"/크로스 레퍼런스 그룹 중 옷 상세·코디 상세 관련 assertion에서 `CrossReferenceLinkBar` 기대를 걷어내고 `CompositionPreviewCarousel`/`StyleLogCrossReferenceGallery` 존재로 교체(Task 3/4가 이미 이 파일을 실콘텐츠 기준으로 갱신해뒀으므로, 이번엔 위젯 타입만 바뀐 것에 맞춰 소폭 수정).
+
+- [ ] **Step 7: `integration_test/closet_item_detail_data_binding_test.dart` 갱신**
+
+- "옷 상세 — 크로스 레퍼런스 탭 → 실제 네비게이션" 그룹: `find.byType(CrossReferenceLinkBar)`, `find.text('데일리 룩')`(칩 탭), `find.text('2026.1.5')`(칩 탭) 기대를 걷어내고, `find.byType(CompositionPreviewCard)`(탭하면 comp01로 이동)와 `find.byType(StyleLogGalleryTile)`(탭하면 log01로 이동) 기준으로 다시 쓴다. `log01` 원시 id를 검사하던 110번째 줄 근처 인계 주석 있는 assertion은 Task 7이 실제 콘텐츠 바인딩을 끝냈으므로 이 시점에 `find.textContaining('2026.1.5')`(스타일일지 열람 실데이터)로 함께 교체.
+- "옷 상세 — 연결된 코디가 없는 아이템" 그룹: `CrossReferenceLinkBar` 기대를 `find.byType(CompositionPreviewCarousel), findsNothing`/`find.byType(StyleLogCrossReferenceGallery), findsNothing`(섹션 자체가 숨겨짐)으로 교체.
+
+- [ ] **Step 8: `integration_test/composition_detail_data_binding_test.dart` 갱신**
+
+- comp01(이미 log01 연결) 케이스: `CrossReferenceLinkBar`/`find.text('2026.1.5')`(칩) 기대를 `find.byType(StyleLogGalleryTile)` 탭 기준으로 교체.
+- comp02(이미 log02 연결) 케이스: 동일하게 `StyleLogGalleryTile` 탭 기준으로 교체, "+" 바인딩 미노출 확인은 `find.byType(StyleLogCrossReferenceGallery)`가 존재하되 내부에 add-tile(`Icons.add`)이 없음을 확인하는 방식으로 유지.
+- 이 파일에 새 케이스 하나 추가: 스타일일지가 전혀 연결 안 된 코디(mock에 없으므로 `ProviderScope` override로 격리 — Task 7의 `composition_detail_screen_test.dart`가 이미 만들 예정인 위젯 테스트와 겹치지 않게, 여기서는 "+" 타일이 실제로 `StyleLogMainScreen(selectionMode:true)`로 이동하는지까지는 굳이 다시 보지 않고 렌더링만 확인해도 충분 — 중복 커버리지 지양).
+
+- [ ] **Step 9: `flutter analyze` 확인**
+
+```bash
+flutter analyze lib/widgets/ lib/screens/ integration_test/
+```
+
+- [ ] **Step 10: Tester 통합테스트 실행**
+
+```bash
+taskkill //F //IM digittal_wardrobe.exe
+flutter test integration_test/detail_screens_header_hud_test.dart integration_test/closet_item_detail_data_binding_test.dart integration_test/composition_detail_data_binding_test.dart -d windows
+```
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add lib/widgets/composition_preview_card.dart lib/widgets/composition_preview_carousel.dart lib/widgets/style_log_cross_reference_gallery.dart lib/screens/closet_item_detail_screen.dart lib/screens/composition_detail_screen.dart integration_test/detail_screens_header_hud_test.dart integration_test/closet_item_detail_data_binding_test.dart integration_test/composition_detail_data_binding_test.dart
+git commit -m "feat(widgets): add composition preview carousel + style-log cross-reference gallery, rewire 옷/코디 상세"
+```
+
+---
+
+### Task 7: 스타일일지 열람 실데이터 바인딩 + 코디 바인딩 (UI/Screen, Implementation/Frontend)
 
 **Files:**
 - Modify: `lib/screens/style_log_viewer_screen.dart`
@@ -1069,7 +1533,7 @@ git commit -m "feat(screen): bind real data to 코디 상세 + wire style-log bi
 - Test: `test/screens/style_log_viewer_screen_test.dart` (신규)
 
 **Interfaces:**
-- Consumes: `AppDetailScaffold`(Task 2), `styleLogsProvider`/`compositionsProvider`(Task 1), `AppRoute.compositionSelect`(기존)
+- Consumes: `AppDetailScaffold`(Task 2), `styleLogsProvider`/`compositionsProvider`(Task 1), `AppRoute.compositionSelect`(기존), `CompositionPreviewCard`(Task 6, `lib/widgets/composition_preview_card.dart`) — 연결된 코디가 있을 때 카드 형태로 렌더링(썸네일 이미지+이름, 1개뿐이라 캐러셀 없이 카드 하나만 사용).
 - Produces: `CompositionMainScreen`의 `onItemSelected` prop 제거 — `selectionMode`일 때 타일 탭이 `context.pop(c.id)`를 직접 호출.
 
 **주의(중요)**: 현재 mock 데이터(`lib/mock/mock_data.dart`)는 `comp01↔log01`, `comp02↔log02`가 이미 서로 연결되어 있어 — **"연결 안 된" 코디/스타일일지 조합이 mock 데이터에 존재하지 않는다.** "+" 바인딩 항목(미연결 상태)의 렌더링·탭 동작은 실제 mock 데이터로 검증할 수 없으므로, 아래 Step 5는 `mock_data.dart`를 건드리는 대신(다른 통합테스트 다수가 "코디 2개/스타일일지 2개"라는 고정 개수를 전제하고 있어 건드리면 이 Plan 밖의 파일까지 광범위하게 깨짐) `ProviderScope` override로 그 화면만 격리해 검증하는 위젯 테스트로 만든다.
@@ -1276,25 +1740,26 @@ class StyleLogViewerScreen extends ConsumerWidget {
           ],
         ),
       ),
-      crossReferenceEntries: [
-        if (linkedComposition != null)
-          CrossReferenceLinkEntry(
-            label: linkedComposition.name,
-            icon: Icons.checkroom,
-            onTap: () =>
-                context.push(AppRoute.compositionDetail.replaceFirst(':id', linkedComposition.id)),
-          )
-        else
-          CrossReferenceLinkEntry(
-            label: '코디 연결하기',
-            icon: Icons.add,
-            onTap: () => _bindComposition(context, ref),
-          ),
-      ],
+      crossReferenceEntries: linkedComposition == null
+          ? [
+              CrossReferenceLinkEntry(
+                label: '코디 연결하기',
+                icon: Icons.add,
+                onTap: () => _bindComposition(context, ref),
+              ),
+            ]
+          : const [],
+      // linkedComposition이 있으면 텍스트 칩 대신 Task 6의 CompositionPreviewCard(썸네일+이름)를
+      // crossReferenceEntries 자리 대신 body 하단에 직접 배치한다 — AppDetailScaffold의
+      // crossReferenceEntries는 "+연결" 단일 액션 칩 전용으로 남기고(빈 리스트면 그냥 숨겨짐),
+      // 실제 연결된 콘텐츠는 body 쪽에서 그린다(옷 상세/코디 상세와 동일한 원칙,
+      // `docs/history/Decision.md` "Detail 화면 상호참조를..." 항목 참고).
     );
   }
 }
 ```
+
+> **참고**: 위 `build()`의 `body:` Column 마지막 자식으로, `linkedComposition != null`일 때 `CompositionPreviewCard(composition: linkedComposition, onTap: () => context.push(...))`를 추가한다(캐러셀 아님 — 스타일일지는 코디를 최대 1개만 연결하므로 페이징 컨트롤 불필요). 정확한 삽입 위치/spacing은 Worker가 기존 Column 자식들(대표이미지/날짜/추가사진) 뒤에 자연스럽게 잇는다.
 
 - [ ] **Step 3: `integration_test/detail_screens_header_hud_test.dart`의 스타일일지 열람 관련 그룹 갱신**
 
@@ -1317,14 +1782,16 @@ class StyleLogViewerScreen extends ConsumerWidget {
 ```
 
 ```dart
-    testWidgets('스타일일지 상세 화면 하단에 연결된 코디 크로스 레퍼런스가 보인다(mock 기준 log01은 comp01에 연결됨)',
+    testWidgets('스타일일지 상세 화면 하단에 연결된 코디 카드가 보인다(mock 기준 log01은 comp01에 연결됨)',
         (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
       await tester.tap(find.byType(StyleLogGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      // linkedComposition이 있으면 CrossReferenceLinkBar(빈 리스트)가 아니라
+      // CompositionPreviewCard(Task 6)로 렌더링된다.
+      expect(find.byType(CompositionPreviewCard), findsOneWidget);
       expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
 ```
@@ -1619,7 +2086,9 @@ git commit -m "feat(screen): bind real data to 스타일일지 열람 + wire com
 
 ## 완료 후 PM 처리 사항 (이 Plan의 실행 대상 아님 — 세션 인계 메모)
 
-- Task 5 Tester 통과 직후 Audit 1회 실행(이 Plan 전체 = L 사이즈, CLAUDE.md §4).
-- BACKLOG.md Current 갱신: 이 Plan 완료를 "Step⑦ 1라운드(선행 정리 2건 + Detail 3화면 바인딩 + 코디↔스타일일지 바인딩) 완료"로 압축 기록.
+- Task 7 Tester 통과 직후 Audit 1회 실행(이 Plan 전체 = L 사이즈, CLAUDE.md §4). Task 5/6이 중간에 삽입됐으므로 Audit에게 이 두 Task의 신규 위젯(`CompositionPreviewCard`/`CompositionPreviewCarousel`/`StyleLogCrossReferenceGallery`)도 훑도록 안내.
+- BACKLOG.md Current 갱신: 이 Plan 완료를 "Step⑦ 1라운드(선행 정리 2건 + Detail 3화면 바인딩 + 코디↔스타일일지 바인딩 + 상호참조 썸네일 캐러셀/갤러리) 완료"로 압축 기록.
 - 이번 Plan에서 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)을 BACKLOG "Next" 또는 Current 하위 항목으로 신규 등록.
+- `CompositionGalleryTile`(코디 메인 그리드, 아직 텍스트 전용) TechDebt 항목은 Task 5의 `compositionCoverImageProvider` 덕에 착수 비용이 낮아졌다고 이미 `TechnicalDebt.md`에 기록해뒀음 — 이번 Plan 스코프는 아니라는 점만 재확인, 별도 착수 여부는 다음 세션 판단.
+- 코디 아이템 개수 상한(15개, `Decision.md`) 실제 코드 반영은 "코디 만들기(Editor)" 구현 시점 — `TechnicalDebt.md`에 이미 등록됨, 이번 라운드엔 손대지 않음.
 - 남은 Step⑦ 스코프(그룹형 드릴다운 실배선 2곳, 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입)는 별도 Plan으로 이어서 진행.

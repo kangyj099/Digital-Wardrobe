@@ -100,10 +100,21 @@ Header/HUD Stack 재설계(2026-07-13) 후 Audit이 발견: `lib/widgets/glass_p
 
 [TechDebt] `CompositionGalleryTile`이 아직 텍스트만 표시 — 향후 `Composition.coverImagePath` 필드 신설로 해소 예정(사용자 확정)
 
-상태: 미해결 (방향 확정, 미착수)
+상태: 미해결 (방향 확정, 미착수 — 단 착수 비용이 낮아짐, 2026-07-16)
 
 내용:
 Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widgets/composition_gallery_tile.dart`)이 코디 이름+계절 텍스트만 표시해 `02_코디 (가상 조합).md`의 "옷장과 동일한 레이아웃/버튼 패턴"(실제 사진 타일) 요구와 어긋난다. 대응 방식 3가지(대표 아이템 이미지 1장 재사용 / 미니 아트보드 합성 렌더 / `StyleLog`처럼 `coverImagePath` 필드 신설)를 검토한 결과 사용자가 **`coverImagePath` 필드 신설**로 확정(2026-07-13) — 단, 지금 당장 착수하지 않고 현행 텍스트 표시를 유지한 채 이후 라운드로 미룬다. 필드 신설 시 사용자가 대표 이미지를 지정/캡처하는 로직(신규 기능)이 선행돼야 하므로 순수 Frontend 표시 변경이 아니라 Data/Architecture 결정 + Editor(Step⑤) 연동이 함께 필요.
+
+**갱신(2026-07-16)**: Step⑦ 상호참조 썸네일 작업(Task 6, `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목)에서 `Composition.coverImagePath` 필드 + "null이면 첫 옷 이미지로 폴백" 파생 provider가 이미 생긴다. `CompositionGalleryTile`을 이 provider로 갈아끼우기만 하면 되므로 착수 비용이 크게 낮아졌다 — 여전히 착수하지는 않음(이번 라운드 스코프 아님), 다음에 이 파일을 만질 때 저비용으로 처리 가능하다는 점만 기록.
+
+---
+
+[TechDebt] 코디 아이템 개수 상한(15개) 결정은 됐으나 코드에 미반영 — Editor(코디 만들기) 구현 시 적용 필요
+
+상태: 미해결
+
+내용:
+`docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목에서 코디 1개당 옷 개수 상한을 15개로 확정(2026-07-16, 사용자 확인). 코디 만들기(Editor) 화면이 아직 skeleton 상태라 지금 강제할 대상 자체가 없음 — "코디 만들기(편집)" 화면의 아트보드 아이템 추가 로직 구현 시(아이템 추가/드롭 처리 지점) 이 상한을 실제로 체크하는 로직을 넣을 것.
 
 ---
 

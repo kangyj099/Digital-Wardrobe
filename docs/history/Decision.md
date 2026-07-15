@@ -1,5 +1,26 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장, `Composition.coverImagePath` 필드 신설, 코디 아이템 개수 상한 15개 (UI/Screen, Decision)
+
+결정:
+- **상호참조 표시 방식 확정**: 옷 상세/코디 상세의 "연결된 코디"/"연결된 스타일일지" 영역을 기존 `CrossReferenceLinkBar`(하단 텍스트+아이콘 pill 칩)에서, 이미지가 보이는 body 내 섹션으로 바꾼다.
+  - 옷 상세: 연결된 코디 → 이미지 캐러셀(여러 개면 스와이프), 그 아래 연결된 스타일일지 → 2열 갤러리(1개면 1열로 확대). 둘 다 읽기 전용(바인딩 액션 없음), 리스트가 비면 그 섹션 자체를 숨긴다.
+  - 코디 상세: 연결된 스타일일지 → 옷 상세와 동일한 2열/1열 갤러리. 단, 미연결(0개) 상태에서는 갤러리 자리에 "+" 추가 타일 하나가 대신 뜨고(기존 "스타일일지 연결하기" 바인딩 동작 유지, `_bindStyleLog` 그대로), 1개 이상이면 + 타일은 사라지고 실제 항목만 그리드로 보인다(`02_코디 UX명세서`가 이미 이 조건부 배치를 명시하고 있었음 — `CrossReferenceLinkBar`는 그 자리에 들어간 축약판이었을 뿐).
+  - 스타일일지 열람의 "연결된 코디"(단일, `linkedCompositionId`)도 일관성을 위해 캐러셀의 카드 콘텐츠(이미지+이름)와 동일한 시각 언어로 렌더링한다 — 다만 최대 1개뿐이라 페이징 캐러셀은 불필요, 카드 하나만 그대로 쓴다. 미연결 시의 "+코디 연결하기" 바인딩 동작(`_bindComposition`)은 변경 없음.
+  - `CrossReferenceLinkBar`/`CrossReferenceLinkEntry` 자체는 폐기하지 않는다 — 이번 변경의 대상이 아닌 다른 "+연결" 단일 액션 자리에서 계속 쓸 수 있는 범용 컴포넌트로 유지.
+- **`Composition.coverImagePath` 필드 신설**: `String?`, 기본 `null`.가치 로직(사용자가 대표 이미지를 고르는 Editor UI)은 이번 라운드에 포함하지 않는다 — `isIncomplete`와 동일한 "필드만 먼저" 패턴. `null`일 때의 표시 이미지는 코디에 포함된 첫 번째 옷의 `ClothingItem.imagePath`로 폴백한다(파생 provider로 해결, Record에 값을 쓰지 않음). 코디 메인 그리드의 `CompositionGalleryTile`(현재 텍스트 전용)은 이번 라운드에 함께 갱신하지 않는다 — 이 작업으로 해소 가능해졌다는 사실만 TechnicalDebt에 기록하고 착수는 별도 판단.
+- **코디 아이템 개수 상한 15개로 확정**: `Composition`은 옷장 전체가 아니라 1:1 아트보드 위의 단일 코디 표현이라, 상의/하의/아우터/신발/가방/모자/스카프/벨트/액세서리 등을 헤비 레이어드룩까지 감안해도 15개면 충분하다고 판단(30개는 아트보드 겹침 터치 선택 UX에 부담). 값 자체는 이번 커밋에서 코드에 반영하지 않음 — 실제 상한 검증 로직은 코디 만들기(Editor) 화면 구현 시점에 적용 대상.
+
+사유:
+사용자가 옷 상세 화면에서 연결된 코디/스타일일지가 텍스트만 있는 걸 보고 "썸네일 이미지 추가"를 요청(2026-07-16). PM이 `Composition`에 이미지 필드 자체가 없다는 걸 확인해 표시 이미지 소스를 사용자에게 확인받음 — "필드는 지금 추가하되 로직(선택 UI)은 나중" 옵션을 선택. 코디 상세의 "연결된 스타일일지 2열/1열 갤러리"는 실은 `02_코디 UX명세서`(Step① 이전부터 존재)가 이미 명시했던 내용이라, `CrossReferenceLinkBar`가 그 자리를 임시로 대신하고 있었을 뿐임이 드러났다.
+
+Impact:
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 6(모델 필드+파생 provider)/Task 7(캐러셀/갤러리 위젯+옷 상세·코디 상세 재배선) 추가, Task 5의 스타일일지 열람 코드도 카드 콘텐츠 공유 위젯을 쓰도록 소폭 수정.
+- `docs/history/TechnicalDebt.md`에 "`CompositionGalleryTile` 텍스트 전용" 항목 갱신(coverImagePath 필드 생겨 착수 비용이 낮아짐), 코디 개수 상한 15 값은 Editor 구현 시 반영 필요 항목으로 별도 등록.
+- `docs/work/BACKLOG.md` Current 갱신.
+
+---
+
 [Decision] Editor 저장 모델 전환 — Record Real-time Save + Editor Draft/Commit/Cancel (Data/Architecture, Editor Draft 구현은 Step⑦ 이후 별도 후속 작업으로 분리)
 
 결정:

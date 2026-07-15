@@ -29,14 +29,14 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **Step⑦(기능 구현) 1라운드 진행 중 — Task 1~4 완료, Task 5만 남음.** 플랜(코드 전부 포함, 그대로 실행 가능): `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`.
+1. **Step⑦(기능 구현) 1라운드 진행 중 — Task 1~4 완료, Task 5~7 남음(2026-07-16, 사용자 요청으로 Task 5/6 신규 삽입 — 상세: `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장").** 플랜(코드 전부 포함, 그대로 실행 가능): `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`.
    - **완료**: Task 1(모델 필드+크로스레퍼런스 provider+바인딩 메서드, 커밋 `43181ab`), Task 2(`AppDetailScaffold` 계약 확장 — `body`/`crossReferenceEntries`, `ab2a014`), Task 3(옷 상세 실데이터 바인딩, `f66a0a9` + 회귀 테스트 `7e399cc`), Task 4(코디 상세 실데이터 바인딩 + 스타일일지 바인딩, `e015319` + 회귀 테스트 `c021871`). 전부 Worker→Review→Tester 통과. 진행 중 Task 4/5의 selection_modal_test 교체 대상이 서로 뒤바뀌어 있던 Plan 저작 오류를 발견해 정정(`f8ba7c5`).
-   - **다음 착수: Task 5(스타일일지 열람 실데이터 바인딩 + 코디 바인딩)** — Plan Step 1~9 그대로 실행(Worker→Review→Tester). **Task 5 완료 시 이 1라운드 Plan 전체(5개 Task)가 끝나므로 CLAUDE.md §4에 따라 Audit 1회 필요**(L 사이즈).
-   - **Task 5 착수 전 확인할 것**:
-     - 직전 세션에서 Task 5 Worker를 스폰했으나 API 연결 오류로 중단됨 — `git status` 클린 확인 완료(실제 코드 변경 전혀 없었음), 처음부터 새로 시작하면 된다.
-     - `integration_test/closet_item_detail_data_binding_test.dart`(Task 3 Tester 작성)에 인계 주석이 남아있다 — `log01` 원시 id를 검사하던 assertion을, 이번에 `StyleLogViewerScreen`이 실데이터로 바뀌면 실제 콘텐츠(예: 착용일자 "2026.1.5") 기준으로 갱신해야 한다(안 그러면 Task 4의 `comp01` 케이스처럼 회귀함). 같은 파일의 미사용 import 2건(`enums.dart`/`closet_main_screen.dart`, pre-existing)도 이 참에 정리하면 좋음(급하지 않음).
-     - `context.mounted` 가드 부재(P2, `docs/history/TechnicalDebt.md` 등록됨) — Task 5의 `_bindComposition`은 Plan에 이미 가드가 포함돼 있으니 그대로 반영하면 됨(Task 4의 `_bindStyleLog` 쪽만 아직 미해결로 남음).
-   - **1라운드 스코프 밖**(Task 5 완료 후 별도 후속 항목으로 BACKLOG 등록 필요 — Plan 문서 "완료 후 PM 처리 사항" 참고): 겹친 아이템 팝업/아트보드 실제 렌더링, 추가사진 드래그 순서변경, 신규 생성 바인딩, Detail "⋯더보기" 메뉴 실제 연결.
+   - **번호 재편(2026-07-16)**: 사용자가 Task 3/4가 만든 옷 상세/코디 상세의 "연결된 코디/스타일일지" 텍스트 칩에 썸네일 이미지 추가를 요청 — 원래 Task 5("스타일일지 열람 실데이터 바인딩 + 코디 바인딩")가 신설되는 위젯을 소비하는 구조라 그 앞에 새 Task 5/6을 끼워넣고, 원 Task 5는 **Task 7**로 번호만 밀렸다(내용은 카드 위젯 재사용 부분만 소폭 수정, 나머지 동일).
+   - **다음 착수: Task 5(`Composition.coverImagePath` 필드 + 커버 이미지 파생 provider, Data/Architecture)** — Plan Step 1~8, Worker→Review만(화면 변경 없음). 이어서 **Task 6(코디 프리뷰 캐러셀/카드 + 스타일일지 2열 갤러리 위젯 신설, 옷 상세·코디 상세 재배선)** — Worker→Review→Tester. 그다음 **Task 7(구 Task 5, 스타일일지 열람 실데이터 바인딩 + 코디 바인딩)** — Worker→Review→Tester. **Task 7 완료 시 이 1라운드 Plan 전체(7개 Task)가 끝나므로 CLAUDE.md §4에 따라 Audit 1회 필요**(L 사이즈, Task 5/6 신규 위젯도 함께 훑을 것).
+   - **Task 5/6 착수 전 확인할 것**:
+     - `integration_test/closet_item_detail_data_binding_test.dart`/`integration_test/composition_detail_data_binding_test.dart`가 현재 `CrossReferenceLinkBar` 텍스트 칩을 전제로 한 assertion을 갖고 있음 — Task 6 Step 7/8이 이를 새 위젯(`CompositionPreviewCard`/`StyleLogGalleryTile` 렌더링) 기준으로 교체하도록 이미 Plan에 반영해뒀다.
+     - `integration_test/closet_item_detail_data_binding_test.dart`의 `log01` 원시 id 인계 주석은 Task 7(구 Task 5)이 스타일일지 열람을 실데이터로 바꾸는 시점에 함께 정리(Task 6 Step 7에서 이미 이 교체를 지시해둠).
+   - **1라운드 스코프 밖**(Task 7 완료 후 별도 후속 항목으로 BACKLOG 등록 필요 — Plan 문서 "완료 후 PM 처리 사항" 참고): 겹친 아이템 팝업/아트보드 실제 렌더링, 추가사진 드래그 순서변경, 신규 생성 바인딩, Detail "⋯더보기" 메뉴 실제 연결. 추가로: `CompositionGalleryTile`(코디 메인 그리드) 이미지 업그레이드(착수 비용 낮아짐, TechDebt 참고), 코디 아이템 개수 상한 15개의 실제 코드 반영(Editor 구현 시점).
    - **Step⑦ 나머지 스코프**(1라운드 완료 후 별도 Plan으로 이어감): 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결.
    - **"Editor Draft 구현"(신규 후속 작업, Step⑦ 전체 완료 후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
 - ~~Detail 3화면 보일러플레이트 중복~~ **완료(2026-07-15)** — 위 (b)에서 `AppDetailScaffold`로 해소(단, 파라미터 협소 문제는 위 Step⑦ 착수 노트 참고).
