@@ -5,13 +5,13 @@ import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
-import '../widgets/frosted_close_button.dart';
+import '../widgets/expandable_add_fab.dart';
 import '../widgets/glass_circle_button.dart';
 import '../widgets/glass_pill.dart';
 import '../widgets/grouped_gallery_grid.dart';
+import '../widgets/selection_aware_header_actions.dart';
 import 'skeleton_region.dart';
 
 /// [selectionMode]가 true면 별도 화면을 새로 만들지 않고 이 Main 화면을 "선택 모달"로
@@ -35,8 +35,6 @@ class ClosetMainScreen extends ConsumerStatefulWidget {
 }
 
 class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
-  bool _fabExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final items = ref.watch(filteredClosetItemsProvider);
@@ -59,17 +57,10 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
       current: AppCategory.closet,
       showBackButton: !widget.selectionMode,
       showCategoryToggle: !widget.selectionMode,
-      headerActions: [
-        if (widget.selectionMode)
-          FrostedCloseButton(onTap: () => context.pop())
-        else
-          GlassPill(
-            child: TextButton(
-              onPressed: () {},
-              child: const Text('선택', style: AppTypography.actionMinimal),
-            ),
-          ),
-      ],
+      headerActions: buildSelectionAwareHeaderActions(
+        selectionMode: widget.selectionMode,
+        onClose: () => context.pop(),
+      ),
       // 두 번째 툴바 행 — 옷장 메인 하이파이 디자인 주문서 기준(계절 세그먼트/밀도 버튼/
       // 우측 원형 버튼 3개가 각각 독립 floating, Header/HUD Pinned Rule).
       secondaryControlsLeft: [
@@ -90,7 +81,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
       ],
       secondaryControlsRight: [
         GlassCircleButton(
-          icon: _densityIcon(density),
+          icon: AppDensity.iconFor(density),
           tooltip: '그리드 밀도 전환',
           onTap: () {
             final current = ref.read(closetDensityProvider);
@@ -139,68 +130,18 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
       ),
       floatingActionButton: widget.selectionMode
           ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AnimatedSize(
-                  duration: AppMotion.fast,
-                  child: _fabExpanded
-                      ? Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              _buildFabOption(context, label: singleLabel, onTap: _onFabOptionTap),
-                              const SizedBox(height: AppSpacing.xs),
-                              _buildFabOption(context, label: multiLabel, onTap: _onFabOptionTap),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(),
+          : ExpandableAddFab(
+              options: [
+                ExpandableAddFabOption(
+                  label: singleLabel,
+                  onTap: () => context.push(AppRoute.closetAdd),
                 ),
-                FloatingActionButton(
-                  onPressed: () => setState(() => _fabExpanded = !_fabExpanded),
-                  child: AnimatedRotation(
-                    turns: _fabExpanded ? 0.125 : 0,
-                    duration: AppMotion.fast,
-                    child: const Icon(Icons.add),
-                  ),
+                ExpandableAddFabOption(
+                  label: multiLabel,
+                  onTap: () => context.push(AppRoute.closetAdd),
                 ),
               ],
             ),
     );
-  }
-
-  void _onFabOptionTap() {
-    setState(() => _fabExpanded = false);
-    context.push(AppRoute.closetAdd);
-  }
-
-  Widget _buildFabOption(
-    BuildContext context, {
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: colorScheme.secondary,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-          child: Text(label, style: Theme.of(context).textTheme.labelMedium),
-        ),
-      ),
-    );
-  }
-
-  IconData _densityIcon(int density) {
-    if (density == AppDensity.max) return Icons.grid_view;
-    if (density == AppDensity.mid) return Icons.view_comfy;
-    return Icons.crop_square;
   }
 }

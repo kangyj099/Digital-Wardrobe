@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// T5(Spacing Scale) + 갤러리 그리드 전용 gap 토큰.
 class AppSpacing {
   AppSpacing._();
@@ -22,6 +24,15 @@ class AppDensity {
   static const int max = 4;
 
   static const List<int> levels = [min, mid, max];
+
+  /// 밀도 값→그리드 아이콘 매핑 — `closet_main_screen.dart`/`composition_main_screen.dart`에
+  /// 코드 100% 동일하게 복제됐던 private `_densityIcon`을 승격했다
+  /// (`docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목).
+  static IconData iconFor(int density) {
+    if (density == max) return Icons.grid_view;
+    if (density == mid) return Icons.view_comfy;
+    return Icons.crop_square;
+  }
 }
 
 /// T-Shape(코너 반경) — 옷장 메인 재설계 시 신설, Design Tokens에 역할명조차 없던 값이라

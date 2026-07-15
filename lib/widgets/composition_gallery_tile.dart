@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/composition.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'gallery_meta_label.dart';
 
 /// `Composition` 1개를 표시하는 갤러리 타일. 아직 아트보드 스냅샷 렌더링 기능이 없다(모델에
 /// 썸네일 필드 자체가 없음) — 그래서 `SelectableGalleryTile`처럼 옷 이미지를 대표사진으로
@@ -48,26 +49,7 @@ class CompositionGalleryTile extends StatelessWidget {
                     ),
                   ),
                   if (season != null)
-                    Positioned(
-                      left: AppSpacing.xxs,
-                      bottom: AppSpacing.xxs,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: constraints.maxWidth - AppSpacing.xxs * 2),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-                          decoration: BoxDecoration(
-                            color: semantic.gray50.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                          ),
-                          child: Text(
-                            season.label,
-                            style: Theme.of(context).textTheme.labelSmall,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ),
-                    ),
+                    GalleryMetaLabel(label: season.label, maxWidth: constraints.maxWidth),
                 ],
               );
             },

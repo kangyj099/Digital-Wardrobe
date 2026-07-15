@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_colors.dart';
+import 'gallery_meta_label.dart';
 import 'status_badge.dart';
 
 class SelectableGalleryTile extends StatelessWidget {
@@ -51,26 +52,7 @@ class SelectableGalleryTile extends StatelessWidget {
                   ),
                   if (item.isIncomplete)
                     const Positioned(top: AppSpacing.xxs, left: AppSpacing.xxs, child: StatusBadge(label: '미완성')),
-                  Positioned(
-                    left: AppSpacing.xxs,
-                    bottom: AppSpacing.xxs,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: constraints.maxWidth - AppSpacing.xxs * 2),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-                        decoration: BoxDecoration(
-                          color: semantic.gray50.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Text(
-                          item.category.label,
-                          style: Theme.of(context).textTheme.labelSmall,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ),
-                  ),
+                  GalleryMetaLabel(label: item.category.label, maxWidth: constraints.maxWidth),
                 ],
               );
             },

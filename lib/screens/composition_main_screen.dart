@@ -5,13 +5,12 @@ import '../models/enums.dart';
 import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
 import '../widgets/composition_gallery_grid.dart';
-import '../widgets/frosted_close_button.dart';
 import '../widgets/glass_circle_button.dart';
 import '../widgets/glass_pill.dart';
+import '../widgets/selection_aware_header_actions.dart';
 import 'skeleton_region.dart';
 
 /// Main-그룹형(옷장 메인과 동일 페이지 타입) — `closet_main_screen.dart` 패턴을 그대로 이식.
@@ -48,17 +47,10 @@ class CompositionMainScreen extends ConsumerWidget {
       current: AppCategory.composition,
       showBackButton: !selectionMode,
       showCategoryToggle: !selectionMode,
-      headerActions: [
-        if (selectionMode)
-          FrostedCloseButton(onTap: () => context.pop())
-        else
-          GlassPill(
-            child: TextButton(
-              onPressed: () {},
-              child: const Text('선택', style: AppTypography.actionMinimal),
-            ),
-          ),
-      ],
+      headerActions: buildSelectionAwareHeaderActions(
+        selectionMode: selectionMode,
+        onClose: () => context.pop(),
+      ),
       secondaryControlsLeft: [
         GlassPill(
           child: DropdownButton<Season?>(
@@ -78,7 +70,7 @@ class CompositionMainScreen extends ConsumerWidget {
       ],
       secondaryControlsRight: [
         GlassCircleButton(
-          icon: _densityIcon(density),
+          icon: AppDensity.iconFor(density),
           tooltip: '그리드 밀도 전환',
           onTap: () {
             final current = ref.read(compositionDensityProvider);
@@ -121,11 +113,5 @@ class CompositionMainScreen extends ConsumerWidget {
               child: const Icon(Icons.add),
             ),
     );
-  }
-
-  IconData _densityIcon(int density) {
-    if (density == AppDensity.max) return Icons.grid_view;
-    if (density == AppDensity.mid) return Icons.view_comfy;
-    return Icons.crop_square;
   }
 }

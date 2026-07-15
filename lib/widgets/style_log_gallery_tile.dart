@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/style_log.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
+import 'gallery_meta_label.dart';
 
 /// `StyleLog` 1개를 표시하는 갤러리 타일 — `coverImagePath`로 대표이미지를 렌더링하고
 /// (`SelectableGalleryTile`의 `Image.asset(... fit: BoxFit.contain)` 패턴과 동일), 하단에
@@ -39,26 +39,7 @@ class StyleLogGalleryTile extends StatelessWidget {
                         ? Image.asset(styleLog.coverImagePath, fit: BoxFit.contain)
                         : const SizedBox.shrink(),
                   ),
-                  Positioned(
-                    left: AppSpacing.xxs,
-                    bottom: AppSpacing.xxs,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: constraints.maxWidth - AppSpacing.xxs * 2),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-                        decoration: BoxDecoration(
-                          color: semantic.gray50.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Text(
-                          metaLabel,
-                          style: Theme.of(context).textTheme.labelSmall,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ),
-                  ),
+                  GalleryMetaLabel(label: metaLabel, maxWidth: constraints.maxWidth),
                 ],
               );
             },
