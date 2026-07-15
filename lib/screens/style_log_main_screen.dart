@@ -15,20 +15,14 @@ import '../widgets/style_log_gallery_grid.dart';
 /// `closet_main_screen.dart`의 2-옵션 팝업 패턴을 그대로 이식.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 참고.
 ///
-/// [selectionMode]가 true면 이 화면이 "선택 모달(스타일일지 재호출)"로 동작한다 —
-/// `closet_main_screen.dart`의 selectionMode 문서 주석과 동일 원칙. `StyleLog` 모델에는
-/// `isIncomplete` 필드가 없어(`lib/models/style_log.dart`) 미완성 항목 분기는 만들지
-/// 않았다 — Step⑦에서 그 필드가 생기면 `closet_main_screen.dart`의 `onIncompleteTap`
-/// 패턴을 그대로 이식하면 된다. 원래도 그룹형이 아니므로 groupingBar는 변경 없음.
+/// [selectionMode]가 true면 이 화면이 "선택 모달(스타일일지 재호출)"로 동작한다 — 타일 탭 시
+/// `context.pop(log.id)`로 결과를 반환한다. 호출부는 `context.push<String>(AppRoute.styleLogSelect)`로
+/// 열고 반환값을 기다리면 된다(`lib/screens/composition_detail_screen.dart` 사용례 참고).
 class StyleLogMainScreen extends ConsumerStatefulWidget {
-  const StyleLogMainScreen({super.key, this.selectionMode = false, this.onItemSelected});
+  const StyleLogMainScreen({super.key, this.selectionMode = false});
 
-  /// true면 선택 모달로 동작 — 실제 호출부 연결은 Step⑦ 몫.
+  /// true면 선택 모달로 동작 — 타일 탭 시 상세 화면 대신 `context.pop(id)`로 결과 반환.
   final bool selectionMode;
-
-  /// [selectionMode]일 때 타일 탭 시 호출되는 선택 콜백(선택된 항목 id). 실제 바인딩
-  /// 로직(go_router result 반환 등)은 아직 없음 — Step⑦ 위임.
-  final ValueChanged<String>? onItemSelected;
 
   @override
   ConsumerState<StyleLogMainScreen> createState() => _StyleLogMainScreenState();
@@ -39,9 +33,6 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
   Widget build(BuildContext context) {
     final logs = ref.watch(filteredStyleLogsProvider);
 
-    // Content Spacer(스펙 §4) — 스타일일지는 groupingBar가 없다(플랫+필터형, Decision.md
-    // "그리드 밀도 토글은 그룹형 Main 전용" 항목과 같은 근거로 season/density도 없음). Row2에는
-    // 정렬 아이콘 하나만 있어 hasSecondaryRow=true.
     final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
 
     return AppMainScaffold(
@@ -63,7 +54,7 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
           topSpacing: contentTopSpacing,
           onItemTap: (l) {
             if (widget.selectionMode) {
-              widget.onItemSelected?.call(l.id);
+              context.pop(l.id);
             } else {
               context.push(AppRoute.styleLogViewer.replaceFirst(':id', l.id));
             }

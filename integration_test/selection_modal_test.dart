@@ -8,10 +8,8 @@ import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_add_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
-import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
-import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
@@ -154,7 +152,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(CompositionDetailScreen), findsNothing);
       expect(find.byType(CompositionMainScreen), findsOneWidget);
     },
   );
@@ -163,13 +160,16 @@ void main() {
 
   testWidgets(
     '스타일일지 선택 모달(/style-log/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
-    '없으며, 원래도 그룹형이 아니라 groupingBar는 (변화 없이) 여전히 없다. 타일 탭 시 뷰어로 '
-    '이동하지 않는다',
+    '없으며, 원래도 그룹형이 아니라 groupingBar는 (변화 없이) 여전히 없다. 타일 탭 시 '
+    'context.pop(id)로 결과를 반환한다',
     (tester) async {
       await pumpApp(tester);
 
+      String? poppedResult;
       final context = tester.element(find.byType(SelectableGalleryTile).first);
-      GoRouter.of(context).push(AppRoute.styleLogSelect);
+      GoRouter.of(context).push<String>(AppRoute.styleLogSelect).then((value) {
+        poppedResult = value;
+      });
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -185,8 +185,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(StyleLogViewerScreen), findsNothing);
-      expect(find.byType(StyleLogMainScreen), findsOneWidget);
+      expect(poppedResult, 'log01');
     },
   );
 

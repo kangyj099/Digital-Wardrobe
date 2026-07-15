@@ -86,7 +86,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
-      expect(find.textContaining(composition.id), findsOneWidget);
+      expect(find.text(composition.name), findsOneWidget);
     });
 
     testWidgets('스타일일지 메인에서 카드 탭 → StyleLogViewerScreen이 크래시 없이 렌더링된다', (tester) async {
@@ -271,13 +271,15 @@ void main() {
       expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
 
-    testWidgets('코디 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
+    testWidgets('코디 상세 화면 하단에 연결된 스타일일지 크로스 레퍼런스가 보인다(mock 기준 comp01은 log01에 연결됨)',
+        (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tester.tap(find.byType(CompositionGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Task 4에서 실제 바인딩 예정'), findsOneWidget);
+      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+      expect(find.textContaining('2026.1.5'), findsOneWidget); // log01.wornDate
     });
 
     testWidgets('스타일일지 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
