@@ -29,10 +29,16 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **8단계 프로세스 Step①~⑥ + 선행 작업 2건 전부 완료 — Step⑦(기능 구현) 착수부터 시작.** 착수 시 먼저 반영할 2건:
-   - `AppDetailScaffold` 파라미터 협소 문제(Audit 2026-07-15 발견) — Detail 3화면 실제 데이터 바인딩 전에 `body` 슬롯 + `crossReferenceEntries` 리스트로 계약을 넓힐 것(현재는 `placeholderLabel`/`crossReferenceLabel` 단일 문자열뿐).
-   - `Composition`/`StyleLog`에 `bool isIncomplete = false` 필드 추가(토글 로직 없이 — 값 판정 로직은 "Editor Draft 구현"에서 처리, `Decision.md` "Editor 저장 모델 전환" 참고).
-   - **"Editor Draft 구현"(신규 후속 작업, Step⑦ 이후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
+1. **Step⑦(기능 구현) 1라운드 진행 중 — Task 1~4 완료, Task 5만 남음.** 플랜(코드 전부 포함, 그대로 실행 가능): `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`.
+   - **완료**: Task 1(모델 필드+크로스레퍼런스 provider+바인딩 메서드, 커밋 `43181ab`), Task 2(`AppDetailScaffold` 계약 확장 — `body`/`crossReferenceEntries`, `ab2a014`), Task 3(옷 상세 실데이터 바인딩, `f66a0a9` + 회귀 테스트 `7e399cc`), Task 4(코디 상세 실데이터 바인딩 + 스타일일지 바인딩, `e015319` + 회귀 테스트 `c021871`). 전부 Worker→Review→Tester 통과. 진행 중 Task 4/5의 selection_modal_test 교체 대상이 서로 뒤바뀌어 있던 Plan 저작 오류를 발견해 정정(`f8ba7c5`).
+   - **다음 착수: Task 5(스타일일지 열람 실데이터 바인딩 + 코디 바인딩)** — Plan Step 1~9 그대로 실행(Worker→Review→Tester). **Task 5 완료 시 이 1라운드 Plan 전체(5개 Task)가 끝나므로 CLAUDE.md §4에 따라 Audit 1회 필요**(L 사이즈).
+   - **Task 5 착수 전 확인할 것**:
+     - 직전 세션에서 Task 5 Worker를 스폰했으나 API 연결 오류로 중단됨 — `git status` 클린 확인 완료(실제 코드 변경 전혀 없었음), 처음부터 새로 시작하면 된다.
+     - `integration_test/closet_item_detail_data_binding_test.dart`(Task 3 Tester 작성)에 인계 주석이 남아있다 — `log01` 원시 id를 검사하던 assertion을, 이번에 `StyleLogViewerScreen`이 실데이터로 바뀌면 실제 콘텐츠(예: 착용일자 "2026.1.5") 기준으로 갱신해야 한다(안 그러면 Task 4의 `comp01` 케이스처럼 회귀함). 같은 파일의 미사용 import 2건(`enums.dart`/`closet_main_screen.dart`, pre-existing)도 이 참에 정리하면 좋음(급하지 않음).
+     - `context.mounted` 가드 부재(P2, `docs/history/TechnicalDebt.md` 등록됨) — Task 5의 `_bindComposition`은 Plan에 이미 가드가 포함돼 있으니 그대로 반영하면 됨(Task 4의 `_bindStyleLog` 쪽만 아직 미해결로 남음).
+   - **1라운드 스코프 밖**(Task 5 완료 후 별도 후속 항목으로 BACKLOG 등록 필요 — Plan 문서 "완료 후 PM 처리 사항" 참고): 겹친 아이템 팝업/아트보드 실제 렌더링, 추가사진 드래그 순서변경, 신규 생성 바인딩, Detail "⋯더보기" 메뉴 실제 연결.
+   - **Step⑦ 나머지 스코프**(1라운드 완료 후 별도 Plan으로 이어감): 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결.
+   - **"Editor Draft 구현"(신규 후속 작업, Step⑦ 전체 완료 후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
 - ~~Detail 3화면 보일러플레이트 중복~~ **완료(2026-07-15)** — 위 (b)에서 `AppDetailScaffold`로 해소(단, 파라미터 협소 문제는 위 Step⑦ 착수 노트 참고).
 - (P2) `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`)가 같은 역할의 `AppMainScaffold`(`lib/widgets/`)와 달리 `lib/widgets/`가 아닌 `lib/screens/`에 배치됨 — Audit(2026-07-15) 발견, 근거가 약한 배치(상세는 `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목 하단). 호출부가 3곳뿐인 지금이 이동 비용이 가장 쌈, 급하지 않음.
 - 6번째 UI 블록 중복 사례(Editor 3화면 `EditorHeader`+`skeletonRegion` 보일러플레이트, P3, Audit 2026-07-15 발견) — "Editor Draft 구현" 착수로 어차피 재작성될 예정이라 의도적으로 추출 보류(`docs/history/TechnicalDebt.md` 참고).
