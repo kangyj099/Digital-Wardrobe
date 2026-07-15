@@ -9,14 +9,27 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    // mock_data.dart 기준 comp01은 coverImagePath가 null이라, 다른 케이스로 확인.
-    // 이 테스트는 필드 자체의 우선순위 규칙만 검증하므로 실제 mock 코디 하나를 그대로 쓴다.
-    final result = container.read(compositionCoverImageProvider('comp01'));
+    // mock_data.dart에는 coverImagePath가 설정된 코디가 없으므로, 우선순위 분기(명시값이
+    // 폴백보다 우선한다)를 검증하기 위해 CompositionsNotifier에 직접 add해서 만든다.
+    // items를 비워두지 않고 c01을 포함시켜, 아이템이 있어도 폴백(첫 옷 이미지)이 아니라
+    // coverImagePath가 그대로 반환되는지까지 함께 확인한다.
+    const withCover = Composition(
+      id: 'test-with-cover',
+      name: '커버 이미지 지정 코디',
+      items: [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
+      coverImagePath: 'assets/mock/cover_test.png',
+    );
+    container.read(compositionsProvider.notifier).state = [
+      ...container.read(compositionsProvider),
+      withCover,
+    ];
 
-    // comp01.coverImagePath == null이므로 폴백(첫 옷 이미지)이 나와야 한다 — 아래 테스트가
-    // 그 경로를 검증. 이 테스트는 필드가 있는 경우를 mock_data.dart에 값을 넣지 않고도
-    // 검증하기 위해 다음 테스트로 대체한다(위 설명은 다음 케이스와 함께 읽을 것).
-    expect(result, isNotNull);
+    final result = container.read(compositionCoverImageProvider('test-with-cover'));
+    final firstItemFallback =
+        container.read(closetItemsProvider).firstWhere((i) => i.id == 'c01').imagePath;
+
+    expect(result, 'assets/mock/cover_test.png');
+    expect(result, isNot(firstItemFallback));
   });
 
   test('coverImagePath가 null이면 코디에 포함된 첫 번째 옷의 이미지로 폴백한다', () {
