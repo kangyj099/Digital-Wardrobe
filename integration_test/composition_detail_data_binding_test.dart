@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/main.dart';
+import 'package:digittal_wardrobe/models/composition.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
+import 'package:digittal_wardrobe/providers/composition_providers.dart';
+import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
-import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
+import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
+import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 
 /// Tester 검증 — e015319 "코디 상세 real data 바인딩(사용된 옷 목록 + 스타일일지 크로스
 /// 레퍼런스)".
@@ -19,9 +25,11 @@ import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 /// 1) comp01(데일리 룩)의 "사용된 옷" 가로 목록에 실제 4개 아이템(c01/c11/c07/c03) 이름이
 ///    전부 보이고, 이미지 렌더링이 예외 없이 되며, 항목 탭 시 실제 옷 상세로 이동하는가.
 /// 2) comp02(포멀 코디, mock 기준 이미 log02에 연결됨)도 사용된 옷 2개(c04/c05)가 보이고,
-///    크로스 레퍼런스에는 이미 연결된 log02(2026.1.10) chip만 보이며 "+ 스타일일지
-///    연결하기" 바인딩 엔트리는 나타나지 않는가(연결된 로그가 있으면 바인딩 UI 대신
-///    로그 chip 목록을 보여준다는 분기 검증).
+///    크로스 레퍼런스에는 이미 연결된 log02(2026-01-10) 타일만 보이며 "+ 스타일일지
+///    연결하기" 바인딩 타일은 나타나지 않는가(연결된 로그가 있으면 바인딩 UI 대신
+///    로그 타일 목록을 보여준다는 분기 검증).
+/// 3) 스타일일지가 전혀 연결되지 않은 코디는 "+" 바인딩 타일이 렌더링되는가(Task 6,
+///    `StyleLogCrossReferenceGallery`).
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -100,19 +108,20 @@ void main() {
       },
     );
 
-    testWidgets('comp01 상세에서 연결된 스타일일지(log01, 2026.1.5) chip을 탭하면 스타일일지 열람으로 이동한다',
+    testWidgets('comp01 상세에서 연결된 스타일일지 타일(log01, 2026-01-05)을 탭하면 스타일일지 열람으로 이동한다',
         (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tapCompositionById(tester, 'comp01');
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-      final logChip = find.text('2026.1.5');
-      expect(logChip, findsOneWidget);
-      // 연결된 로그가 있으니 "+" 바인딩 엔트리는 보이지 않아야 한다.
+      expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
+      final logTile = find.byType(StyleLogGalleryTile);
+      expect(logTile, findsOneWidget);
+      expect(find.textContaining('2026-01-05'), findsOneWidget);
+      // 연결된 로그가 있으니 "+" 바인딩 타일은 보이지 않아야 한다.
       expect(find.text('스타일일지 연결하기'), findsNothing);
 
-      await tester.tap(logChip);
+      await tester.tap(logTile);
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -124,7 +133,7 @@ void main() {
   group('코디 상세 — 사용된 옷 목록 + 크로스 레퍼런스(comp02, 이미 log02에 연결됨)', () {
     testWidgets(
       'comp02(포멀 코디) 상세 — 사용된 옷 2개(c04/c05)가 보이고, 크로스 레퍼런스에는 이미 '
-      '연결된 log02(2026.1.10) chip만 보이며 "+" 바인딩 엔트리는 나타나지 않는다',
+      '연결된 log02(2026-01-10) 타일만 보이며 "+" 바인딩 타일은 나타나지 않는다',
       (tester) async {
         await pumpApp(tester);
         await goToCategory(tester, '코디');
@@ -139,17 +148,47 @@ void main() {
         expect(find.byType(Image), findsWidgets);
         expect(tester.takeException(), isNull);
 
-        expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-        expect(find.text('2026.1.10'), findsOneWidget); // log02.wornDate
+        expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
+        final logTile = find.byType(StyleLogGalleryTile);
+        expect(logTile, findsOneWidget);
+        expect(find.textContaining('2026-01-10'), findsOneWidget); // log02.wornDate
         expect(find.text('스타일일지 연결하기'), findsNothing);
         expect(find.byIcon(Icons.add), findsNothing);
 
-        await tester.tap(find.text('2026.1.10'));
+        await tester.tap(logTile);
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
         expect(find.byType(StyleLogViewerScreen), findsOneWidget);
         expect(find.textContaining('log02'), findsOneWidget);
+      },
+    );
+  });
+
+  group('코디 상세 — 스타일일지가 전혀 연결되지 않은 코디("+" 바인딩 타일)', () {
+    testWidgets(
+      'mock 코디는 전부 이미 연결돼 있어(comp01/comp02), 미연결 상태를 검증하려면 코디 목록에 '
+      '임시 코디를 하나 추가해 격리한다 — "+" 바인딩 타일 렌더링만 확인(탭 시 실제 이동 여부는 '
+      'Task 7의 composition_detail_screen_test.dart 위젯 테스트가 이미 커버 — 중복 검증 지양)',
+      (tester) async {
+        final container = await pumpApp(tester);
+        const unlinkedComposition = Composition(id: 'test-unlinked', name: '미연결 코디', items: []);
+        container.read(compositionsProvider.notifier).state = [
+          ...container.read(compositionsProvider),
+          unlinkedComposition,
+        ];
+
+        final context = tester.element(find.byType(ClosetMainScreen));
+        GoRouter.of(context)
+            .push(AppRoute.compositionDetail.replaceFirst(':id', 'test-unlinked'));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(CompositionDetailScreen), findsOneWidget);
+        expect(find.text('미연결 코디'), findsOneWidget);
+        expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
+        expect(find.text('스타일일지 연결하기'), findsOneWidget);
+        expect(find.byIcon(Icons.add), findsOneWidget);
       },
     );
   });

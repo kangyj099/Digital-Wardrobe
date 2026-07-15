@@ -12,9 +12,11 @@ import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
 import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 
 /// Step④(DetailHeaderActions 재작업 + Detail 3화면 AppMainScaffold 연결) Tester 검증.
@@ -258,7 +260,7 @@ void main() {
   // ── 4) Detail 화면 skeleton body 렌더링 ──────────────────────────────────
 
   group('Detail 화면 skeleton body 렌더링(Task 3~5 전까지)', () {
-    testWidgets('옷 상세 화면 하단에 연결된 코디/스타일일지 크로스 레퍼런스가 실제로 보인다(빈 화면처럼 보이지 않음)',
+    testWidgets('옷 상세 화면 하단에 연결된 코디 캐러셀/스타일일지 갤러리가 실제로 보인다(빈 화면처럼 보이지 않음)',
         (tester) async {
       await pumpApp(tester);
       final tile = find.byType(SelectableGalleryTile).first;
@@ -266,20 +268,21 @@ void main() {
       await tester.tap(tile);
       await tester.pumpAndSettle();
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-      expect(item.id, 'c01'); // mock_data.dart 첫 항목은 comp01에 포함되어 크로스 레퍼런스가 비지 않음을 전제.
+      expect(find.byType(CompositionPreviewCarousel), findsOneWidget);
+      expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
+      expect(item.id, 'c01'); // mock_data.dart 첫 항목은 comp01에 포함되어 프리뷰가 비지 않음을 전제.
       expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
 
-    testWidgets('코디 상세 화면 하단에 연결된 스타일일지 크로스 레퍼런스가 보인다(mock 기준 comp01은 log01에 연결됨)',
+    testWidgets('코디 상세 화면 하단에 연결된 스타일일지 갤러리가 보인다(mock 기준 comp01은 log01에 연결됨)',
         (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tester.tap(find.byType(CompositionGalleryTile).first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
-      expect(find.textContaining('2026.1.5'), findsOneWidget); // log01.wornDate
+      expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
+      expect(find.textContaining('2026-01-05'), findsOneWidget); // log01.wornDate(StyleLogGalleryTile 라벨 포맷)
     });
 
     testWidgets('스타일일지 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {

@@ -7,7 +7,7 @@ import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../widgets/cross_reference_link_bar.dart';
+import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
 
 /// 코디 상세 — 사용된 옷 목록과 연결된 스타일일지를 실제 mock 데이터로 표시한다.
@@ -89,25 +89,17 @@ class CompositionDetailScreen extends ConsumerWidget {
                 },
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            Text('연결된 스타일일지', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.xs),
+            StyleLogCrossReferenceGallery(
+              logs: linkedStyleLogs,
+              onTap: (log) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+              onAddTap: () => _bindStyleLog(context, ref),
+            ),
           ],
         ),
       ),
-      crossReferenceEntries: linkedStyleLogs.isEmpty
-          ? [
-              CrossReferenceLinkEntry(
-                label: '스타일일지 연결하기',
-                icon: Icons.add,
-                onTap: () => _bindStyleLog(context, ref),
-              ),
-            ]
-          : [
-              for (final log in linkedStyleLogs)
-                CrossReferenceLinkEntry(
-                  label: '${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}',
-                  icon: Icons.menu_book,
-                  onTap: () => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
-                ),
-            ],
     );
   }
 }

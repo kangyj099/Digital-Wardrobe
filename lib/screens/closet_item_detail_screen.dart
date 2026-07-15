@@ -7,7 +7,8 @@ import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../widgets/cross_reference_link_bar.dart';
+import '../widgets/composition_preview_carousel.dart';
+import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
 
 /// 옷 상세 — 이미지/메타데이터/착용 이력을 실제 mock 데이터로 표시하고, 이 옷을 포함한
@@ -52,24 +53,19 @@ class ClosetItemDetailScreen extends ConsumerWidget {
             if (item.memo.isNotEmpty) Text('메모: ${item.memo}'),
             const SizedBox(height: AppSpacing.xs),
             Text('착용 ${item.wearCount}회', style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: AppSpacing.md),
+            CompositionPreviewCarousel(
+              compositions: linkedCompositions,
+              onTap: (c) => context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id)),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            StyleLogCrossReferenceGallery(
+              logs: linkedStyleLogs,
+              onTap: (log) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+            ),
           ],
         ),
       ),
-      crossReferenceEntries: [
-        for (final composition in linkedCompositions)
-          CrossReferenceLinkEntry(
-            label: composition.name,
-            icon: Icons.checkroom,
-            onTap: () =>
-                context.push(AppRoute.compositionDetail.replaceFirst(':id', composition.id)),
-          ),
-        for (final log in linkedStyleLogs)
-          CrossReferenceLinkEntry(
-            label: '${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}',
-            icon: Icons.menu_book,
-            onTap: () => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
-          ),
-      ],
     );
   }
 }
