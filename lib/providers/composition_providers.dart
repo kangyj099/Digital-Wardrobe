@@ -28,3 +28,13 @@ final filteredCompositionsProvider = Provider<List<Composition>>((ref) {
 
 /// 코디 메인 그리드 밀도 — AppDensity.min/mid/max 중 하나.
 final compositionDensityProvider = StateProvider<int>((ref) => AppDensity.mid);
+
+/// [itemId]를 포함하는(삭제되지 않은) Composition 목록 — 옷 상세 화면의
+/// "연결된 코디" 크로스 레퍼런스 근거.
+final compositionsContainingItemProvider =
+    Provider.family<List<Composition>, String>((ref, itemId) {
+  return ref
+      .watch(compositionsProvider)
+      .where((c) => !c.isDeleted && c.items.any((p) => p.clothingItemId == itemId))
+      .toList();
+});

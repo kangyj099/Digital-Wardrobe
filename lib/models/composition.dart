@@ -24,6 +24,7 @@ class Composition {
     required this.name,
     required this.items,
     this.season,
+    this.isIncomplete = false,
     this.isDeleted = false,
   });
 
@@ -31,5 +32,6 @@ class Composition {
   final String name;
   final List<CompositionItemPlacement> items;
   final Season? season;
+  final bool isIncomplete;
   final bool isDeleted;
 }
