@@ -992,39 +992,44 @@ class CompositionDetailScreen extends ConsumerWidget {
     });
 ```
 
-- [ ] **Step 4: `integration_test/selection_modal_test.dart`의 코디 선택 모달 assertion을 실제 pop-result 동작에 맞게 교체**
+- [ ] **Step 4: `integration_test/selection_modal_test.dart`의 스타일일지 선택 모달 assertion을 실제 pop-result 동작에 맞게 교체**
+
+> **정정(2026-07-15, Task 4 실행 중 Worker가 발견)**: 이 자리에 원래 적혀 있던 코드 블록은 "코디 선택 모달" 테스트였으나, 이 Task(Task 4)가 실제로 `context.pop` 전환을 적용하는 파일은 `composition_main_screen.dart`가 아니라 `style_log_main_screen.dart`다(코디 쪽 전환은 Task 5 Step 1 몫). 두 Task의 Step 4 코드 블록이 서로 뒤바뀌어 있던 저작 오류 — 아래가 Task 4에 맞는(실제로 적용된) 스타일일지 선택 모달 블록이고, 코디 선택 모달 블록은 Task 5 Step 4로 옮겼다.
 
 ```dart
   testWidgets(
-    '코디 선택 모달(/composition/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
-    '없으며 groupingBar는 그대로 노출된다. 타일 탭 시 context.pop(id)로 결과를 반환한다',
+    '스타일일지 선택 모달(/style-log/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
+    '없으며, 원래도 그룹형이 아니라 groupingBar는 (변화 없이) 여전히 없다. 타일 탭 시 '
+    'context.pop(id)로 결과를 반환한다',
     (tester) async {
       await pumpApp(tester);
 
       String? poppedResult;
       final context = tester.element(find.byType(SelectableGalleryTile).first);
-      GoRouter.of(context).push<String>(AppRoute.compositionSelect).then((value) {
+      GoRouter.of(context).push<String>(AppRoute.styleLogSelect).then((value) {
         poppedResult = value;
       });
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expect(find.byType(StyleLogMainScreen), findsOneWidget);
       expect(closeButtonFinder(), findsOneWidget);
       expect(backButtonFinder(), findsNothing);
       expect(find.byType(CategoryToggleDropdown), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.textContaining('분류 선택 바'), findsOneWidget);
-      expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
+      expect(find.textContaining('분류 선택 바'), findsNothing);
+      expect(find.byType(StyleLogGalleryTile), findsNWidgets(2));
 
-      await tester.tap(find.byKey(const ValueKey('comp01')));
+      await tester.tap(find.byKey(const ValueKey('log01')));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(poppedResult, 'comp01');
+      expect(poppedResult, 'log01');
     },
   );
 ```
+
+이 교체에 맞춰 이제 쓰이지 않는 import 2개(`composition_detail_screen.dart`, `style_log_viewer_screen.dart`)도 함께 제거한다(코디 선택 모달 테스트의 `findsNothing` assertion에서만 쓰였는데, 그 테스트는 이번 Task에서 변경되지 않으므로 실제로는 `expect(find.byType(CompositionDetailScreen), findsNothing)`처럼 다른 import에 의존하던 라인이 있다면 그 라인만 제거하고 나머지 코디 선택 모달 테스트는 그대로 둔다).
 
 - [ ] **Step 5: `flutter analyze` 확인**
 
@@ -1318,40 +1323,43 @@ class StyleLogViewerScreen extends ConsumerWidget {
     });
 ```
 
-- [ ] **Step 4: `integration_test/selection_modal_test.dart`의 스타일일지 선택 모달 assertion을 실제 pop-result 동작에 맞게 교체**
+- [ ] **Step 4: `integration_test/selection_modal_test.dart`의 코디 선택 모달 assertion을 실제 pop-result 동작에 맞게 교체**
+
+> **정정(2026-07-15)**: Task 4 실행 시 이 블록이 Task 4/5 사이에서 뒤바뀌어 있던 저작 오류가 발견됐다 — Task 4는 이미 스타일일지 선택 모달 쪽을 처리했으므로(위 Task 4 Step 4 정정 내용 참고), 여기(Task 5)에서 실제로 `context.pop` 전환이 적용되는 것은 `composition_main_screen.dart`이고 아래 코디 선택 모달 블록이 이 Task에 맞는 블록이다.
 
 ```dart
   testWidgets(
-    '스타일일지 선택 모달(/style-log/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
-    '없으며, 원래도 그룹형이 아니라 groupingBar는 (변화 없이) 여전히 없다. 타일 탭 시 '
-    'context.pop(id)로 결과를 반환한다',
+    '코디 선택 모달(/composition/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
+    '없으며 groupingBar는 그대로 노출된다. 타일 탭 시 context.pop(id)로 결과를 반환한다',
     (tester) async {
       await pumpApp(tester);
 
       String? poppedResult;
       final context = tester.element(find.byType(SelectableGalleryTile).first);
-      GoRouter.of(context).push<String>(AppRoute.styleLogSelect).then((value) {
+      GoRouter.of(context).push<String>(AppRoute.compositionSelect).then((value) {
         poppedResult = value;
       });
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(StyleLogMainScreen), findsOneWidget);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
       expect(closeButtonFinder(), findsOneWidget);
       expect(backButtonFinder(), findsNothing);
       expect(find.byType(CategoryToggleDropdown), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.textContaining('분류 선택 바'), findsNothing);
-      expect(find.byType(StyleLogGalleryTile), findsNWidgets(2));
+      expect(find.textContaining('분류 선택 바'), findsOneWidget);
+      expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
 
-      await tester.tap(find.byKey(const ValueKey('log01')));
+      await tester.tap(find.byKey(const ValueKey('comp01')));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(poppedResult, 'log01');
+      expect(poppedResult, 'comp01');
     },
   );
 ```
+
+이 블록은 Task 4에서 이미 `expect(find.byType(CompositionDetailScreen), findsNothing)` 라인(그때 함께 지워진 미사용 import 대상)을 제거해둔 상태이므로, 이 Step에서는 그 라인을 다시 넣지 않고 위 코드 그대로 반영한다.
 
 - [ ] **Step 5: `ProviderScope` override로 "미연결 → + 바인딩 항목" 케이스를 격리 검증하는 위젯 테스트 2개 추가**
 
