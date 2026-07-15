@@ -1,5 +1,18 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `composition_preview_carousel.dart`/`composition_detail_screen.dart`에 `AppSpacing` 미등재 매직넘버 — 로컬 named const로 유지 중
+
+상태: 미해결
+
+내용:
+Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-07-16)가 지적: `lib/widgets/composition_preview_carousel.dart`의 `height: 200`(카드 영역), `viewportFraction: 0.82`(PageView), 페이지 인디케이터 점 `width`/`height: 6`, `margin: 2`가 이름 없는 리터럴로 있었다. `CrossReferenceLinkBar.height`(아래 항목 참고) 전례를 따라 `_cardAreaHeight`/`_pageViewportFraction`/`_dotSize`/`_dotMargin` 이름의 로컬 `static const`로 승격하고 출처 주석을 달아 해소(같은 커밋에서 수정).
+
+같은 Review가 `lib/screens/composition_detail_screen.dart`(Task 4, 커밋 `e015319`)의 "사용된 옷" 가로 스크롤 스트립에 있는 `height: 96`(스트립 전체 높이), 각 아이템 썸네일 `width: 72`(정사각 `SizedBox`라 `height`도 동일하게 72)도 동일하게 미등재 상태이나 이번엔 로그만 되고 아직 손대지 않았다고 함께 지적 — 두 파일 모두 확정된 디자인 값이라 급하지 않으나(막지 않음, not blocking), 다음에 이 두 파일 중 하나를 다시 열 때 `AppSpacing`으로 정식 토큰화 검토.
+
+조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, `composition_preview_carousel.dart`의 로컬 const 4개와 `composition_detail_screen.dart`의 `height: 96`/`width: 72`를 함께 정식 토큰으로 승격 검토(성격이 비슷한 "가로 스크롤 스트립/캐러셀 고정 치수" 값들이라 한 번에 정리하는 게 효율적).
+
+---
+
 [TechDebt] 코디↔스타일일지 바인딩 액션(`_bindStyleLog`/`_bindComposition`)에 `context.mounted` 가드 부재 (P2)
 
 상태: 미해결(리스크 낮음으로 판단, 착수 보류)

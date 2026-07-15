@@ -19,7 +19,19 @@ class CompositionPreviewCarousel extends StatefulWidget {
 }
 
 class _CompositionPreviewCarouselState extends State<CompositionPreviewCarousel> {
-  final _controller = PageController(viewportFraction: 0.82);
+  /// `AppSpacing` 등재 전까지 유지하는 로컬 값(TechnicalDebt 기록됨) — 카드 영역 고정 높이.
+  static const double _cardAreaHeight = 200;
+
+  /// `AppSpacing` 등재 전까지 유지하는 로컬 값(TechnicalDebt 기록됨) — 옆 카드가 살짝 보이는 비율.
+  static const double _pageViewportFraction = 0.82;
+
+  /// `AppSpacing` 등재 전까지 유지하는 로컬 값(TechnicalDebt 기록됨) — 페이지 인디케이터 점 크기.
+  static const double _dotSize = 6;
+
+  /// `AppSpacing` 등재 전까지 유지하는 로컬 값(TechnicalDebt 기록됨) — 인디케이터 점 사이 여백.
+  static const double _dotMargin = 2;
+
+  final _controller = PageController(viewportFraction: _pageViewportFraction);
   int _page = 0;
 
   @override
@@ -34,7 +46,7 @@ class _CompositionPreviewCarouselState extends State<CompositionPreviewCarousel>
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
 
     return SizedBox(
-      height: 200,
+      height: _cardAreaHeight,
       child: Column(
         children: [
           Expanded(
@@ -61,9 +73,9 @@ class _CompositionPreviewCarouselState extends State<CompositionPreviewCarousel>
               children: [
                 for (var i = 0; i < widget.compositions.length; i++)
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    width: 6,
-                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: _dotMargin),
+                    width: _dotSize,
+                    height: _dotSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: i == _page ? semantic.gray900 : semantic.gray200,
