@@ -1064,6 +1064,7 @@ git commit -m "feat(screen): bind real data to 코디 상세 + wire style-log bi
 - Modify: `lib/screens/composition_main_screen.dart`
 - Modify: `integration_test/detail_screens_header_hud_test.dart`
 - Modify: `integration_test/selection_modal_test.dart`
+- Modify: `integration_test/closet_item_detail_data_binding_test.dart` (Task 3 Tester 작성 — 110번째 줄 근처 `log01` 원시 id assertion을 이 Task가 만드는 실제 콘텐츠 기준으로 교체, 파일에 인계 주석 있음)
 - Test: `test/screens/composition_detail_screen_test.dart` (신규)
 - Test: `test/screens/style_log_viewer_screen_test.dart` (신규)
 
