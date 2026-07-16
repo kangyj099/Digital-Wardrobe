@@ -78,7 +78,12 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 /// id("test-id")를 그대로 push하면 `firstWhere`가 `StateError`를 던져 테스트가 깨진다 — 테스트의
 /// 실제 의도(라우터가 id를 정확히 넘기고 화면이 그 id로 올바르게 렌더링되는지 확인)는 존재하지 않는
 /// id를 요구하지 않으므로, 실재하는 mock id(comp01)로 교체하고 raw id echo 대신 실제 렌더링된 코디
-/// 이름 확인으로 갱신한다(`StyleLogViewerScreen`은 아직 skeleton이라 25번은 그대로 유효).
+/// 이름 확인으로 갱신한다.
+///
+/// [갱신, Task 7 재검증] `StyleLogViewerScreen`도 Task 7에서 실제 데이터 바인딩으로 교체되며
+/// `styleLogsProvider`를 `firstWhere`로 조회하게 됐다 — 25번 테스트가 쓰던 존재하지 않는 픽스처
+/// id("test-id")를 그대로 push하면 마찬가지로 `StateError`가 던져진다. 24번과 동일한 이유로
+/// 실재하는 mock id(log01)로 교체하고 raw id echo 대신 실제 착용일자 렌더링 확인으로 갱신한다.
 ///
 /// 아래는 `CompositionEditorScreen`/`StyleLogAddScreen`(Task E) 검증 시 신설한
 /// 테스트(26~27번). 두 화면 모두 상위 메인 화면(코디 메인/스타일일지 메인)의 FAB가
@@ -733,23 +738,25 @@ void main() {
   );
 
   testWidgets(
-    '[갱신됨, Step④ 재검증] 옷장 메인 위에 /style-log/:id 를 인위적으로 push하면 '
+    '[갱신됨, Task 7 재검증] 옷장 메인 위에 /style-log/:id 를 인위적으로 push하면 '
     'StyleLogViewerScreen이 실제로 렌더링되고, AppMainScaffold 헤더(⋯더보기 GlassCircleButton)가 '
-    '나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 (정상 UI 플로우로는 아직 도달 '
-    '불가능한 화면 — 스타일일지 메인이 스켈레톤이라 뷰어로 가는 진입 UI가 없는 것이 플랜에 명시된 '
-    '의도된 상태. Step④ 이전엔 skeletonRegion 텍스트 "헤더"로 확인했으나, AppMainScaffold 마이그레이션 '
-    '후 그 텍스트가 사라져 "더보기 메뉴" 툴팁으로 확인 대상을 갱신)',
+    '나타나며 id로 조회된 실제 스타일일지 데이터가 화면 본문에 렌더링된다 (정상 UI 플로우로는 아직 '
+    '도달 불가능한 화면 — 스타일일지 메인이 스켈레톤이라 뷰어로 가는 진입 UI가 없는 것이 플랜에 명시된 '
+    '의도된 상태. Task 7에서 화면이 `styleLogsProvider`를 `firstWhere`로 조회하도록 실제 데이터 '
+    '바인딩되며, 존재하지 않는 id("test-id")를 인위적으로 push하면 firstWhere가 StateError를 던지게 '
+    '됐다 — 실재하는 mock id(log01)로 교체하고 raw id echo 대신 실제 착용일자("2026.1.5") 렌더링 '
+    '확인으로 갱신한다)',
     (tester) async {
       await pumpClosetMain(tester);
 
       final context = tester.element(find.byType(SelectableGalleryTile).first);
-      GoRouter.of(context).push('${AppRoute.styleLogMain}/test-id');
+      GoRouter.of(context).push('${AppRoute.styleLogMain}/log01');
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
       expect(find.byTooltip('더보기 메뉴'), findsOneWidget);
-      expect(find.textContaining('test-id'), findsOneWidget);
+      expect(find.textContaining('2026.1.5'), findsOneWidget);
     },
   );
 

@@ -12,6 +12,7 @@ import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
 import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
@@ -28,7 +29,7 @@ import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 /// 2) Header/HUD Pinned Rule — 카테고리 드롭다운과 "더보기" 버튼이 물리적으로 독립된
 ///    위젯으로 겹치지 않고 각자 반응하는지.
 /// 3) FrostedBackButton이 Detail 3화면 전부에서 실제로 나타나고 pop이 동작하는지.
-/// 4) Detail 화면 skeleton body(Task 3~5 전까지 임시 문구)가 실제로 렌더링되는지.
+/// 4) Detail 화면 하단 크로스 레퍼런스(연결된 코디/스타일일지)가 실제 mock 데이터로 렌더링되는지.
 /// 6) Detail 화면에서 카테고리 드롭다운으로 다른 메인 화면 이동이 실제로 동작하는지.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -103,7 +104,10 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-      expect(find.textContaining(log.id), findsOneWidget);
+      expect(
+        find.textContaining('${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -257,9 +261,9 @@ void main() {
     });
   });
 
-  // ── 4) Detail 화면 skeleton body 렌더링 ──────────────────────────────────
+  // ── 4) Detail 화면 크로스 레퍼런스 실데이터 렌더링 ─────────────────────────
 
-  group('Detail 화면 skeleton body 렌더링(Task 3~5 전까지)', () {
+  group('Detail 화면 크로스 레퍼런스 실데이터 렌더링', () {
     testWidgets('옷 상세 화면 하단에 연결된 코디 캐러셀/스타일일지 갤러리가 실제로 보인다(빈 화면처럼 보이지 않음)',
         (tester) async {
       await pumpApp(tester);
@@ -285,13 +289,19 @@ void main() {
       expect(find.textContaining('2026-01-05'), findsOneWidget); // log01.wornDate(StyleLogGalleryTile 라벨 포맷)
     });
 
-    testWidgets('스타일일지 상세 화면 본문에도 skeleton 안내 문구가 보인다', (tester) async {
+    testWidgets('스타일일지 상세 화면 하단에 연결된 코디 카드가 보인다(mock 기준 log01은 comp01에 연결됨)',
+        (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
-      await tester.tap(find.byType(StyleLogGalleryTile).first);
+      // filteredStyleLogsProvider는 날짜 내림차순이라 log02(2026.1.10)가 먼저 나온다 —
+      // log01을 명시적으로 골라 comp01 연결을 검증한다.
+      await tester.tap(find.byKey(const ValueKey('log01')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Task 5에서 실제 바인딩 예정'), findsOneWidget);
+      // linkedComposition이 있으면 CrossReferenceLinkBar(빈 리스트)가 아니라
+      // CompositionPreviewCard로 렌더링된다.
+      expect(find.byType(CompositionPreviewCard), findsOneWidget);
+      expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
   });
 

@@ -111,10 +111,9 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-        // 주의: StyleLogViewerScreen이 아직 skeleton이라 log01 원시 id를 그대로 검사한다.
-        // Task 7(스타일일지 열람 실데이터 바인딩) 완료 시 실제 콘텐츠(예: 착용일자 2026-01-05)를
-        // 기준으로 이 assertion을 교체해야 한다.
-        expect(find.textContaining('log01'), findsOneWidget);
+        // Task 7(스타일일지 열람 실데이터 바인딩) 완료 — log01.wornDate(2026.1.5)를 실제
+        // 콘텐츠 기준으로 검사한다(StyleLogViewerScreen의 날짜 라벨 포맷).
+        expect(find.textContaining('2026.1.5'), findsOneWidget);
       },
     );
   });

@@ -267,8 +267,8 @@ void main() {
   );
 
   testWidgets(
-    '스타일일지 타일 탭 시 올바른 id로 /style-log/:id (열람 skeleton)로 이동하고, id가 화면에 '
-    '그대로 보간된다',
+    '스타일일지 타일 탭 시 올바른 id로 /style-log/:id로 이동하고, 실제 콘텐츠(착용일자)가 렌더링된다 '
+    '(Task 7 — 스타일일지 열람 실데이터 바인딩 완료로 skeleton id echo는 더 이상 유효하지 않음)',
     (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
@@ -278,7 +278,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-      expect(find.textContaining('log01'), findsOneWidget);
+      expect(find.textContaining('2026.1.5'), findsOneWidget); // log01.wornDate
     },
   );
 

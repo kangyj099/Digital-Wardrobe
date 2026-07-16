@@ -126,7 +126,8 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-      expect(find.textContaining('log01'), findsOneWidget);
+      // Task 7(스타일일지 열람 실데이터 바인딩) 완료 — 실제 착용일자 라벨로 검증한다.
+      expect(find.textContaining('2026.1.5'), findsOneWidget);
     });
   });
 
@@ -160,7 +161,8 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.byType(StyleLogViewerScreen), findsOneWidget);
-        expect(find.textContaining('log02'), findsOneWidget);
+        // Task 7(스타일일지 열람 실데이터 바인딩) 완료 — 실제 착용일자 라벨로 검증한다.
+        expect(find.textContaining('2026.1.10'), findsOneWidget);
       },
     );
   });
