@@ -12,8 +12,7 @@ class TopGradientOverlay extends StatelessWidget {
 
   /// 스펙 §2 "Top Gradient" 수치 그대로(height=40px, opacity=0.85, transition .3s ease) —
   /// 이 프로젝트의 공식 스펙 문서가 Source of Truth인 값이라 매직넘버 TechDebt 등록 대상이
-  /// 아니다(이름 있는 const + 출처 주석, 기존 `CrossReferenceLinkBar.height` Review 판정과
-  /// 동일 근거).
+  /// 아니다(이름 있는 const + 출처 주석으로 값의 출처를 명시한 전례와 동일 근거).
   static const double height = 40;
   static const double _visibleOpacity = 0.85;
   static const Duration _fadeDuration = Duration(milliseconds: 300);

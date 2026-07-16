@@ -15,7 +15,6 @@ import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
-import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
@@ -126,11 +125,9 @@ void main() {
 
   group('연결이 전혀 없는 화면(c02) — 빈 상태가 실제로 0 높이인지, 잔여 공간은 없는지', () {
     testWidgets(
-      'c02 상세 — 연결된 코디/스타일일지가 없어 캐러셀/갤러리는 실제 렌더 높이가 0이다. '
-      'CrossReferenceLinkBar도 entries가 비어 있으면 SizedBox.shrink()로 실제 높이 0이어야 '
-      '한다(고정 64px 컨테이너가 죽은 공간으로 남지 않아야 함 — 이전엔 outer SizedBox(height: 64)가 '
-      'entries.isEmpty 여부와 무관하게 유지돼 버그였다, 지금은 CrossReferenceLinkBar.build()가 '
-      'entries.isEmpty일 때 SizedBox.shrink()를 바로 반환하도록 고쳤다)',
+      'c02 상세 — 연결된 코디/스타일일지가 없어 캐러셀/갤러리는 실제 렌더 높이가 0이다 '
+      '(`CrossReferenceLinkBar`는 Task 9에서 폐기됨 — 이제 옷 상세 하단은 이 두 위젯이 전부이고, '
+      '둘 다 SizedBox.shrink()라 죽은 공간이 남지 않는다)',
       (tester) async {
         await pumpApp(tester);
         await tapItemById(tester, 'c02');
@@ -147,14 +144,6 @@ void main() {
           0,
           reason: '연결된 스타일일지가 없으면 갤러리도 실제 높이 0이어야 한다',
         );
-
-        // CrossReferenceLinkBar 자체는 이제 어느 Detail 화면에서도 entries를 받지 않는다.
-        // entries가 비어 있으면 위젯 자체가 SizedBox.shrink()를 반환해 실제 높이도 0이어야
-        // 한다 — 고정 64px 죽은 공간이 남지 않는지 런타임으로 확인.
-        final barFinder = find.byType(CrossReferenceLinkBar);
-        expect(barFinder, findsOneWidget);
-        final barSize = tester.getSize(barFinder);
-        expect(barSize.height, 0);
         expect(tester.takeException(), isNull);
       },
     );

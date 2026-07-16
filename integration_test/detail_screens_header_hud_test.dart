@@ -14,7 +14,6 @@ import 'package:digittal_wardrobe/widgets/app_scroll_container.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
-import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
@@ -344,7 +343,9 @@ void main() {
         await tester.fling(find.byType(SingleChildScrollView), const Offset(0, -2000), 2000);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+        // CrossReferenceLinkBar는 Task 9에서 폐기됨 — 이제 옷 상세 하단 크로스 레퍼런스는
+        // StyleLogCrossReferenceGallery(정사각 2열 타일)가 대신한다.
+        expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
         expect(scrollable.position.pixels, closeTo(scrollable.position.maxScrollExtent, 1));
       },
     );
