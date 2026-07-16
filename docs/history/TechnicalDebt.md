@@ -11,7 +11,9 @@ Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-
 
 **추가(Task 7 Review, 2026-07-16)**: `lib/screens/style_log_viewer_screen.dart`(커밋 `7f6db21`)의 "추가 사진" 가로 스크롤 스트립에도 동일 패턴(`height: 96` ×2, `width: 96`)이 이름 없는 리터럴로 추가됐다 — 같은 종류의 값이라 이 항목에 함께 등재.
 
-조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, `composition_preview_carousel.dart`의 로컬 const 4개와 `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 `height: 96`/`width: 72`/`width: 96`을 함께 정식 토큰으로 승격 검토(성격이 비슷한 "가로 스크롤 스트립/캐러셀 고정 치수" 값들이라 한 번에 정리하는 게 효율적).
+**정정(Task 8, 2026-07-16)**: 사용자가 스타일일지 열람 카드 구조를 스펙 원문(대표이미지→코디 슬롯 2페이지 캐러셀)대로 정정 지시 — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고. 이 재구현 과정에서 `composition_preview_carousel.dart`의 `_cardAreaHeight`/`_pageViewportFraction`(고정 200/0.82) 상수 자체가 `AspectRatio(1)` 풀블리드 방식으로 교체되며 **사라진다** — 이 두 상수에 대한 이 항목의 미해결 상태는 Task 8/9 완료로 자연 해소. 나머지(`_dotSize`/`_dotMargin`, `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 `height: 96`/`width: 72`/`width: 96`)는 여전히 미등재 상태로 남음.
+
+조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, 남은 항목들(`_dotSize`/`_dotMargin`, `height: 96`/`width: 72`/`width: 96`)을 정식 토큰으로 승격 검토.
 
 ---
 

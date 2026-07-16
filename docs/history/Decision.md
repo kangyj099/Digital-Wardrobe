@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 스타일일지 열람 카드 구조를 스펙 원문대로 정정(대표이미지/코디 슬롯 2페이지 캐러셀) + 옷장 상세 정사각형 통일 + `crossReferenceEntries` 폐기 (UI/Screen, Decision — 아래 "Detail 화면 상호참조를..." 항목을 부분 정정)
+
+결정:
+- **스타일일지 열람 = 2페이지 스와이프 캐러셀**: `03_스타일 일지.md` 23번 줄 "카드 구조: 대표이미지(1번, 고정) → 코디 슬롯(2번, 고정)"을 문자 그대로 구현한다. Task 7에서 구현했던 "커버 이미지 + 하단에 별도 `CompositionPreviewCard`/칩" 방식은 이 스펙을 어겨 폐기 — **직전 Task 7 작업 중 이 방식으로 진행하라고 한 지시가 있었다면 그 지시는 전부 무효**(사용자 확인, 2026-07-16). 대표이미지(1페이지)와 코디 슬롯(2페이지, 연결됨=`CompositionPreviewCard`/미연결="+" 플레이스홀더)을 하나의 스와이프 가능한 `PageView`(정사각형, 풀블리드, 2개뿐이라도 페이지 인디케이터 점 표시)로 묶는다. 화면 하단에 별도로 코디 이미지/칩이 있으면 안 됨.
+- **"추가 사진" 라벨 정정 → "착용 옷"**: `StyleLog.additionalImagePaths`는 실제로는 이 스타일일지에서 착용한 옷들의 이미지다(mock 데이터 확인: `log01.additionalImagePaths`가 `c11`/`c07`의 `imagePath`와 동일값) — Task 7이 "추가 사진"으로 잘못 이름 붙였을 뿐 기능 자체는 이미 있었다. 라벨을 "착용 옷"으로 바꾸고, 각 이미지를 탭하면 `ClothingItem.imagePath` 역참조로 해당 옷을 찾아 옷 상세로 이동하도록 배선한다(모델 필드 추가 없이 기존 데이터로 충분 — 매칭 안 되면 탭 비활성).
+- **옷장 상세의 코디 캐러셀/스타일일지 갤러리는 정사각형으로 통일**: `CompositionPreviewCarousel`(옷 상세의 연결된 코디)은 고정 높이(200)+피크 뷰포트(0.82) 대신 `AspectRatio(1)`+풀블리드 페이지로 바꿔 항상 정사각형 카드가 되게 한다(스타일일지 열람의 코디 슬롯과 동일한 시각 언어). `StyleLogCrossReferenceGallery`(옷 상세의 연결된 스타일일지)도 옷 상세에서 쓰일 때는 개수와 무관하게 항상 정사각형(2열 그리드, 1개면 그냥 1칸만 채움)이 되도록 새 파라미터(`expandSingle`, 기본값 `true`)를 추가한다 — **코디 상세**(같은 위젯을 "연결된 스타일일지"에 재사용, `02_코디 UX명세서`의 "2열, 1개면 2칸 확대" 규칙이 이미 승인된 스펙)는 `expandSingle: true`(기존 동작 그대로) 유지, **옷장 상세만** `expandSingle: false`로 호출해 정사각형 강제.
+- **`AppDetailScaffold.crossReferenceEntries`/`CrossReferenceLinkBar` 폐기**: 위 스타일일지 열람 재구현이 끝나면 이 파라미터를 실제로 쓰는 화면이 하나도 안 남는다(코디 상세는 이미 `onAddTap`으로 갈아탔고, 옷 상세는 애초에 안 씀) — 죽은 계약을 남겨두지 않고 `AppDetailScaffold`에서 파라미터 자체를 제거하고 `CrossReferenceLinkBar`/`CrossReferenceLinkEntry` 위젯 파일도 삭제한다(TechDebt로 남겨뒀던 "`crossReferenceEntries` 계약이 애매해졌다"는 Audit 지적의 근본 해결).
+
+사유:
+Audit(2026-07-16)이 스타일일지 열람의 코디 바인딩 UI가 코디 상세와 다르게 생겼고 스펙의 카드 순서(대표이미지→코디 슬롯→추가사진)와도 어긋난다고 P1로 지적. 사용자가 직접 화면을 보고 "2번째 페이지가 코디 슬롯이어야 하고 하단에 코디 이미지가 따로 있으면 안 된다"고 스펙 원문 근거로 정정 지시, 동시에 "추가 사진"이 사실 "착용 옷"이라는 것과 옷장 상세의 코디/스타일일지 썸네일이 정사각형이어야 한다는 것도 함께 확인.
+
+Impact:
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 8(스타일일지 열람 카드 캐러셀 재구현)/Task 9(옷장 상세 정사각형 통일 + crossReferenceEntries 폐기) 추가.
+- `docs/history/TechnicalDebt.md`의 "`CrossReferenceLinkBar` 계약 애매해짐"/"`composition_preview_carousel.dart` 매직넘버"(고정 height/viewportFraction 상수 자체가 이번에 사라짐) 항목 갱신.
+
+---
+
 [Decision] Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장, `Composition.coverImagePath` 필드 신설, 코디 아이템 개수 상한 15개 (UI/Screen, Decision)
 
 결정:

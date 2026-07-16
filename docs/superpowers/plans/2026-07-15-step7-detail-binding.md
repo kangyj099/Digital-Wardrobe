@@ -2,9 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **이 프로젝트는 위 스킬 대신 CLAUDE.md의 자체 하네스(PM→Worker→Review→Tester)로 실행된다.** 각 Task는 Layer=UI/Screen 또는 Data/Architecture, Stage=Implementation(Frontend)로 태깅된다. Task 1/5는 화면 변경이 없어 Worker→Review만 돈다. Task 2~4, 6~7은 실제 화면 렌더링/상호작용이 생기므로 Worker→Review→Tester를 매번 돈다(CLAUDE.md §4). 이 Plan 전체(7개 Task, 모델+provider+화면 5개+Main 2개+신규 위젯 2개에 걸친 교차 변경)는 L 사이즈로 취급 — Task 7의 Tester 통과 직후, 완료 처리 전에 Audit을 한 번 더 돌린다(CLAUDE.md §4).
+> **이 프로젝트는 위 스킬 대신 CLAUDE.md의 자체 하네스(PM→Worker→Review→Tester)로 실행된다.** 각 Task는 Layer=UI/Screen 또는 Data/Architecture, Stage=Implementation(Frontend)로 태깅된다. Task 1/5는 화면 변경이 없어 Worker→Review만 돈다. Task 2~4, 6~9는 실제 화면 렌더링/상호작용이 생기므로 Worker→Review→Tester를 매번 돈다(CLAUDE.md §4). 이 Plan 전체(9개 Task)는 L 사이즈로 취급 — Task 7 Tester 통과 직후 1차 Audit(P1 2건 발견, Task 8/9로 즉시 착수), **Task 9 Tester 통과 직후 2차(최종) Audit을 한 번 더 돈다**(CLAUDE.md §4 — 코드가 다시 바뀌었으므로).
 >
 > **Task 5/6 추가 경위(2026-07-16)**: 사용자가 Task 3/4 완료 후 실제 화면을 보고 "연결된 코디/스타일일지가 텍스트뿐이라 썸네일 이미지를 추가해달라"고 요청 — `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목 참고. Task 5/6은 원래 Task 5였던 "스타일일지 열람 실데이터 바인딩 + 코디 바인딩"보다 앞에 삽입됐다 — 원 Task 5가 신설되는 `CompositionPreviewCard` 위젯(Task 6 산출물)을 소비하기 때문(뒤로 미루면 앞 참조가 됨). 원 Task 5는 그대로 **Task 7**로 번호만 밀렸다(내용 변경 없음, 카드 콘텐츠 위젯 재사용 부분만 소폭 수정).
+>
+> **Task 8/9 추가 경위(2026-07-16)**: Task 7 완료 직후 1차 Audit이 P1 2건 발견 — 스타일일지 열람의 코디 바인딩 UI가 스펙(`03_스타일 일지.md` "대표이미지→코디 슬롯→추가사진" 카드 순서)과 어긋나고 코디 상세와도 다르게 생김, `AppDetailScaffold.crossReferenceEntries` 계약이 애매해짐. 사용자가 직접 스펙 근거로 정정 지시(**Task 7의 "하단 별도 카드/칩" 구현 방식은 폐기 — 그 방식을 지시한 이전 요청이 있었다면 전부 무효**) — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고.
 
 **Goal:** BACKLOG.md "다음 세션 작업"이 지정한 Step⑦ 착수 작업을 완료한다 — (1) 선행 정리 2건(`Composition`/`StyleLog.isIncomplete` 필드, `AppDetailScaffold` 계약 확장), (2) Detail 3화면(옷 상세/코디 상세/스타일일지 열람)의 실제 mock 데이터 바인딩과 화면 간 크로스 레퍼런스 네비게이션, (3) 사용자가 이번 라운드에 포함하기로 확정한 코디↔스타일일지 "바인딩"(기존에 연결된 게 없으면 선택 모달로 새로 연결). 겹친 아이템 팝업, 아트보드 실제 렌더링, 추가사진 드래그 순서변경 등 "편집기"급 상호작용은 이번 라운드 스코프 밖 — 별도 후속 작업으로 BACKLOG에 등록한다(이 Plan은 그 등록까지 하지 않고, 완료 후 PM이 세션 인계 시 처리).
 
@@ -2084,9 +2086,390 @@ git commit -m "feat(screen): bind real data to 스타일일지 열람 + wire com
 
 ---
 
+### Task 8: 스타일일지 열람 카드 캐러셀 재구현 — 대표이미지/코디 슬롯 2페이지 스와이프 (UI/Screen, Implementation/Frontend)
+
+**배경**: Audit(2026-07-16)이 스타일일지 열람의 코디 바인딩 UI가 코디 상세와 다르게 생겼고, `03_스타일 일지.md`의 카드 순서(대표이미지→코디 슬롯→추가사진)와도 어긋난다고 P1 지적. 사용자가 직접 확인 후 정정 지시 — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고. **Task 7에서 구현한 "하단 별도 `CompositionPreviewCard`/칩" 방식은 이 Task로 완전히 대체된다.**
+
+**Files:**
+- Modify: `lib/screens/style_log_viewer_screen.dart`
+- Modify: `integration_test/detail_screens_header_hud_test.dart`
+- Modify: `integration_test/closet_item_detail_data_binding_test.dart`(스타일일지 크로스 레퍼런스 탭 이동 시나리오가 있다면 스타일일지 열람 쪽 화면 구조 변화에 영향받는지 확인)
+- Modify: `test/screens/style_log_viewer_screen_test.dart`
+- New(선택): `integration_test/style_log_composition_binding_test.dart`에 이미 있는 시나리오는 재사용, 화면 구조 변경으로 깨지는 assertion만 수정(Tester가 Task 7 때 만든 파일 — 신규 파일을 또 만들 필요는 없음, 기존 파일 갱신)
+
+**Interfaces:**
+- Consumes: `compositionCoverImageProvider`(Task 5), `CompositionPreviewCard`(Task 6), `closetItemsProvider`(`lib/providers/closet_providers.dart`)
+- Produces: 스타일일지 열람 body의 최상단이 이제 `PageView` 2페이지(대표이미지/코디 슬롯) — 화면 하단의 `crossReferenceEntries`/`CrossReferenceLinkBar` 사용을 이 화면에서 완전히 제거(다음 Task 9가 이 계약 자체를 폐기).
+
+- [ ] **Step 1: 대표이미지/코디 슬롯을 하나의 정사각형 2페이지 `PageView`로 묶기**
+
+`ConsumerWidget` → `ConsumerStatefulWidget`으로 전환(현재 페이지 인덱스를 페이지 인디케이터 점에 반영하려면 상태가 필요). 구조:
+
+```dart
+class StyleLogViewerScreen extends ConsumerStatefulWidget {
+  const StyleLogViewerScreen({super.key, required this.styleLogId});
+  final String styleLogId;
+
+  @override
+  ConsumerState<StyleLogViewerScreen> createState() => _StyleLogViewerScreenState();
+}
+
+class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
+  final _pageController = PageController();
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _bindComposition(BuildContext context, WidgetRef ref, String styleLogId) async {
+    final selectedCompositionId = await context.push<String>(AppRoute.compositionSelect);
+    if (!context.mounted) return;
+    if (selectedCompositionId != null) {
+      ref.read(styleLogsProvider.notifier).linkToComposition(styleLogId, selectedCompositionId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final log = ref.watch(styleLogsProvider).firstWhere((l) => l.id == widget.styleLogId);
+    final linkedComposition = log.linkedCompositionId == null
+        ? null
+        : ref.watch(compositionsProvider).firstWhere((c) => c.id == log.linkedCompositionId);
+    final closetItems = ref.watch(closetItemsProvider);
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+
+    return AppDetailScaffold(
+      category: AppCategory.styleLog,
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (page) => setState(() => _page = page),
+                  children: [
+                    log.coverImagePath.isEmpty
+                        ? Container(color: semantic.gray200)
+                        : Image.asset(log.coverImagePath, fit: BoxFit.cover),
+                    linkedComposition != null
+                        ? CompositionPreviewCard(
+                            composition: linkedComposition,
+                            onTap: () => context.push(
+                              AppRoute.compositionDetail.replaceFirst(':id', linkedComposition.id),
+                            ),
+                          )
+                        : _CompositionAddSlide(
+                            onTap: () => _bindComposition(context, ref, widget.styleLogId),
+                          ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < 2; i++)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: i == _page ? semantic.gray900 : semantic.gray200,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              '${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'
+              '${log.location.isEmpty ? '' : '  ${log.location}'}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            if (log.additionalImagePaths.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text('착용 옷', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: AppSpacing.xs),
+              SizedBox(
+                height: 96,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: log.additionalImagePaths.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.xs),
+                  itemBuilder: (context, index) {
+                    final path = log.additionalImagePaths[index];
+                    final match = closetItems.where((i) => i.imagePath == path);
+                    final item = match.isEmpty ? null : match.first;
+                    return GestureDetector(
+                      onTap: item == null
+                          ? null
+                          : () => context.push(
+                              AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        child: Image.asset(path, width: 96, fit: BoxFit.cover),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompositionAddSlide extends StatelessWidget {
+  const _CompositionAddSlide({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    return Material(
+      color: semantic.gray100,
+      child: InkWell(
+        onTap: onTap,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add),
+              Text('코디 연결하기', style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+`crossReferenceEntries`를 `AppDetailScaffold` 호출에서 완전히 제거(생략, 기본값 `const []`). `import '../widgets/cross_reference_link_bar.dart';`도 이제 필요 없으면 제거(Task 9가 그 파일 자체를 지울 예정이니 지금 지워도, 안 지워도 다음 Task에서 정리됨 — 어느 쪽이든 상관없음).
+
+"착용 옷" 매칭 로직(`closetItems.where((i) => i.imagePath == path)`)은 `mock_data.dart` 기준 log01의 두 경로가 각각 c11/c07의 `imagePath`와 정확히 일치함을 전제로 한다 — 이미 확인된 데이터 정합성.
+
+- [ ] **Step 2: 기존 통합/위젯 테스트 갱신**
+
+`integration_test/detail_screens_header_hud_test.dart`/`test/screens/style_log_viewer_screen_test.dart`의 "연결된 코디" 관련 assertion을 `find.byType(CompositionPreviewCard)`가 (텍스트 칩이 아니라) 2페이지 캐러셀 안에서 보이는 것으로, "코디 연결하기" 관련 assertion을 `_CompositionAddSlide`/`find.text('코디 연결하기')`가 캐러셀 2페이지 자리에서 보이는 것으로 갱신. `PageView`는 기본적으로 두 페이지 모두 프리로드되지 않을 수 있으니, 두 번째 페이지 내용을 확인하려면 `tester.drag`로 스와이프하거나 `_pageController.jumpToPage(1)`을 테스트에서 직접 트리거하는 방식 검토(Worker 재량 — `PageView`는 기본 `viewportFraction: 1.0`이라 인접 페이지도 실제로는 빌드되어 있을 가능성이 높음, 직접 확인).
+
+- [ ] **Step 3: `flutter analyze` 확인**
+
+```bash
+flutter analyze lib/screens/style_log_viewer_screen.dart integration_test/ test/screens/
+```
+
+- [ ] **Step 4: Tester 통합테스트 실행**
+
+```bash
+taskkill //F //IM digittal_wardrobe.exe
+flutter test integration_test/detail_screens_header_hud_test.dart integration_test/style_log_composition_binding_test.dart integration_test/closet_item_detail_data_binding_test.dart -d windows
+flutter test test/screens/
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/screens/style_log_viewer_screen.dart integration_test/ test/screens/style_log_viewer_screen_test.dart
+git commit -m "feat(screen): rebuild 스타일일지 열람 as 2-page cover/composition carousel, rename 추가사진→착용옷 with clothing-detail nav"
+```
+
+---
+
+### Task 9: 옷장 상세 정사각형 통일 + `crossReferenceEntries`/`CrossReferenceLinkBar` 폐기 (UI/Screen, Implementation/Frontend)
+
+**배경**: Task 8 완료 후 `crossReferenceEntries`를 실제로 쓰는 화면이 하나도 남지 않는다(코디 상세는 `onAddTap`, 옷 상세는 애초에 미사용, 스타일일지 열람은 Task 8로 제거). 죽은 계약을 남기지 않고 정리한다. 동시에 사용자가 옷 상세의 코디 캐러셀/스타일일지 갤러리를 정사각형으로 통일하라고 지시(코디 상세의 "1개면 2칸 확대" 규칙은 승인된 스펙이라 그대로 유지) — `docs/history/Decision.md` 참고.
+
+**Files:**
+- Modify: `lib/widgets/composition_preview_carousel.dart` (고정 height/viewportFraction → `AspectRatio(1)` 풀블리드로 교체)
+- Modify: `lib/widgets/style_log_cross_reference_gallery.dart` (`expandSingle` 파라미터 추가, 기본값 `true`)
+- Modify: `lib/screens/closet_item_detail_screen.dart` (`StyleLogCrossReferenceGallery(... expandSingle: false)` 호출로 갱신)
+- Modify: `lib/screens/app_detail_scaffold.dart` (`crossReferenceEntries` 파라미터 제거)
+- Delete: `lib/widgets/cross_reference_link_bar.dart`, `test/widgets/cross_reference_link_bar_test.dart`
+- Modify: `lib/widgets/top_gradient_overlay.dart` (주석에서 `CrossReferenceLinkBar` 참조 제거 — 삭제될 클래스를 근거로 인용하고 있으므로 일반화된 문구로 교체)
+- Modify: 남은 통합테스트 중 `CrossReferenceLinkBar` import/assertion이 있는 파일 전부(`grep -rl CrossReferenceLinkBar integration_test/ test/`로 확인 후 정리 — Task 6/8 완료 시점 기준 `detail_cross_reference_visuals_test.dart` 등)
+
+**Interfaces:**
+- Consumes: 없음(순수 리팩터)
+- Produces: `CompositionPreviewCarousel`가 항상 정사각형 페이지를 렌더링, `StyleLogCrossReferenceGallery(expandSingle: false)`가 항상 정사각형(2열, 1개면 한 칸만 채움) 렌더링, `AppDetailScaffold(category, body)` — `crossReferenceEntries` 없는 2-파라미터 계약으로 축소.
+
+- [ ] **Step 1: `composition_preview_carousel.dart`를 `AspectRatio(1)` 풀블리드로 교체**
+
+```dart
+@override
+Widget build(BuildContext context) {
+  if (widget.compositions.isEmpty) return const SizedBox.shrink();
+  final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+
+  return Column(
+    children: [
+      AspectRatio(
+        aspectRatio: 1,
+        child: PageView.builder(
+          controller: _controller, // PageController() 기본값(viewportFraction 1.0)으로 교체
+          itemCount: widget.compositions.length,
+          onPageChanged: (page) => setState(() => _page = page),
+          itemBuilder: (context, index) {
+            final composition = widget.compositions[index];
+            return CompositionPreviewCard(
+              composition: composition,
+              onTap: () => widget.onTap(composition),
+            );
+          },
+        ),
+      ),
+      if (widget.compositions.length > 1) ...[
+        const SizedBox(height: AppSpacing.xs),
+        Row(/* 기존 점 인디케이터 코드 그대로 */),
+      ],
+    ],
+  );
+}
+```
+
+`_cardAreaHeight`/`_pageViewportFraction` 로컬 const는 더 이상 필요 없으면 제거(사용처가 없어지므로) — `_dotSize`/`_dotMargin`은 그대로 유지. `PageController(viewportFraction: _pageViewportFraction)` 생성 코드도 기본 `PageController()`로 단순화.
+
+- [ ] **Step 2: `style_log_cross_reference_gallery.dart`에 `expandSingle` 파라미터 추가**
+
+```dart
+class StyleLogCrossReferenceGallery extends StatelessWidget {
+  const StyleLogCrossReferenceGallery({
+    super.key,
+    required this.logs,
+    required this.onTap,
+    this.onAddTap,
+    this.expandSingle = true,
+  });
+
+  final List<StyleLog> logs;
+  final void Function(StyleLog styleLog) onTap;
+  final VoidCallback? onAddTap;
+
+  /// true(기본값, 코디 상세 전용)면 `02_코디 UX명세서`의 "1개면 2칸 확대" 규칙대로 1개일 때
+  /// 가로로 넓은 타일. false(옷 상세 전용)면 개수와 무관하게 항상 정사각형 타일.
+  final bool expandSingle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (logs.isEmpty) {
+      if (onAddTap == null) return const SizedBox.shrink();
+      return _AddTile(onTap: onAddTap!);
+    }
+
+    final singleRow = expandSingle && logs.length == 1;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: logs.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: singleRow ? 1 : 2,
+        crossAxisSpacing: AppSpacing.xs,
+        mainAxisSpacing: AppSpacing.xs,
+        childAspectRatio: singleRow ? 2 : 1,
+      ),
+      itemBuilder: (context, index) {
+        final log = logs[index];
+        return StyleLogGalleryTile(styleLog: log, onTap: () => onTap(log));
+      },
+    );
+  }
+}
+```
+
+- [ ] **Step 3: `closet_item_detail_screen.dart` 호출부에 `expandSingle: false` 추가**
+
+```dart
+StyleLogCrossReferenceGallery(
+  logs: linkedStyleLogs,
+  onTap: (log) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
+  expandSingle: false,
+),
+```
+
+`composition_detail_screen.dart`는 손대지 않는다(기본값 `true`가 이미 기존 동작과 동일).
+
+- [ ] **Step 4: `AppDetailScaffold`에서 `crossReferenceEntries` 제거**
+
+```dart
+class AppDetailScaffold extends StatelessWidget {
+  const AppDetailScaffold({super.key, required this.category, required this.body});
+
+  final AppCategory category;
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) {
+    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: false);
+
+    return AppMainScaffold(
+      current: category,
+      headerActions: [
+        GlassCircleButton(icon: Icons.more_horiz, tooltip: '더보기 메뉴', onTap: () {}),
+      ],
+      body: AppScrollContainer(
+        topHintThreshold: contentTopSpacing,
+        builder: (context, controller) => SingleChildScrollView(
+          controller: controller,
+          padding: EdgeInsets.only(top: contentTopSpacing),
+          child: body,
+        ),
+      ),
+    );
+  }
+}
+```
+
+`import '../widgets/cross_reference_link_bar.dart';`도 제거.
+
+- [ ] **Step 5: `lib/widgets/cross_reference_link_bar.dart`/`test/widgets/cross_reference_link_bar_test.dart` 삭제**
+
+호출부가 완전히 사라졌는지(`grep -r CrossReferenceLinkBar lib/ integration_test/ test/`) 먼저 확인한 뒤 삭제.
+
+- [ ] **Step 6: `lib/widgets/top_gradient_overlay.dart`의 주석 정리**
+
+`CrossReferenceLinkBar.height Review 판정과 동일 근거` 부분을, 삭제된 클래스를 가리키지 않도록 일반화(예: "이름 있는 const로 값의 출처를 명시한 전례와 동일 근거").
+
+- [ ] **Step 7: 나머지 관련 통합테스트 정리**
+
+`grep -rl CrossReferenceLinkBar integration_test/`로 남은 파일(예: `detail_cross_reference_visuals_test.dart`)을 찾아 import/assertion 제거 또는 새 위젯 기준으로 교체.
+
+- [ ] **Step 8: `flutter analyze` 확인**
+
+```bash
+flutter analyze lib/ integration_test/ test/
+```
+
+- [ ] **Step 9: Tester 통합테스트 실행**
+
+```bash
+taskkill //F //IM digittal_wardrobe.exe
+flutter test integration_test/detail_screens_header_hud_test.dart integration_test/closet_item_detail_data_binding_test.dart integration_test/composition_detail_data_binding_test.dart integration_test/detail_cross_reference_visuals_test.dart -d windows
+flutter test test/
+```
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add -A
+git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log thumbnails, retire crossReferenceEntries/CrossReferenceLinkBar"
+```
+
+---
+
 ## 완료 후 PM 처리 사항 (이 Plan의 실행 대상 아님 — 세션 인계 메모)
 
-- Task 7 Tester 통과 직후 Audit 1회 실행(이 Plan 전체 = L 사이즈, CLAUDE.md §4). Task 5/6이 중간에 삽입됐으므로 Audit에게 이 두 Task의 신규 위젯(`CompositionPreviewCard`/`CompositionPreviewCarousel`/`StyleLogCrossReferenceGallery`)도 훑도록 안내.
+- Task 7 Tester 통과 직후 1차 Audit 실행 완료(2026-07-16) — P1 2건(스타일일지 열람 코디 바인딩 UI 불일치/스펙 위반, `crossReferenceEntries` 계약 애매함) 발견, 사용자가 즉시 착수 지시 → Task 8/9로 추가. **Task 9 Tester 통과 직후 2차(최종) Audit을 한 번 더 실행**해야 이 Plan 전체(9개 Task)가 완료 처리된다(CLAUDE.md §4 — Task 8/9로 코드가 다시 바뀌었으므로 1차 Audit 결과만으로 완료 처리하지 않음).
 - BACKLOG.md Current 갱신: 이 Plan 완료를 "Step⑦ 1라운드(선행 정리 2건 + Detail 3화면 바인딩 + 코디↔스타일일지 바인딩 + 상호참조 썸네일 캐러셀/갤러리) 완료"로 압축 기록.
 - 이번 Plan에서 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)을 BACKLOG "Next" 또는 Current 하위 항목으로 신규 등록.
 - `CompositionGalleryTile`(코디 메인 그리드, 아직 텍스트 전용) TechDebt 항목은 Task 5의 `compositionCoverImageProvider` 덕에 착수 비용이 낮아졌다고 이미 `TechnicalDebt.md`에 기록해뒀음 — 이번 Plan 스코프는 아니라는 점만 재확인, 별도 착수 여부는 다음 세션 판단.
