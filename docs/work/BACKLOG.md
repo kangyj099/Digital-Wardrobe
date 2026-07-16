@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step⑦ 착수 전 선행 작업 2건 완료 (2026-07-15).** (a) `Composition`/`StyleLog` `isIncomplete` 필드 Decision 확정(저장 필드 방식) — 그 논의 중 사용자 제안으로 "상시 저장" 정책이 Record Real-time Save + Editor Draft/Commit/Cancel로 분리되는 더 큰 정책 전환(`docs/history/Decision.md` "Editor 저장 모델 전환")까지 함께 확정, Editor 3화면 실배선은 "Editor Draft 구현" 후속 작업으로 이관. (b) "화면 간 반복 복제된 UI 블록" 5개 사례를 공용 위젯(`ExpandableAddFab`/`GalleryMetaLabel`/`buildSelectionAwareHeaderActions`/`AppDetailScaffold`/`AppDensity.iconFor`)으로 추출, Worker→Review→Tester→Audit(L 사이즈) 전부 통과. Audit이 후속 항목 몇 건 추가 발견 — 상세는 `docs/history/TechnicalDebt.md`.
+**Step⑦ 1라운드(Task 1~9) 완료 (2026-07-16).** Detail 3화면(옷 상세/코디 상세/스타일일지 열람) 실데이터 바인딩 + 코디↔스타일일지 바인딩 + 상호참조 썸네일화(캐러셀/갤러리, 정사각형 통일)까지 전부 Worker→Review→Tester 통과, 2차례 Audit(Task 7 직후 1차: P1 2건 발견→즉시 Task 8/9로 흡수, Task 9 직후 2차 최종: P0/P1 없음) 통과. 상세 경위/커밋: `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`, `docs/history/Decision.md`. 2차 Audit이 남긴 P2/P3 후속 항목은 아래 Current 하위 목록에 등록.
 
 ---
 
@@ -29,19 +29,19 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-1. **Step⑦(기능 구현) 1라운드 진행 중 — Task 1~7 완료(Worker→Review→Tester 전부 통과), Task 8~9 남음(2026-07-16, Task 7 완료 직후 1차 Audit이 P1 2건 발견 → 사용자가 즉시 착수 지시).** 플랜(코드 전부 포함, 그대로 실행 가능): `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`.
-   - **완료**: Task 1~4(이전 세션), Task 5(`Composition.coverImagePath`+파생 provider, `69ee1c0`+`62999ee`), Task 6(코디 프리뷰 캐러셀/카드+스타일일지 2열 갤러리 위젯, 옷 상세·코디 상세 재배선, `1b4b339`+`4dd8875`+`37bb25a`, Tester가 발견한 `CrossReferenceLinkBar` 빈 여백 버그까지 해결 후 재통과 — Review→Tester 사이클 재시작 1회), Task 7(스타일일지 열람 실데이터 바인딩+코디 선택 모달 바인딩, `7f6db21`; 도중 서브에이전트가 API 오류로 끊겨 PM이 직접 검증/커밋 마무리, `d6d62e3`), 문서 정정(`c85f52e`).
-   - **1차 Audit(Task 7 직후) 발견 P1 2건 → 사용자가 스펙 근거로 정정 지시, 즉시 Task 8/9로 편입**: (a) 스타일일지 열람의 코디 바인딩 UI가 `03_스타일 일지.md`의 카드 순서(대표이미지→코디 슬롯→추가사진)를 어기고 코디 상세와도 다르게 생김 — **Task 7이 구현한 "하단 별도 카드/칩" 방식은 폐기**, 대표이미지+코디 슬롯을 정사각형 2페이지 스와이프 캐러셀로 재구현(스펙 원문 그대로). (b) `AppDetailScaffold.crossReferenceEntries` 계약이 애매해짐 — 폐기. 상세: `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 항목.
-   - **사용자가 동시에 확인한 추가 사항**: "추가 사진"으로 잘못 라벨된 스타일일지 하단 가로스크롤이 실은 "착용 옷"(mock 데이터의 `additionalImagePaths`가 실제 `ClothingItem.imagePath`와 매칭됨) — 라벨 정정 + 탭 시 옷 상세 이동 배선. 옷장 상세의 코디 캐러셀/스타일일지 갤러리는 정사각형으로 통일(코디 상세의 "1개면 2칸 확대"는 승인된 스펙이라 그대로 유지).
-   - **다음 착수: Task 8(스타일일지 열람 카드 캐러셀 재구현, UI/Screen)** — Worker→Review→Tester. 그다음 **Task 9(옷장 상세 정사각형 통일 + `crossReferenceEntries`/`CrossReferenceLinkBar` 폐기, UI/Screen)** — Worker→Review→Tester. **Task 9 Tester 통과 직후 2차(최종) Audit 필요**(CLAUDE.md §4 — 코드가 다시 바뀌었으므로 1차 Audit로 완료 처리 안 함).
-   - **1라운드 스코프 밖**(Task 9 완료 후 별도 후속 항목으로 BACKLOG 등록 필요 — Plan 문서 "완료 후 PM 처리 사항" 참고): 겹친 아이템 팝업/아트보드 실제 렌더링, 추가사진(진짜 의미의, 착용 옷과 별개인 순수 추가사진 개념은 이번에 없어짐) 드래그 순서변경, 신규 생성 바인딩, Detail "⋯더보기" 메뉴 실제 연결. 추가로: `CompositionGalleryTile`(코디 메인 그리드) 이미지 업그레이드(착수 비용 낮아짐, TechDebt 참고), 코디 아이템 개수 상한 15개의 실제 코드 반영(Editor 구현 시점, `Decision.md` "Detail 화면 상호참조를..." 항목).
-   - **Step⑦ 나머지 스코프**(1라운드 완료 후 별도 Plan으로 이어감): 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결.
-   - **"Editor Draft 구현"(신규 후속 작업, Step⑦ 전체 완료 후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
-- ~~Detail 3화면 보일러플레이트 중복~~ **완료(2026-07-15)** — 위 (b)에서 `AppDetailScaffold`로 해소(단, 파라미터 협소 문제는 위 Step⑦ 착수 노트 참고).
-- (P2) `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`)가 같은 역할의 `AppMainScaffold`(`lib/widgets/`)와 달리 `lib/widgets/`가 아닌 `lib/screens/`에 배치됨 — Audit(2026-07-15) 발견, 근거가 약한 배치(상세는 `docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목 하단). 호출부가 3곳뿐인 지금이 이동 비용이 가장 쌈, 급하지 않음.
+1. **Step⑦(기능 구현) 1라운드(Task 1~9) 전체 완료 — 다음은 "Step⑦ 나머지 스코프"를 별도 Plan으로 착수.** 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결. 착수 전 이번 라운드가 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)도 함께 Plan에 반영할 것.
+   - **"Editor Draft 구현"(Step⑦ 전체 완료 후 별도 후속 작업)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
+2. **2차(최종) Audit(2026-07-16, Task 9 직후) 발견 P2/P3 — 다음 Step⑦ 나머지 스코프 Plan 착수 전 픽업 검토**:
+   - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 "사용된 옷"/"연결된 스타일일지" 타이틀을 붙이는데 옷 상세는 안 붙임, 비대칭. `closet_item_detail_screen.dart`에 "연결된 코디"/"연결된 스타일일지" `Text(titleSmall)` 헤더 추가로 간단히 해소 가능.
+   - (P2/P3) "착용 옷"(구 "추가 사진")이 스타일일지 열람의 스와이프 카드 슬롯 구조(대표이미지→코디 슬롯)에 포함돼야 하는지 미확정 — `03_스타일 일지.md` 23-24행 문언은 포함되는 것처럼 읽히나, 현재 구현(Task 8)은 별도 가로 스크롤 섹션으로 둠. 사용자 확인 필요(다음 세션 질문 후보).
+   - (P3) `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목의 Impact 문단에 남은 초안 시절 Task 번호(정정 각주로 이미 보강함, `docs/history/Decision.md` 참고) — 추가 조치 불필요, 기록만.
+   - (P3) `composition_detail_screen.dart` 호출부에 `expandSingle: true`를 생략(기본값 의존) — `closet_item_detail_screen.dart`는 `false`를 명시 — 인라인 주석 한 줄이면 비대칭 해소, 급하지 않음.
+   - (P3) `flutter analyze` 미등재 lint 경고 2건(`integration_test/header_hud_stack_architecture_test.dart:200`, `integration_test/settings_trash_shell_test.dart:86`) — 기존 `typography_pass3_test.dart` 항목과 같은 성격, 다음에 해당 파일 손댈 때 정리.
+- ~~Detail 3화면 보일러플레이트 중복~~ **완료(2025-07-15)** — `AppDetailScaffold`로 해소. 이후 Task 9(2026-07-16)에서 `crossReferenceEntries` 계약 자체를 폐기(`CrossReferenceLinkBar`도 삭제) — TechDebt 항목 해소됨.
+- (P2) `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`)가 같은 역할의 `AppMainScaffold`(`lib/widgets/`)와 달리 `lib/widgets/`가 아닌 `lib/screens/`에 배치됨 — Audit(2026-07-15) 발견, 근거가 약한 배치. 호출부가 3곳뿐인 지금이 이동 비용이 가장 쌈, 급하지 않음.
 - 6번째 UI 블록 중복 사례(Editor 3화면 `EditorHeader`+`skeletonRegion` 보일러플레이트, P3, Audit 2026-07-15 발견) — "Editor Draft 구현" 착수로 어차피 재작성될 예정이라 의도적으로 추출 보류(`docs/history/TechnicalDebt.md` 참고).
-- `CrossReferenceLinkBar` Step④ placeholder가 완성된 컨트롤처럼 보여 Visual Review 시 혼동 위험(P3, 위 TechDebt 항목 하단 참고) — 우선순위 낮음, 픽업 시 비활성 스타일 검토.
-- 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설로 방향만 확정, 착수는 보류 중(`docs/history/TechnicalDebt.md`).
+- 코디 타일 표시 방식(Audit P1, Step③ 때 발견)은 `coverImagePath` 필드 신설(Task 5, 2026-07-16 완료)로 착수 비용이 낮아짐 — `CompositionGalleryTile`(코디 메인 그리드) 이미지 업그레이드는 여전히 미착수(TechDebt 참고).
+- 코디 아이템 개수 상한 15개(`Decision.md` 확정, 2026-07-16) — 실제 코드 반영은 Editor 구현 시점.
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
 - (P2, 급하지 않음) 휴지통 mock provider에 삭제 시각(`deletedAt`) 필드가 없어 실제 3-domain 집계 전환 시 "N일 남음" 계산 불가 — 모델에 필드 추가 필요. `mockTrashEntries`의 `t3` 항목이 `remainingDays: 27`로 15일 상한을 넘는 값이라 다음에 손댈 때 0~15 범위로 조정.
 

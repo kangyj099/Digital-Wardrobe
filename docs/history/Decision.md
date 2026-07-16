@@ -36,6 +36,8 @@ Impact:
 - `docs/history/TechnicalDebt.md`에 "`CompositionGalleryTile` 텍스트 전용" 항목 갱신(coverImagePath 필드 생겨 착수 비용이 낮아짐), 코디 개수 상한 15 값은 Editor 구현 시 반영 필요 항목으로 별도 등록.
 - `docs/work/BACKLOG.md` Current 갱신.
 
+**정정(2차 Audit, 2026-07-16)**: 위 Impact의 "Task 6/Task 7" 번호는 이 결정을 작성하던 시점의 초안 번호다 — 실제 최종 Plan 번호는 **Task 5**(모델 필드+파생 provider)/**Task 6**(캐러셀/갤러리 위젯+재배선)이며, Task 7은 이후 삽입된 "원래 Task 5"(스타일일지 열람 바인딩)가 밀린 번호다. `docs/work/BACKLOG.md`/`docs/history/TechnicalDebt.md`는 전부 최종 번호를 쓰고 있음 — 이 항목만 예외였다.
+
 ---
 
 [Decision] Editor 저장 모델 전환 — Record Real-time Save + Editor Draft/Commit/Cancel (Data/Architecture, Editor Draft 구현은 Step⑦ 이후 별도 후속 작업으로 분리)
