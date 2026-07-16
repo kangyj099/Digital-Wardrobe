@@ -181,12 +181,14 @@ Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적
 
 [TechDebt] `CrossReferenceLinkBar.height`(64)가 `AppSpacing`이 아니라 위젯 파일 로컬 const로 남아있음
 
-상태: 미해결
+상태: **해소됨(2026-07-16) — 위젯 자체가 삭제되어 대상 소멸**
 
 내용:
-Step②(Component Library) Task 2-A에서 `lib/widgets/cross_reference_link_bar.dart`를 신설하며 Detail 3화면(옷 상세/코디 상세/스타일일지 열람) skeleton의 `height: 64`(상호 참조 링크 바) 값을 그대로 가져왔으나, 이번 태스크의 Edit 대상에 `lib/theme/app_spacing.dart`가 포함되지 않아 `AppSpacing` 토큰으로 승격하지 못하고 위젯 파일 로컬 `static const`로 남겼다. Review(2026-07-13)에서 하드코딩 원칙 위반은 아니라고 판정(이름 있는 const + 출처 주석 확인)했으나, `app_spacing.dart`가 다음에 Edit 대상에 포함될 때 정식 토큰으로 승격 검토 필요.
+Step②(Component Library) Task 2-A에서 `lib/widgets/cross_reference_link_bar.dart`를 신설하며 Detail 3화면(옷 상세/코디 상세/스타일일지 열람) skeleton의 `height: 64`(상호 참조 링크 바) 값을 그대로 가져왔으나, 이번 태스크의 Edit 대상에 `lib/theme/app_spacing.dart`가 포함되지 않아 `AppSpacing` 토큰으로 승격하지 못하고 위젯 파일 로컬 `static const`로 남겼다. Review(2026-07-13)에서 하드코딩 원칙 위반은 아니라고 판정(이름 있는 const + 출처 주석 확인)했으나, `app_spacing.dart`가 다음에 Edit 대상에 포함될 때 정식 토큰으로 승격 검토가 필요하다고 남겨뒀었다.
 
-**추가 관찰(Step④ Audit, 2026-07-14, P3)**: Detail 3화면이 `CrossReferenceLinkBar`에 넣은 Step④ placeholder entry(`onTap: () {}`, "…Step⑦에서 연동 예정" 라벨)가 `_CrossReferenceLinkChip`(Material+InkWell+`gray100` pill 채움)을 그대로 통과해 렌더링된다 — Main 화면들의 `groupingBar` skeleton(`skeletonRegion()`, 외곽선 박스+텍스트로 명백히 "가짜"임을 표시)과 달리, 실제 완성된 인터랙션 컨트롤과 시각적으로 구분이 안 된다. 의도적 선택(완성된 Step②-A 컴포넌트를 그대로 재사용)이라 문제는 아니지만, Step⑦ 전에 Visual Review를 하는 사람이 "이미 연동된 컨트롤"로 착각할 위험이 있음. 우선순위 낮음 — 픽업 시 placeholder entry에 비활성 느낌(투명도 낮춤 등) 스타일을 주거나, 현재 관례를 그대로 인정하고 주석으로 근거만 남기는 것 중 택1 검토.
+**추가 관찰(Step④ Audit, 2026-07-14, P3)**: Detail 3화면이 `CrossReferenceLinkBar`에 넣은 Step④ placeholder entry(`onTap: () {}`, "…Step⑦에서 연동 예정" 라벨)가 `_CrossReferenceLinkChip`(Material+InkWell+`gray100` pill 채움)을 그대로 통과해 렌더링된다 — Main 화면들의 `groupingBar` skeleton(`skeletonRegion()`, 외곽선 박스+텍스트로 명백히 "가짜"임을 표시)과 달리, 실제 완성된 인터랙션 컨트롤과 시각적으로 구분이 안 된다. 의도적 선택(완성된 Step②-A 컴포넌트를 그대로 재사용)이라 문제는 아니지만, Step⑦ 전에 Visual Review를 하는 사람이 "이미 연동된 컨트롤"로 착각할 위험이 있음.
+
+**해소(Task 9, 2026-07-16)**: Step⑦ Task 8/9(`docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고)에서 `CrossReferenceLinkBar`를 쓰던 마지막 화면(스타일일지 열람)이 2페이지 캐러셀 구조로 재구현되며 이 위젯을 쓰는 화면이 하나도 남지 않아, `AppDetailScaffold.crossReferenceEntries` 계약과 함께 `lib/widgets/cross_reference_link_bar.dart`/`test/widgets/cross_reference_link_bar_test.dart` 자체를 삭제했다(커밋 `732c57b`) — 위 두 관찰 모두 대상 위젯이 사라지며 자연 해소.
 
 ---
 
