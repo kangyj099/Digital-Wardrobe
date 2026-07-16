@@ -73,6 +73,13 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 /// `AppRoute.styleLogMain`)에 테스트 픽스처 id를 이어붙인 경로 문자열을 push해, 화면이
 /// 렌더링되고 id가 실제로 화면에 보간되는지까지 함께 확인한다.
 ///
+/// [갱신, Task 6 재검증] `CompositionDetailScreen`이 Task 6에서 실제 데이터 바인딩으로 교체되며
+/// `compositionsProvider`를 `firstWhere`로 조회하게 됐다. 24번 테스트가 쓰던 존재하지 않는 픽스처
+/// id("test-id")를 그대로 push하면 `firstWhere`가 `StateError`를 던져 테스트가 깨진다 — 테스트의
+/// 실제 의도(라우터가 id를 정확히 넘기고 화면이 그 id로 올바르게 렌더링되는지 확인)는 존재하지 않는
+/// id를 요구하지 않으므로, 실재하는 mock id(comp01)로 교체하고 raw id echo 대신 실제 렌더링된 코디
+/// 이름 확인으로 갱신한다(`StyleLogViewerScreen`은 아직 skeleton이라 25번은 그대로 유효).
+///
 /// 아래는 `CompositionEditorScreen`/`StyleLogAddScreen`(Task E) 검증 시 신설한
 /// 테스트(26~27번). 두 화면 모두 상위 메인 화면(코디 메인/스타일일지 메인)의 FAB가
 /// 아직 no-op(`onPressed: () {}`, Plan Global Constraints 명시)이라 진입 UI가 없어
@@ -700,23 +707,28 @@ void main() {
   // ── 아래부터 CompositionDetailScreen/StyleLogViewerScreen(Task D) 검증 ────────
 
   testWidgets(
-    '[갱신됨, Step④ 재검증] 옷장 메인 위에 /composition/:id 를 인위적으로 push하면 '
+    '[갱신됨, Task 6 재검증] 옷장 메인 위에 /composition/:id 를 인위적으로 push하면 '
     'CompositionDetailScreen이 실제로 렌더링되고, AppMainScaffold 헤더(⋯더보기 GlassCircleButton)가 '
-    '나타나며 강제 non-null 처리된 id가 화면 본문에 그대로 보간된다 (정상 UI 플로우로는 아직 도달 '
+    '나타나며 id로 조회된 실제 코디 데이터가 화면 본문에 렌더링된다 (정상 UI 플로우로는 아직 도달 '
     '불가능한 화면 — 코디 메인이 스켈레톤이라 상세로 가는 진입 UI가 없는 것이 플랜에 명시된 의도된 '
     '상태. Step④ 이전엔 skeletonRegion 텍스트 "헤더"로 확인했으나, AppMainScaffold 마이그레이션 후 '
-    '그 텍스트가 사라져 "더보기 메뉴" 툴팁으로 확인 대상을 갱신)',
+    '그 텍스트가 사라져 "더보기 메뉴" 툴팁으로 확인 대상을 갱신했다. Task 6에서 화면이 '
+    '`compositionsProvider`를 `firstWhere`로 조회하도록 실제 데이터 바인딩되며, 존재하지 않는 '
+    'id("test-id")를 인위적으로 push하면 firstWhere가 StateError를 던지게 됐다 — 이 테스트의 실제 '
+    '의도(라우터가 id를 정확히 넘기고 화면이 그 id로 올바르게 렌더링되는지 확인)는 존재하지 않는 id를 '
+    '요구하지 않으므로, 실재하는 mock id(comp01)로 교체하고 raw id echo 대신 comp01의 실제 이름 '
+    '("데일리 룩") 렌더링 확인으로 갱신한다)',
     (tester) async {
       await pumpClosetMain(tester);
 
       final context = tester.element(find.byType(SelectableGalleryTile).first);
-      GoRouter.of(context).push('${AppRoute.compositionMain}/test-id');
+      GoRouter.of(context).push('${AppRoute.compositionMain}/comp01');
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
       expect(find.byTooltip('더보기 메뉴'), findsOneWidget);
-      expect(find.textContaining('test-id'), findsOneWidget);
+      expect(find.text('데일리 룩'), findsOneWidget);
     },
   );
 

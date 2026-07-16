@@ -98,9 +98,11 @@ void main() {
   );
 
   testWidgets(
-    '그리드 아이템 탭으로 진입한 실제 옷 상세 화면에서는 FrostedBackButton이 실제로 나타난다 '
-    '(ClosetItemDetailScreen이 Step④에서 AppMainScaffold로 마이그레이션되어 canPop()이 '
-    'true인 이 상황에서 뒤로가기가 렌더링됨 — 실측 확인)',
+    '[갱신됨, Task 6 재검증] 그리드 아이템 탭으로 진입한 실제 옷 상세 화면에서는 FrostedBackButton이 '
+    '실제로 나타난다(ClosetItemDetailScreen이 Step④에서 AppMainScaffold로 마이그레이션되어 '
+    'canPop()이 true인 이 상황에서 뒤로가기가 렌더링됨 — 실측 확인). ClosetItemDetailScreen이 Task '
+    '6에서 실제 데이터 바인딩으로 교체되어 raw id를 그대로 echo하던 과거 skeleton 동작은 더 이상 '
+    '유효하지 않아, 실제 렌더링된 옷 이름 확인으로 갱신한다.',
     (tester) async {
       await pumpApp(tester);
 
@@ -111,7 +113,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
-      expect(find.textContaining(tappedItem.id), findsOneWidget);
+      expect(find.text(tappedItem.name), findsOneWidget);
       expect(find.byType(FrostedBackButton), findsOneWidget);
       expect(find.byTooltip('뒤로가기'), findsOneWidget);
     },

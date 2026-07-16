@@ -164,8 +164,10 @@ void main() {
   );
 
   testWidgets(
-    '코디 타일 탭 시 올바른 id로 /composition/:id (코디 상세 skeleton)로 이동하고, id가 화면에 '
-    '그대로 보간된다',
+    '[갱신됨, Task 6 재검증] 코디 타일 탭 시 올바른 id로 /composition/:id 로 이동하고, id로 조회된 '
+    '실제 코디 데이터가 렌더링된다 (CompositionDetailScreen이 Task 6에서 실제 데이터 바인딩으로 '
+    '교체되어, id를 raw text로 그대로 echo하던 과거 skeleton 동작은 더 이상 유효하지 않다 — mock '
+    'comp01의 실제 이름("데일리 룩") 렌더링 확인으로 갱신)',
     (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
@@ -175,7 +177,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
-      expect(find.textContaining('comp01'), findsOneWidget);
+      expect(find.text('데일리 룩'), findsOneWidget);
     },
   );
 
