@@ -9,7 +9,9 @@ Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-
 
 같은 Review가 `lib/screens/composition_detail_screen.dart`(Task 4, 커밋 `e015319`)의 "사용된 옷" 가로 스크롤 스트립에 있는 `height: 96`(스트립 전체 높이), 각 아이템 썸네일 `width: 72`(정사각 `SizedBox`라 `height`도 동일하게 72)도 동일하게 미등재 상태이나 이번엔 로그만 되고 아직 손대지 않았다고 함께 지적 — 두 파일 모두 확정된 디자인 값이라 급하지 않으나(막지 않음, not blocking), 다음에 이 두 파일 중 하나를 다시 열 때 `AppSpacing`으로 정식 토큰화 검토.
 
-조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, `composition_preview_carousel.dart`의 로컬 const 4개와 `composition_detail_screen.dart`의 `height: 96`/`width: 72`를 함께 정식 토큰으로 승격 검토(성격이 비슷한 "가로 스크롤 스트립/캐러셀 고정 치수" 값들이라 한 번에 정리하는 게 효율적).
+**추가(Task 7 Review, 2026-07-16)**: `lib/screens/style_log_viewer_screen.dart`(커밋 `7f6db21`)의 "추가 사진" 가로 스크롤 스트립에도 동일 패턴(`height: 96` ×2, `width: 96`)이 이름 없는 리터럴로 추가됐다 — 같은 종류의 값이라 이 항목에 함께 등재.
+
+조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, `composition_preview_carousel.dart`의 로컬 const 4개와 `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 `height: 96`/`width: 72`/`width: 96`을 함께 정식 토큰으로 승격 검토(성격이 비슷한 "가로 스크롤 스트립/캐러셀 고정 치수" 값들이라 한 번에 정리하는 게 효율적).
 
 ---
 
@@ -18,9 +20,11 @@ Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-
 상태: 미해결(리스크 낮음으로 판단, 착수 보류)
 
 내용:
-Step⑦ 1라운드(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Task 4 Review(2026-07-15)가 발견: `composition_detail_screen.dart`의 `_bindStyleLog`가 `await context.push<String>(...)` 이후 `context`를 직접 재사용하진 않지만, `ref.read(...)` 호출 전에 `context.mounted` 체크가 없다 — `.claude/skills/flutter-implementation-conventions/SKILL.md`가 요구하는 "async 작업 완료 후 context 사용 전 mounted 체크" 원칙의 문자 그대로의 위반. 이 async 갭 동안 화면이 실제로 dispose될 경로가 현재는 없어(같은 화면이 계속 떠 있는 상태에서 선택 모달만 push/pop) 런타임 크래시로 이어지지 않았고, Tester도 재현하지 못했다. Task 4 Worker의 결함이 아니라 Plan 코드 스니펫 자체에 있던 갭이라 그대로 구현됨. Task 5의 `style_log_viewer_screen.dart`(`_bindComposition`, 동일 패턴)에도 그대로 반복될 예정이라 함께 기록.
+Step⑦ 1라운드(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Task 4 Review(2026-07-15)가 발견: `composition_detail_screen.dart`의 `_bindStyleLog`가 `await context.push<String>(...)` 이후 `context`를 직접 재사용하진 않지만, `ref.read(...)` 호출 전에 `context.mounted` 체크가 없다 — `.claude/skills/flutter-implementation-conventions/SKILL.md`가 요구하는 "async 작업 완료 후 context 사용 전 mounted 체크" 원칙의 문자 그대로의 위반. 이 async 갭 동안 화면이 실제로 dispose될 경로가 현재는 없어(같은 화면이 계속 떠 있는 상태에서 선택 모달만 push/pop) 런타임 크래시로 이어지지 않았고, Tester도 재현하지 못했다. Task 4 Worker의 결함이 아니라 Plan 코드 스니펫 자체에 있던 갭이라 그대로 구현됨.
 
-조치 방향(착수 조건): 두 함수 모두 `ref.read(...)` 호출 직전에 `if (!context.mounted) return;` 한 줄만 추가하면 해소됨 — 다음에 이 두 파일 중 하나를 손댈 때(Editor Draft 구현 등) 함께 정리, 또는 별도로 픽업해도 비용이 매우 낮음.
+**정정(Task 7 Review, 2026-07-16)**: 위에서 "Task 5의 `style_log_viewer_screen.dart`에도 그대로 반복될 예정"이라고 예측했으나, 실제 Task 7(`style_log_viewer_screen.dart`, 커밋 `7f6db21`)의 `_bindComposition`은 `ref.read(...)` 호출 직전에 `if (!context.mounted) return;` 가드를 이미 포함해서 구현됐다 — 이 항목의 범위를 `composition_detail_screen.dart`의 `_bindStyleLog` 단독으로 좁힌다.
+
+조치 방향(착수 조건): `_bindStyleLog`의 `ref.read(...)` 호출 직전에 `if (!context.mounted) return;` 한 줄만 추가하면 해소됨 — 다음에 이 파일을 손댈 때(Editor Draft 구현 등) 함께 정리, 또는 별도로 픽업해도 비용이 매우 낮음.
 
 ---
 
