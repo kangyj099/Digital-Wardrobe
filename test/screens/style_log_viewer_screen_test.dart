@@ -9,7 +9,6 @@ import 'package:digittal_wardrobe/providers/style_log_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
-import 'package:digittal_wardrobe/widgets/cross_reference_link_bar.dart';
 
 class _FixedCompositionsNotifier extends CompositionsNotifier {
   _FixedCompositionsNotifier(List<Composition> initial) {
@@ -57,7 +56,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(CrossReferenceLinkBar), findsOneWidget);
+    // 코디 슬롯은 캐러셀의 2번째 페이지 — 기본 PageView(viewportFraction 1.0)는 인접 페이지를
+    // 미리 빌드해두지 않으므로, 실제로 보려면 컨트롤러로 명시적으로 넘겨야 한다.
+    tester.widget<PageView>(find.byType(PageView)).controller!.jumpToPage(1);
+    await tester.pumpAndSettle();
+
     expect(find.text('코디 연결하기'), findsOneWidget);
 
     await tester.ensureVisible(find.text('코디 연결하기'));
@@ -103,6 +106,9 @@ void main() {
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
       ),
     );
+    await tester.pumpAndSettle();
+
+    tester.widget<PageView>(find.byType(PageView)).controller!.jumpToPage(1);
     await tester.pumpAndSettle();
 
     expect(find.text('코디 연결하기'), findsNothing);

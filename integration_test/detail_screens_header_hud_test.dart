@@ -289,8 +289,9 @@ void main() {
       expect(find.textContaining('2026-01-05'), findsOneWidget); // log01.wornDate(StyleLogGalleryTile 라벨 포맷)
     });
 
-    testWidgets('스타일일지 상세 화면 하단에 연결된 코디 카드가 보인다(mock 기준 log01은 comp01에 연결됨)',
-        (tester) async {
+    testWidgets(
+        '스타일일지 상세 화면의 코디 슬롯(캐러셀 2페이지)에 연결된 코디 카드가 보인다'
+        '(mock 기준 log01은 comp01에 연결됨)', (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
       // filteredStyleLogsProvider는 날짜 내림차순이라 log02(2026.1.10)가 먼저 나온다 —
@@ -298,8 +299,13 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('log01')));
       await tester.pumpAndSettle();
 
-      // linkedComposition이 있으면 CrossReferenceLinkBar(빈 리스트)가 아니라
-      // CompositionPreviewCard로 렌더링된다.
+      // 코디 슬롯은 대표이미지 다음 페이지(2번) — 기본 PageView(viewportFraction 1.0)는
+      // 인접 페이지를 미리 빌드해두지 않으므로 컨트롤러로 명시적으로 넘겨서 확인한다.
+      tester.widget<PageView>(find.byType(PageView)).controller!.jumpToPage(1);
+      await tester.pumpAndSettle();
+
+      // linkedComposition이 있으면 "코디 연결하기" 자리 대신 CompositionPreviewCard로
+      // 렌더링된다.
       expect(find.byType(CompositionPreviewCard), findsOneWidget);
       expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01.name
     });
