@@ -17,6 +17,8 @@ Impact:
 - `composition_preview_carousel.dart`가 `ConsumerStatefulWidget`로 전환(`closetItemsProvider` watch 필요), `closet_item_detail_screen.dart` 호출부에 `onItemTap` 파라미터 추가.
 - `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 10으로 추가.
 
+**[정정, 2026-07-18]** 위 결정은 사용자 지시를 잘못 해석한 것으로 확인되어 되돌림(`git revert cc49ad2` + `git revert 5a4c704`). 사용자가 원한 것은 "옷 상세 캐러셀 타일 크기를 스타일일지 열람의 캐러셀과 동일하게" — 즉 Task 9의 `AspectRatio(1)` 풀블리드 크기 통일이었을 뿐, 타일 **콘텐츠**를 코디 대표이미지에서 "그 코디에 포함된 옷들을 풀어놓은 목록"으로 바꾸라는 뜻이 아니었다. 캐러셀 타일은 여전히 "코디"(이미지+이름 카드, `CompositionPreviewCard`) 단위를 보여줘야 하며, 크기는 이미 Task 9에서 스타일일지 열람과 동일하게 맞춰져 있었으므로 별도 크기 작업도 불필요했다. `ClothingItemsRow`/`CompositionItemsTile`은 삭제되었고 `composition_detail_screen.dart`/`style_log_viewer_screen.dart`는 리팩터 이전 인라인 구현으로 복귀, `composition_preview_carousel.dart`는 다시 평범한 `StatefulWidget`으로 복귀했다.
+
 ---
 
 [Decision] 스타일일지 열람 카드 구조를 스펙 원문대로 정정(대표이미지/코디 슬롯 2페이지 캐러셀) + 옷장 상세 정사각형 통일 + `crossReferenceEntries` 폐기 (UI/Screen, Decision — 아래 "Detail 화면 상호참조를..." 항목을 부분 정정)

@@ -2502,6 +2502,8 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 - [ ] **Step 7**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행, `taskkill` 습관 유지)
 - [ ] **Step 8**: Commit
 
+**[정정, 2026-07-18]** 이 Task는 사용자 지시를 잘못 해석한 것으로 확인되어 `git revert`로 되돌림(`cc49ad2`, `5a4c704` 되돌림 커밋). 사용자가 실제로 원한 것은 "옷 상세 캐러셀 크기를 스타일일지 열람 캐러셀과 동일하게" — 이미 Task 9에서 양쪽 다 `AspectRatio(1)` 풀블리드로 통일돼 있어 이 요구는 이미 충족된 상태였다. 캐러셀 타일 콘텐츠를 코디 대표이미지에서 "옷 목록 풀어놓기"로 바꾸는 것은 오해였고, 타일은 여전히 코디 단위(`CompositionPreviewCard`)를 보여줘야 한다. 상세 근거는 `docs/history/Decision.md`의 대응 정정 항목 참고.
+
 ---
 
 ## 완료 후 PM 처리 사항 (이 Plan의 실행 대상 아님 — 세션 인계 메모)
