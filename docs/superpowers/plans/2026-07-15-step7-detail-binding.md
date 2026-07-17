@@ -2502,7 +2502,26 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 - [ ] **Step 7**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행, `taskkill` 습관 유지)
 - [ ] **Step 8**: Commit
 
-**[정정, 2026-07-18]** 이 Task는 사용자 지시를 잘못 해석한 것으로 확인되어 `git revert`로 되돌림(`cc49ad2`, `5a4c704` 되돌림 커밋). 사용자가 실제로 원한 것은 "옷 상세 캐러셀 크기를 스타일일지 열람 캐러셀과 동일하게" — 이미 Task 9에서 양쪽 다 `AspectRatio(1)` 풀블리드로 통일돼 있어 이 요구는 이미 충족된 상태였다. 캐러셀 타일 콘텐츠를 코디 대표이미지에서 "옷 목록 풀어놓기"로 바꾸는 것은 오해였고, 타일은 여전히 코디 단위(`CompositionPreviewCard`)를 보여줘야 한다. 상세 근거는 `docs/history/Decision.md`의 대응 정정 항목 참고.
+**[정정, 2026-07-18]** 이 Task는 사용자 지시를 잘못 해석한 것으로 확인되어 `git revert`로 되돌림(`cc49ad2`, `5a4c704` 되돌림 커밋). 최종 확인 결과 사용자가 가리킨 "가로 캐러셀"은 스타일일지 열람의 `PageView` 카드 영역이 아니라 그 아래 "착용 옷"(연속 스크롤 리스트) 섹션이었다 — 상세 근거는 `docs/history/Decision.md` "옷 상세 코디 프리뷰를 `PageView` 캐러셀에서 착용 옷과 동일한 연속 스크롤 리스트로 교체" 항목과 아래 Task 11 참고.
+
+---
+
+### Task 11: 옷 상세 코디 프리뷰를 `PageView` 캐러셀에서 연속 스크롤 리스트로 교체 (UI/Screen, Implementation/Frontend)
+
+**배경**: `docs/history/Decision.md` "옷 상세 코디 프리뷰를 `PageView` 캐러셀에서 '착용 옷'과 동일한 연속 스크롤 리스트로 교체" 참고. Task 10 되돌림 이후에도 `CompositionPreviewCarousel`은 여전히 Task 6/9의 `PageView`+점 인디케이터 방식 그대로다 — 이걸 `style_log_viewer_screen.dart`의 "착용 옷"과 동일한 메커니즘(페이지 넘김 없는 연속 가로 스크롤)으로 교체하는 게 이번 Task의 전부다.
+
+**Files:**
+- Modify: `lib/widgets/composition_preview_carousel.dart` (`StatefulWidget`(`PageView`+점 인디케이터) → `StatelessWidget`(`ListView.separated`, 고정 타일 크기)로 재작성. 클래스/파일명·`compositions`/`onTap` 시그니처는 그대로 유지 — 호출부 무변경)
+- Modify: 이 위젯을 다루는 통합테스트(`grep -rl CompositionPreviewCarousel integration_test/`로 확인 — 점 인디케이터/페이지 전환 관련 assertion을 연속 스크롤 기준으로 교체)
+
+**Interfaces:**
+- Consumes: `CompositionPreviewCard`(기존, 변경 없음)
+- Produces: `CompositionPreviewCarousel({required List<Composition> compositions, required void Function(Composition) onTap})` — 시그니처 동일. 내부만 `ListView.separated(scrollDirection: Axis.horizontal)`로 교체, 각 아이템은 고정 크기(예: 96x96, "착용 옷" 타일과 동일 스케일) `SizedBox`로 감싼 `CompositionPreviewCard`. 0개면 `SizedBox.shrink()`(기존과 동일).
+
+- [ ] **Step 1**: `composition_preview_carousel.dart` 재작성 — `PageController`/`_page`/점 인디케이터 전부 제거, `ListView.separated`로 교체
+- [ ] **Step 2**: 관련 통합테스트에서 점 인디케이터/페이지 스와이프 관련 assertion을 "동시에 여러 코디 카드가 보이고, 옆으로 스크롤하면 더 보인다" 기준으로 교체
+- [ ] **Step 3**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행, `taskkill` 습관 유지)
+- [ ] **Step 4**: Commit
 
 ---
 

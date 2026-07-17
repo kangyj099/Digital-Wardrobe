@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 옷 상세 코디 프리뷰를 `PageView` 캐러셀에서 "착용 옷"과 동일한 연속 스크롤 리스트로 교체 (UI/Screen, Decision — 아래 "옷 상세의 '연결된 코디' 캐러셀 타일을..." 항목의 최종 정정)
+
+결정:
+- `CompositionPreviewCarousel`(Task 6에서 신설, Task 9에서 `AspectRatio(1)` 풀블리드 정사각 페이지로 통일)이 채택했던 **"스와이프하면 페이지가 넘어가고 점 인디케이터로 표시하는" `PageView` 방식 자체를 폐기**한다. 대신 `style_log_viewer_screen.dart`의 "착용 옷" 섹션(페이지 개념 없이 그냥 옆으로 미는 연속 스크롤 `ListView.horizontal`, 코디 슬롯 `PageView`와는 완전히 별개 섹션)과 동일한 메커니즘으로 교체한다.
+- 타일 콘텐츠는 여전히 "코디" 단위(이미지+이름, `CompositionPreviewCard` 그대로 재사용) — 코디에 포함된 개별 옷을 풀어놓지 않는다. 각 타일 크기는 "착용 옷" 타일과 동일(고정된 작은 정사각형, 화면 폭을 채우는 큰 정사각형 아님).
+- 점 인디케이터/`PageController`/`onPageChanged` 상태는 전부 제거 — 페이지 개념이 없으므로 `StatefulWidget`일 필요도 없어져 `StatelessWidget`으로 단순화.
+
+사유:
+사용자가 옷 상세 화면을 실제로 보고 여러 차례 정정 — 처음엔 "코디 대표이미지 대신 착용옷처럼 실제 옷들을 캐러셀 타일로"라고 요청했다가(Task 10, 되돌려짐), PM이 "그럼 타일 크기를 스타일일지 캐러셀과 맞추자"고 재해석했으나 이 역시 어긋났음이 확인됐다. 최종적으로 사용자가 가리킨 "가로 캐러셀"은 스타일일지 열람의 코디 슬롯 `PageView`가 아니라 그 화면의 "착용 옷"(연속 스크롤 리스트)이었다 — 즉 옷 상세의 코디 프리뷰도 "여러 코디를 한 화면에 동시에 보여주고 옆으로 미는" 방식이어야 하며, "하나씩 스와이프해서 넘기는" 방식이 아니었다.
+
+Impact:
+- `lib/widgets/composition_preview_carousel.dart` — `StatefulWidget`(`PageView`+점 인디케이터) → `StatelessWidget`(`ListView.horizontal`, 고정 타일 크기)로 재작성. 파일/클래스명은 유지(호출부 변경 최소화).
+- `lib/screens/closet_item_detail_screen.dart` 호출부는 변경 없음(같은 시그니처: `compositions`/`onTap`).
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 11로 추가.
+
+---
+
 [Decision] 옷 상세의 "연결된 코디" 캐러셀 타일을 단일 대표이미지에서 "사용된 옷" 가로 스크롤로 교체 (UI/Screen, Decision)
 
 결정:
@@ -17,7 +34,7 @@ Impact:
 - `composition_preview_carousel.dart`가 `ConsumerStatefulWidget`로 전환(`closetItemsProvider` watch 필요), `closet_item_detail_screen.dart` 호출부에 `onItemTap` 파라미터 추가.
 - `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 10으로 추가.
 
-**[정정, 2026-07-18]** 위 결정은 사용자 지시를 잘못 해석한 것으로 확인되어 되돌림(`git revert cc49ad2` + `git revert 5a4c704`). 사용자가 원한 것은 "옷 상세 캐러셀 타일 크기를 스타일일지 열람의 캐러셀과 동일하게" — 즉 Task 9의 `AspectRatio(1)` 풀블리드 크기 통일이었을 뿐, 타일 **콘텐츠**를 코디 대표이미지에서 "그 코디에 포함된 옷들을 풀어놓은 목록"으로 바꾸라는 뜻이 아니었다. 캐러셀 타일은 여전히 "코디"(이미지+이름 카드, `CompositionPreviewCard`) 단위를 보여줘야 하며, 크기는 이미 Task 9에서 스타일일지 열람과 동일하게 맞춰져 있었으므로 별도 크기 작업도 불필요했다. `ClothingItemsRow`/`CompositionItemsTile`은 삭제되었고 `composition_detail_screen.dart`/`style_log_viewer_screen.dart`는 리팩터 이전 인라인 구현으로 복귀, `composition_preview_carousel.dart`는 다시 평범한 `StatefulWidget`으로 복귀했다.
+**[정정, 2026-07-18]** 위 결정은 사용자 지시를 잘못 해석한 것으로 확인되어 되돌림(`git revert cc49ad2` + `git revert 5a4c704`). 처음엔 "타일 콘텐츠를 코디 대표이미지에서 옷 목록으로 바꾼 게 문제였고, 크기만 스타일일지 캐러셀과 맞추면 된다"고 판단했으나(이 판단도 부분적으로만 맞음), 대화를 더 거친 끝에 사용자가 가리킨 "가로 캐러셀"이 스타일일지 열람의 **2페이지 `PageView`+점 인디케이터 카드 영역이 아니라, 그 아래의 "착용 옷" 섹션(페이지 넘김 없이 연속 스크롤되는 `ListView.horizontal`)**이었음이 최종 확인됐다 — 상세는 아래 "옷 상세 코디 프리뷰를 PageView 캐러셀에서 착용 옷과 동일한 연속 스크롤 리스트로 교체" 항목 참고.
 
 ---
 
