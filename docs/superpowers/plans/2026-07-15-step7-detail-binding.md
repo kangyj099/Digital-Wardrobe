@@ -2525,6 +2525,27 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 
 ---
 
+### Task 12: 코디 상세의 "연결된 스타일일지" 썸네일도 정사각형(1:1)으로 통일 (UI/Screen, Implementation/Frontend)
+
+**배경**: `docs/history/Decision.md` "코디 상세의 '연결된 스타일일지' 썸네일도 정사각형(1:1)으로 통일..." 참고. 사용자가 코디 상세의 스타일일지 썸네일 비율을 1:1로 바꿔달라고 지시 — `02_코디 (가상 조합).md`의 "1개면 2칸 확대" 규칙 자체를 폐기하고, 옷 상세와 동일하게 항상 정사각형으로 통일한다.
+
+**Files:**
+- Modify: `lib/widgets/style_log_cross_reference_gallery.dart` (`expandSingle` 파라미터 제거, 항상 `crossAxisCount: 2`/`childAspectRatio: 1`, `_AddTile`도 `aspectRatio: 1`로)
+- Modify: `lib/screens/closet_item_detail_screen.dart` (더 이상 필요 없는 `expandSingle: false` 인자 제거)
+- Modify: `integration_test/detail_thumbnail_square_unification_test.dart` (그룹 3 "코디 상세는 여전히 2:1" assertion을 "코디 상세도 정사각형"으로 갱신 — 파일명 자체가 이제 목적과 다시 맞아떨어짐)
+- Modify: `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md` — PM이 이미 반영 완료("1개면 2칸 확대 배치" → "정사각형 타일")
+
+**Interfaces:**
+- Produces: `StyleLogCrossReferenceGallery({required logs, required onTap, onAddTap})` — `expandSingle` 파라미터 삭제, 항상 정사각형 그리드.
+
+- [ ] **Step 1**: `style_log_cross_reference_gallery.dart`에서 `expandSingle`/`singleRow` 분기 제거, 항상 정사각형 로직만 남기기. `_AddTile`의 `aspectRatio: 2` → `1`.
+- [ ] **Step 2**: `closet_item_detail_screen.dart` 호출부에서 `expandSingle: false` 인자 삭제(동작 변화 없음).
+- [ ] **Step 3**: `integration_test/detail_thumbnail_square_unification_test.dart` 그룹 3 갱신 — "여전히 2:1" 대신 "이제 정사각형" 확인, comp01 케이스뿐 아니라 comp02도 확인.
+- [ ] **Step 4**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행 — `composition_detail_data_binding_test.dart` 포함, `taskkill` 습관 유지)
+- [ ] **Step 5**: Commit
+
+---
+
 ## 완료 후 PM 처리 사항 (이 Plan의 실행 대상 아님 — 세션 인계 메모)
 
 - Task 7 Tester 통과 직후 1차 Audit 실행 완료(2026-07-16) — P1 2건(스타일일지 열람 코디 바인딩 UI 불일치/스펙 위반, `crossReferenceEntries` 계약 애매함) 발견, 사용자가 즉시 착수 지시 → Task 8/9로 추가. **Task 9 Tester 통과 직후 2차(최종) Audit을 한 번 더 실행**해야 이 Plan 전체(9개 Task)가 완료 처리된다(CLAUDE.md §4 — Task 8/9로 코드가 다시 바뀌었으므로 1차 Audit 결과만으로 완료 처리하지 않음).

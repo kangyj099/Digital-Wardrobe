@@ -1,5 +1,25 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 코디 상세의 "연결된 스타일일지" 썸네일도 정사각형(1:1)으로 통일 — "1개면 2칸 확대" 스펙 규칙 폐기 (UI/Screen, Decision)
+
+결정:
+- `02_코디 (가상 조합).md`가 명시했던 "연결된 스타일 일지 목록(2열, 스타일 일지 1개면 2칸 확대 배치)"의 "1개면 2칸 확대" 규칙을 폐기한다. 코디 상세도 옷 상세와 동일하게 연결된 개수와 무관하게 항상 정사각형(1:1) 타일로 표시한다.
+- `StyleLogCrossReferenceGallery`의 `expandSingle` 파라미터(Task 9에서 두 화면의 차이를 표현하려고 도입)는 이제 두 화면 모두 `false`와 동일한 결과를 내므로 **파라미터 자체를 제거**하고 항상 정사각형 그리드 로직만 남긴다(죽은 분기 유지 안 함, YAGNI). 미연결 시 "+" 타일(`_AddTile`)의 비율도 2:1 → 1:1로 함께 맞춘다.
+- `02_코디 (가상 조합).md` 문서 텍스트도 "1개면 2칸 확대 배치" 서술을 제거해 실제 구현과 일치시킨다.
+
+사유:
+사용자가 실제 화면을 보고 코디 상세의 스타일일지 썸네일 비율을 1:1로 바꿔달라고 직접 지시(2026-07-18). Task 9 당시엔 이 "1개면 확대" 규칙이 승인된 스펙이라 보존했으나, 사용자가 이번에 그 규칙 자체를 변경하기로 결정 — 문서(스펙)보다 최신 사용자 지시가 우선.
+
+Impact:
+- `lib/widgets/style_log_cross_reference_gallery.dart` — `expandSingle` 파라미터 제거, 항상 정사각형.
+- `lib/screens/closet_item_detail_screen.dart` — 이제 불필요해진 `expandSingle: false` 인자 제거(동작 변화 없음, 이미 그 값이었으므로).
+- `lib/screens/composition_detail_screen.dart` — 변경 없음(원래 파라미터를 안 넘기고 있었음, 이제 그 자리의 의미만 바뀜).
+- `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md` 텍스트 갱신.
+- `integration_test/detail_thumbnail_square_unification_test.dart`의 "코디 상세는 여전히 2:1" 회귀 assertion을 "코디 상세도 이제 정사각형"으로 갱신 필요.
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 12로 추가.
+
+---
+
 [Decision] 옷 상세 코디 프리뷰를 `PageView` 캐러셀에서 "착용 옷"과 동일한 연속 스크롤 리스트로 교체 (UI/Screen, Decision — 아래 "옷 상세의 '연결된 코디' 캐러셀 타일을..." 항목의 최종 정정)
 
 결정:
