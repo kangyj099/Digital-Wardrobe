@@ -6,7 +6,7 @@ import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
-import 'package:digittal_wardrobe/widgets/composition_items_tile.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
@@ -82,13 +82,9 @@ void main() {
         await tapItemById(tester, 'c01');
         expect(find.byType(CompositionPreviewCarousel), findsOneWidget);
 
-        final compositionTile = find.byType(CompositionItemsTile);
-        expect(compositionTile, findsOneWidget);
-        // 코디 이름 라벨(배경 영역)을 탭한다 — 옷 이미지 영역을 탭하면 개별 옷 상세로 가는
-        // onItemTap이 대신 발동하므로(Task 10, 두 탭 대상 분리), 코디 상세로 가려면 반드시
-        // 라벨/배경을 탭해야 한다.
-        expect(find.text('데일리 룩'), findsOneWidget);
-        await tester.tap(find.text('데일리 룩'));
+        final compositionCard = find.byType(CompositionPreviewCard);
+        expect(compositionCard, findsOneWidget);
+        await tester.tap(compositionCard);
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
@@ -134,7 +130,7 @@ void main() {
       // 두 위젯은 항상 마운트되지만(Column 자식으로 무조건 배치), 내용이 없으면 내부적으로
       // SizedBox.shrink()만 그린다 — 그래서 컨테이너 존재는 findsOneWidget, 콘텐츠 위젯은 findsNothing.
       expect(find.byType(CompositionPreviewCarousel), findsOneWidget);
-      expect(find.byType(CompositionItemsTile), findsNothing);
+      expect(find.byType(CompositionPreviewCard), findsNothing);
       expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
       expect(find.byType(StyleLogGalleryTile), findsNothing);
       // 다른 코디명이 새어 보이면 안 된다.

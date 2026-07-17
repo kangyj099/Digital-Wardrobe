@@ -13,7 +13,7 @@ import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
-import 'package:digittal_wardrobe/widgets/composition_items_tile.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
@@ -73,35 +73,28 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('연결된 코디 타일 — 실제 이미지 렌더링(Task 10, 사용된 옷 전부)', () {
+  group('연결된 코디 프리뷰 카드 — 실제 이미지 렌더링', () {
     testWidgets(
-      'c01 상세의 코디 타일(comp01)이 코디에 실제로 포함된 옷 전부(c01/c11/c07/c03)의 이미지를 '
-      '실제 Image.asset으로 그린다(빈 회색 박스가 아니다)',
+      'c01 상세의 코디 카드(comp01)가 compositionCoverImageProvider 폴백 이미지(첫 아이템 c01 자체 '
+      '이미지)를 실제 Image.asset으로 그린다(빈 회색 박스가 아니다)',
       (tester) async {
         await pumpApp(tester);
         await tapItemById(tester, 'c01');
 
-        final tileFinder = find.byType(CompositionItemsTile);
-        expect(tileFinder, findsOneWidget);
-        final imageFinder = find.descendant(of: tileFinder, matching: find.byType(Image));
+        final cardFinder = find.byType(CompositionPreviewCard);
+        expect(cardFinder, findsOneWidget);
+        final imageFinder = find.descendant(of: cardFinder, matching: find.byType(Image));
         expect(
           imageFinder,
-          findsWidgets,
-          reason: '타일 안에 comp01의 실제 사용된 옷(c01/c11/c07/c03) 이미지들이 렌더링돼야 한다',
-        );
-        expect(
-          find.descendant(
-            of: tileFinder,
-            matching: find.byWidgetPredicate(
-              (w) =>
-                  w is Image &&
-                  w.image is AssetImage &&
-                  (w.image as AssetImage).assetName ==
-                      'assets/images/mock/IMG_4259_preview_rev_1.png',
-            ),
-          ),
           findsOneWidget,
-          reason: '첫 사용된 옷(c01)의 이미지가 실제 asset 경로로 렌더링돼야 한다',
+          reason: '카드 안에 실제 Image 위젯이 렌더링돼야 한다(comp01의 coverImagePath가 null이라 '
+              '첫 아이템 c01 이미지로 폴백해야 함)',
+        );
+        final image = tester.widget<Image>(imageFinder);
+        expect(image.image, isA<AssetImage>());
+        expect(
+          (image.image as AssetImage).assetName,
+          'assets/images/mock/IMG_4259_preview_rev_1.png',
         );
         expect(tester.takeException(), isNull);
       },

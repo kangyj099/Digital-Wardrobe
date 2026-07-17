@@ -57,8 +57,6 @@ class ClosetItemDetailScreen extends ConsumerWidget {
             CompositionPreviewCarousel(
               compositions: linkedCompositions,
               onTap: (c) => context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id)),
-              onItemTap: (item) =>
-                  context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
             ),
             const SizedBox(height: AppSpacing.md),
             StyleLogCrossReferenceGallery(

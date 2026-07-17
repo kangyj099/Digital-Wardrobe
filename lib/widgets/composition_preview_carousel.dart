@@ -1,38 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/clothing_item.dart';
 import '../models/composition.dart';
-import '../providers/closet_providers.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import 'composition_items_tile.dart';
+import 'composition_preview_card.dart';
 
 /// 옷 상세 화면의 "연결된 코디" 섹션 — 여러 개면 좌우 스와이프로 넘기는 캐러셀, 하나도
 /// 없으면 아무것도 그리지 않는다(읽기 전용, 이 화면엔 바인딩 액션이 없다). 카드 영역은
 /// 항상 `AspectRatio(1)` 풀블리드 정사각형 — 페이지 인디케이터는 2개 이상일 때만 보인다.
-///
-/// 각 페이지 콘텐츠는 `CompositionItemsTile`(Task 10) — `closetItemsProvider`를 watch해
-/// 각 코디의 `composition.items`(순서 유지)를 실제 `ClothingItem` 리스트로 resolve한 뒤
-/// 넘긴다(`docs/history/Decision.md` "옷 상세의 '연결된 코디' 캐러셀 타일을 단일 대표이미지에서
-/// '사용된 옷' 가로 스크롤로 교체" 참고). [onItemTap]은 타일 안 개별 옷 이미지 탭을,
-/// [onTap]은 타일의 나머지 영역(코디 자체) 탭을 처리한다.
-class CompositionPreviewCarousel extends ConsumerStatefulWidget {
-  const CompositionPreviewCarousel({
-    super.key,
-    required this.compositions,
-    required this.onTap,
-    required this.onItemTap,
-  });
+class CompositionPreviewCarousel extends StatefulWidget {
+  const CompositionPreviewCarousel({super.key, required this.compositions, required this.onTap});
 
   final List<Composition> compositions;
   final void Function(Composition composition) onTap;
-  final void Function(ClothingItem item) onItemTap;
 
   @override
-  ConsumerState<CompositionPreviewCarousel> createState() => _CompositionPreviewCarouselState();
+  State<CompositionPreviewCarousel> createState() => _CompositionPreviewCarouselState();
 }
 
-class _CompositionPreviewCarouselState extends ConsumerState<CompositionPreviewCarousel> {
+class _CompositionPreviewCarouselState extends State<CompositionPreviewCarousel> {
   /// `AppSpacing` 등재 전까지 유지하는 로컬 값(TechnicalDebt 기록됨) — 페이지 인디케이터 점 크기.
   static const double _dotSize = 6;
 
@@ -52,7 +37,6 @@ class _CompositionPreviewCarouselState extends ConsumerState<CompositionPreviewC
   Widget build(BuildContext context) {
     if (widget.compositions.isEmpty) return const SizedBox.shrink();
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
-    final closetItems = ref.watch(closetItemsProvider);
 
     return Column(
       children: [
@@ -64,15 +48,9 @@ class _CompositionPreviewCarouselState extends ConsumerState<CompositionPreviewC
             onPageChanged: (page) => setState(() => _page = page),
             itemBuilder: (context, index) {
               final composition = widget.compositions[index];
-              final items = [
-                for (final placement in composition.items)
-                  closetItems.firstWhere((item) => item.id == placement.clothingItemId),
-              ];
-              return CompositionItemsTile(
+              return CompositionPreviewCard(
                 composition: composition,
-                items: items,
                 onTap: () => widget.onTap(composition),
-                onItemTap: widget.onItemTap,
               );
             },
           ),
