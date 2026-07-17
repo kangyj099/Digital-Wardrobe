@@ -62,7 +62,6 @@ class ClosetItemDetailScreen extends ConsumerWidget {
             StyleLogCrossReferenceGallery(
               logs: linkedStyleLogs,
               onTap: (log) => context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id)),
-              expandSingle: false,
             ),
           ],
         ),

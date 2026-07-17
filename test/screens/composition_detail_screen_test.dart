@@ -58,6 +58,8 @@ void main() {
 
     expect(find.text('스타일일지 연결하기'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('스타일일지 연결하기'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('스타일일지 연결하기'));
     await tester.pumpAndSettle();
 

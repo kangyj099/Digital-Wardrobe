@@ -29,7 +29,8 @@ import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 /// 2) 스타일일지 갤러리 타일이 실제 이미지+날짜를 그리는지.
 /// 3) 연결이 전혀 없는 화면에서 캐러셀/갤러리가 실제로 0 높이인지, 그리고 그 자리에 다른
 ///    잔여 빈 공간(레이아웃 유령 요소)이 남아있지 않은지.
-/// 4) 스타일일지 1개일 때 타일이 실제로 2:1 비율로 넓게(찌그러지지 않고) 렌더링되는지.
+/// 4) 스타일일지 1개일 때 타일이 실제로 정사각(1:1) 비율로(찌그러지지 않고) 렌더링되는지
+///    (Task 12 — "1개면 2칸 확대" 규칙 폐기).
 /// 5) mock 데이터엔 없는 "스타일일지 미연결 코디"를 만들어, "+" 타일을 실제로 탭해 선택
 ///    모달로 이동하고, 로그를 골라 복귀했을 때 실제로 바인딩이 반영되는지(엔드투엔드).
 void main() {
@@ -149,9 +150,8 @@ void main() {
     );
   });
 
-  group('단일 스타일일지 타일 — 가로 2칸 비율 레이아웃이 찌그러지지 않는지', () {
-    testWidgets('comp01 상세의 log01 타일이 실제로 약 2:1 가로비로 렌더링된다(정사각으로 찌그러지지 않음)',
-        (tester) async {
+  group('단일 스타일일지 타일 — 정사각 레이아웃이 찌그러지지 않는지(Task 12, "1개면 2칸 확대" 규칙 폐기)', () {
+    testWidgets('comp01 상세의 log01 타일이 실제로 정사각(비율 ≈ 1)으로 렌더링된다', (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tapCompositionById(tester, 'comp01');
@@ -163,12 +163,12 @@ void main() {
       expect(size.height, greaterThan(0));
       expect(
         size.width / size.height,
-        closeTo(2, 0.05),
-        reason: '1개일 때 childAspectRatio: 2 그리드 규칙이 실제로 반영돼야 한다',
+        closeTo(1, 0.05),
+        reason: '1개여도 childAspectRatio: 1 그리드 규칙이 실제로 반영돼야 한다(Task 12)',
       );
     });
 
-    testWidgets('comp02 상세의 log02 타일도 실제로 약 2:1 가로비로 렌더링된다', (tester) async {
+    testWidgets('comp02 상세의 log02 타일도 실제로 정사각(비율 ≈ 1)으로 렌더링된다', (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tapCompositionById(tester, 'comp02');
@@ -176,7 +176,7 @@ void main() {
       final tileFinder = find.byType(StyleLogGalleryTile);
       expect(tileFinder, findsOneWidget);
       final size = tester.getSize(tileFinder);
-      expect(size.width / size.height, closeTo(2, 0.05));
+      expect(size.width / size.height, closeTo(1, 0.05));
     });
   });
 

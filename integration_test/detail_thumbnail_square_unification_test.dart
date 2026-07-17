@@ -32,10 +32,10 @@ import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 /// 파일은 그 스위트들이 다루지 않는 핵심 동작만 확인한다:
 /// 1) 옷 상세(c01)의 코디 캐러셀이 고정 96×96 타일의 연속 스크롤 리스트로 렌더링되는가(더 이상
 ///    페이지 단위 AspectRatio(1) 풀블리드 정사각형이 아님, Task 11).
-/// 2) 옷 상세(c01)의 스타일일지 타일이 (연결 1개뿐인데도) 정사각형인가 — `expandSingle: false`
-///    오버라이드가 실제로 반영되는지.
-/// 3) 코디 상세(comp01)의 스타일일지 타일은 여전히 2:1 와이드인가 — 두 화면이 "연결 1개"
-///    케이스에서 실제로 다르게 보인다는 분기 증거.
+/// 2) 옷 상세(c01)의 스타일일지 타일이 (연결 1개뿐인데도) 정사각형인가.
+/// 3) 코디 상세(comp01/comp02)의 스타일일지 타일도 이제 정사각형인가(Task 12 — "1개면
+///    2칸 확대" 규칙 폐기, `expandSingle` 파라미터 자체가 제거되어 두 화면이 더 이상 다르게
+///    보이지 않는다).
 /// 4) 양쪽 Detail 화면 회귀 스윕 — 예외/오버플로 없음, `CrossReferenceLinkBar` 삭제 이후 잔여
 ///    빈 공간이 없음(마지막 콘텐츠 위젯이 화면 하단 근처에 온다).
 /// 5) mock엔 없는 "옷 1개가 코디 5개/스타일일지 2개에 연결된" 상태를 임시로 구성해 캐러셀의
@@ -120,7 +120,7 @@ void main() {
 
   // ── 2) 옷 상세(c01) — 스타일일지 타일도 정사각형(1개뿐이어도 확대 안 함) ──────
 
-  group('옷 상세(c01) — 스타일일지 타일은 1개뿐이어도 정사각형(expandSingle: false)', () {
+  group('옷 상세(c01) — 스타일일지 타일은 1개뿐이어도 정사각형', () {
     testWidgets('StyleLogGalleryTile 1개가 2:1 와이드가 아니라 실제로 정사각(비율 ≈ 1)으로 렌더링된다',
         (tester) async {
       await pumpApp(tester);
@@ -133,16 +133,16 @@ void main() {
       expect(
         size.width / size.height,
         closeTo(1, 0.05),
-        reason: '옷 상세는 expandSingle: false라 1개여도 정사각 타일이어야 한다(2:1 와이드가 아님)',
+        reason: '옷 상세는 1개여도 정사각 타일이어야 한다(2:1 와이드가 아님)',
       );
       expect(tester.takeException(), isNull);
     });
   });
 
-  // ── 3) 코디 상세(comp01) — 스타일일지 타일은 여전히 2:1(승인된 스펙, 변경 없음) ──
+  // ── 3) 코디 상세(comp01/comp02) — 스타일일지 타일도 이제 정사각형(Task 12) ──
 
-  group('코디 상세(comp01) — 스타일일지 타일은 여전히 2:1 와이드(회귀 확인, 변경 없어야 함)', () {
-    testWidgets('CompositionDetailScreen의 StyleLogGalleryTile은 여전히 가로 2칸 확대 비율(≈2)로 렌더링된다',
+  group('코디 상세 — 스타일일지 타일은 연결 1개뿐이어도 이제 정사각형(Task 12, "1개면 2칸 확대" 규칙 폐기)', () {
+    testWidgets('CompositionDetailScreen(comp01)의 StyleLogGalleryTile은 더 이상 2:1이 아니라 정사각(비율 ≈ 1)으로 렌더링된다',
         (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
@@ -154,10 +154,24 @@ void main() {
 
       expect(
         size.width / size.height,
-        closeTo(2, 0.05),
-        reason: '코디 상세는 expandSingle 기본값(true)이 유지되어 여전히 2:1이어야 한다 — 옷 상세와 '
-            '달라야 이번 Task의 의도한 분기다',
+        closeTo(1, 0.05),
+        reason: 'Task 12 이후로는 옷 상세와 동일하게 코디 상세도 연결 개수와 무관하게 항상 정사각형이어야 '
+            '한다(expandSingle 파라미터 자체가 제거됨)',
       );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('CompositionDetailScreen(comp02)의 StyleLogGalleryTile도 동일하게 정사각(비율 ≈ 1)으로 렌더링된다',
+        (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      await tapCompositionById(tester, 'comp02');
+
+      final tileFinder = find.byType(StyleLogGalleryTile);
+      expect(tileFinder, findsOneWidget);
+      final size = tester.getSize(tileFinder);
+
+      expect(size.width / size.height, closeTo(1, 0.05));
       expect(tester.takeException(), isNull);
     });
   });
