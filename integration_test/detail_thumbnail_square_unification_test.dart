@@ -14,26 +14,33 @@ import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_preview_carousel.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_cross_reference_gallery.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 
 /// Tester 검증 — Task 9("옷장 상세 정사각형 통일 + crossReferenceEntries/CrossReferenceLinkBar
-/// 폐기", commit `732c57b`, 9-Task 플랜의 마지막 Task).
+/// 폐기", commit `732c57b`, 9-Task 플랜의 마지막 Task). **Task 11(`CompositionPreviewCarousel`을
+/// `PageView`+점 인디케이터에서 "착용 옷"과 동일한 연속 스크롤 리스트로 교체, `docs/history/
+/// Decision.md` 참고)에서 그룹 1/5의 캐러셀 관련 assertion을 새 동작 기준으로 다시 작성했다** —
+/// 그룹 2/3/4는 스타일일지 정사각/2:1 분기·회귀 스윕이라 영향 없음(탭 대상만 컨테이너에서 실제
+/// 카드로 보정).
 ///
 /// `detail_cross_reference_visuals_test.dart`/`detail_screens_header_hud_test.dart`가 이미
 /// 확인한 것(위젯 존재, 빈 상태 0 높이, comp01/comp02의 2:1 타일)은 다시 만들지 않는다. 이
-/// 파일은 그 스위트들이 다루지 않는, Task 9가 실제로 바꾼 핵심 동작만 확인한다:
-/// 1) 옷 상세(c01)의 코디 캐러셀이 실제로 정사각형(고정 200px/0.82 peek 아님)으로 렌더링되는가.
+/// 파일은 그 스위트들이 다루지 않는 핵심 동작만 확인한다:
+/// 1) 옷 상세(c01)의 코디 캐러셀이 고정 96×96 타일의 연속 스크롤 리스트로 렌더링되는가(더 이상
+///    페이지 단위 AspectRatio(1) 풀블리드 정사각형이 아님, Task 11).
 /// 2) 옷 상세(c01)의 스타일일지 타일이 (연결 1개뿐인데도) 정사각형인가 — `expandSingle: false`
 ///    오버라이드가 실제로 반영되는지.
 /// 3) 코디 상세(comp01)의 스타일일지 타일은 여전히 2:1 와이드인가 — 두 화면이 "연결 1개"
 ///    케이스에서 실제로 다르게 보인다는 분기 증거.
 /// 4) 양쪽 Detail 화면 회귀 스윕 — 예외/오버플로 없음, `CrossReferenceLinkBar` 삭제 이후 잔여
 ///    빈 공간이 없음(마지막 콘텐츠 위젯이 화면 하단 근처에 온다).
-/// 5) mock엔 없는 "옷 1개가 코디 2개/스타일일지 2개에 연결된" 상태를 임시로 구성해 캐러셀
-///    다중 페이지(dot 2개)와 스타일일지 2열 그리드가 정상 동작하는지 확인.
+/// 5) mock엔 없는 "옷 1개가 코디 5개/스타일일지 2개에 연결된" 상태를 임시로 구성해 캐러셀의
+///    연속 스크롤 오버플로(페이지 스냅 없이 여러 카드가 동시 표시 + 드래그로 뒤쪽 카드 도달)와
+///    스타일일지 2열 그리드가 정상 동작하는지 확인.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -77,10 +84,12 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  // ── 1) 옷 상세(c01) — 코디 캐러셀 실제 정사각형 렌더링 ──────────────────────
+  // ── 1) 옷 상세(c01) — 코디 캐러셀은 고정 타일 크기의 연속 스크롤 리스트 ──────
 
-  group('옷 상세(c01) — 코디 캐러셀 실제 정사각형 렌더링(고정 200px/0.82 peek 아님)', () {
-    testWidgets('CompositionPreviewCarousel의 실제 렌더 크기가 width == height(AspectRatio(1))다',
+  group(
+      '옷 상세(c01) — 코디 캐러셀은 "착용 옷"과 동일한 고정 96×96 타일의 연속 스크롤 리스트'
+      '(Task 11 — 더 이상 페이지 단위 AspectRatio(1) 풀블리드 정사각형이 아님)', () {
+    testWidgets('CompositionPreviewCarousel 컨테이너 높이는 고정 타일 크기(96)이고, 내부 카드도 96×96 정사각형이다',
         (tester) async {
       await pumpApp(tester);
       await tapItemById(tester, 'c01');
@@ -89,12 +98,22 @@ void main() {
       expect(carouselFinder, findsOneWidget);
       final size = tester.getSize(carouselFinder);
 
-      expect(size.height, isNot(200), reason: 'Task 9 이전의 고정 200px 카드 높이가 남아있으면 안 된다');
+      expect(
+        size.height,
+        closeTo(96, 0.5),
+        reason: '"착용 옷" 타일과 동일한 스케일의 고정 타일 높이(96)여야 한다(Task 9의 고정 200px과도 다름)',
+      );
       expect(
         size.width,
-        closeTo(size.height, 0.5),
-        reason: 'AspectRatio(1) 풀블리드 정사각형이어야 한다(옛 0.82 viewport-peek 형태가 아님)',
+        isNot(closeTo(size.height, 0.5)),
+        reason: '더 이상 AspectRatio(1) 풀블리드 정사각형이 아니다 — 위젯 너비는 화면 콘텐츠 폭(패딩 제외) 전체다',
       );
+
+      final cardFinder = find.byType(CompositionPreviewCard);
+      expect(cardFinder, findsOneWidget);
+      final cardSize = tester.getSize(cardFinder);
+      expect(cardSize.width, closeTo(96, 0.5));
+      expect(cardSize.height, closeTo(96, 0.5));
       expect(tester.takeException(), isNull);
     });
   });
@@ -203,10 +222,13 @@ void main() {
       await tapItemById(tester, 'c01');
       expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
 
-      final compositionCard = find.byType(CompositionPreviewCarousel);
+      final compositionCard = find.byType(CompositionPreviewCard);
       expect(compositionCard, findsOneWidget);
       // 빠르게 연속으로 탭 → 뒤로가기 → 다시 탭(사용자가 빠르게 오가는 비정형 조작).
-      await tester.tap(find.byType(CompositionPreviewCarousel));
+      // 연속 스크롤 리스트가 되면서 캐러셀 컨테이너 자체는 화면 폭 전체를 차지하므로(실제
+      // 카드는 그 안의 96×96 타일 하나뿐), 탭은 반드시 실제 카드(CompositionPreviewCard)를
+      // 대상으로 해야 한다 — 컨테이너 중앙을 탭하면 카드 밖 빈 스크롤 영역을 맞출 수 있다.
+      await tester.tap(compositionCard);
       await tester.pump();
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -214,7 +236,7 @@ void main() {
 
       await tester.tap(find.byTooltip('뒤로가기'));
       await tester.pump();
-      await tester.tap(find.byType(CompositionPreviewCarousel));
+      await tester.tap(find.byType(CompositionPreviewCard));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
@@ -222,25 +244,29 @@ void main() {
     });
   });
 
-  // ── 5) 임시 구성 — 옷 1개가 코디 2개/스타일일지 2개에 연결된 경우 ────────────
+  // ── 5) 임시 구성 — 옷 1개가 코디 여러 개/스타일일지 2개에 연결된 경우 ─────────
 
-  group('임시 구성(mock 데이터엔 없음) — 코디 2개 캐러셀 다중 페이지 + 스타일일지 2열 그리드', () {
+  group(
+      '임시 구성(mock 데이터엔 없음) — 코디 캐러셀 연속 스크롤 오버플로(Task 11) + 스타일일지 2열 그리드', () {
     testWidgets(
-      'c01을 두 번째 코디에도 포함시키면 캐러셀이 2페이지가 되어 실제 드래그로 페이지 전환이 된다. '
-      '스타일일지도 comp01에 하나 더 연결하면 2열 그리드(정사각 2칸)로 바뀐다',
+      'c01을 코디 5개(comp01 + 임시 4개)에 포함시키면 여러 코디 카드가 스크롤 없이 동시에 보이고, '
+      '타일 총 폭이 화면 폭을 넘어 실제로 가로 스크롤이 가능해지며, 드래그로 뒤쪽 카드까지 탭할 수 '
+      '있다(페이지 스냅 없는 연속 스크롤 — PageView가 아님). 스타일일지도 comp01에 하나 더 연결하면 '
+      '2열 그리드(정사각 2칸)로 바뀐다',
       (tester) async {
         final container = await pumpApp(tester);
 
-        const extraComposition = Composition(
-          id: 'test-extra-comp-for-c01',
-          name: '임시 추가 코디',
-          items: [
-            CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0),
-          ],
-        );
+        final extraCompositions = [
+          for (var i = 1; i <= 4; i++)
+            Composition(
+              id: 'test-extra-comp-$i-for-c01',
+              name: '임시 추가 코디 $i',
+              items: const [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
+            ),
+        ];
         container.read(compositionsProvider.notifier).state = [
           ...container.read(compositionsProvider),
-          extraComposition,
+          ...extraCompositions,
         ];
 
         final extraStyleLog = StyleLog(
@@ -261,16 +287,46 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
 
-        // 캐러셀 — 2페이지.
-        expect(find.byType(CompositionPreviewCarousel), findsOneWidget);
-        final pageViewSize = tester.getSize(find.byType(PageView));
-        expect(pageViewSize.width, closeTo(pageViewSize.height, 0.5));
-        expect(find.textContaining('데일리 룩'), findsOneWidget);
+        // 캐러셀 — 더 이상 PageView가 아니라 연속 스크롤 리스트다. 여러 카드가 드래그 없이도
+        // 동시에 보인다(코디 상세로 진입해 하나만 보이는 옛 PageView 방식과의 결정적 차이).
+        final carouselFinder = find.byType(CompositionPreviewCarousel);
+        expect(carouselFinder, findsOneWidget);
+        expect(
+          find.descendant(of: carouselFinder, matching: find.byType(PageView)),
+          findsNothing,
+          reason: 'Task 11 이후로는 페이지 개념 자체가 없다',
+        );
+        expect(find.textContaining('데일리 룩'), findsOneWidget); // comp01, 1번째 타일
+        expect(find.textContaining('임시 추가 코디 1'), findsOneWidget); // 2번째 타일, 드래그 없이 동시 표시
 
-        await tester.drag(find.byType(PageView), const Offset(-400, 0));
+        // 타일 5개(96×5 + separator 4×8)가 화면 콘텐츠 폭을 넘어 실제로 스크롤 가능해야 한다.
+        final scrollableFinder =
+            find.descendant(of: carouselFinder, matching: find.byType(Scrollable));
+        expect(scrollableFinder, findsOneWidget);
+        final scrollable = tester.state<ScrollableState>(scrollableFinder);
+        expect(
+          scrollable.position.maxScrollExtent,
+          greaterThan(0),
+          reason: '5개 타일 총 폭이 화면 폭을 넘어야 이 시나리오가 의미가 있다',
+        );
+
+        // 실제 드래그(페이지 스냅 없는 연속 스크롤)로 더 뒤쪽 카드까지 이동한다.
+        await tester.drag(carouselFinder, const Offset(-400, 0));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.textContaining('임시 추가 코디'), findsOneWidget);
+        expect(scrollable.position.pixels, greaterThan(0));
+        expect(find.textContaining('임시 추가 코디 4'), findsOneWidget);
+
+        // 드래그로 도달한 마지막 카드도 실제로 탭 가능하고 정확한 코디 상세로 이동한다.
+        await tester.tap(find.textContaining('임시 추가 코디 4'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byType(CompositionDetailScreen), findsOneWidget);
+        expect(find.text('임시 추가 코디 4'), findsOneWidget);
+
+        await tester.tap(find.byTooltip('뒤로가기'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
 
         // 스타일일지 — 2개가 되었으니 이제 2열 그리드(정사각 타일 2개), 더 이상 단일 확대가 아니다.
         final tiles = find.byType(StyleLogGalleryTile);
