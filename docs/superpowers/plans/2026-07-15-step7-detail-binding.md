@@ -2467,6 +2467,43 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 
 ---
 
+### Task 10: 옷 상세 코디 캐러셀 타일을 "사용된 옷" 가로 스크롤로 교체 (UI/Screen, Implementation/Frontend)
+
+**배경**: 2차 Audit 이후 사용자가 옷 상세의 코디 캐러셀 타일을 단일 대표이미지 대신 실제 사용된 옷 목록(가로 스크롤)으로 바꿔달라고 지시(2026-07-16→17) — `docs/history/Decision.md` "옷 상세의 '연결된 코디' 캐러셀 타일을 단일 대표이미지에서 '사용된 옷' 가로 스크롤로 교체" 참고. 이 패턴은 `composition_detail_screen.dart`의 "사용된 옷", `style_log_viewer_screen.dart`의 "착용 옷"에 이미 두 번 존재하므로 공용 위젯으로 추출한다.
+
+**Files:**
+- New: `lib/widgets/clothing_items_row.dart` (`ClothingItemsRow`)
+- New: `lib/widgets/composition_items_tile.dart` (`CompositionItemsTile`)
+- Modify: `lib/widgets/composition_preview_carousel.dart` (`ConsumerStatefulWidget`로 전환, 타일 콘텐츠를 `CompositionItemsTile`로 교체, `onItemTap` 파라미터 추가)
+- Modify: `lib/widgets/composition_preview_card.dart` (docstring만 — 이제 스타일일지 열람 코디 슬롯 전용)
+- Modify: `lib/screens/closet_item_detail_screen.dart` (`CompositionPreviewCarousel`에 `onItemTap` 전달)
+- Modify: `lib/screens/composition_detail_screen.dart` ("사용된 옷" 인라인 코드를 `ClothingItemsRow`로 교체, 동작 변경 없음)
+- Modify: `lib/screens/style_log_viewer_screen.dart` ("착용 옷" 인라인 코드를 `ClothingItemsRow`로 교체, 동작 변경 없음)
+- Modify: 관련 통합테스트(코디 캐러셀/사용된 옷/착용 옷을 다루는 파일 전부 — `grep -rl "CompositionPreviewCarousel\|사용된 옷\|착용 옷" integration_test/`로 확인)
+
+**Interfaces:**
+- Consumes: `closetItemsProvider`
+- Produces: `ClothingItemsRow({required List<ClothingItem> items, required void Function(ClothingItem) onTap, bool showLabel = true, double tileSize = 72})` — `showLabel`이 true면 이미지 아래 이름 라벨(기존 "사용된 옷" 방식), false면 이미지만(기존 "착용 옷" 방식). `CompositionItemsTile({required Composition composition, required List<ClothingItem> items, required VoidCallback onTap, required void Function(ClothingItem) onItemTap})` — 상단 코디 이름 라벨 + `ClothingItemsRow`(showLabel:false 권장), 옷 이미지 탭은 `onItemTap`, 그 외 영역 탭은 `onTap`(코디 상세).
+
+**설계 노트(Worker 재량 허용, 단 아래 원칙은 지킬 것)**:
+- `CompositionPreviewCarousel`이 `closetItemsProvider`를 watch해 각 코디의 `composition.items`(순서 유지)를 실제 `ClothingItem` 리스트로 resolve한 뒤 `CompositionItemsTile`에 넘긴다.
+- **제스처 경합 리스크**: 캐러셀(가로 스와이프)과 그 안의 `ClothingItemsRow`(가로 스크롤)가 같은 축에서 중첩된다. `CompositionItemsTile`의 코디 이름 라벨 영역에 적당한 패딩을 둬 "스와이프 시작 여지"를 확보하는 정도로 완화하고, 실제 동작 여부는 Tester가 실측 드래그로 검증한다(막히면 후속 조정).
+- `ClothingItemsRow`로 옮기며 기존 두 화면(`composition_detail_screen.dart`/`style_log_viewer_screen.dart`)의 동작(각 아이템 탭 시 옷 상세 이동, `style_log_viewer_screen.dart`의 imagePath 역참조 매칭 로직 등)은 그대로 보존 — 순수 리팩터, 회귀 없이.
+- 값(spacing/코너반경)은 `AppSpacing`/`AppRadius` 참조, 새 매직넘버 도입 시 이름 있는 const + TechnicalDebt 기록.
+
+**Stage**: UI/Screen, Implementation/Frontend. 화면 렌더링/상호작용이 실제로 바뀌므로 Worker→Review→Tester(CLAUDE.md §4). 단독 Task(S~M 사이즈로 판단) — 이 Task만으로는 별도 Audit 불필요, 다음에 여러 Task가 쌓이면 그때 판단.
+
+- [ ] **Step 1**: `ClothingItemsRow` 신설
+- [ ] **Step 2**: `CompositionItemsTile` 신설
+- [ ] **Step 3**: `composition_preview_carousel.dart` 전환 + `closet_item_detail_screen.dart` 호출부 갱신
+- [ ] **Step 4**: `composition_detail_screen.dart`/`style_log_viewer_screen.dart`를 `ClothingItemsRow` 재사용으로 리팩터(동작 동일 확인)
+- [ ] **Step 5**: `composition_preview_card.dart` docstring 갱신
+- [ ] **Step 6**: 관련 통합테스트 갱신(신규 위젯 타입 기준 assertion)
+- [ ] **Step 7**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행, `taskkill` 습관 유지)
+- [ ] **Step 8**: Commit
+
+---
+
 ## 완료 후 PM 처리 사항 (이 Plan의 실행 대상 아님 — 세션 인계 메모)
 
 - Task 7 Tester 통과 직후 1차 Audit 실행 완료(2026-07-16) — P1 2건(스타일일지 열람 코디 바인딩 UI 불일치/스펙 위반, `crossReferenceEntries` 계약 애매함) 발견, 사용자가 즉시 착수 지시 → Task 8/9로 추가. **Task 9 Tester 통과 직후 2차(최종) Audit을 한 번 더 실행**해야 이 Plan 전체(9개 Task)가 완료 처리된다(CLAUDE.md §4 — Task 8/9로 코드가 다시 바뀌었으므로 1차 Audit 결과만으로 완료 처리하지 않음).

@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 옷 상세의 "연결된 코디" 캐러셀 타일을 단일 대표이미지에서 "사용된 옷" 가로 스크롤로 교체 (UI/Screen, Decision)
+
+결정:
+- 옷 상세(`closet_item_detail_screen.dart`)의 `CompositionPreviewCarousel` 각 타일이 지금까지는 `CompositionPreviewCard`(코디 대표이미지 1장 — `coverImagePath` 없으면 첫 옷 이미지로 폴백 — + 이름)만 보여줬는데, 이를 그 코디에 실제로 포함된 옷 전부를 가로 스크롤 스트립으로 보여주는 방식으로 바꾼다. 이 가로 스크롤 스트립 UI는 이미 `composition_detail_screen.dart`의 "사용된 옷"과 `style_log_viewer_screen.dart`의 "착용 옷"에 거의 동일한 형태로 두 번 존재하므로, 공용 위젯(`ClothingItemsRow`)으로 추출해 세 곳에서 재사용한다.
+- 코디 이름은 타일 상단 라벨로 유지. 타일 안에서 **개별 옷 이미지를 탭하면 그 옷의 상세로**, **옷 이미지가 아닌 타일의 나머지 영역(이름 라벨 등)을 탭하면 기존처럼 코디 상세로** 이동한다 — 두 탭 대상이 공존해야 하므로 새 위젯(`CompositionItemsTile`)이 이 분기를 담당한다.
+- **알려진 리스크(구현 후 Tester가 반드시 실측 검증)**: 캐러셀(가로 스와이프, 코디 간 이동)과 그 안의 옷 목록(가로 스크롤, 옷 간 이동)이 같은 축(가로)의 중첩 스크롤이라 제스처 경합이 생길 수 있다 — Flutter의 제스처 아레나가 터치 시작 위치 기준으로 대체로 잘 처리하지만, 옷 목록이 타일 전체를 채우면 "코디 간 스와이프"를 시작할 빈 공간이 부족해질 수 있음. 실측 결과에 따라 후속 조정(예: 타일 상단 라벨 영역을 스와이프 전용 구역으로 넉넉히 두기) 검토.
+- `CompositionPreviewCard`는 이제 스타일일지 열람의 코디 슬롯(단일 카드) 전용으로 좁혀진다 — docstring 갱신.
+
+사유:
+사용자가 옷 상세 화면을 보고 "코디 이미지를 그냥 단일 이미지로 넣지 말고, 스타일일지 열람의 착용 옷 캐러셀처럼 실제 옷들을 캐러셀의 타일 콘텐츠로 넣어달라"고 지시(2026-07-16→17). 단일 대표이미지(코디에 포함된 첫 옷 하나만 임의로 대표하는 방식)보다 실제 구성 옷 전부를 보여주는 편이 정보량이 많고, 이미 두 화면에 있는 패턴을 재사용하면 구현 비용도 낮다고 판단.
+
+Impact:
+- 신규 `lib/widgets/clothing_items_row.dart`(`ClothingItemsRow`), `lib/widgets/composition_items_tile.dart`(`CompositionItemsTile`).
+- `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 기존 인라인 가로 스크롤 코드를 `ClothingItemsRow`로 교체(동작 변경 없음, 순수 리팩터).
+- `composition_preview_carousel.dart`가 `ConsumerStatefulWidget`로 전환(`closetItemsProvider` watch 필요), `closet_item_detail_screen.dart` 호출부에 `onItemTap` 파라미터 추가.
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 10으로 추가.
+
+---
+
 [Decision] 스타일일지 열람 카드 구조를 스펙 원문대로 정정(대표이미지/코디 슬롯 2페이지 캐러셀) + 옷장 상세 정사각형 통일 + `crossReferenceEntries` 폐기 (UI/Screen, Decision — 아래 "Detail 화면 상호참조를..." 항목을 부분 정정)
 
 결정:
