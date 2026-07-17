@@ -206,7 +206,14 @@ void main() {
       final compositionCard = find.byType(CompositionPreviewCarousel);
       expect(compositionCard, findsOneWidget);
       // 빠르게 연속으로 탭 → 뒤로가기 → 다시 탭(사용자가 빠르게 오가는 비정형 조작).
-      await tester.tap(find.byType(CompositionPreviewCarousel));
+      // 코디 이름 라벨(배경 영역)을 탭한다 — 옷 이미지 영역을 탭하면 개별 옷 상세로 가는
+      // onItemTap이 대신 발동하므로(Task 10, 두 탭 대상 분리), 코디 상세로 가려면 반드시
+      // 라벨/배경을 탭해야 한다. 캐러셀 안으로 범위를 좁혀 찾는다 — 뒤로가기 전환 애니메이션
+      // 도중엔 CompositionDetailScreen의 headlineSmall 제목("데일리 룩")도 동시에 트리에
+      // 남아있어 범위를 안 좁히면 findText가 모호해진다.
+      final compositionLabel =
+          find.descendant(of: compositionCard, matching: find.text('데일리 룩'));
+      await tester.tap(compositionLabel);
       await tester.pump();
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -214,7 +221,7 @@ void main() {
 
       await tester.tap(find.byTooltip('뒤로가기'));
       await tester.pump();
-      await tester.tap(find.byType(CompositionPreviewCarousel));
+      await tester.tap(compositionLabel);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
@@ -267,7 +274,11 @@ void main() {
         expect(pageViewSize.width, closeTo(pageViewSize.height, 0.5));
         expect(find.textContaining('데일리 룩'), findsOneWidget);
 
-        await tester.drag(find.byType(PageView), const Offset(-400, 0));
+        // 코디 이름 라벨 위에서 드래그를 시작한다 — 옷 이미지 스트립(ClothingItemsRow) 위에서
+        // 시작하면 같은 가로축 제스처 경합으로 안쪽 리스트가 드래그를 먼저 가져가 캐러셀
+        // 페이지가 안 넘어갈 수 있다(Task 10 설계 노트의 알려진 리스크 — 라벨 영역이
+        // 스와이프 시작 여지로 남겨둔 non-list 표면).
+        await tester.drag(find.text('데일리 룩'), const Offset(-400, 0));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.textContaining('임시 추가 코디'), findsOneWidget);

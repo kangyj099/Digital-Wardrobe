@@ -7,6 +7,7 @@ import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/clothing_items_row.dart';
 import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
 
@@ -52,42 +53,10 @@ class CompositionDetailScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             Text('사용된 옷', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: AppSpacing.xs),
-            SizedBox(
-              height: 96,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: usedItems.length,
-                separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.xs),
-                itemBuilder: (context, index) {
-                  final item = usedItems[index];
-                  return GestureDetector(
-                    key: ValueKey(item.id),
-                    onTap: () =>
-                        context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 72,
-                          height: 72,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            child: Image.asset(item.imagePath, fit: BoxFit.cover),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 72,
-                          child: Text(
-                            item.name,
-                            style: Theme.of(context).textTheme.labelSmall,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+            ClothingItemsRow(
+              items: usedItems,
+              onTap: (item) =>
+                  context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
             ),
             const SizedBox(height: AppSpacing.md),
             Text('연결된 스타일일지', style: Theme.of(context).textTheme.titleSmall),

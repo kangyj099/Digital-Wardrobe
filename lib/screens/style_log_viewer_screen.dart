@@ -8,6 +8,7 @@ import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/clothing_items_row.dart';
 import '../widgets/composition_preview_card.dart';
 import 'app_detail_scaffold.dart';
 
@@ -54,6 +55,14 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
         : ref.watch(compositionsProvider).firstWhere((c) => c.id == log.linkedCompositionId);
     final closetItems = ref.watch(closetItemsProvider);
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    // additionalImagePaths(실제로는 착용 옷 이미지, Decision.md "추가 사진" 라벨 정정
+    // 참고)를 imagePath 역참조로 실제 ClothingItem에 매칭 — 매칭되는 옷이 없으면(mock
+    // 데이터엔 없는 케이스) 목록에서 제외한다(ClothingItemsRow는 조회 로직을 갖지 않으므로
+    // 이 resolve는 항상 호출부 책임).
+    final wornItems = [
+      for (final path in log.additionalImagePaths)
+        ...closetItems.where((i) => i.imagePath == path).take(1),
+    ];
 
     return AppDetailScaffold(
       category: AppCategory.styleLog,
@@ -116,31 +125,12 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
               const SizedBox(height: AppSpacing.md),
               Text('착용 옷', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: AppSpacing.xs),
-              SizedBox(
-                height: 96,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: log.additionalImagePaths.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.xs),
-                  itemBuilder: (context, index) {
-                    final path = log.additionalImagePaths[index];
-                    // `imagePath`가 정확히 일치하는 옷을 역으로 찾아 탭 시 그 옷 상세로
-                    // 이동한다(mock_data.dart 기준 log01의 두 경로는 각각 c11/c07의
-                    // imagePath와 정확히 일치함이 이미 확인된 데이터 정합성).
-                    final match = closetItems.where((i) => i.imagePath == path);
-                    final item = match.isEmpty ? null : match.first;
-                    return GestureDetector(
-                      onTap: item == null
-                          ? null
-                          : () =>
-                              context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        child: Image.asset(path, width: 96, fit: BoxFit.cover),
-                      ),
-                    );
-                  },
-                ),
+              ClothingItemsRow(
+                items: wornItems,
+                onTap: (item) =>
+                    context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
+                showLabel: false,
+                tileSize: 96,
               ),
             ],
           ],
