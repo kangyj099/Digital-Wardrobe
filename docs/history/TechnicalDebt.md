@@ -15,7 +15,9 @@ Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-
 
 **추가(Task 8 Review, 2026-07-16)**: `lib/screens/style_log_viewer_screen.dart`(커밋 `37ef084`)의 2페이지 캐러셀 점 인디케이터도 `composition_preview_carousel.dart`의 `_dotSize`/`_dotMargin`과 동일한 값(6/2)을 이름 없는 리터럴로 반복했다 — 같은 패턴이 세 번째로 등장(코디 캐러셀→여기)한 것이라, 다음에 손댈 때는 이름 붙이는 것보다 공유 `_PageDotIndicator` 위젯 추출을 우선 검토.
 
-조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, 남은 항목들(`_dotSize`/`_dotMargin`(코디 캐러셀), `style_log_viewer_screen.dart`의 동일 점 인디케이터 리터럴, `height: 96`/`width: 72`/`width: 96`)을 정식 토큰으로 승격 검토 — 점 인디케이터 쪽은 토큰화보다 공유 위젯 추출이 더 적합할 수 있음.
+**정정(Task 11, 2026-07-18)**: 사용자와의 여러 차례 정정 끝에 옷 상세의 코디 프리뷰가 `PageView`+점 인디케이터 방식이 아니라 "착용 옷"과 동일한 연속 스크롤 리스트여야 함이 확인됨(`docs/history/Decision.md` "옷 상세 코디 프리뷰를 `PageView` 캐러셀에서..." 참고). `composition_preview_carousel.dart`가 `ListView.separated`로 재작성되며 `_dotSize`/`_dotMargin`(및 점 인디케이터 자체)이 완전히 삭제됐다 — 이 항목의 "점 인디케이터 3번째 반복" 지적은 이제 `style_log_viewer_screen.dart` 단독 사례로 좁혀짐(공유 위젯 추출 필요성 자체가 낮아짐, 반복이 1곳뿐이라). 새로 도입된 `_tileSize`(96, 코디 카드 고정 크기)는 이름 있는 로컬 const로 이미 승격돼 있어 추가 조치 불필요.
+
+조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, 남은 항목들(`style_log_viewer_screen.dart`의 점 인디케이터 리터럴, `height: 96`/`width: 72`/`width: 96`, `composition_preview_carousel.dart`의 `_tileSize`)을 정식 토큰으로 승격 검토.
 
 ---
 
