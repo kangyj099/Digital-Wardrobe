@@ -59,7 +59,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 코디 아이템 개수 상한 15개(`Decision.md` 확정, 2026-07-16) — 실제 코드 반영은 Editor 구현 시점.
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
 - (P2, 급하지 않음) 휴지통 mock provider에 삭제 시각(`deletedAt`) 필드가 없어 실제 3-domain 집계 전환 시 "N일 남음" 계산 불가 — 모델에 필드 추가 필요. `mockTrashEntries`의 `t3` 항목이 `remainingDays: 27`로 15일 상한을 넘는 값이라 다음에 손댈 때 0~15 범위로 조정.
-- ~~`ClothingItem`의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)~~ **완료(2026-07-19)** — Worker→Review(1차 P0 발견·재작업)→Review(2차 통과)→Tester 전체 사이클 통과, 실제 영향 파일은 애초 집계(13개)보다 훨씬 좁은 4개였음. 상세는 `docs/history/Decision.md` 해당 항목의 "상태" 줄 참고. 후속: 옷장·코디 메인 헤더 스펙(`2026-07-19-main-header-classification-and-settings-entry-design.md`)의 "옷장은 미분류 없음" 전제를 이제 갱신해야 함(다음 세션 작업으로 진행 중).
+- ~~`ClothingItem`의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)~~ **완료(2026-07-19)** — Worker→Review(1차 P0 발견·재작업)→Review(2차 통과)→Tester 전체 사이클 통과, 실제 영향 파일은 애초 집계(13개)보다 훨씬 좁은 4개였음. 상세는 `docs/history/Decision.md` 해당 항목의 "상태" 줄 참고. 후속으로 필요했던 옷장·코디 메인 헤더 스펙의 "옷장은 미분류 없음" 전제 갱신도 같은 날 완료(커밋 `e7e6b73`, 위 1번 그룹 A 항목 참고) — 더 할 일 없음.
 
 ---
 
