@@ -53,6 +53,7 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 코디 아이템 개수 상한 15개(`Decision.md` 확정, 2026-07-16) — 실제 코드 반영은 Editor 구현 시점.
 - Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지 — 이번 라운드엔 제작 안 함. 실제로 만들 때 지킬 계약(Overlay, 레이아웃 비침습)은 위 스펙 §3/§6에 이미 정의됨.
 - (P2, 급하지 않음) 휴지통 mock provider에 삭제 시각(`deletedAt`) 필드가 없어 실제 3-domain 집계 전환 시 "N일 남음" 계산 불가 — 모델에 필드 추가 필요. `mockTrashEntries`의 `t3` 항목이 `remainingDays: 27`로 15일 상한을 넘는 값이라 다음에 손댈 때 0~15 범위로 조정.
+- **(신규 결정, 2026-07-19) `ClothingItem`의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)** — "Step⑦ 나머지 스코프" 중 옷장·코디 메인 헤더 스펙(`docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`) 브레인스토밍 중 발견, 근거·Impact는 `docs/history/Decision.md` 해당 항목 참고. **별도 Decision + 리토핑 태스크로 분리 확정**(사용자 지시) — 이미 non-null을 전제하는 기존 파일 13개 리토핑 필요, `closet_add_screen.dart`(미착수) 검증 로직에도 반영 필요. 위 헤더 스펙의 "옷장은 미분류 없음" 전제가 이 작업 완료 시 깨지니 착수 순서 조율 필요.
 
 ---
 

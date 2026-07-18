@@ -786,3 +786,24 @@ Design System, Component Library. 화면/기획 문서 변경 없음.
 
 Follow-up:
 Brand Guide 확정 시 PLACEHOLDER 값 전수 교체 Task 필요 (TechnicalDebt.md 등록 대상 여부는 별도 확인).
+
+---
+
+[Decision] ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)
+
+배경:
+`2026-07-19-main-header-classification-and-settings-entry-design.md` 스펙 작업 중 사용자가 "옷장 category/season이 지금 왜 non-nullable이냐"고 확인, 그 배경에서 제기됨.
+
+결정:
+- `ClothingItem.category`/`season`/`color`/`material` 4개 필드를 전부 `required` → nullable(선택 필드)로 전환한다.
+- 대상은 `ClothingItem`뿐 — `Composition`/`StyleLog`는 이 결정 범위 밖(별도 검토).
+
+사유:
+앱의 본질적 가치는 "옷 등록 — 아카이브 사진 연결"이고, 종류/계절/색상/소재 같은 태그 정보는 부가적이라고 판단. AI 자동 라벨링(`01_옷장.md` "여러 장 한 번에 추가하기")이 보통은 채워주지만 (a) 사용자가 원하는 선택지가 폐쇄형 어휘에 없을 수 있고 (b) 태그를 건너뛰고 빠르게 등록만 하고 싶을 수 있음 — 두 경우 모두 저장 자체를 막아서는 안 된다는 게 사용자 판단.
+
+Impact:
+- 이미 이 4개 필드를 non-null로 전제하고 읽는 파일 13개가 리토핑 대상(grep 확인, 2026-07-19 기준): `lib/widgets/trash_gallery_tile.dart`, `lib/widgets/selectable_gallery_tile.dart`, `lib/widgets/composition_gallery_tile.dart`, `lib/screens/trash_main_screen.dart`, `lib/screens/composition_detail_screen.dart`, `lib/screens/closet_item_detail_screen.dart`, `lib/screens/app_detail_scaffold.dart`, `lib/providers/composition_providers.dart`, `lib/providers/closet_providers.dart`, `lib/models/trash_entry.dart`, `lib/models/enums.dart`, `lib/models/composition.dart`, `lib/models/clothing_item.dart`.
+- **`2026-07-19-main-header-classification-and-settings-entry-design.md`(옷장·코디 메인 헤더 드릴다운 캡슐 스펙)와의 관계**: 그 스펙은 "옷장의 4개 분류 기준(날짜/종류/계절/착용빈도)은 대응 필드가 전부 non-nullable이라 미분류 카드가 없다"고 명시하는데, 이 결정이 실행되면 옷종류·계절 두 필드가 nullable이 되어 그 전제가 깨진다 — 옷장도 코디(계절·날씨)와 동일하게 미분류 그룹 카드가 필요해짐. 두 작업 착수 순서에 따라 어느 한쪽이 먼저 완료되면 나머지가 그 변경을 반영해야 한다.
+- `closet_add_screen.dart`(아직 스켈레톤, 미착수) 구현 시 필수/선택 필드 검증 로직에 반영 필요 — 현재는 착수 전이라 즉시 영향 없음.
+
+착수 방식: 별도 Decision + 리토핑 태스크로 분리한다(사용자 확정, 2026-07-19) — 위 헤더 드릴다운 스펙엔 포함하지 않고 진행 중인 채로 둔다. `docs/work/BACKLOG.md`에 후속 작업으로 등록.
