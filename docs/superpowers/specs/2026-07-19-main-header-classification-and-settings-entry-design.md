@@ -72,10 +72,10 @@ Row 2의 기존 계절 필터 pill 자리를, **`[중분류 ▾][소분류 ▾]`
 | 값 | 소분류(세부 값) | 데이터 소스 |
 |---|---|---|
 | 전체보기 | 없음(캡슐 축소) | — |
-| 날짜·시간 | 연도 | `ClothingItem.createdAt`(신설) |
-| 옷 종류 | `ClothingCategory` 8종 | 기존 필드, 이미 착용순서로 선언돼 있어 추가 매핑 불필요 |
-| 계절 | `Season` 3종 | 기존 필드 |
-| 착용빈도 | 없음(캡슐 축소, 정렬 전용) | 기존 `wearCount` |
+| 날짜·시간 | 연도 | `ClothingItem.createdAt`(신설, non-nullable) |
+| 옷 종류 | `ClothingCategory` 8종 + **미분류** | `ClothingItem.category`(`ClothingCategory?`, nullable — `docs/history/Decision.md` "ClothingItem의 category/season/color/material... nullable화" 결정, 2026-07-19 리토핑 완료). 값 종류 자체는 이미 착용순서로 선언돼 있어 추가 매핑 불필요 |
+| 계절 | `Season` 3종 + **미분류** | `ClothingItem.season`(`Season?`, nullable — 위와 동일 결정) |
+| 착용빈도 | 없음(캡슐 축소, 정렬 전용) | 기존 `wearCount`(non-nullable `int`) |
 
 **코디** (`CompositionSortCriterion`):
 
@@ -86,9 +86,7 @@ Row 2의 기존 계절 필터 pill 자리를, **`[중분류 ▾][소분류 ▾]`
 | 계절 | `Season` 3종 + **미분류** | 기존 필드 — `Composition.season`은 `Season?`으로 원래부터 nullable(선택 태그)이라 미설정 코디가 있을 수 있음 |
 | 날씨 | `Weather` 3종 + **미분류** | `Composition.weather`(신설, nullable) |
 
-**미분류 카드**: 옷장 쪽 4개 기준(날짜/종류/계절/착용빈도)은 대응 필드가 전부 non-nullable(`ClothingItem`은 `season`/`category`도 required)이라 미분류가 원천적으로 없다 — 옷장 그룹 개요엔 이 카드가 절대 등장하지 않는다. **코디의 계절·날씨만** 해당 필드가 nullable이라 미분류 카드가 필요하다. 다른 그룹 카드와 동일하게 "값을 가진 항목이 0개면 카드 자체를 안 만든다" 규칙이 미분류 카드에도 그대로 적용된다(코디가 전부 계절 태그를 갖고 있으면 미분류 카드는 안 생김). 카드 정렬 위치는 §3.4의 null 정렬 규칙과 동일하게 오름차순이면 맨 뒤, 내림차순이면 맨 앞.
-
-> **[정정 여지, 2026-07-19]** `docs/history/Decision.md`에 별도로 기록된 결정("ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환")이 실행되면 위 "옷장은 미분류 없음" 전제가 깨진다 — `category`/`season`이 nullable이 되면 옷장도 코디와 동일하게 미분류 카드가 필요해짐. 그 리토핑 작업은 이 스펙과 별도 태스크로 분리돼 있어(사용자 확정) 지금은 반영하지 않지만, 두 작업 중 어느 쪽이 나중에 착수되든 서로 참조해서 갱신할 것.
+**미분류 카드**: 옷장의 옷종류·계절, 코디의 계절·날씨 — 이 4개 기준 전부 대응 필드가 nullable이라 미분류 카드가 필요하다(옷장 쪽은 2026-07-19 리토핑으로 nullable화 완료, 코디 쪽은 원래부터 nullable). 옷장의 날짜·시간(`createdAt`)/착용빈도(`wearCount`)는 여전히 non-nullable이라 이 둘만 미분류가 없다. 다른 그룹 카드와 동일하게 "값을 가진 항목이 0개면 카드 자체를 안 만든다" 규칙이 미분류 카드에도 그대로 적용된다(어떤 도메인이든 전부 태그가 채워져 있으면 미분류 카드는 안 생김). 카드 정렬 위치는 §3.4의 null 정렬 규칙과 동일하게 오름차순이면 맨 뒤, 내림차순이면 맨 앞.
 
 기본 정렬 순서(`_공통 규칙.md` "분류 기준별 정렬 기준표" 그대로): 날짜=최신순 내림차순, 옷종류=머리→발, 계절=봄가을→여름→겨울, 착용빈도=많이 입은 순 내림차순, 날씨=맑음→비→눈. 모든 기준에 오름차순/내림차순 토글 제공.
 
@@ -118,7 +116,7 @@ extension on ClosetSortCriterion {
 ### 3.4 정렬 방향 & nullable 값 처리
 
 - 오름차순/내림차순은 기존 `secondaryControlsRight`에 이미 자리만 잡아둔 스텁 버튼을 재사용한다 — 옷장의 `GlassCircleButton(icon: Icons.adjust, tooltip: '(미정)')`, 코디의 `GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {})`. 둘 다 지금은 `onPressed: () {}`인 스텁으로, 이 캡슐 작업의 오름차순/내림차순 토글로 배선하면 자연스럽게 의미가 채워짐(아이콘/툴팁은 Worker가 방향 표시에 맞게 조정).
-- **nullable 소분류 값(현재는 코디의 `weather`만 해당) 정렬 규칙**: 오름차순이면 미지정(`null`)이 맨 아래로, 내림차순이면 미지정이 맨 위로 온다. 즉 `null`을 항상 "가장 큰 값"으로 취급해 `compareTo`에 넣으면 두 방향 모두 별도 분기 없이 일관되게 처리된다:
+- **nullable 소분류 값(옷장의 옷종류·계절, 코디의 계절·날씨 — §3.6의 `DrilledValue` 대상 4개 기준과 동일) 정렬 규칙**: 오름차순이면 미지정(`null`)이 맨 아래로, 내림차순이면 미지정이 맨 위로 온다. 즉 `null`을 항상 "가장 큰 값"으로 취급해 `compareTo`에 넣으면 두 방향 모두 별도 분기 없이 일관되게 처리된다:
 
 ```dart
 int _compareNullableLast<T extends Comparable>(T? a, T? b, {required bool ascending}) {
@@ -162,7 +160,7 @@ final Weather? weather;   // nullable, season과 동일한 성격의 "의도된"
 
 ### 3.6 Provider 아키텍처
 
-기존 `selectedSeasonFilterProvider`/`selectedCompositionSeasonFilterProvider`(계절 필터)는 유지하고 "중분류=계절"일 때의 소분류 값 저장소로 재사용한다. 나머지 기준은 새 provider를 추가한다 — 도메인별 독립(옷장 드릴다운이 코디 상태에 영향 없음), `2026-07-12` 스펙의 "타입은 공유, 인스턴스는 도메인별 분리" 원칙은 유지하되 enum 자체는 옷장/코디가 각자 다른 기준 목록을 가지므로 공유하지 않는다(공유 시도는 과설계 — 옷장 5종/코디 4종이 겹치는 게 "전체보기/날짜/계절"뿐이라 억지로 합치면 코디에 없는 "옷종류"/"착용빈도"까지 끌고 들어옴).
+기존 `selectedSeasonFilterProvider`(옷장)/`selectedCompositionSeasonFilterProvider`(코디)는 **아래 `DrilledValue` wrapper 기반 provider로 대체된다**(재사용 아님 — 이유는 뒤에서 설명). 나머지 기준은 새 provider를 추가한다 — 도메인별 독립(옷장 드릴다운이 코디 상태에 영향 없음), `2026-07-12` 스펙의 "타입은 공유, 인스턴스는 도메인별 분리" 원칙은 유지하되 enum 자체는 옷장/코디가 각자 다른 기준 목록을 가지므로 공유하지 않는다(공유 시도는 과설계 — 옷장 5종/코디 4종이 겹치는 게 "전체보기/날짜/계절"뿐이라 억지로 합치면 코디에 없는 "옷종류"/"착용빈도"까지 끌고 들어옴).
 
 ```dart
 // lib/providers/closet_providers.dart 추가
@@ -170,9 +168,8 @@ enum ClosetSortCriterion { all, dateTime, clothingType, season, wearFrequency }
 
 final closetSortCriterionProvider = StateProvider<ClosetSortCriterion>((ref) => ClosetSortCriterion.all);
 final closetSortAscendingProvider = StateProvider<bool>((ref) => false); // 기본 내림차순(최신/많이입은순)
-final closetDrilledCategoryProvider = StateProvider<ClothingCategory?>((ref) => null);
-final closetDrilledYearProvider = StateProvider<int?>((ref) => null);
-// 계절 소분류는 기존 selectedSeasonFilterProvider 재사용
+final closetDrilledYearProvider = StateProvider<int?>((ref) => null); // createdAt은 non-nullable이라 wrapper 불필요
+// 옷종류·계절은 ClothingItem.category/season이 nullable이라 DrilledValue<T> wrapper 필요(아래 참고)
 ```
 
 ```dart
@@ -184,7 +181,7 @@ final compositionSortAscendingProvider = StateProvider<bool>((ref) => false);
 final compositionDrilledYearProvider = StateProvider<int?>((ref) => null);
 ```
 
-**계절·날씨는 "미분류" 드릴인이 있어서 단순 nullable로는 부족하다** — `null`이 "아직 소분류 안 고름(그룹 개요)"과 "미분류 그룹으로 드릴인함(값이 원래부터 null인 코디만 보기)" 두 가지를 동시에 가리키게 되는 충돌이 생긴다(`Composition.season`/`weather` 둘 다 원래 nullable이라 §3.2에서 확인한 문제). 그래서 이 두 기준만 작은 wrapper로 "미선택"과 "미분류 드릴인"을 구분한다:
+**소분류 값 자체가 nullable인 기준(옷장의 옷종류·계절, 코디의 계절·날씨)은 "미분류" 드릴인이 있어서 단순 nullable provider로는 부족하다** — `null`이 "아직 소분류 안 고름(그룹 개요)"과 "미분류 그룹으로 드릴인함(그 필드가 원래부터 null인 항목만 보기)" 두 가지를 동시에 가리키게 되는 충돌이 생긴다. 그래서 이 4개 기준만 작은 wrapper로 "미선택"과 "미분류 드릴인"을 구분한다:
 
 ```dart
 /// 소분류 provider의 상태 3가지: 미선택(groupOverview) / 특정 값으로 드릴인 / 미분류로 드릴인.
@@ -195,13 +192,19 @@ class DrilledValue<T> {
   final T? value; // null == 미분류로 드릴인
 }
 
+// lib/providers/closet_providers.dart
+final closetDrilledCategoryProvider = StateProvider<DrilledValue<ClothingCategory>?>((ref) => null);
+final closetDrilledSeasonProvider = StateProvider<DrilledValue<Season>?>((ref) => null);
+// 기존 selectedSeasonFilterProvider(단순 Season? 필터)는 위 closetDrilledSeasonProvider로 대체됨.
+
+// lib/providers/composition_providers.dart
 final compositionDrilledSeasonProvider = StateProvider<DrilledValue<Season>?>((ref) => null);
 final compositionDrilledWeatherProvider = StateProvider<DrilledValue<Weather>?>((ref) => null);
 // 기존 selectedCompositionSeasonFilterProvider(단순 Season? 필터)는 위 provider로 대체됨 —
 // "전체 시즌"과 "미분류 시즌"이 이제 서로 다른 상태라 하나의 nullable로 겸용 불가능해졌기 때문.
 ```
 
-옷장의 `closetDrilledCategoryProvider`/`closetDrilledYearProvider`, 코디의 `compositionDrilledYearProvider`는 대응 필드가 전부 non-nullable이라 이 wrapper가 필요 없다 — 단순 `T?` 그대로 유지(null = 미선택뿐, 미분류 케이스 자체가 없음).
+옷장의 `closetDrilledYearProvider`, 코디의 `compositionDrilledYearProvider`는 대응 필드(`createdAt`)가 non-nullable이라 이 wrapper가 필요 없다 — 단순 `int?` 그대로 유지(null = 미선택뿐, 미분류 케이스 자체가 없음). 옷장 착용빈도는 애초에 소분류가 없어(§3.3) 해당 사항 없음.
 
 `filteredClosetItemsProvider`/`filteredCompositionsProvider`는 위 provider들을 모두 `watch`해서 (a) 현재 중분류의 소분류 필터 적용 (b) 정렬 기준+방향 적용하도록 확장한다. 기존 시그니처(반환 타입 `List<ClothingItem>`/`List<Composition>`) 그대로 유지 — 소비하는 화면 쪽 변경 없음.
 
@@ -234,7 +237,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
 });
 ```
 
-코디도 동일한 모양의 `compositionGroupSummariesProvider`를 둔다. `value`의 런타임 타입은 criterion에 따라 다르므로(`ClothingCategory`/`Season`/`int`(연도)/`Weather`) `Object?`로 받고, 그룹 카드 탭 핸들러가 대상 provider에 맞게 세팅한다 — criterion과 provider의 매핑이 이미 고정돼 있어 안전한 캐스팅(런타임 타입 불일치는 프로그래밍 오류로 취급, 방어적 캐스팅 불필요). **`value == null`인 카드가 곧 "미분류" 카드**(코디의 계절·날씨에서만 나타남) — 탭하면 `compositionDrilledSeasonProvider`/`compositionDrilledWeatherProvider`에 `DrilledValue.unclassified()`를 세팅하고, 그 외 카드는 `DrilledValue.value(...)`를 세팅한다.
+코디도 동일한 모양의 `compositionGroupSummariesProvider`를 둔다. `value`의 런타임 타입은 criterion에 따라 다르므로(`ClothingCategory`/`Season`/`int`(연도)/`Weather`) `Object?`로 받고, 그룹 카드 탭 핸들러가 대상 provider에 맞게 세팅한다 — criterion과 provider의 매핑이 이미 고정돼 있어 안전한 캐스팅(런타임 타입 불일치는 프로그래밍 오류로 취급, 방어적 캐스팅 불필요). **`value == null`인 카드가 곧 "미분류" 카드**(옷장의 옷종류·계절, 코디의 계절·날씨에서 나타남 — §3.6의 `DrilledValue` wrapper 대상 4개 기준과 정확히 일치) — 탭하면 해당 `Drilled*Provider`에 `DrilledValue.unclassified()`를 세팅하고, 그 외 카드는 `DrilledValue.value(...)`를 세팅한다.
 
 ---
 
@@ -242,7 +245,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
 
 **신규/수정 파일**:
 - `lib/models/enums.dart` — `Weather` enum 추가
-- `lib/models/clothing_item.dart`, `lib/models/composition.dart` — `createdAt` 필드(+ `Composition.weather`)
+- `lib/models/clothing_item.dart`, `lib/models/composition.dart` — `createdAt` 필드(+ `Composition.weather`). `ClothingItem.category`/`season`/`color`/`material`의 nullable화 자체는 이 스펙 범위가 아니라 `docs/history/Decision.md`의 별도 결정으로 이미 완료됨(2026-07-19) — 이 스펙은 그 결과(nullable 필드)를 전제로 미분류 카드를 설계할 뿐, 필드를 nullable로 만드는 작업 자체는 재작업하지 않는다.
 - `lib/providers/closet_providers.dart`, `lib/providers/composition_providers.dart` — 위 provider 세트
 - `lib/mock/mock_data.dart` — 기존 인스턴스에 `createdAt` 채움
 - `lib/widgets/category_toggle_dropdown.dart` — "설정" 항목 추가, 위젯 타입 변경 가능성
