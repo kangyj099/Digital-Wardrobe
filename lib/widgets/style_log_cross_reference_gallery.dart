@@ -4,10 +4,11 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'style_log_gallery_tile.dart';
 
-/// 옷 상세/코디 상세 공용 — 연결된 스타일일지를 항상 정사각형(1:1) 타일의 2열 갤러리로
-/// 보여준다. [onAddTap]이 있고 [logs]가 비어 있으면 "+" 바인딩 타일을 대신 그린다(코디
-/// 상세 전용 — 옷 상세는 바인딩 액션이 없어 onAddTap을 넘기지 않고, 비면 섹션 자체가
-/// 사라진다).
+/// 옷 상세/코디 상세 공용 — 연결된 스타일일지를 항상 정사각형(1:1) 타일의 갤러리로
+/// 보여준다. 기본 2열이며, [logs]가 정확히 1장이면 1열(타일이 컨테이너 폭 전체를 차지해
+/// 더 커 보임 — 2:1 와이드 확대가 아니라 열 개수 자체를 줄이는 방식). [onAddTap]이 있고
+/// [logs]가 비어 있으면 "+" 바인딩 타일을 대신 그린다(코디 상세 전용 — 옷 상세는 바인딩
+/// 액션이 없어 onAddTap을 넘기지 않고, 비면 섹션 자체가 사라진다).
 class StyleLogCrossReferenceGallery extends StatelessWidget {
   const StyleLogCrossReferenceGallery({
     super.key,
@@ -31,8 +32,8 @@ class StyleLogCrossReferenceGallery extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: logs.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: logs.length == 1 ? 1 : 2,
         crossAxisSpacing: AppSpacing.xs,
         mainAxisSpacing: AppSpacing.xs,
         childAspectRatio: 1,

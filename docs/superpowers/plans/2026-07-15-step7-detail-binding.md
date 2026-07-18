@@ -8,7 +8,7 @@
 >
 > **Task 8/9 추가 경위(2026-07-16)**: Task 7 완료 직후 1차 Audit이 P1 2건 발견 — 스타일일지 열람의 코디 바인딩 UI가 스펙(`03_스타일 일지.md` "대표이미지→코디 슬롯→추가사진" 카드 순서)과 어긋나고 코디 상세와도 다르게 생김, `AppDetailScaffold.crossReferenceEntries` 계약이 애매해짐. 사용자가 직접 스펙 근거로 정정 지시(**Task 7의 "하단 별도 카드/칩" 구현 방식은 폐기 — 그 방식을 지시한 이전 요청이 있었다면 전부 무효**) — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고.
 >
-> **[정정, 2026-07-18] Task 10~12 추가**: 이 Plan은 Task 1~9(2차 Audit까지) 완료로 끝나지 않고, 사용자의 추가 UI 지시로 Task 10(옷 상세 코디 캐러셀에 옷 목록 표시 — 오해로 되돌림, `git revert`), Task 11(같은 캐러셀을 `PageView`에서 "착용 옷"과 동일한 연속 스크롤로 교체 — 최종 확정), Task 12(코디 상세의 스타일일지 썸네일도 정사각형 통일)까지 이어졌다. Task 10~12는 S/M 사이즈 단독 Task라 별도 Audit 없이 각각 Worker→Review→Tester로 완료됨. 상세는 각 Task 섹션과 `docs/history/Decision.md`의 대응 항목 참고.
+> **[정정, 2026-07-18] Task 10~13 추가**: 이 Plan은 Task 1~9(2차 Audit까지) 완료로 끝나지 않고, 사용자의 추가 UI 지시로 Task 10(옷 상세 코디 캐러셀에 옷 목록 표시 — 오해로 되돌림, `git revert`), Task 11(같은 캐러셀을 `PageView`에서 "착용 옷"과 동일한 연속 스크롤로 교체 — 최종 확정), Task 12(코디 상세의 스타일일지 썸네일도 정사각형 통일), Task 13(연결된 스타일일지 갤러리 — 기본 2열, 1장이면 1열)까지 이어졌다. Task 10~13은 S/M 사이즈 단독 Task라 별도 Audit 없이 각각 Worker→Review→Tester로 완료됨. 상세는 각 Task 섹션과 `docs/history/Decision.md`의 대응 항목 참고.
 
 **Goal:** BACKLOG.md "다음 세션 작업"이 지정한 Step⑦ 착수 작업을 완료한다 — (1) 선행 정리 2건(`Composition`/`StyleLog.isIncomplete` 필드, `AppDetailScaffold` 계약 확장), (2) Detail 3화면(옷 상세/코디 상세/스타일일지 열람)의 실제 mock 데이터 바인딩과 화면 간 크로스 레퍼런스 네비게이션, (3) 사용자가 이번 라운드에 포함하기로 확정한 코디↔스타일일지 "바인딩"(기존에 연결된 게 없으면 선택 모달로 새로 연결). 겹친 아이템 팝업, 아트보드 실제 렌더링, 추가사진 드래그 순서변경 등 "편집기"급 상호작용은 이번 라운드 스코프 밖 — 별도 후속 작업으로 BACKLOG에 등록한다(이 Plan은 그 등록까지 하지 않고, 완료 후 PM이 세션 인계 시 처리).
 
@@ -2545,6 +2545,24 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 - [ ] **Step 3**: `integration_test/detail_thumbnail_square_unification_test.dart` 그룹 3 갱신 — "여전히 2:1" 대신 "이제 정사각형" 확인, comp01 케이스뿐 아니라 comp02도 확인.
 - [ ] **Step 4**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행 — `composition_detail_data_binding_test.dart` 포함, `taskkill` 습관 유지)
 - [ ] **Step 5**: Commit
+
+---
+
+### Task 13: "연결된 스타일일지" 갤러리 — 기본 2열, 1장이면 1열 (UI/Screen, Implementation/Frontend)
+
+**배경**: `docs/history/Decision.md` "'연결된 스타일일지' 갤러리 — 기본 2열, 1장이면 1열(정사각형 유지, 확대 아님)" 참고. 사용자가 옷 상세/코디 상세 둘 다에서 스타일일지가 1장뿐일 때 2열 그리드 절반이 비어 보이는 걸 지적, 1장이면 1열로 표시해 달라고 지시. Task 12에서 폐기한 "1개면 2칸 확대"(2:1 와이드)와는 다른 규칙 — 스팬이 아니라 열 개수(`crossAxisCount`) 자체를 줄이는 방식이며 타일은 계속 정사각형(`childAspectRatio: 1`) 유지.
+
+**Files:**
+- Modify: `lib/widgets/style_log_cross_reference_gallery.dart` (`GridView.builder`의 `crossAxisCount: 2` 고정값을 `logs.length == 1 ? 1 : 2`로)
+- Modify (필요시): 1장 연결 케이스의 그리드 폭/타일 크기를 검증하는 통합테스트 — 존재 여부와 영향 범위는 Worker가 확인
+
+**Interfaces:**
+- `StyleLogCrossReferenceGallery({required logs, required onTap, onAddTap})` — 시그니처 변경 없음, 내부 그리드 열 개수만 `logs.length` 기준으로 동적화.
+
+- [x] **Step 1**: `style_log_cross_reference_gallery.dart`의 `GridView.builder` `gridDelegate`에서 `crossAxisCount`를 `logs.length == 1 ? 1 : 2`로 변경. `childAspectRatio: 1`은 그대로 유지.
+- [x] **Step 2**: 옷 상세/코디 상세 mock 데이터 중 스타일일지가 정확히 1장 연결된 케이스가 있는지 확인, 관련 통합테스트(`composition_detail_addtile_square_test.dart`, `detail_thumbnail_square_unification_test.dart`, `detail_cross_reference_visuals_test.dart` 등)가 그리드 폭/타일 크기를 하드코딩해서 검증하는지 점검 후 필요시 갱신. — mock_data.dart 기준 comp01↔log01, comp02↔log02가 이미 1:1 연결(옷 상세 c01도 comp01을 거쳐 log01 1장 간접 연결)이라 1장 케이스가 이미 커버됨. 세 통합테스트 모두 타일 크기를 절대값이 아니라 `size.width/size.height ≈ 1` 비율로만 검증해 열 개수 변화와 무관하게 그대로 유효 — 갱신 불필요.
+- [x] **Step 3**: `flutter analyze` + 회귀 테스트 스윕(`flutter test test/`, 관련 `integration_test/*.dart` 개별 실행, `taskkill` 습관 유지) — `flutter analyze lib/widgets/style_log_cross_reference_gallery.dart` 클린, `flutter test test/` 54개 전부 통과, 세 통합테스트(8+8+7 케이스) 전부 통과.
+- [x] **Step 4**: Commit
 
 ---
 
