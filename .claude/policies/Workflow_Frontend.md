@@ -51,6 +51,8 @@ Flutter/Dart 구현을 작성하거나 리뷰하기 전, `flutter-implementation
 
 `flutter-implementation-conventions` 스킬 참고 (§ Review 체크리스트).
 
+Feature Audit(`Workflow_Project.md` §2, `.claude/agents/audit.md`)이 이 프로젝트 코드베이스를 볼 때 쓰는 Flutter 전용 체크리스트도 동일 스킬에 있다 (§ Audit 체크리스트).
+
 ---
 
 # 7. 참고: 커뮤니티에서 검증된 보조 도구

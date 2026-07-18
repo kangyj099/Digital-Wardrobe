@@ -26,7 +26,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
+  // Fixed to iPhone 15 Pro logical resolution (393x852) so design work has a
+  // mobile-shaped reference instead of a desktop-shaped window (user request,
+  // 2026-07-13). Non-ASCII comments are avoided in this file specifically:
+  // MSVC's /W4 /WX treats non-UTF-8-BOM source with non-ASCII chars as an
+  // error (C4819), which would break every native Windows build.
+  Win32Window::Size size(393, 852);
   if (!window.Create(L"digittal_wardrobe", origin, size)) {
     return EXIT_FAILURE;
   }

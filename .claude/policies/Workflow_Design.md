@@ -1,6 +1,6 @@
 # Design Workflow
 
-> Version 2.1
+> Version 2.2
 >
 > Purpose: A design workflow policy for efficiently collaborating with AI on Flutter-based mobile app design.
 
@@ -38,6 +38,12 @@ Review
 ↓
 Developer Handoff
 ```
+
+## 2.1 Cross-Workflow Trigger: Hi-Fi Sample Delivered via Development Track
+
+The representative High-Fidelity Sample (3–5 screens) is sometimes built as Frontend Implementation tasks in the Development pipeline (Layer=UI/Screen, Stage=Implementation) rather than as standalone design deliverables — this is what happened with this project's Flutter Hi-Fi sprint.
+
+When that happens, passing Development Review and Tester does **not** substitute for Visual Review — Development Review checks code/functionality, not typography/color/spacing/visual hierarchy. Once the representative sample screens are done on the Development track, PM must explicitly trigger Visual Review before treating that Design Process milestone as complete, and Design Tokens stay provisional (not frozen per §5) until that review happens.
 
 # 3. Unit of Work
 

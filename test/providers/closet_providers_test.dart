@@ -9,11 +9,11 @@ void main() {
     addTearDown(container.dispose);
 
     final before = container.read(filteredClosetItemsProvider).length;
-    container.read(selectedSeasonFilterProvider.notifier).state = Season.allSeason;
+    container.read(selectedSeasonFilterProvider.notifier).state = Season.springFall;
     final after = container.read(filteredClosetItemsProvider);
 
     expect(after.length, lessThan(before));
-    expect(after.every((item) => item.season == Season.allSeason), isTrue);
+    expect(after.every((item) => item.season == Season.springFall), isTrue);
   });
 
   test('softDelete한 아이템은 filteredClosetItemsProvider에서 제외된다', () {

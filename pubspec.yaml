@@ -74,9 +74,3 @@ flutter:
           weight: 600
         - asset: assets/fonts/Pretendard/Pretendard-Bold.otf
           weight: 700
-    - family: KoPubDotum
-      fonts:
-        - asset: "assets/fonts/KoPub/KoPubWorld Dotum_Pro Medium.otf"
-          weight: 500
-        - asset: "assets/fonts/KoPub/KoPubWorld Dotum_Pro Bold.otf"
-          weight: 700

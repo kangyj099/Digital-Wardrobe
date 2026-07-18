@@ -23,3 +23,11 @@ main  ─ release only
 - **dev → main**: triggered when every item intended for the next patch/release has landed on dev. The human decides, or PM proposes and the human approves; PM drafts a report (doubling as release notes) and gets confirmation before running `gh pr create --base main`. The human merges on GitHub — PM never merges, and never runs `gh pr merge`.
 
 GitHub Branch protection on `main`/`dev` (require PR before merge, disallow force-push/deletion) is configured by the human directly in the GitHub web UI — independent of the local hook, as a second safety net.
+
+## 13.4 Sync Cadence (feature ← dev)
+
+A long-lived `feature/*` branch can drift far from `dev` if nobody pulls — including structural changes (file moves/renames, policy doc reorganization) that turn into painful conflicts the longer they're deferred. This happened concretely on 2026-07-10: a parallel PR restructured the policy/reference doc layout on `dev`, and the Tester-harness feature branch hadn't synced in the meantime.
+
+- **Pull `dev` into the feature branch at two checkpoints**: (a) whenever a Task completes (the Worker→Review→Tester cycle reaches Complete — the same moment BACKLOG.md's Current section gets updated), and (b) whenever an entire Plan (a multi-task effort, not a single step) finishes.
+- Run `git fetch origin && git merge origin/dev` on the feature branch. This is a safe, feature-branch-local operation — no report/confirmation needed to run it (same basis as §13.2's free commit gate).
+- If the merge is clean, continue. If it conflicts, PM resolves directly (the one with context on both sides' intent, same reasoning as why Tester — not the person waiting — should design its own scenarios) and then shows the resulting diff for human confirmation before finishing — especially when Decision documents or policy docs are among the conflicts (still governed by Core Operating Principles checkpoint 2).

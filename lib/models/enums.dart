@@ -23,18 +23,31 @@ enum ClothingCategory {
 }
 
 // TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
-/// [ClothingItem.season], [Composition.season]에 허용되는 값.
-enum Season {
-  summer,
-  winter,
-  transitional,
-  allSeason;
+/// 최상단 카테고리 드롭다운(옷장/코디/스타일일지)에서 고를 수 있는 영역. 폐쇄형 어휘라
+/// 다른 enum들과 동일하게 raw String 비교 대신 이 타입으로 분기한다.
+enum AppCategory {
+  closet,
+  composition,
+  styleLog;
 
   String get label => switch (this) {
+        AppCategory.closet => '옷장',
+        AppCategory.composition => '코디',
+        AppCategory.styleLog => '스타일일지',
+      };
+}
+
+// TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
+/// [ClothingItem.season], [Composition.season]에 허용되는 값.
+enum Season {
+  springFall,
+  summer,
+  winter;
+
+  String get label => switch (this) {
+        Season.springFall => '봄가을',
         Season.summer => '여름',
         Season.winter => '겨울',
-        Season.transitional => '간절기',
-        Season.allSeason => '사계절',
       };
 }
 

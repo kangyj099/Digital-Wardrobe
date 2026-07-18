@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../models/clothing_item.dart';
 import '../models/enums.dart';
 import '../mock/mock_data.dart';
+import '../theme/app_spacing.dart';
 
 class ClosetItemsNotifier extends StateNotifier<List<ClothingItem>> {
   ClosetItemsNotifier() : super(mockClothingItems);
@@ -33,4 +34,4 @@ final filteredClosetItemsProvider = Provider<List<ClothingItem>>((ref) {
 });
 
 /// 옷장 메인 그리드 밀도 — AppDensity.min/mid/max 중 하나.
-final closetDensityProvider = StateProvider<int>((ref) => 3);
+final closetDensityProvider = StateProvider<int>((ref) => AppDensity.mid);

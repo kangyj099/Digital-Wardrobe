@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// T5(Spacing Scale) + 갤러리 그리드 전용 gap 토큰.
 class AppSpacing {
   AppSpacing._();
@@ -18,8 +20,35 @@ class AppDensity {
   AppDensity._();
 
   static const int min = 1;
-  static const int mid = 3;
-  static const int max = 5;
+  static const int mid = 2;
+  static const int max = 4;
 
   static const List<int> levels = [min, mid, max];
+
+  /// 밀도 값→그리드 아이콘 매핑 — `closet_main_screen.dart`/`composition_main_screen.dart`에
+  /// 코드 100% 동일하게 복제됐던 private `_densityIcon`을 승격했다
+  /// (`docs/history/TechnicalDebt.md` "화면 간 반복 복제된 UI 블록" 항목).
+  static IconData iconFor(int density) {
+    if (density == max) return Icons.grid_view;
+    if (density == mid) return Icons.view_comfy;
+    return Icons.crop_square;
+  }
+}
+
+/// T-Shape(코너 반경) — 옷장 메인 재설계 시 신설, Design Tokens에 역할명조차 없던 값이라
+/// 여기서 처음 정의. 추후 Brand Guide/Design Tokens 문서에 정식 등재 검토 필요(TechnicalDebt 후보).
+class AppRadius {
+  AppRadius._();
+
+  static const double sm = 16; // 드롭다운 패널
+  static const double pill = 100; // 필 버튼(둥근 알약형)
+}
+
+/// Motion(애니메이션 지속시간) — Design Tokens에 `Motion.standard`라는 역할명만 있고 값이 없던 것을
+/// 이 화면(옷장 메인, 속도 우선 유틸리티 화면) 기준으로 처음 채택. 다른 화면에도 재사용 전제.
+class AppMotion {
+  AppMotion._();
+
+  static const Duration fast = Duration(milliseconds: 200); // 밀도 토글, FAB 회전 등 일반 전환
+  static const Duration searchExpand = Duration(milliseconds: 300); // 검색창 확장/축소 전용(추후 Task 4에서 소비)
 }

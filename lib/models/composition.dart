@@ -24,6 +24,8 @@ class Composition {
     required this.name,
     required this.items,
     this.season,
+    this.coverImagePath,
+    this.isIncomplete = false,
     this.isDeleted = false,
   });
 
@@ -31,5 +33,11 @@ class Composition {
   final String name;
   final List<CompositionItemPlacement> items;
   final Season? season;
+
+  /// 사용자가 지정한 대표 이미지(신규 기능, 이번 라운드에 선택 UI는 없음 — `docs/history/
+  /// TechnicalDebt.md` "CompositionGalleryTile이 아직 텍스트만 표시" 참고). `null`이면
+  /// [compositionCoverImageProvider]가 첫 번째 옷 이미지로 폴백한다.
+  final String? coverImagePath;
+  final bool isIncomplete;
   final bool isDeleted;
 }

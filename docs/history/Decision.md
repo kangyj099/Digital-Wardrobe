@@ -1,5 +1,377 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] "연결된 스타일일지" 갤러리 — 기본 2열, 1장이면 1열(정사각형 유지, 확대 아님) (UI/Screen, Decision)
+
+결정:
+- `StyleLogCrossReferenceGallery`(옷 상세/코디 상세 공용)의 `SliverGridDelegateWithFixedCrossAxisCount.crossAxisCount`를 고정 `2`에서 `logs.length == 1 ? 1 : 2`로 바꾼다.
+- `childAspectRatio: 1`(정사각형)은 그대로 유지 — 1열일 때도 타일 비율은 정사각형이며, 다만 열이 1개뿐이라 폭이 컨테이너 전체로 넓어져 타일 자체가 더 커 보이는 효과. 바로 앞 Decision("1개면 2칸 확대" 폐기)이 없앤 2:1 와이드 사각형 배치와는 다른 규칙 — 이번엔 스팬이 아니라 열 개수 자체를 줄이는 방식.
+
+사유:
+사용자가 두 화면 모두에서 스타일일지가 1장뿐일 때 2열 그리드의 절반이 비어 보이는 게 어색하다고 판단, 1장이면 1열로 표시해 달라고 직접 지시(2026-07-18).
+
+Impact:
+- `lib/widgets/style_log_cross_reference_gallery.dart` — `GridView.builder`의 `crossAxisCount`를 `logs.length` 기준 동적 값으로 변경.
+- `lib/screens/closet_item_detail_screen.dart`, `lib/screens/composition_detail_screen.dart` — 변경 없음(공용 위젯만 수정, 두 화면 모두 자동 적용).
+- `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md` 19행 — "연결된 스타일 일지 목록(2열, 정사각형 타일)"을 "연결된 스타일 일지 목록(기본 2열, 1장이면 1열, 정사각형 타일)"로 갱신.
+- 관련 통합테스트(`composition_detail_addtile_square_test.dart`, `detail_thumbnail_square_unification_test.dart` 등)가 1장 연결 케이스의 mock 데이터로 그리드 폭을 검증하는지 확인 필요 — Worker 구현 시 점검.
+
+---
+
+[Decision] 코디 상세의 "연결된 스타일일지" 썸네일도 정사각형(1:1)으로 통일 — "1개면 2칸 확대" 스펙 규칙 폐기 (UI/Screen, Decision)
+
+결정:
+- `02_코디 (가상 조합).md`가 명시했던 "연결된 스타일 일지 목록(2열, 스타일 일지 1개면 2칸 확대 배치)"의 "1개면 2칸 확대" 규칙을 폐기한다. 코디 상세도 옷 상세와 동일하게 연결된 개수와 무관하게 항상 정사각형(1:1) 타일로 표시한다.
+- `StyleLogCrossReferenceGallery`의 `expandSingle` 파라미터(Task 9에서 두 화면의 차이를 표현하려고 도입)는 이제 두 화면 모두 `false`와 동일한 결과를 내므로 **파라미터 자체를 제거**하고 항상 정사각형 그리드 로직만 남긴다(죽은 분기 유지 안 함, YAGNI). 미연결 시 "+" 타일(`_AddTile`)의 비율도 2:1 → 1:1로 함께 맞춘다.
+- `02_코디 (가상 조합).md` 문서 텍스트도 "1개면 2칸 확대 배치" 서술을 제거해 실제 구현과 일치시킨다.
+
+사유:
+사용자가 실제 화면을 보고 코디 상세의 스타일일지 썸네일 비율을 1:1로 바꿔달라고 직접 지시(2026-07-18). Task 9 당시엔 이 "1개면 확대" 규칙이 승인된 스펙이라 보존했으나, 사용자가 이번에 그 규칙 자체를 변경하기로 결정 — 문서(스펙)보다 최신 사용자 지시가 우선.
+
+Impact:
+- `lib/widgets/style_log_cross_reference_gallery.dart` — `expandSingle` 파라미터 제거, 항상 정사각형.
+- `lib/screens/closet_item_detail_screen.dart` — 이제 불필요해진 `expandSingle: false` 인자 제거(동작 변화 없음, 이미 그 값이었으므로).
+- `lib/screens/composition_detail_screen.dart` — 변경 없음(원래 파라미터를 안 넘기고 있었음, 이제 그 자리의 의미만 바뀜).
+- `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md` 텍스트 갱신.
+- `integration_test/detail_thumbnail_square_unification_test.dart`의 "코디 상세는 여전히 2:1" 회귀 assertion을 "코디 상세도 이제 정사각형"으로 갱신 필요.
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 12로 추가.
+
+---
+
+[Decision] 옷 상세 코디 프리뷰를 `PageView` 캐러셀에서 "착용 옷"과 동일한 연속 스크롤 리스트로 교체 (UI/Screen, Decision — 아래 "옷 상세의 '연결된 코디' 캐러셀 타일을..." 항목의 최종 정정)
+
+결정:
+- `CompositionPreviewCarousel`(Task 6에서 신설, Task 9에서 `AspectRatio(1)` 풀블리드 정사각 페이지로 통일)이 채택했던 **"스와이프하면 페이지가 넘어가고 점 인디케이터로 표시하는" `PageView` 방식 자체를 폐기**한다. 대신 `style_log_viewer_screen.dart`의 "착용 옷" 섹션(페이지 개념 없이 그냥 옆으로 미는 연속 스크롤 `ListView.horizontal`, 코디 슬롯 `PageView`와는 완전히 별개 섹션)과 동일한 메커니즘으로 교체한다.
+- 타일 콘텐츠는 여전히 "코디" 단위(이미지+이름, `CompositionPreviewCard` 그대로 재사용) — 코디에 포함된 개별 옷을 풀어놓지 않는다. 각 타일 크기는 "착용 옷" 타일과 동일(고정된 작은 정사각형, 화면 폭을 채우는 큰 정사각형 아님).
+- 점 인디케이터/`PageController`/`onPageChanged` 상태는 전부 제거 — 페이지 개념이 없으므로 `StatefulWidget`일 필요도 없어져 `StatelessWidget`으로 단순화.
+
+사유:
+사용자가 옷 상세 화면을 실제로 보고 여러 차례 정정 — 처음엔 "코디 대표이미지 대신 착용옷처럼 실제 옷들을 캐러셀 타일로"라고 요청했다가(Task 10, 되돌려짐), PM이 "그럼 타일 크기를 스타일일지 캐러셀과 맞추자"고 재해석했으나 이 역시 어긋났음이 확인됐다. 최종적으로 사용자가 가리킨 "가로 캐러셀"은 스타일일지 열람의 코디 슬롯 `PageView`가 아니라 그 화면의 "착용 옷"(연속 스크롤 리스트)이었다 — 즉 옷 상세의 코디 프리뷰도 "여러 코디를 한 화면에 동시에 보여주고 옆으로 미는" 방식이어야 하며, "하나씩 스와이프해서 넘기는" 방식이 아니었다.
+
+Impact:
+- `lib/widgets/composition_preview_carousel.dart` — `StatefulWidget`(`PageView`+점 인디케이터) → `StatelessWidget`(`ListView.horizontal`, 고정 타일 크기)로 재작성. 파일/클래스명은 유지(호출부 변경 최소화).
+- `lib/screens/closet_item_detail_screen.dart` 호출부는 변경 없음(같은 시그니처: `compositions`/`onTap`).
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 11로 추가.
+
+---
+
+[Decision] 옷 상세의 "연결된 코디" 캐러셀 타일을 단일 대표이미지에서 "사용된 옷" 가로 스크롤로 교체 (UI/Screen, Decision)
+
+결정:
+- 옷 상세(`closet_item_detail_screen.dart`)의 `CompositionPreviewCarousel` 각 타일이 지금까지는 `CompositionPreviewCard`(코디 대표이미지 1장 — `coverImagePath` 없으면 첫 옷 이미지로 폴백 — + 이름)만 보여줬는데, 이를 그 코디에 실제로 포함된 옷 전부를 가로 스크롤 스트립으로 보여주는 방식으로 바꾼다. 이 가로 스크롤 스트립 UI는 이미 `composition_detail_screen.dart`의 "사용된 옷"과 `style_log_viewer_screen.dart`의 "착용 옷"에 거의 동일한 형태로 두 번 존재하므로, 공용 위젯(`ClothingItemsRow`)으로 추출해 세 곳에서 재사용한다.
+- 코디 이름은 타일 상단 라벨로 유지. 타일 안에서 **개별 옷 이미지를 탭하면 그 옷의 상세로**, **옷 이미지가 아닌 타일의 나머지 영역(이름 라벨 등)을 탭하면 기존처럼 코디 상세로** 이동한다 — 두 탭 대상이 공존해야 하므로 새 위젯(`CompositionItemsTile`)이 이 분기를 담당한다.
+- **알려진 리스크(구현 후 Tester가 반드시 실측 검증)**: 캐러셀(가로 스와이프, 코디 간 이동)과 그 안의 옷 목록(가로 스크롤, 옷 간 이동)이 같은 축(가로)의 중첩 스크롤이라 제스처 경합이 생길 수 있다 — Flutter의 제스처 아레나가 터치 시작 위치 기준으로 대체로 잘 처리하지만, 옷 목록이 타일 전체를 채우면 "코디 간 스와이프"를 시작할 빈 공간이 부족해질 수 있음. 실측 결과에 따라 후속 조정(예: 타일 상단 라벨 영역을 스와이프 전용 구역으로 넉넉히 두기) 검토.
+- `CompositionPreviewCard`는 이제 스타일일지 열람의 코디 슬롯(단일 카드) 전용으로 좁혀진다 — docstring 갱신.
+
+사유:
+사용자가 옷 상세 화면을 보고 "코디 이미지를 그냥 단일 이미지로 넣지 말고, 스타일일지 열람의 착용 옷 캐러셀처럼 실제 옷들을 캐러셀의 타일 콘텐츠로 넣어달라"고 지시(2026-07-16→17). 단일 대표이미지(코디에 포함된 첫 옷 하나만 임의로 대표하는 방식)보다 실제 구성 옷 전부를 보여주는 편이 정보량이 많고, 이미 두 화면에 있는 패턴을 재사용하면 구현 비용도 낮다고 판단.
+
+Impact:
+- 신규 `lib/widgets/clothing_items_row.dart`(`ClothingItemsRow`), `lib/widgets/composition_items_tile.dart`(`CompositionItemsTile`).
+- `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 기존 인라인 가로 스크롤 코드를 `ClothingItemsRow`로 교체(동작 변경 없음, 순수 리팩터).
+- `composition_preview_carousel.dart`가 `ConsumerStatefulWidget`로 전환(`closetItemsProvider` watch 필요), `closet_item_detail_screen.dart` 호출부에 `onItemTap` 파라미터 추가.
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 10으로 추가.
+
+**[정정, 2026-07-18]** 위 결정은 사용자 지시를 잘못 해석한 것으로 확인되어 되돌림(`git revert cc49ad2` + `git revert 5a4c704`). 처음엔 "타일 콘텐츠를 코디 대표이미지에서 옷 목록으로 바꾼 게 문제였고, 크기만 스타일일지 캐러셀과 맞추면 된다"고 판단했으나(이 판단도 부분적으로만 맞음), 대화를 더 거친 끝에 사용자가 가리킨 "가로 캐러셀"이 스타일일지 열람의 **2페이지 `PageView`+점 인디케이터 카드 영역이 아니라, 그 아래의 "착용 옷" 섹션(페이지 넘김 없이 연속 스크롤되는 `ListView.horizontal`)**이었음이 최종 확인됐다 — 상세는 아래 "옷 상세 코디 프리뷰를 PageView 캐러셀에서 착용 옷과 동일한 연속 스크롤 리스트로 교체" 항목 참고.
+
+---
+
+[Decision] 스타일일지 열람 카드 구조를 스펙 원문대로 정정(대표이미지/코디 슬롯 2페이지 캐러셀) + 옷장 상세 정사각형 통일 + `crossReferenceEntries` 폐기 (UI/Screen, Decision — 아래 "Detail 화면 상호참조를..." 항목을 부분 정정)
+
+결정:
+- **스타일일지 열람 = 2페이지 스와이프 캐러셀**: `03_스타일 일지.md` 23번 줄 "카드 구조: 대표이미지(1번, 고정) → 코디 슬롯(2번, 고정)"을 문자 그대로 구현한다. Task 7에서 구현했던 "커버 이미지 + 하단에 별도 `CompositionPreviewCard`/칩" 방식은 이 스펙을 어겨 폐기 — **직전 Task 7 작업 중 이 방식으로 진행하라고 한 지시가 있었다면 그 지시는 전부 무효**(사용자 확인, 2026-07-16). 대표이미지(1페이지)와 코디 슬롯(2페이지, 연결됨=`CompositionPreviewCard`/미연결="+" 플레이스홀더)을 하나의 스와이프 가능한 `PageView`(정사각형, 풀블리드, 2개뿐이라도 페이지 인디케이터 점 표시)로 묶는다. 화면 하단에 별도로 코디 이미지/칩이 있으면 안 됨.
+- **"추가 사진" 라벨 정정 → "착용 옷"**: `StyleLog.additionalImagePaths`는 실제로는 이 스타일일지에서 착용한 옷들의 이미지다(mock 데이터 확인: `log01.additionalImagePaths`가 `c11`/`c07`의 `imagePath`와 동일값) — Task 7이 "추가 사진"으로 잘못 이름 붙였을 뿐 기능 자체는 이미 있었다. 라벨을 "착용 옷"으로 바꾸고, 각 이미지를 탭하면 `ClothingItem.imagePath` 역참조로 해당 옷을 찾아 옷 상세로 이동하도록 배선한다(모델 필드 추가 없이 기존 데이터로 충분 — 매칭 안 되면 탭 비활성).
+- **옷장 상세의 코디 캐러셀/스타일일지 갤러리는 정사각형으로 통일**: `CompositionPreviewCarousel`(옷 상세의 연결된 코디)은 고정 높이(200)+피크 뷰포트(0.82) 대신 `AspectRatio(1)`+풀블리드 페이지로 바꿔 항상 정사각형 카드가 되게 한다(스타일일지 열람의 코디 슬롯과 동일한 시각 언어). `StyleLogCrossReferenceGallery`(옷 상세의 연결된 스타일일지)도 옷 상세에서 쓰일 때는 개수와 무관하게 항상 정사각형(2열 그리드, 1개면 그냥 1칸만 채움)이 되도록 새 파라미터(`expandSingle`, 기본값 `true`)를 추가한다 — **코디 상세**(같은 위젯을 "연결된 스타일일지"에 재사용, `02_코디 UX명세서`의 "2열, 1개면 2칸 확대" 규칙이 이미 승인된 스펙)는 `expandSingle: true`(기존 동작 그대로) 유지, **옷장 상세만** `expandSingle: false`로 호출해 정사각형 강제.
+- **`AppDetailScaffold.crossReferenceEntries`/`CrossReferenceLinkBar` 폐기**: 위 스타일일지 열람 재구현이 끝나면 이 파라미터를 실제로 쓰는 화면이 하나도 안 남는다(코디 상세는 이미 `onAddTap`으로 갈아탔고, 옷 상세는 애초에 안 씀) — 죽은 계약을 남겨두지 않고 `AppDetailScaffold`에서 파라미터 자체를 제거하고 `CrossReferenceLinkBar`/`CrossReferenceLinkEntry` 위젯 파일도 삭제한다(TechDebt로 남겨뒀던 "`crossReferenceEntries` 계약이 애매해졌다"는 Audit 지적의 근본 해결).
+
+사유:
+Audit(2026-07-16)이 스타일일지 열람의 코디 바인딩 UI가 코디 상세와 다르게 생겼고 스펙의 카드 순서(대표이미지→코디 슬롯→추가사진)와도 어긋난다고 P1로 지적. 사용자가 직접 화면을 보고 "2번째 페이지가 코디 슬롯이어야 하고 하단에 코디 이미지가 따로 있으면 안 된다"고 스펙 원문 근거로 정정 지시, 동시에 "추가 사진"이 사실 "착용 옷"이라는 것과 옷장 상세의 코디/스타일일지 썸네일이 정사각형이어야 한다는 것도 함께 확인.
+
+Impact:
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 8(스타일일지 열람 카드 캐러셀 재구현)/Task 9(옷장 상세 정사각형 통일 + crossReferenceEntries 폐기) 추가.
+- `docs/history/TechnicalDebt.md`의 "`CrossReferenceLinkBar` 계약 애매해짐"/"`composition_preview_carousel.dart` 매직넘버"(고정 height/viewportFraction 상수 자체가 이번에 사라짐) 항목 갱신.
+
+---
+
+[Decision] Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장, `Composition.coverImagePath` 필드 신설, 코디 아이템 개수 상한 15개 (UI/Screen, Decision)
+
+결정:
+- **상호참조 표시 방식 확정**: 옷 상세/코디 상세의 "연결된 코디"/"연결된 스타일일지" 영역을 기존 `CrossReferenceLinkBar`(하단 텍스트+아이콘 pill 칩)에서, 이미지가 보이는 body 내 섹션으로 바꾼다.
+  - 옷 상세: 연결된 코디 → 이미지 캐러셀(여러 개면 스와이프), 그 아래 연결된 스타일일지 → 2열 갤러리(1개면 1열로 확대). 둘 다 읽기 전용(바인딩 액션 없음), 리스트가 비면 그 섹션 자체를 숨긴다.
+  - 코디 상세: 연결된 스타일일지 → 옷 상세와 동일한 2열/1열 갤러리. 단, 미연결(0개) 상태에서는 갤러리 자리에 "+" 추가 타일 하나가 대신 뜨고(기존 "스타일일지 연결하기" 바인딩 동작 유지, `_bindStyleLog` 그대로), 1개 이상이면 + 타일은 사라지고 실제 항목만 그리드로 보인다(`02_코디 UX명세서`가 이미 이 조건부 배치를 명시하고 있었음 — `CrossReferenceLinkBar`는 그 자리에 들어간 축약판이었을 뿐).
+  - 스타일일지 열람의 "연결된 코디"(단일, `linkedCompositionId`)도 일관성을 위해 캐러셀의 카드 콘텐츠(이미지+이름)와 동일한 시각 언어로 렌더링한다 — 다만 최대 1개뿐이라 페이징 캐러셀은 불필요, 카드 하나만 그대로 쓴다. 미연결 시의 "+코디 연결하기" 바인딩 동작(`_bindComposition`)은 변경 없음.
+  - `CrossReferenceLinkBar`/`CrossReferenceLinkEntry` 자체는 폐기하지 않는다 — 이번 변경의 대상이 아닌 다른 "+연결" 단일 액션 자리에서 계속 쓸 수 있는 범용 컴포넌트로 유지.
+- **`Composition.coverImagePath` 필드 신설**: `String?`, 기본 `null`.가치 로직(사용자가 대표 이미지를 고르는 Editor UI)은 이번 라운드에 포함하지 않는다 — `isIncomplete`와 동일한 "필드만 먼저" 패턴. `null`일 때의 표시 이미지는 코디에 포함된 첫 번째 옷의 `ClothingItem.imagePath`로 폴백한다(파생 provider로 해결, Record에 값을 쓰지 않음). 코디 메인 그리드의 `CompositionGalleryTile`(현재 텍스트 전용)은 이번 라운드에 함께 갱신하지 않는다 — 이 작업으로 해소 가능해졌다는 사실만 TechnicalDebt에 기록하고 착수는 별도 판단.
+- **코디 아이템 개수 상한 15개로 확정**: `Composition`은 옷장 전체가 아니라 1:1 아트보드 위의 단일 코디 표현이라, 상의/하의/아우터/신발/가방/모자/스카프/벨트/액세서리 등을 헤비 레이어드룩까지 감안해도 15개면 충분하다고 판단(30개는 아트보드 겹침 터치 선택 UX에 부담). 값 자체는 이번 커밋에서 코드에 반영하지 않음 — 실제 상한 검증 로직은 코디 만들기(Editor) 화면 구현 시점에 적용 대상.
+
+사유:
+사용자가 옷 상세 화면에서 연결된 코디/스타일일지가 텍스트만 있는 걸 보고 "썸네일 이미지 추가"를 요청(2026-07-16). PM이 `Composition`에 이미지 필드 자체가 없다는 걸 확인해 표시 이미지 소스를 사용자에게 확인받음 — "필드는 지금 추가하되 로직(선택 UI)은 나중" 옵션을 선택. 코디 상세의 "연결된 스타일일지 2열/1열 갤러리"는 실은 `02_코디 UX명세서`(Step① 이전부터 존재)가 이미 명시했던 내용이라, `CrossReferenceLinkBar`가 그 자리를 임시로 대신하고 있었을 뿐임이 드러났다.
+
+Impact:
+- `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`에 Task 6(모델 필드+파생 provider)/Task 7(캐러셀/갤러리 위젯+옷 상세·코디 상세 재배선) 추가, Task 5의 스타일일지 열람 코드도 카드 콘텐츠 공유 위젯을 쓰도록 소폭 수정.
+- `docs/history/TechnicalDebt.md`에 "`CompositionGalleryTile` 텍스트 전용" 항목 갱신(coverImagePath 필드 생겨 착수 비용이 낮아짐), 코디 개수 상한 15 값은 Editor 구현 시 반영 필요 항목으로 별도 등록.
+- `docs/work/BACKLOG.md` Current 갱신.
+
+**정정(2차 Audit, 2026-07-16)**: 위 Impact의 "Task 6/Task 7" 번호는 이 결정을 작성하던 시점의 초안 번호다 — 실제 최종 Plan 번호는 **Task 5**(모델 필드+파생 provider)/**Task 6**(캐러셀/갤러리 위젯+재배선)이며, Task 7은 이후 삽입된 "원래 Task 5"(스타일일지 열람 바인딩)가 밀린 번호다. `docs/work/BACKLOG.md`/`docs/history/TechnicalDebt.md`는 전부 최종 번호를 쓰고 있음 — 이 항목만 예외였다.
+
+---
+
+[Decision] Editor 저장 모델 전환 — Record Real-time Save + Editor Draft/Commit/Cancel (Data/Architecture, Editor Draft 구현은 Step⑦ 이후 별도 후속 작업으로 분리)
+
+결정:
+- 기존 "상시 저장(드래프트 없음)" 정책을 **Record(실 데이터)와 Editor 세션(편집 버퍼)의 분리**로 대체한다:
+  1. **일반 정보(Real-time Save, 기존과 동일)**: Detail 화면에서 이뤄지는 일반 필드 수정(옷 태그/계절/위치/메모, 코디 제목/계절, 스타일 일지 메모/연결 코디 등)은 지금처럼 즉시 실제 Record에 저장. 별도 저장 버튼/사용자 관리 Draft 없음 — 이 부분은 변경 없음.
+  2. **Editor Draft(신규)**: 옷 추가(배경제거/크롭/마스킹), 코디 만들기(아트보드 배치/이동/회전/크기) 등 전용 Editor 화면의 편집은 더 이상 Record를 직접 수정하지 않는다. Editor 진입 시 해당 Record에 연결된 Editor Draft를 생성(또는 기존 미커밋 Draft가 있으면 재사용)하고, 이후 모든 변경은 Draft에만 실시간 자동저장.
+  3. **Commit/Cancel**: 우상단 완료(✔)는 Draft → Record 반영(Commit) 후 Draft 삭제. 취소(✕)/뒤로가기는 Draft를 폐기(Record는 Editor 진입 이전 상태 그대로 유지) — 진짜 의미의 편집 취소(Rollback)가 됨.
+  4. **"미완성" 배지 판정 기준 변경**: 기존엔 "필드 미입력"이 판정 대상이었으나, 앞으로는 **해당 Record에 연결된 미커밋 Editor Draft가 존재하는가**만이 기준이다(제목/태그/계절/메모 미입력은 더 이상 미완성 사유 아님). `ClothingItem.isIncomplete`/(신설 예정) `Composition.isIncomplete`/`StyleLog.isIncomplete` 저장 필드 자체는 유지 — 값을 채우는 로직만 이 기준으로 재정의.
+- **작업 분리**: BACKLOG "Flutter Hi-Fi 화면" 스프린트의 Step⑦(기능 구현)은 이 Editor Draft/Commit/Cancel 메커니즘을 포함하지 않는다. Editor 3화면(옷 추가/코디 만들기/스타일일지 추가)의 실제 저장 로직 배선은 Step⑦ 완료 후 **별도 후속 작업("Editor Draft 구현")**으로 진행한다(사용자 제안 원문의 "Phase 1.5"에 해당 — `00_MVP.md`가 이미 쓰고 있는 프로젝트 로드맵 Phase 1/1.5/2/3 번호 체계와 이름이 겹쳐 혼동을 피하려고 문서에는 별도 명칭으로 기록). Gallery "미완성" 배지 UI 및 "이어서 편집" 진입 UX는 그다음 후속 작업으로, Draft 버전 관리/다중 Draft/Editor 공통화는 더 뒤로 유지(사용자 원 제안 Phase 2/Phase 3에 각각 대응).
+- **Recovery 범위 축소**: 앱 강제종료 후 복원(사용자 원 제안 §5)은 "Editor Draft 구현" 후속 작업의 필수 목표에서 제외한다 — 현재 프로젝트에 영속 계층 자체가 없어(모든 Record가 인메모리 Riverpod 상태) Draft만 강제종료 후 살아남게 만드는 건 의미가 약함. 대신 **인터페이스는 나중에 로컬/Firestore 영속화 어댑터로 교체 가능하게 준비**해둔다(아래 Draft 구조 참고) — 이번엔 실제 로컬 저장 패키지(Hive 등)는 추가하지 않음. 세션 내 복원(에디터 재진입 시 기존 Draft 로드)은 Riverpod 상태만으로 자동 충족되므로 별도 구현 불필요.
+- **Draft 데이터 구조**: 기존 Record notifier(`closetItemsProvider` 등)에 필드를 얹지 않고, 도메인별 독립 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`, `Map<recordId, Draft>` 형태)를 신설한다 — Draft는 조회 패턴(갤러리 목록/필터 대상 아님, 휘발성, 단일 소유자)이 Record와 근본적으로 달라 분리가 맞고, 향후 Firestore에서도 별도 컬렉션(`editor_drafts`, `{recordType, recordId}` 키)으로 갈 것이므로 지금부터 그 경계를 맞춘다.
+
+사유:
+사용자가 "Policy Revision Proposal — Editor Draft Strategy & Save Model"로 직접 제안(2026-07-15). 기존 "상시 저장(드래프트 없음)" 정책이 Record와 편집 세션을 동일시해 실제 편집 취소(Rollback)가 불가능했던 구조적 한계를 해결하기 위함. PM 조사 결과 Editor 3화면이 아직 전부 skeleton 상태(Step①/⑤ 산출물만 존재, 실제 저장 로직 없음)라 마이그레이션 비용 없이 지금 방향을 바꾸는 게 가장 저렴하다고 판단, 세부 설계(Recovery 범위/Draft 구조/작업 분리 시점)를 PM이 정리해 사용자에게 확인받음.
+
+Impact:
+- `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md` "상시 저장(드래프트 없음)" 섹션 리라이트(이 커밋에서 함께 처리).
+- `docs/history/TechnicalDebt.md`의 "Composition/StyleLog isIncomplete 필드 부재" 항목 — 필드 신설 자체는 이 결정과 별개로 이미 확정(저장 필드, ClothingItem과 동일 패턴), 값 설정/해제 로직만 이 Draft 기준으로 갱신 필요하다고 함께 업데이트.
+- `docs/work/BACKLOG.md` Current 섹션 — Step⑦ 스코프에서 Editor 3화면 저장 로직 배선 제외 명시, "Editor Draft 구현"을 Step⑦ 이후 후속 작업으로 별도 등록.
+- 코드 영향은 전부 "Editor Draft 구현" 착수 시점 Implementation 태스크(신규 `lib/providers/*_drafts_provider.dart` 3종, `EditorHeader.onCancel`/`AutoSaveIndicator` 배선, Editor 3화면 실제 로직)로 예정 — 이번 라운드(Step⑦ 착수 전)는 모델 필드/문서만 정리.
+
+---
+
+[Decision] Typography Pass 3 확정 (Type Scale) + Brand Guide §3 코드 동기화
+
+결정:
+- **Brand Guide 동기화**: `docs/reference/design/01_BrandGuid.md` §3 "Font Families"가 "Body: KoPub돋움"을 확정으로 표시하고 있었으나, 실제로는 옷장 메인 재설계 때(위 "옷장 메인 재설계 — Design Tokens 확정" 결정) Body도 Pretendard로 단일화되고 KoPubDotum이 코드/`pubspec.yaml`에서 제거된 상태였다 — Decision.md엔 남아있었지만 Brand Guide 문서 자체가 갱신되지 않아 living document 원칙을 어기고 있었다. Header/HUD Stack 재설계 후 재개한 Visual Review에서 발견, 사용자 확인 하에 Brand Guide를 코드에 맞춰 "전 역할 Pretendard"로 수정.
+- **Type Scale 확정**: 그동안 잠정값(Material 3 기본 스케일)으로 미확정 표시돼 있던 사이즈/굵기를 정식 확정값으로 승격. 사용자가 실제 3개 메인 화면(옷장/코디/스타일일지) 스크린샷을 보고 다음 2가지 조정을 지시:
+  1. 갤러리 타일 배지/태그 텍스트(`labelSmall`, 원피스/하의 등 카테고리 태그·"미완성" 배지) — 11 → **13**으로 확대.
+  2. "선택" 보조 액션 버튼 텍스트가 **앱 전체에서 가장 작은 텍스트**가 되도록 — 기존 `labelSmall`(11)이 비운 값을 재사용해 신규 역할 `actionMinimal`(**11**, M3 표준 15-role 밖의 추가 역할)을 도입, "선택" 버튼에 명시 적용. 나머지 역할(`display*`/`headline*`/`title*`/`body*`/`labelLarge`/`labelMedium`)은 기존 M3 기본값 그대로 확정.
+- 확정값 전체 표는 `01_BrandGuid.md` §3에 기록(이 문서에 중복 전사하지 않음 — Reference 문서가 Source of Truth).
+
+사유:
+BACKLOG.md "다음 세션 작업" 1번(Header/HUD Stack 재설계 후 Main 3화면 스크린샷 재캡처 → Visual Review 재개, 보류 중이던 Typography Pass 3 포함)에 따라 재개한 Visual Review 중 사용자 직접 지시.
+
+Impact:
+- `docs/reference/design/01_BrandGuid.md` §3/§4 갱신 완료(이 세션에서 직접 수정).
+- 코드 반영은 별도 Implementation 태스크: `lib/theme/app_typography.dart`(`labelSmall` 11→13, `actionMinimal` 11 신설)과 옷장/코디/스타일일지 메인 3개 화면의 "선택" `TextButton`(`lib/screens/closet_main_screen.dart`, `composition_main_screen.dart`, `style_log_main_screen.dart`)에 `actionMinimal` 명시 적용 필요 — Worker→Review→Tester 사이클로 진행 예정.
+- `labelSmall`을 참조하는 다른 위젯(`status_badge.dart`, `selectable_gallery_tile.dart`, `style_log_gallery_tile.dart`, `composition_gallery_tile.dart`)은 role 참조만 하고 있어 자동으로 커진 값이 반영됨(별도 수정 불필요).
+
+---
+
+[Decision] Header/HUD Pinned Rule — 모든 조작 요소는 독립된 Floating Control, 단일 Toolbar/Capsule Bar/NavigationBar/SegmentedContainer로 병합 금지 (Layout Principle, 변경 시 사용자 승인 필수)
+
+결정:
+- 헤더/HUD의 조작 요소(카테고리 드롭다운, 계절 드롭다운, 밀도 버튼, 선택 버튼, ⋯더보기, 검색 등)는 **각각 물리적으로 독립된 컨테이너**(개별 프로스티드글래스 pill/circle)여야 한다. 시각적 스타일(블러/보더/그림자 톤)은 공유할 수 있지만, 하나의 Container/Row 안에 여러 요소를 함께 담아 하나의 Bar처럼 렌더링하는 것은 **프로젝트 전체에서 금지**한다.
+- 이 결정 당시(2026-07-13) `lib/widgets/overlay_header.dart`(`OverlayHeader`)가 정확히 이 금지된 패턴이었다 — 배경/블러/보더/그림자를 가진 단일 `Container`가 `child`(드롭다운+타이틀)와 `actions`(선택 버튼 등)를 한 Row에 모두 담고 있었다. `AppMainScaffold`가 모든 Main 화면에서 이 `OverlayHeader`를 공용으로 쓰고 있어, 화면 단위로 개별 수정해도 셸 자체가 이 패턴이면 계속 재발하는 구조였다 — 이번 결정은 **셸 컴포넌트 자체의 재설계**를 요구했다(화면별 땜질 금지). **(주: `OverlayHeader`는 같은 날 Header/HUD Stack 재설계 작업으로 삭제됐다 — 이 문단은 그 시점의 문제 상황을 기록한 것이지 현재 코드 상태가 아니다.)**
+- **Layer 분류**(`uiux-design-conventions` Layer Boundary Rule 기준): 이 규칙은 "헤더가 어떻게 배치되는가"를 정의하므로 **Layout Principle**에 속한다(Golden Question: UI가 어떻게 배치되는지 정의하는가? → YES → Layout).
+- **변경 절차 고정**: 이 규칙과 다른 형태(요소를 하나의 컨테이너로 합치는 등)를 제안하려면, 먼저 "기존 Pinned Rule을 변경하는 제안"임을 명시하고 사용자 승인을 받은 뒤에만 반영한다 — Worker/PM이 임의로 되돌릴 수 없다.
+- 이 규칙과 별개로, 사용자가 제공한 "옷장 메인 하이파이 디자인 주문서"(2026-07-13)의 세부 레이아웃(2번째 툴바 행, 계절 세그먼트, 원형 자리표시 버튼, 삭제 바, 토스트 등)은 `docs/reference/plan/03_화면별UX명세서/01_옷장.md`와 대조해 반영 — 세부 사항은 별도 Implementation 태스크에서 처리.
+- **후속 확정(같은 날)**: 이 Pinned Rule과 Scroll Edge Gradient 문제(아래 TechDebt, 이후 이 항목과 통합)를 PM이 종합해 "헤더가 Column으로 콘텐츠를 도킹시키는 구조 자체가 근본 원인"이라고 진단했고, 사용자가 이를 확인하며 정식 스펙 원문(Scroll Container + Header/HUD 아키텍처)을 전달 — `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`에 그대로 기록. 이 Decision 항목의 상세 구현 지침은 이제 그 스펙 문서가 Source of Truth이며, 여기서는 "규칙이 언제/왜 생겼는지"만 남긴다.
+
+사유:
+사용자가 여러 차례 "독립된 Floating Control" 형태로 수정 요청했음에도 Bar 형태로 반복 회귀 — 근본 원인이 화면별 구현이 아니라 공용 셸 컴포넌트(`OverlayHeader`) 자체의 설계였음을 이번에 확인. 재발 방지를 위해 Pinned Rule로 명문화하고 변경 절차를 고정.
+
+Impact:
+- 상세 구현 지침·Impact 평가는 `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`로 이관(중복 방지) — `lib/widgets/app_main_scaffold.dart`/`overlay_header.dart`/`fading_scroll_edge.dart` 재설계, 옷장/코디/스타일일지 메인 3화면 전부 영향.
+- 상세 구현은 별도 Implementation 태스크로 진행.
+
+---
+
+[Decision] 갤러리 그리드는 화면 가로폭 끝까지 사용(edge-to-edge) — HUD Scrollbar는 향후 Stack 기반 overlay로만 구현, Grid padding/inset 확장으로 자리 확보 금지
+
+결정:
+- `AppGalleryGrid`(`lib/widgets/app_gallery_grid.dart`)는 좌우 padding 없이 화면 가로폭을 끝까지 채운다. 수직 padding(상/하 여백)은 유지 가능하며, 타일 간 간격은 기존 `AppSpacing.galleryGap`(crossAxisSpacing/mainAxisSpacing)로 그대로 유지한다.
+- 아직 미착수 상태인 HUD Scrollbar(`docs/work/BACKLOG.md` 파킹로트 항목 — "Scrollbar / Scroll Hint(`<`/`>`)")는 향후 구현 시 반드시 **Stack 기반 overlay**로 그리드 위에 얹는 방식으로 만든다. Grid의 padding이나 top inset을 늘려 스크롤바 자리를 미리 확보하는 방식은 금지 — 스크롤바 유무가 갤러리 콘텐츠의 레이아웃(타일 크기/위치)에 영향을 줘서는 안 된다.
+
+사유:
+사용자 지시(2026-07-13, Step③ 완료 후 대표 3화면 Visual Review 착수 중 발견).
+
+Impact:
+- `lib/widgets/app_gallery_grid.dart` 좌우 padding 제거 필요 — 소규모 Implementation 태스크로 진행.
+- 이후 Scrollbar를 Component Library에 추가할 때(BACKLOG 파킹로트) 이 규칙(Stack overlay, Grid 비침습)을 따를 것.
+
+---
+
+[Decision] 그리드 밀도(`AppDensity`) 토글은 그룹형 Main 화면(옷장/코디) 전용 — 스타일일지 메인은 밀도 토글 없이 고정 밀도 사용
+
+결정:
+- `AppDensity`(`lib/theme/app_spacing.dart`)의 3단계 밀도 토글 UI는 옷장/코디 메인에만 적용한다. 스타일일지 메인(`style_log_main_screen.dart`)은 밀도 토글 아이콘/provider 없이 `StyleLogGalleryGrid` 내부에서 `AppDensity.mid`를 고정값으로 사용한다.
+- 근거: `AppDensity` 클래스 자체의 기존 주석("T6(Density) — Grouped Main 그리드(옷장/코디) 전용 열 개수")이 이미 이 범위를 명시하고 있었고, `03_스타일 일지.md` UX명세서도 밀도 토글을 요구하지 않는다(플랫+필터형이라는 페이지 타입 확정과는 별개 개념).
+
+사유:
+Step③(코디/스타일일지 메인 적용, 2026-07-13) Worker가 이 기존 주석 근거로 스타일일지에 밀도 provider를 추가하지 않았고, Review·Audit이 코드-스펙 일치를 확인했다. 다만 이 판단이 코드 주석에만 있고 Decision.md에는 없어 Audit이 "다음 Worker/Reviewer가 오인할 위험"을 지적 — 그 근거로 이번에 정식 기록한다(코드 변경 없음, 문서화만).
+
+Impact:
+- 코드 변경 없음(이미 Step③ 커밋에 반영된 상태를 사후 문서화).
+- 이후 Step⑥(휴지통 등 나머지 화면 적용) 때도 같은 기준(그룹형 여부로 밀도 토글 유무 판단)을 따를 것.
+
+---
+
+[Decision] Step②(Component Library) 1차 라운드 제작 범위 확정 + `AppMainScaffold` 내부 슬롯 구조 지시
+
+결정:
+- 이번 라운드(Task 2-A, 2026-07-13 완료) 제작 대상을 8개로 확정: Layout `AppMainScaffold`(Task 2-B로 이월), Header 계열 `FrostedBackButton`/`CategoryToggleDropdown`/`EditorHeader`/`AutoSaveIndicator`/`DetailHeaderActions`, Detail `CrossReferenceLinkBar`, Primitive `FadingScrollEdge`. Task 2-A에서 실제로 만든 건 `AppMainScaffold`를 뺀 7개 + Gallery 레이아웃 분리(`AppGalleryGrid`).
+- **`AppMainScaffold` 내부 구조 지시(Task 2-B가 따라야 할 구속 조건)**: Scaffold는 레이아웃 조립만 담당하고, `Header`는 `Leading`/`Title`/`Actions(slot)`로 나뉘며 `Actions` 슬롯에 `DetailHeaderActions`(드롭다운+⋯메뉴, 재사용 가능한 별도 composite)가 꽂히는 구조로 만든다. 화면마다 Header를 따로 구현하거나 Detail 전용 별도 Scaffold를 새로 만드는 방향은 명시적으로 금지 — Detail은 Main과 동일한 셸에서 `groupingBar` 슬롯만 비우는 방식으로 처리한다.
+- **Gallery 제네릭화는 이번 라운드에 전체로 하지 않음**: Grid 레이아웃(`AppGalleryGrid`)만 공용 컴포넌트로 분리하고, Tile(`SelectableGalleryTile`)은 Clothing 전용 구현을 유지 — Composition/Style Log/Trash로의 확장은 Step③ 몫으로 이월.
+- **Scrollbar/Scroll Hint(`<`/`>`)는 이번 라운드에 제작하지 않고 향후 Component Library 확장 후보로만 유지**(프로젝트 전반 공통 디자인 예정).
+- Component Hierarchy 참고 모델(사용자 제시, 향후 라운드에도 적용): `Primitive(Button/Scrollbar/Badge/Divider/FadeEdge) → Composite(GalleryTile/DetailHeaderActions/CrossReferenceLinkBar) → Layout(AppMainScaffold/EditorScaffold) → Screen`. 이번 라운드는 이 중 Primitive 일부 + Composite + Header 계열까지만 해당, Layout(`AppMainScaffold`/`EditorScaffold`)은 Task 2-B 이후.
+
+사유:
+Step①(전체 화면 Skeleton) 완료 후 PM이 스켈레톤을 훑어 후보를 리스트업했고, 사용자가 검수하며 범위를 확정 — 특히 Detail 헤더를 별도 Scaffold로 분기하지 않고 기존 `AppMainScaffold`의 슬롯 구조 안에서 흡수하도록 명시적으로 지시(불필요한 셸 중복 방지).
+
+Impact:
+- Task 2-A 산출물: `lib/widgets/{frosted_back_button,category_toggle_dropdown,detail_header_actions,editor_header,auto_save_indicator,cross_reference_link_bar,fading_scroll_edge,app_gallery_grid}.dart`, `grouped_gallery_grid.dart` 리팩터, `closet_main_screen.dart` 마이그레이션. 커밋 `56eb828`.
+- `CrossReferenceLinkBar.height=64` 로컬 const는 `TechnicalDebt.md`에 등록(추후 `AppSpacing` 승격 검토).
+- 다음 착수 대상: Task 2-B(`AppMainScaffold` 조립, 위 구속 조건 그대로 적용) — 상세: `docs/work/BACKLOG.md` Current.
+
+---
+
+[Decision] 화면 관통 공용 UI 셸 아키텍처로 전환, Task 8~15(화면별 순차 구현) 폐기 → 8단계 프로세스로 대체
+
+결정:
+- 뒤로가기 버튼/카테고리 토글/그룹형 드릴다운을 화면마다 개별 구현하던 기존 계획(플랜 Task 8~15)을 폐기하고, 공용 셸 위젯 `AppMainScaffold`(신설 예정)가 이 세 가지를 소유하는 구조로 전환 — 화면이 이 셸을 쓰기만 하면 뒤로가기/토글/그룹바를 빠뜨릴 수 없음(B안 채택). `FrostedBackButton`/`CategoryToggleDropdown`을 기존 코드에서 추출해 셸 하위 컴포넌트로 재사용, `groupingBar` 슬롯을 그룹형 드릴다운용으로 신설. Add/Create 3화면(옷 추가/코디 만들기/스타일일지 추가)은 이 셸을 쓰지 않고 자체 취소/저장 헤더 유지.
+- 화면별 규칙 표(스펙 §1) 확정 — 그룹형 드릴다운은 옷장 메인/코디 메인 두 곳만 적용(스타일일지는 플랫+필터 유지). 선택 모달은 원 화면과 동일 사양으로 원 화면을 재사용(신규 화면 없음).
+- 개발 프로세스를 화면별 Task 8~15에서 8단계로 재편: ①전체 화면 Skeleton → ②Component Library 구축 → ③Main 3개 적용 → ④Detail 적용 → ⑤Editor 적용 → ⑥나머지 적용 → ⑦기능 구현 → ⑧디테일 튜닝.
+- 산출물: `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(정식 스펙). `docs/work/전체화면_아키텍처_재설계_체크리스트.md`는 은퇴(append-only 보존, 내용은 스펙으로 이관).
+
+사유:
+옷장 메인 뒤로가기 버튼을 개별 구현하던 중 사용자가 "뒤로가기/카테고리 토글/그룹형 드릴다운은 화면 하나씩이 아니라 앱을 관통하는 공용 UI여야 한다"고 지적 — 화면별 순차 구현 방식이 이 전제를 반영하지 못해 같은 로직이 반복 구현·검증될 위험이 있었음.
+
+Impact:
+- 플랜 `docs/superpowers/plans/2026-07-08-flutter-frontend-hifi-screens.md`의 Task 8~15는 더 이상 유효하지 않음(Task 1~7은 유효).
+- Step①(전체 화면 Skeleton)은 별도 플랜(`docs/superpowers/plans/2026-07-13-cross-screen-skeleton-step1.md`)으로 작성, 2026-07-13 Task A~F 전부 완료(상세: `feature/flutter-hifi-screens` 브랜치 커밋 `4778316`~`5ad6561`).
+- 다음 착수 대상은 Step②(Component Library 구축).
+
+---
+
+[Decision] Worktree는 저장소 바깥 형제 디렉토리로만 생성 — `.claude/worktrees/`(기본 위치)는 검색 중복의 원인으로 확인돼 신규 생성 금지
+
+결정:
+- 별도 세션이 병렬로 쓸 worktree는 항상 `git worktree add ../Digital-Wardrobe-<목적> <branch>` 형태로 **저장소 바깥**에 만든다. `EnterWorktree` 툴의 기본 동작(`.claude/worktrees/` 안에 생성)은 이 프로젝트에서 쓰지 않는다.
+- `Workflow_Project.md` §15 "Worktree Placement" 신설(v2.5→v2.6), `CLAUDE.md` 하네스 섹션에도 짧은 포인터 추가.
+- 원인 조사 중 확인된 사실: 이 환경의 Grep/Glob 도구가 `.gitignore`를 전혀 참조하지 않음(검증: 명백히 gitignore 대상인 `.dart_tool/`도 Glob에 147개 파일이 그대로 매칭됨). `.claude/worktrees`가 `.gitignore`에 등록돼 있어도 소용없고, `.ignore`/`.rgignore` 같은 대체 ignore 파일도 같은 이유로 효과가 없을 것으로 판단(도구 자체가 ignore 파일을 안 읽으므로) — 그래서 물리적으로 저장소 트리 밖에 두는 것만이 구조적으로 확실한 해법.
+- 부수: 고아 worktree 디렉토리 2개(`.claude/worktrees/policy-audit-fix`, `setting-ui-temp`) 발견·삭제. `setting-ui-temp`는 이미 2026-07-12에 "해소됨"으로 기록됐던 `policy-doc-versioning-audit` 메타데이터를 가리키는 죽은 `.git` 포인터를 갖고 있었음 — 즉 그 정리 이후로도 계속 남아 검색을 중복시키고 있었던 것으로 추정. `git worktree remove` 대신 `rm -rf`로 지워졌던 게 원인으로 보임(정상 명령을 안 쓰면 메타데이터만 pruned되고 디렉토리는 안 지워질 수 있음).
+
+사유:
+사용자가 "문서 재구조화를 다른 세션/worktree로 진행하면 이 세션 탐색 범위가 2배로 늘지 않냐"고 질문 → 실측 결과 실제로 이미 벌어지고 있던 문제였음이 드러남.
+
+Impact:
+- `.claude/policies/Workflow_Project.md`, `CLAUDE.md` 수정.
+- 향후 모든 worktree 생성(문서 재구조화 세션 포함)이 이 규칙을 따라야 함.
+- `.dart_tool`/`build` 등 다른 gitignore 대상도 평소 검색에 걸리고 있다는 부수 발견 — 이번 스코프에서 별도 조치는 안 함(필요시 후속 검토).
+
+---
+
+[Decision] 컬러 팔레트를 `ColorPalette` 데이터 클래스로 구조화, Palette 1/2 등록(비활성)
+
+결정:
+- `lib/theme/app_colors.dart`에 `ColorPalette` 데이터 클래스 신설(`name`/`gray50`/`gray100`/`primary300`/`primary500`/`accent`/`text` 6필드 + name). `bg`는 두 팔레트 모두 `gray50`과 동일해 별도 필드 없이 `gray50` 재사용.
+- 팔레트 3개 등록: `ColorPalette.current`(기존 Brand Guide Pass 2 고정값을 그대로 옮긴 것), `ColorPalette.palette1`, `ColorPalette.palette2`(사용자가 이번에 준 팔레트 2종).
+- `const ColorPalette activePalette = ColorPalette.current;` 한 줄로 전체 라이트 테마 팔레트를 전환할 수 있는 구조를 만듦. **이번 결정으로 색이 바뀐 것은 아니다** — `activePalette`가 여전히 `current`를 가리키므로 화면에 보이는 색은 리팩터 전과 동일.
+- `AppColors.light`(ColorScheme)와 `AppSemanticColors.light`를 `activePalette` 기반 파생값으로 변경. `static const` → `static ... get`으로 바뀔 수밖에 없었음(런타임 평가가 필요해 `const` 유지 불가).
+- `AppSemanticColors`에 신규 필드 `primaryLight`(← `activePalette.primary300`), `accent`(← `activePalette.accent`) 추가. 이에 따라 생성자가 두 필드를 `required`로 요구하게 되어, 값이 하드코딩된 `AppSemanticColors.dark`에도 값을 채워야 했음 — `dark`의 기존 `primary`/`secondary` 값을 그대로 재사용(`primaryLight: 0xFF93B5CC`, `accent: 0xFF8FA890`), dark의 다른 기존 필드 값은 전혀 건드리지 않음.
+- `gray200`~`gray900`, `warning`, `success`, `AppColors.dark`, `AppSemanticColors.dark`의 기존 색상 값은 팔레트에 없는 role이거나 다크모드 데이터가 없어 손대지 않고 그대로 유지(특히 `gray200`은 갤러리 타일 배경으로 쓰이는 값이라 명시적으로 보존).
+
+사유:
+사용자가 컬러 팔레트를 코드 한 곳만 바꾸면 전체 테마가 바뀌도록 구조화해달라고 요청, 동시에 팔레트 후보 2종(Palette 1/2)을 등록해달라고 요청.
+
+Impact:
+- `lib/theme/app_colors.dart`만 수정, `lib/theme/app_theme.dart`는 이미 getter로 접근하고 있어 코드 변경 불필요.
+- `activePalette`를 `palette1`/`palette2`로 바꾸면 별도 코드 변경 없이 라이트 테마 전체 색이 전환됨(다크 테마는 영향 없음 — 별도 구조).
+- Palette 1/2는 현재 미사용(등록만 됨) — 실제 적용은 별도 Task에서 사용자 확정 후 진행.
+
+---
+
+[Decision] 옷장 메인 그리드 밀도 컬럼 수 1/3/5 → 1/2/4 변경 — 기존 "옷장 메인 재설계 — Design Tokens 확정" 결정 중 `AppDensity` 값 부분을 대체
+
+결정:
+- `lib/theme/app_spacing.dart`의 `AppDensity`: `mid=3`→`mid=2`, `max=5`→`max=4`로 변경(`min=1`은 유지). `levels = [min, mid, max]` 리스트 정의 자체는 변경 없음(값만 `[1, 2, 4]`로 바뀜).
+- `lib/providers/closet_providers.dart`의 `closetDensityProvider` 기본값이 리터럴 `3`으로 하드코딩되어 있던 것을 `AppDensity.mid` 참조로 교체(전수 확인 중 발견 — 값 변경 시 새 밀도 집합 `{1,2,4}`에 속하지 않는 죽은 리터럴이 될 위험이 있었음).
+- 순환 방향(내림차순, max→mid→min)은 그대로 유지 — 4→2→1→4로 순환.
+- 이 결정은 아래 "옷장 메인 재설계 — Design Tokens 확정" 결정 중 `AppDensity`가 `min=1/mid=3/max=5`로 확정됐던 부분을 대체(supersede)한다. append-only 원칙에 따라 해당 항목 자체는 삭제·수정하지 않고 그대로 둔다(순환 방향 결정은 이번 변경 대상이 아니므로 그대로 유효).
+
+사유:
+사용자가 옷장 메인 그리드 밀도 컬럼 수를 1/3/5에서 1/2/4로 확정(사용자 직접 결정).
+
+Impact:
+- `lib/theme/app_spacing.dart`, `lib/providers/closet_providers.dart`
+- `lib/screens/closet_main_screen.dart`는 `AppDensity.max`/`.mid`/`.min` 상수 참조만 쓰고 있어 코드 변경 불필요.
+- `integration_test/closet_main_screen_test.dart`의 밀도 순환 관련 assertion 3건(기존 "3→1→5→3" 전제)이 실패 — Tester가 별도로 갱신 예정.
+
+---
+
+[Decision] 옷장 메인 재설계 — Design Tokens 확정(타이포/코너반경/모션/글래스 헤더/밀도 토글 방향)
+
+결정:
+- `lib/theme/app_typography.dart`: Body 계열(`bodyLarge`/`bodyMedium`/`bodySmall`)에 쓰던 `KoPubDotum`을 제거하고 `Pretendard`로 단일화(굵기는 기존 `FontWeight.w500` 유지). 코드 내 유일한 사용처였으므로 `pubspec.yaml`의 `KoPubDotum` `fonts:` 등록도 함께 제거.
+- `lib/theme/app_spacing.dart`: `AppRadius`(`sm=16`, `pill=100`) 신설 — Design Tokens에 역할명조차 없던 코너 반경 값을 옷장 메인 목업 기준으로 처음 정의. `AppMotion`(`fast=200ms`, `searchExpand=300ms`) 신설 — Design Tokens의 `Motion.standard` 역할명에 값을 처음 채택, 다른 화면 재사용 전제.
+- `lib/widgets/overlay_header.dart`: 글래스 헤더 배경 투명도를 `alpha: 0.7` → `alpha: 0.38`로 수정(목업 값 `rgba(247,246,243,0.38)`과 일치), 얇은 화이트 보더(`alpha 0.2`)와 약한 `BoxShadow`(`alpha 0.05`, `blurRadius 8`, `offset(0,2)`) 추가.
+- `lib/screens/closet_main_screen.dart`: 그리드 밀도 토글 순환 방향을 오름차순(3→5→1→3)에서 목업 요구사항인 내림차순(5→3→1→5)으로 반전. 토글 아이콘도 밀도 단계별로 분기(5=`grid_view`, 3=`view_comfy`, 1=`crop_square`)해 시각적으로 구분되게 함.
+
+사유:
+Task 7(옷장 메인) 구현이 실제 목업과 어긋난 부분을 재설계하는 플랜(`옷장 메인 화면 재설계` 플랜 §2, Design Tokens 확정 Task) 진행 중, 목업 대조 결과 위 값들이 잠정값·오차·미정 상태였음을 확인해 이번 Task에서 확정.
+
+Impact:
+- `lib/theme/app_typography.dart`, `lib/theme/app_spacing.dart`, `lib/widgets/overlay_header.dart`, `lib/screens/closet_main_screen.dart`, `pubspec.yaml`
+- `AppRadius`는 Brand Guide/Design Tokens 문서에 아직 정식 등재 안 됨 — `docs/history/TechnicalDebt.md`에 후속 조치 후보로 기록.
+- 밀도 토글 방향 반전으로 `integration_test/closet_main_screen_test.dart`의 기존 순환 방향(3→5→1) 전제 assertion 3건이 실패 — Tester가 별도로 갱신 예정.
+
+---
+
+[Decision] Season enum 4종 → 3종 개편 (사계절 폐기, 간절기→봄가을 리네임) — 기존 "ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정" 결정 중 Season 부분을 대체
+
+결정:
+- `lib/models/enums.dart`의 `Season` enum을 `summer, winter, transitional, allSeason` 4종에서 `springFall, summer, winter` 3종으로 변경.
+  - `allSeason`(사계절)은 폐기(제거) — 별도 계절값으로 존치하지 않음.
+  - `transitional`(간절기)은 `springFall`(봄가을)로 리네임 — 개념은 유지하되 라벨과 식별자만 변경.
+  - 선언 순서를 `springFall → summer → winter`로 고정(정렬 기본순서 표와 일치).
+- 기존 `Season.allSeason`/`Season.transitional`로 태깅되어 있던 목업 아이템(`lib/mock/mock_data.dart`) 전부를 `Season.springFall`로 재태깅.
+- `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md`의 정렬 기본순서 표("계절" 행)를 "여름 → 겨울 → 간절기 → 사계절"에서 "봄가을 → 여름 → 겨울"로 갱신.
+- 이 결정은 아래(§) "ClothingItem.category / Season(ClothingItem·Composition) 폐쇄형 어휘 확정" 결정 중 `Season` 4종("여름 / 겨울 / 간절기 / 사계절") 확정 부분을 대체(supersede)한다. append-only 원칙에 따라 그 항목 자체는 삭제·수정하지 않고 그대로 둔다.
+
+사유:
+옷장 메인 화면 재설계 작업 중 사용자가 실제 목업 데이터 모델을 화면과 대조하며 검토한 결과, "사계절"이라는 계절 구분이 실사용 맥락에서 불필요하고(모든 계절에 다 입는 옷은 "간절기" 또는 개별 계절로도 충분히 표현 가능), "간절기"라는 명칭보다 "봄가을"이 사용자에게 더 직관적이라고 직접 확정.
+
+Impact:
+- `lib/models/enums.dart`: `Season` enum 3종으로 축소, 선언 순서 변경
+- `lib/mock/mock_data.dart`: 기존 `Season.allSeason`/`Season.transitional` 태깅 아이템·구성(Composition) 전부 `Season.springFall`로 재태깅
+- `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md`: 정렬 기본순서 표 갱신
+- `test/`, `integration_test/`의 `Season.allSeason`/`transitional` 참조 갱신
+
+---
+
+[Decision] Design 워크플로우-Development 파이프라인 교차 트리거 신설 (Visual Review 누락 방지)
+
+결정:
+- `Workflow_Design.md` §2.1 "Cross-Workflow Trigger" 신설: 대표 Hi-Fi Sample(3~5개 화면)이 Development 파이프라인(Layer=UI/Screen, Stage=Implementation/Frontend)으로 만들어지는 경우, Development Review/Tester 통과가 Visual Review(타이포/색상/여백/시각적 위계 확인)를 대체하지 않는다. 대표 샘플이 Development 트랙에서 완성되면 PM이 Visual Review를 명시적으로 트리거해야 하고, 그 전까지 Design Tokens는 잠정값(freeze 안 됨)으로 취급한다. Version 2.1 → 2.2.
+- `CLAUDE.md` 필수 체크포인트에 6번 "Design 마일스톤 교차 확인" 추가.
+
+사유:
+Task 7(옷장 메인 화면, 대표 Hi-Fi Sample의 첫 화면)이 `Layer=UI/Screen, Stage=Implementation(Frontend)`로 태깅되어 Worker→Review→Tester 사이클만 타고 완료 처리됐는데, 이 사이클 어디에도 Visual Review(타이포/색상/여백 등 "눈으로 봐야 아는 것")를 체크하는 지점이 없었음. `BACKLOG.md`의 "Next" 항목에 Typography가 "임시값 — 실제 화면 육안 확인 후 재검토 필요"라고 이미 적혀 있었는데도 PM이 명시적 체크포인트 없이 지나침. 사용자가 "리뷰 과정에 비주얼 리뷰 했어?"라고 물어 발견, Design/Development 두 워크플로우가 서로의 완료 조건을 모르는 구조적 공백으로 진단하고 즉시 정책 보완 지시.
+
+Impact:
+- `Workflow_Design.md` §2.1 신설, Version 2.2
+- `CLAUDE.md` 체크포인트 6 추가
+- Task 7의 실제 Visual Review는 아직 미실시 — 별도로 진행 예정
+
+---
+
+[Decision] feature 브랜치의 dev 동기화 주기 신설 (Task/Plan 완료 시점마다 pull)
+
+결정:
+- `Workflow_Project.md` §13.4 "Sync Cadence (feature ← dev)" 신설: Task 하나가 완료될 때(Worker→Review→Tester 사이클이 Complete에 도달)와, 여러 Task로 구성된 Plan 전체가 끝날 때, 각각 `git fetch origin && git merge origin/dev`로 feature 브랜치에 dev를 받아들인다.
+- 이 merge 실행 자체는 feature 브랜치 안의 안전한 작업이라 사전 확인 불필요(§13.2 커밋 게이트와 동일 근거). 충돌이 나면 PM이 직접 해결(맥락을 아는 쪽이 처리)하고, 결과 diff를 사용자에게 보여준 뒤 확인받는다 — 결정문서/정책 문서가 충돌에 걸리면 특히.
+- `CLAUDE.md` 필수 체크포인트에 5번으로 추가.
+
+사유:
+Tester 하네스 확장 작업 중, `feature/flutter-hifi-screens` 브랜치가 dev를 오래 안 당겨받은 사이 dev에 병합된 별도 PR(#6, 정책/레퍼런스 문서 폴더구조 개편 — `docs/knowledge/**` → `.claude/policies/`+`docs/history/`+`docs/reference/`)과 크게 갈라져, 실제로 4개 파일(`CLAUDE.md`, `Workflow_Project.md`, `Decision.md`, `BACKLOG.md`)에서 병합 충돌이 발생함(2026-07-10). 사용자가 이 사고를 계기로 "Task 완료 혹은 Plan 완료 시점마다 pull"을 명시적 프로세스로 만들 것을 지시 — 갈라짐을 작은 상태로 자주 해소해 충돌 규모를 최소화하는 것이 목적.
+
+Impact:
+- `Workflow_Project.md` §13.4 신설
+- `CLAUDE.md` 체크포인트 5 추가
+- 이번 사고 자체의 충돌 해결(4개 파일)은 PM이 직접 수행, 사용자가 최종 확인
+
+---
+
 [Decision] Audit 발견 사항 반영 — §1.7 문서 계층/오버라이드 원칙 신설 + §7/§12.1 모순 해소 + Role 중복 정리
 
 결정:
