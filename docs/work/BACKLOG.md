@@ -24,7 +24,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current
 
-Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev 1차 병합 완료, 같은 브랜치에서 계속 진행)에서 Subagent-Driven으로 진행 중.
+Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev 1차 병합, PR #10으로 dev 2차 병합 완료 2026-07-18 — Task 7~13/Step②~⑦ 1라운드 전체, 같은 브랜치에서 계속 진행)에서 Subagent-Driven으로 진행 중.
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(화면 관통 공용 셸 스펙), `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`(Header/HUD·스크롤 컨테이너 정식 스펙 — 지금은 이 3개를 함께 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
@@ -33,10 +33,12 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - Task 12: 코디 상세의 "연결된 스타일일지"도 정사각형(1:1)으로 통일 — `02_코디 (가상 조합).md`의 "1개면 2칸 확대" 스펙 규칙을 사용자 지시로 폐기, `StyleLogCrossReferenceGallery`의 `expandSingle` 파라미터 완전 삭제(옷 상세/코디 상세 둘 다 이제 항상 정사각형 — 아래 P3 "expandSingle 비대칭" 항목은 이걸로 해소됨). 커밋 `424e84f`+`badb675`.
 - Task 13: 같은 갤러리를 "기본 2열, 1장이면 1열"로 재조정 — 사용자가 두 화면 모두에서 1장 연결 시 2열 그리드 절반이 비어 보이는 걸 지적, `crossAxisCount`를 `logs.length == 1 ? 1 : 2`로 동적화(Task 12가 폐기한 "2칸 확대"와는 다른 방식 — 스팬이 아니라 열 개수 자체를 줄임, 타일은 계속 정사각형). 커밋 `4a2dbdd`+테스트 커밋. Tester가 실측 픽셀(1장=컨테이너 전체폭 358px, 2장=175px씩 2열)로 검증.
 - 넷 다 Worker→Review→Tester 통과(별도 Audit 불필요, S/M 사이즈). 상세 경위: `docs/history/Decision.md`의 대응 항목들, `docs/superpowers/plans/2026-07-15-step7-detail-binding.md` Task 10~13 섹션.
-- 세션 종료 시점 working tree clean 예정, 커밋 push 전(로컬 feature 브랜치에 존재) — 다음 세션은 아래 "다음 세션 작업" 1번부터 이어가면 됨.
+- **PR #10(Task 7~13 전체, 119개 파일) push 후 사용자가 직접 merge, dev 반영 완료(2026-07-18).** 병합 직전 제목/설명이 "Task 7"만 반영한 채 9일간 갱신 안 된 상태였던 걸 발견해 PM이 실제 누적 범위로 갱신 후 merge. `origin/dev`에는 이와 별개로 `feature/harness-agent-readonly-guard`(PR #14, review.md/worker.md 역할경계 수정)도 같은 날 직접 병합됐으나, 이 feature 브랜치엔 동등한 수정이 이미 더 이른 시점(`7079576`/`aaaad68` 커밋)에 반영돼 있어 `git diff HEAD origin/dev`가 완전히 비어있음(내용 차이 없음, 별도 조치 불필요) — 확인 완료.
+- 로컬 feature 브랜치는 `origin/dev`보다 커밋 그래프상 2개(머지 커밋들) 뒤처져 있지만 트리 내용은 동일 — 다음 세션에서 `git fetch origin && git merge origin/dev` 한 번 돌려 그래프도 맞춰두면 좋음(§5 관례, 급하지 않음).
+- 다음 세션은 아래 "다음 세션 작업" 1번부터 이어가면 됨.
 
 **다음 세션 작업**:
-1. **Step⑦(기능 구현) 1라운드(Task 1~9, +Task 10~12) 전체 완료 — 다음은 "Step⑦ 나머지 스코프"를 별도 Plan으로 착수.** 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결. 착수 전 이번 라운드가 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)도 함께 Plan에 반영할 것.
+1. **Step⑦(기능 구현) 1라운드(Task 1~13) 전체 완료, PR #10으로 dev 병합 완료(2026-07-18) — 다음은 "Step⑦ 나머지 스코프"를 별도 Plan으로 착수.** 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결. 착수 전 이번 라운드가 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)도 함께 Plan에 반영할 것.
    - **"Editor Draft 구현"(Step⑦ 전체 완료 후 별도 후속 작업)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
 2. **2차(최종) Audit(2026-07-16, Task 9 직후) 발견 P2/P3 — 다음 Step⑦ 나머지 스코프 Plan 착수 전 픽업 검토**:
    - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 "사용된 옷"/"연결된 스타일일지" 타이틀을 붙이는데 옷 상세는 안 붙임, 비대칭. `closet_item_detail_screen.dart`에 "연결된 코디"/"연결된 스타일일지" `Text(titleSmall)` 헤더 추가로 간단히 해소 가능.
@@ -56,7 +58,8 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 
 # Next
 
-- **`ui-ux-pro-max` 플러그인에서 Flutter 관련 내용만 추출해 프로젝트 로컬 스킬로 이식** (별도 세션에서 진행 예정, 2026-07-12 확정). 배경: 토큰 소모 진단 중 `ui-ux-pro-max`/`ui-styling` 플러그인 스킬 7종이 이 Flutter 전용 프로젝트와 무관한 내용을 매 턴 상시 로드하고 있는 걸 발견.
+- **`ui-ux-pro-max` 플러그인에서 Flutter 관련 내용만 추출해 프로젝트 로컬 스킬로 이식** (2026-07-12 확정). 배경: 토큰 소모 진단 중 `ui-ux-pro-max`/`ui-styling` 플러그인 스킬 7종이 이 Flutter 전용 프로젝트와 무관한 내용을 매 턴 상시 로드하고 있는 걸 발견.
+  - **[2026-07-18 발견] 이미 착수된 상태 — 미완료·미커밋으로 방치됨.** 저장소 바깥 sibling worktree `../Digital-Wardrobe-flutter-ui-reference-skill`(브랜치 `feature/flutter-ui-reference-skill`, `dev`보다 159커밋 뒤처짐)에 목표 산출물 `.claude/skills/flutter-ui-reference/SKILL.md` 초안이 **450줄 분량으로 이미 작성되어 있으나 `git add`조차 안 된 untracked 상태**로 남아있다(라이선스 고지문 포함, 구조상 상당히 완성도 높아 보임 — 내용 검증은 안 함). 이 worktree/브랜치의 마지막 실제 커밋은 2026-07-12 날짜의 무관한 커밋(`6c52782`)이라 커밋 로그만 봐서는 이 작업물의 존재가 드러나지 않는다. **과거 이 프로젝트에서 고아 worktree를 `rm -rf`로 지워 유실시킨 전례가 있으므로(Known Issues 참고) 이 worktree를 함부로 정리하지 말 것** — 다음 착수 세션은 정리부터 하지 말고 이 초안을 먼저 열어 이어쓸지 판단할 것.
   - 이미 조사 완료: `ui-styling`(references 6개, 2,652줄)은 **전부 shadcn/Tailwind 전용, Flutter 내용 0줄** — 통째로 버려도 됨. `ui-ux-pro-max` 메인 `SKILL.md`(703줄)는 17개 스택(React/Vue/Flutter/SwiftUI 등) 포괄이라 그중 Flutter 전용 + 스택 무관 범용 부분(색상 팔레트/폰트 페어링/접근성 원칙 등)만 골라내는 편집 작업 필요.
   - 저작권 검토 완료: MIT License (Copyright Next Level Builder, 저장소 `https://github.com/nextlevelbuilder/ui-ux-pro-max-skill`), README에 추가 제약 없음 확인. 사용·수정·재배포 자유, 유일 조건은 **저작권 고지 + MIT 허가문구를 사본에 포함**하는 것 — 새 스킬 파일에 출처 URL과 MIT 고지문을 반드시 남길 것.
   - 원본 소스 경로(로컬 플러그인 캐시, 이 저장소 밖): `C:/Users/User/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/SKILL.md`.
