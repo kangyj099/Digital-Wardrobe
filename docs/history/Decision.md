@@ -807,3 +807,24 @@ Impact:
 - `closet_add_screen.dart`(아직 스켈레톤, 미착수) 구현 시 필수/선택 필드 검증 로직에 반영 필요 — 현재는 착수 전이라 즉시 영향 없음.
 
 착수 방식: 별도 Decision + 리토핑 태스크로 분리한다(사용자 확정, 2026-07-19) — 위 헤더 드릴다운 스펙엔 포함하지 않고 진행 중인 채로 둔다. `docs/work/BACKLOG.md`에 후속 작업으로 등록.
+
+---
+
+[Decision] ClothingCategory "원피스" 값을 "한벌옷"(onePiece)으로 개명 + 착용순서 위치 변경
+
+배경:
+`_공통 규칙.md` "분류 기준별 정렬 기준표" 편집 중 사용자가 옷 종류 착용순서에 "한벌옷"(원피스+점프수트를 포괄하는 상위 개념)을 추가 — 기존 "ClothingItem.category ... 폐쇄형 어휘 확정" 결정(위 §)이 확정한 8종 중 `dress`("원피스")를 대체한다.
+
+결정:
+- `lib/models/enums.dart`의 `ClothingCategory.dress`(라벨 "원피스")를 **`ClothingCategory.onePiece`(라벨 "한벌옷")로 개명**한다. 영어 "dress"는 점프수트를 포함하지 않는 좁은 개념이라 넓어진 범위(원피스+점프수트)와 어긋나 식별자도 함께 바꿈("영어 dress → 원피스만, 한글 한벌옷 → 원피스·점프수트 포괄"이 서로 안 맞다고 판단, 사용자 확정).
+- **선언 순서(=착용순서) 변경**: 기존 `hat, top, outer, bottom, dress, socks, shoes, bagAccessory`(원피스가 5번째, 하의 다음)에서 → `hat, onePiece, top, outer, bottom, socks, shoes, bagAccessory`(한벌옷이 2번째, 모자 다음)로 이동. `_공통 규칙.md`가 이미 이 순서로 편집됨(사용자 직접) — enum 쪽이 그 순서를 따라간다.
+
+사유:
+한벌옷(원피스/점프수트)은 상의+하의를 동시에 대체하는 옷이라 "이것부터 입으면 별도 상/하의가 필요 없다"는 논리로 착용순서 앞쪽(모자 다음)에 두는 게 사용자 판단상 자연스러움.
+
+Impact:
+- `lib/models/enums.dart` — enum 값 개명+재정렬, 라벨 텍스트 변경
+- `lib/mock/mock_data.dart` — `ClothingCategory.dress` 참조 2건(`c01`, `c08`)을 `.onePiece`로 교체
+- `integration_test/closet_item_detail_data_binding_test.dart` — `.dress` 참조 갱신
+- `2026-07-19-main-header-classification-and-settings-entry-design.md`의 "ClothingCategory 선언 순서가 이미 착용순서와 일치해 추가 매핑 불필요" 서술은 이 변경 이후에도 여전히 유효(개명+재정렬 이후 순서가 착용순서 그대로이므로) — 별도 스펙 수정 불필요.
+- 순수 rename+재정렬이라 런타임 동작 변화 없음 — Worker→Review만 진행(Tester 불필요, Task 1/5 선례와 동일 성격).
