@@ -791,6 +791,8 @@ Brand Guide 확정 시 PLACEHOLDER 값 전수 교체 Task 필요 (TechnicalDebt.
 
 [Decision] ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)
 
+상태: **리토핑 완료(2026-07-19)** — 실제 영향 파일은 이 항목 최초 작성 시점의 grep(아래 Impact의 13개)이 과대 집계였음이 리토핑 과정에서 밝혀짐(`TrashEntry.category`/`AppDetailScaffold.category`는 `AppCategory` 타입이라 무관, `Composition.season`은 이미 nullable이라 무관) — 실제로는 `lib/models/clothing_item.dart`, `lib/mock/mock_data.dart`, `lib/screens/closet_item_detail_screen.dart`, `lib/widgets/selectable_gallery_tile.dart` 4개 파일만 수정. `lib/providers/closet_providers.dart`는 기존 필터 로직이 이미 null-safe해 변경 불필요로 확인. Worker→Review(1차 P0: mock 아이템 추가 방식이 기존 통합테스트 개수 assertion을 깨뜨림 → 전역 mock 대신 테스트 로컬 주입 패턴으로 재작업)→Review(2차 통과)→Tester(7개 시나리오 전부 통과, `integration_test/closet_item_nullable_fields_test.dart` 신설) 전체 사이클 완료. 커밋 `88cbea6`/`92d93ef`/`4c5c522`. Review가 발견한 P2(copyWith가 null로 명시적으로 되돌리는 걸 지원 안 함)는 `docs/history/TechnicalDebt.md`에 별도 기록, `closet_add_screen.dart` 구현 시점까지 의도적으로 미해결 보류.
+
 배경:
 `2026-07-19-main-header-classification-and-settings-entry-design.md` 스펙 작업 중 사용자가 "옷장 category/season이 지금 왜 non-nullable이냐"고 확인, 그 배경에서 제기됨.
 
