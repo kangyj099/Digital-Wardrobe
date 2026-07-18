@@ -128,10 +128,10 @@ void main() {
       await pumpApp(tester);
 
       final actionSize = labelSmallRenderedFontSize(tester, find.text('선택'));
-      // c01(원피스) 타일의 카테고리 태그.
+      // c01(한벌옷) 타일의 카테고리 태그.
       final tagFinder = find.descendant(
         of: find.byKey(const ValueKey('c01')),
-        matching: find.text('원피스'),
+        matching: find.text('한벌옷'),
       );
       expect(tagFinder, findsOneWidget);
       final tagSize = labelSmallRenderedFontSize(tester, tagFinder);

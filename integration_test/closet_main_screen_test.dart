@@ -404,8 +404,8 @@ void main() {
   testWidgets('그리드 타일 라벨이 상품명이 아닌 옷 종류(카테고리)로 표시된다', (tester) async {
     await pumpClosetMain(tester);
 
-    // c01(플로럴 원피스), c08(슬립 드레스)은 둘 다 category=dress → "원피스" 라벨.
-    expect(find.text('원피스'), findsNWidgets(2));
+    // c01(플로럴 원피스), c08(슬립 드레스)은 둘 다 category=onePiece → "한벌옷" 라벨.
+    expect(find.text('한벌옷'), findsNWidgets(2));
     // 상품명 자체는 화면 어디에도 노출되지 않아야 한다.
     expect(find.text('플로럴 원피스'), findsNothing);
     expect(find.text('슬립 드레스'), findsNothing);
