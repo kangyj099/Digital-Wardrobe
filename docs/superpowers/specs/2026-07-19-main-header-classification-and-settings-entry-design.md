@@ -47,7 +47,14 @@ Row 2의 기존 계절 필터 pill 자리를, **`[중분류 ▾][소분류 ▾]`
 
 - **중분류**(분류 기준 선택): 항상 노출.
 - **소분류**(그 기준 내 세부 값 선택): 중분류가 "세부 값을 갖는" 기준일 때만 노출. 세부 값이 없는 기준(아래 "전체보기"/"착용빈도")을 고르면 캡슐이 첫 세그먼트 크기로 줄어들고 소분류 세그먼트는 사라진다.
-- 소분류에서 특정 값을 고르면 그 교집합(중분류 기준의 그 값)으로 메인 그리드가 즉시 필터링된다 — 별도 "그룹 개요" 화면 전환 없음, 캡슐 자체가 곧 필터 UI.
+
+**메인 그리드는 3가지 상태를 가진다** (소분류가 있는 중분류를 고른 경우, 소분류 세그먼트의 선택 여부로 갈림 — 별도로 추적하는 상태값이 아니라 `(중분류, 소분류값)` 조합에서 그대로 파생됨):
+
+1. **플랫**(`flat`): 중분류가 "전체보기" 또는 "착용빈도"(소분류 없는 기준)일 때. 기존과 동일하게 아이템 타일이 그대로 나열됨.
+2. **그룹 개요**(`groupOverview`): 소분류가 있는 중분류를 골랐지만 아직 소분류 값은 안 고른 상태. 소분류 세그먼트엔 아직 특정 값이 아니라 **플레이스홀더 텍스트 "소분류"** 가 표시된다(계절 필터의 기존 `hint: '계절'` 패턴과 동일). 이때 메인 그리드는 아이템 타일이 아니라, 폰 갤러리 앱의 폴더 카드처럼 **소분류 값별로 묶은 그룹 카드**를 보여준다(카드 하나 = 그 소분류 값에 속한 아이템들의 썸네일 콜라주 + 그룹 라벨 + 개수). 아이템이 0개인 소분류 값은 카드 자체를 만들지 않는다(빈 폴더를 보여주지 않음 — 갤러리 앱 관례).
+3. **드릴인**(`drilledIn`): 그룹 카드를 탭했거나, 소분류 세그먼트에서 직접 값을 골랐을 때. 메인 그리드가 그 교집합(중분류=X ∩ 소분류=Y)의 아이템 타일 플랫 목록으로 전환된다(폰 갤러리에서 폴더를 펼친 것과 동일한 느낌 — 전환 애니메이션은 Worker 재량, 필수 아님).
+
+**두 진입 경로가 같은 상태로 수렴한다**: 그룹 카드를 탭하는 것과 소분류 드롭다운에서 값을 직접 고르는 것 둘 다 동일한 소분류 provider를 갱신한다 — 그래서 그룹 카드로 드릴인해도 소분류 세그먼트 텍스트가 자동으로 그 값으로 바뀐다(별도 동기화 로직 불필요, 같은 상태를 읽고 쓰는 것뿐). 반대로 소분류 세그먼트를 다시 "미선택"으로 되돌리는 UI(예: 그룹 개요로 복귀하는 뒤로가기/칩의 X)도 필요 — 이 캡슐 자체나 그리드 상단에 작은 "전체 그룹 보기로" 버튼/칩으로 제공한다(정확한 배치는 Worker 재량).
 
 ### 3.2 화면별 중분류 목록
 
@@ -159,6 +166,37 @@ final compositionDrilledWeatherProvider = StateProvider<Weather?>((ref) => null)
 
 `filteredClosetItemsProvider`/`filteredCompositionsProvider`는 위 provider들을 모두 `watch`해서 (a) 현재 중분류의 소분류 필터 적용 (b) 정렬 기준+방향 적용하도록 확장한다. 기존 시그니처(반환 타입 `List<ClothingItem>`/`List<Composition>`) 그대로 유지 — 소비하는 화면 쪽 변경 없음.
 
+**3가지 그리드 상태(§3.1)는 별도 provider 없이 파생값이다** — `closetDrilledCategoryProvider`(옷종류 소분류) 등은 이미 nullable로 설계돼 있어, `null` = 아직 소분류 안 고름(그룹 개요), non-null = 드릴인 상태를 그대로 나타낸다. 화면은 `(criterion, subValue)` 조합만 보고 `flat`/`groupOverview`/`drilledIn` 중 뭘 그릴지 순수 함수로 계산하면 된다 — 3번째 provider(예: `ClosetGalleryViewState`)를 별도로 만들면 소분류 provider와 상태가 어긋날 수 있는 이중 소스가 생기므로 만들지 않는다.
+
+### 3.7 그룹 카드 데이터
+
+`groupOverview` 상태에서 그릴 카드 목록(그룹 라벨/썸네일/개수)도 파생 provider로 계산한다 — 원본 아이템 목록을 현재 중분류 기준으로 묶어서 만들며, 빈 그룹은 목록에서 제외한다.
+
+```dart
+class ClassificationGroupSummary {
+  const ClassificationGroupSummary({
+    required this.label,
+    required this.thumbnailPaths, // 콜라주용, 최대 4장 정도로 자름
+    required this.count,
+    required this.value, // 탭 시 드릴인 provider에 그대로 세팅할 값
+  });
+
+  final String label;
+  final List<String> thumbnailPaths;
+  final int count;
+  final Object value;
+}
+
+final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>((ref) {
+  final criterion = ref.watch(closetSortCriterionProvider);
+  final items = ref.watch(filteredClosetItemsProvider); // 소분류 필터 적용 전 단계 값 사용
+  // criterion별로 groupBy 후 ClassificationGroupSummary로 매핑, count == 0인 그룹은 생성 자체를 안 함
+  // (실제 groupBy 키/라벨 매핑은 Worker가 criterion에 따라 분기 구현)
+});
+```
+
+코디도 동일한 모양의 `compositionGroupSummariesProvider`를 둔다. `value`의 런타임 타입은 criterion에 따라 다르므로(`ClothingCategory`/`Season`/`int`(연도)/`Weather`) `Object`로 받고, 그룹 카드 탭 핸들러가 대상 provider에 캐스팅해서 세팅한다 — criterion과 provider의 매핑이 이미 고정돼 있어 안전한 캐스팅(런타임 타입 불일치는 프로그래밍 오류로 취급, 방어적 캐스팅 불필요).
+
 ---
 
 ## 4. 영향 범위
@@ -172,6 +210,7 @@ final compositionDrilledWeatherProvider = StateProvider<Weather?>((ref) => null)
 - `lib/screens/closet_main_screen.dart`, `lib/screens/composition_main_screen.dart` — `groupingBar` 제거, Row2 캡슐 위젯으로 교체, 정렬방향 스텁 버튼 배선
 - `lib/widgets/app_main_scaffold.dart` — `groupingBar`/`groupingBarHeight` 파라미터와 `defaultGroupingBarHeight` 상수 삭제, `contentSpacerHeight` 시그니처에서 관련 인자 제거
 - 신규 위젯(가칭) `lib/widgets/classification_drilldown_capsule.dart` — 캡슐 UI 자체(옷장/코디가 세그먼트 개수는 같지만 옵션 목록이 달라 제네릭하게 만들거나, 화면별로 얇게 감싸는 두 개의 얇은 wrapper를 둘지는 Worker 판단)
+- 신규 위젯(가칭) `lib/widgets/classification_group_card.dart` — 그룹 개요 상태의 폴더형 카드(썸네일 콜라주+라벨+개수), `lib/widgets/classification_group_grid.dart` — 이 카드들을 배치하는 그리드(기존 `AppGalleryGrid`를 재사용할지, 카드가 아이템 타일보다 커서 별도로 둘지는 Worker 판단)
 - `docs/reference/plan/03_화면별UX명세서/04_설정.md` — §1 정정 각주
 - `docs/history/Decision.md` — 이 스펙이 `04_설정.md` §1과 `2026-07-12-cross-screen-ui-shell-design.md`의 그룹형 드릴다운 설계를 대체한다는 override 기록
 
@@ -181,8 +220,8 @@ final compositionDrilledWeatherProvider = StateProvider<Weather?>((ref) => null)
 
 ## 5. 테스트 전략
 
-- Provider 로직(필터+정렬+캡슐 축소 판정, nullable 정렬)은 순수 로직이라 TDD 대상 — `test/providers/closet_classification_test.dart`, `test/providers/composition_classification_test.dart`(신규).
-- 캡슐 UI 자체(펼침/축소 애니메이션, 드롭다운 상호작용)는 이 프로젝트 관례대로 Tester 통합테스트로 검증(위젯 단위 TDD 아님).
+- Provider 로직(필터+정렬+캡슐 축소 판정, nullable 정렬, 그룹 카드 생성 — 빈 그룹 제외 포함)은 순수 로직이라 TDD 대상 — `test/providers/closet_classification_test.dart`, `test/providers/composition_classification_test.dart`(신규).
+- 캡슐 UI 자체(펼침/축소 애니메이션, 드롭다운 상호작용)와 3가지 그리드 상태 전환(플랫/그룹개요/드릴인, 그룹 카드 탭 시 소분류 세그먼트 텍스트 동기화)은 이 프로젝트 관례대로 Tester 통합테스트로 검증(위젯 단위 TDD 아님).
 - 기존 `closet_main_screen_test.dart`/`composition_style_log_main_screen_test.dart` 등은 `groupingBar` skeleton 관련 assertion이 있다면 제거된 동작에 맞게 갱신 필요 — Worker가 실제 변경 시 확인.
 - "설정" 드롭다운 항목: 탭 시 실제로 `/settings`로 push되고 뒤로가기로 복귀하는지 Tester가 확인.
 
