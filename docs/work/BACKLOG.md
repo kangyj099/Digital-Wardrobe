@@ -29,14 +29,17 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
 **다음 세션 작업**:
-0. **Task 10/11(2026-07-16→18) 완료 — 옷 상세 "연결된 코디" 섹션 최종 형태 확정.** 사용자가 실제 화면을 보고 "코디 이미지를 그냥 이미지 넣지 말고 착용옷 캐러셀처럼"이라고 요청 → 여러 차례 오해(Task 10: 개별 옷으로 풀어헤침→되돌림, 이어서 "크기만 통일"로도 오해) 끝에 최종 확인: `CompositionPreviewCarousel`을 `PageView`+점 인디케이터 방식에서 `style_log_viewer_screen.dart`의 "착용 옷"과 동일한 **연속 가로 스크롤**(고정 96x96 타일, 페이지 넘김/점 없음)로 교체(Task 11, 커밋 `5540dd4`+`fe31488`). Worker→Review→Tester 통과, Tester가 스크롤 물리 속성까지 정량 비교해 "착용 옷"과 동일 메커니즘임을 확인. 상세 경위: `docs/history/Decision.md` "옷 상세 코디 프리뷰를 `PageView` 캐러셀에서..." 항목.
+0. **Task 10~12(2026-07-16→18) 완료 — 옷 상세/코디 상세 썸네일 UI 최종 확정.**
+   - Task 11: 옷 상세 "연결된 코디" 섹션 — 사용자가 "코디 이미지를 그냥 이미지 넣지 말고 착용옷 캐러셀처럼"이라고 요청 → 여러 차례 오해(Task 10: 개별 옷으로 풀어헤침→되돌림, 이어서 "크기만 통일"로도 오해) 끝에 최종 확인: `CompositionPreviewCarousel`을 `PageView`+점 인디케이터 방식에서 "착용 옷"과 동일한 **연속 가로 스크롤**(고정 96x96 타일, 페이지 넘김/점 없음)로 교체(커밋 `5540dd4`+`fe31488`). Tester가 스크롤 물리 속성까지 정량 비교해 "착용 옷"과 동일 메커니즘임을 확인.
+   - Task 12: 코디 상세의 "연결된 스타일일지"도 정사각형(1:1)으로 통일 — `02_코디 (가상 조합).md`의 "1개면 2칸 확대" 스펙 규칙을 사용자 지시로 폐기, `StyleLogCrossReferenceGallery`의 `expandSingle` 파라미터 완전 삭제(옷 상세/코디 상세 둘 다 이제 항상 정사각형 — 아래 P3 "expandSingle 비대칭" 항목은 이걸로 해소됨). 커밋 `424e84f`+`badb675`.
+   - 셋 다 Worker→Review→Tester 통과. 상세 경위: `docs/history/Decision.md`의 대응 항목들.
 1. **Step⑦(기능 구현) 1라운드(Task 1~9) 전체 완료 — 다음은 "Step⑦ 나머지 스코프"를 별도 Plan으로 착수.** 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결. 착수 전 이번 라운드가 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)도 함께 Plan에 반영할 것.
    - **"Editor Draft 구현"(Step⑦ 전체 완료 후 별도 후속 작업)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
 2. **2차(최종) Audit(2026-07-16, Task 9 직후) 발견 P2/P3 — 다음 Step⑦ 나머지 스코프 Plan 착수 전 픽업 검토**:
    - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 "사용된 옷"/"연결된 스타일일지" 타이틀을 붙이는데 옷 상세는 안 붙임, 비대칭. `closet_item_detail_screen.dart`에 "연결된 코디"/"연결된 스타일일지" `Text(titleSmall)` 헤더 추가로 간단히 해소 가능.
    - (P2/P3) "착용 옷"(구 "추가 사진")이 스타일일지 열람의 스와이프 카드 슬롯 구조(대표이미지→코디 슬롯)에 포함돼야 하는지 미확정 — `03_스타일 일지.md` 23-24행 문언은 포함되는 것처럼 읽히나, 현재 구현(Task 8)은 별도 가로 스크롤 섹션으로 둠. 사용자 확인 필요(다음 세션 질문 후보).
    - (P3) `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목의 Impact 문단에 남은 초안 시절 Task 번호(정정 각주로 이미 보강함, `docs/history/Decision.md` 참고) — 추가 조치 불필요, 기록만.
-   - (P3) `composition_detail_screen.dart` 호출부에 `expandSingle: true`를 생략(기본값 의존) — `closet_item_detail_screen.dart`는 `false`를 명시 — 인라인 주석 한 줄이면 비대칭 해소, 급하지 않음.
+   - ~~(P3) `expandSingle` 파라미터 비대칭~~ **해소(2026-07-18, Task 12)** — 파라미터 자체가 삭제되어 두 화면 모두 항상 정사각형으로 통일됨.
    - (P3) `flutter analyze` 미등재 lint 경고 2건(`integration_test/header_hud_stack_architecture_test.dart:200`, `integration_test/settings_trash_shell_test.dart:86`) — 기존 `typography_pass3_test.dart` 항목과 같은 성격, 다음에 해당 파일 손댈 때 정리.
 - ~~Detail 3화면 보일러플레이트 중복~~ **완료(2025-07-15)** — `AppDetailScaffold`로 해소. 이후 Task 9(2026-07-16)에서 `crossReferenceEntries` 계약 자체를 폐기(`CrossReferenceLinkBar`도 삭제) — TechDebt 항목 해소됨.
 - (P2) `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`)가 같은 역할의 `AppMainScaffold`(`lib/widgets/`)와 달리 `lib/widgets/`가 아닌 `lib/screens/`에 배치됨 — Audit(2026-07-15) 발견, 근거가 약한 배치. 호출부가 3곳뿐인 지금이 이동 비용이 가장 쌈, 급하지 않음.
