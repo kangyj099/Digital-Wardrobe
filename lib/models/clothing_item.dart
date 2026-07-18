@@ -4,10 +4,10 @@ class ClothingItem {
   const ClothingItem({
     required this.id,
     required this.name,
-    required this.category,
-    required this.color,
-    required this.season,
-    required this.material,
+    this.category,
+    this.color,
+    this.season,
+    this.material,
     required this.imagePath,
     this.location = '',
     this.memo = '',
@@ -18,10 +18,10 @@ class ClothingItem {
 
   final String id;
   final String name;
-  final ClothingCategory category;
-  final String color;
-  final Season season;
-  final ClothingMaterial material;
+  final ClothingCategory? category;
+  final String? color;
+  final Season? season;
+  final ClothingMaterial? material;
   final String imagePath;
   final String location;
   final String memo;

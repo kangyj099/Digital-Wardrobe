@@ -45,7 +45,7 @@ class ClosetItemDetailScreen extends ConsumerWidget {
             Text(item.name, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '${item.category.label} · ${item.season.label} · ${item.material.label} · ${item.color}',
+              '${item.category?.label ?? '미분류'} · ${item.season?.label ?? '미분류'} · ${item.material?.label ?? '미분류'} · ${item.color ?? '미분류'}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.sm),

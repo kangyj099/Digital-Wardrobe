@@ -17,6 +17,8 @@ final List<ClothingItem> mockClothingItems = [
   const ClothingItem(id: 'c10', name: '그래픽 반팔티', category: ClothingCategory.top, color: 'white', season: Season.summer, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4257_preview_rev_1.png', wearCount: 12),
   const ClothingItem(id: 'c11', name: '그래픽 맨투맨', category: ClothingCategory.top, color: 'pink', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4262_preview_rev_1.png', wearCount: 8),
   const ClothingItem(id: 'c12', name: '플로럴 스커트', category: ClothingCategory.bottom, color: 'multi', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4268-removebg-preview.png', wearCount: 2),
+  // 태그(종류/계절/색상/소재) 없이 빠르게 등록만 한 옷 — 4개 필드 nullable화 검증용.
+  const ClothingItem(id: 'c13', name: '무제 아이템', imagePath: 'assets/images/mock/IMG_4273.PNG', wearCount: 0),
 ];
 
 final List<Composition> mockCompositions = [
