@@ -28,11 +28,12 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 - 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(화면 관통 공용 셸 스펙), `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`(Header/HUD·스크롤 컨테이너 정식 스펙 — 지금은 이 3개를 함께 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**이번 세션에서 추가 완료 (2026-07-16→18, Step⑦ 1라운드 Plan에 Task 10~12로 이어붙여 진행)**: 옷 상세/코디 상세 썸네일 UI 최종 확정.
+**이번 세션에서 추가 완료 (2026-07-16→18, Step⑦ 1라운드 Plan에 Task 10~13으로 이어붙여 진행)**: 옷 상세/코디 상세 썸네일 UI 최종 확정.
 - Task 11: 옷 상세 "연결된 코디" 섹션 — 사용자가 "코디 이미지를 그냥 이미지 넣지 말고 착용옷 캐러셀처럼"이라고 요청 → 여러 차례 오해(Task 10: 개별 옷으로 풀어헤침→되돌림, 이어서 "크기만 통일"로도 오해) 끝에 최종 확인: `CompositionPreviewCarousel`을 `PageView`+점 인디케이터 방식에서 "착용 옷"과 동일한 **연속 가로 스크롤**(고정 96x96 타일, 페이지 넘김/점 없음)로 교체(커밋 `5540dd4`+`fe31488`). Tester가 스크롤 물리 속성까지 정량 비교해 "착용 옷"과 동일 메커니즘임을 확인.
 - Task 12: 코디 상세의 "연결된 스타일일지"도 정사각형(1:1)으로 통일 — `02_코디 (가상 조합).md`의 "1개면 2칸 확대" 스펙 규칙을 사용자 지시로 폐기, `StyleLogCrossReferenceGallery`의 `expandSingle` 파라미터 완전 삭제(옷 상세/코디 상세 둘 다 이제 항상 정사각형 — 아래 P3 "expandSingle 비대칭" 항목은 이걸로 해소됨). 커밋 `424e84f`+`badb675`.
-- 셋 다 Worker→Review→Tester 통과(별도 Audit 불필요, S/M 사이즈). 상세 경위: `docs/history/Decision.md`의 대응 항목들, `docs/superpowers/plans/2026-07-15-step7-detail-binding.md` Task 10~12 섹션.
-- 세션 종료 시점 working tree clean, 모든 커밋 push 전(로컬 feature 브랜치에 존재) — 다음 세션은 아래 "다음 세션 작업" 1번부터 이어가면 됨.
+- Task 13: 같은 갤러리를 "기본 2열, 1장이면 1열"로 재조정 — 사용자가 두 화면 모두에서 1장 연결 시 2열 그리드 절반이 비어 보이는 걸 지적, `crossAxisCount`를 `logs.length == 1 ? 1 : 2`로 동적화(Task 12가 폐기한 "2칸 확대"와는 다른 방식 — 스팬이 아니라 열 개수 자체를 줄임, 타일은 계속 정사각형). 커밋 `4a2dbdd`+테스트 커밋. Tester가 실측 픽셀(1장=컨테이너 전체폭 358px, 2장=175px씩 2열)로 검증.
+- 넷 다 Worker→Review→Tester 통과(별도 Audit 불필요, S/M 사이즈). 상세 경위: `docs/history/Decision.md`의 대응 항목들, `docs/superpowers/plans/2026-07-15-step7-detail-binding.md` Task 10~13 섹션.
+- 세션 종료 시점 working tree clean 예정, 커밋 push 전(로컬 feature 브랜치에 존재) — 다음 세션은 아래 "다음 세션 작업" 1번부터 이어가면 됨.
 
 **다음 세션 작업**:
 1. **Step⑦(기능 구현) 1라운드(Task 1~9, +Task 10~12) 전체 완료 — 다음은 "Step⑦ 나머지 스코프"를 별도 Plan으로 착수.** 그룹형 드릴다운 실배선(옷장/코디 메인 2곳), 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입 연결. 착수 전 이번 라운드가 스코프 밖으로 미룬 항목(겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩/Detail "⋯더보기" 메뉴)도 함께 Plan에 반영할 것.
