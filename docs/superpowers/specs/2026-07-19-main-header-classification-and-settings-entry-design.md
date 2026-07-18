@@ -51,7 +51,16 @@ Row 2의 기존 계절 필터 pill 자리를, **`[중분류 ▾][소분류 ▾]`
 **메인 그리드는 3가지 상태를 가진다** (소분류가 있는 중분류를 고른 경우, 소분류 세그먼트의 선택 여부로 갈림 — 별도로 추적하는 상태값이 아니라 `(중분류, 소분류값)` 조합에서 그대로 파생됨):
 
 1. **플랫**(`flat`): 중분류가 "전체보기" 또는 "착용빈도"(소분류 없는 기준)일 때. 기존과 동일하게 아이템 타일이 그대로 나열됨.
-2. **그룹 개요**(`groupOverview`): 소분류가 있는 중분류를 골랐지만 아직 소분류 값은 안 고른 상태. 소분류 세그먼트엔 아직 특정 값이 아니라 **플레이스홀더 텍스트 "소분류"** 가 표시된다(계절 필터의 기존 `hint: '계절'` 패턴과 동일). 이때 메인 그리드는 아이템 타일이 아니라, 폰 갤러리 앱의 폴더 카드처럼 **소분류 값별로 묶은 그룹 카드**를 보여준다(카드 하나 = 그 소분류 값에 속한 아이템들의 썸네일 콜라주 + 그룹 라벨 + 개수). 아이템이 0개인 소분류 값은 카드 자체를 만들지 않는다(빈 폴더를 보여주지 않음 — 갤러리 앱 관례).
+2. **그룹 개요**(`groupOverview`): 소분류가 있는 중분류를 골랐지만 아직 소분류 값은 안 고른 상태. 소분류 세그먼트엔 아직 특정 값이 아니라 **기준별 구체 명사 플레이스홀더**가 표시된다 — 지금 계절 필터가 쓰는 `hint: '계절'` 패턴을 그대로 기준별로 확장한 것("소분류"라는 내부 스펙 용어를 그대로 사용자 화면에 노출하지 않음):
+
+   | 중분류 | 소분류 플레이스홀더 |
+   |---|---|
+   | 날짜·시간 | "연도" |
+   | 옷 종류 | "종류" |
+   | 계절 | "계절" |
+   | 날씨 | "날씨" |
+
+   이때 메인 그리드는 아이템 타일이 아니라, 폰 갤러리 앱의 폴더 카드처럼 **소분류 값별로 묶은 그룹 카드**를 보여준다(카드 하나 = 그 소분류 값에 속한 아이템들의 썸네일 콜라주 + 그룹 라벨 + 개수). 아이템이 0개인 소분류 값은 카드 자체를 만들지 않는다(빈 폴더를 보여주지 않음 — 갤러리 앱 관례).
 3. **드릴인**(`drilledIn`): 그룹 카드를 탭했거나, 소분류 세그먼트에서 직접 값을 골랐을 때. 메인 그리드가 그 교집합(중분류=X ∩ 소분류=Y)의 아이템 타일 플랫 목록으로 전환된다(폰 갤러리에서 폴더를 펼친 것과 동일한 느낌 — 전환 애니메이션은 Worker 재량, 필수 아님).
 
 **두 진입 경로가 같은 상태로 수렴한다**: 그룹 카드를 탭하는 것과 소분류 드롭다운에서 값을 직접 고르는 것 둘 다 동일한 소분류 provider를 갱신한다 — 그래서 그룹 카드로 드릴인해도 소분류 세그먼트 텍스트가 자동으로 그 값으로 바뀐다(별도 동기화 로직 불필요, 같은 상태를 읽고 쓰는 것뿐). 반대로 소분류 세그먼트를 다시 "미선택"으로 되돌리는 UI(예: 그룹 개요로 복귀하는 뒤로가기/칩의 X)도 필요 — 이 캡슐 자체나 그리드 상단에 작은 "전체 그룹 보기로" 버튼/칩으로 제공한다(정확한 배치는 Worker 재량).
@@ -74,8 +83,10 @@ Row 2의 기존 계절 필터 pill 자리를, **`[중분류 ▾][소분류 ▾]`
 |---|---|---|
 | 전체보기 | 없음(캡슐 축소) | — |
 | 날짜·시간 | 연도 | `Composition.createdAt`(신설) |
-| 계절 | `Season` 3종 | 기존 필드 |
-| 날씨 | `Weather` 3종 + 미지정 | `Composition.weather`(신설, nullable) |
+| 계절 | `Season` 3종 + **미분류** | 기존 필드 — `Composition.season`은 `Season?`으로 원래부터 nullable(선택 태그)이라 미설정 코디가 있을 수 있음 |
+| 날씨 | `Weather` 3종 + **미분류** | `Composition.weather`(신설, nullable) |
+
+**미분류 카드**: 옷장 쪽 4개 기준(날짜/종류/계절/착용빈도)은 대응 필드가 전부 non-nullable(`ClothingItem`은 `season`/`category`도 required)이라 미분류가 원천적으로 없다 — 옷장 그룹 개요엔 이 카드가 절대 등장하지 않는다. **코디의 계절·날씨만** 해당 필드가 nullable이라 미분류 카드가 필요하다. 다른 그룹 카드와 동일하게 "값을 가진 항목이 0개면 카드 자체를 안 만든다" 규칙이 미분류 카드에도 그대로 적용된다(코디가 전부 계절 태그를 갖고 있으면 미분류 카드는 안 생김). 카드 정렬 위치는 §3.4의 null 정렬 규칙과 동일하게 오름차순이면 맨 뒤, 내림차순이면 맨 앞.
 
 기본 정렬 순서(`_공통 규칙.md` "분류 기준별 정렬 기준표" 그대로): 날짜=최신순 내림차순, 옷종류=머리→발, 계절=봄가을→여름→겨울, 착용빈도=많이 입은 순 내림차순, 날씨=맑음→비→눈. 모든 기준에 오름차순/내림차순 토글 제공.
 
@@ -89,6 +100,15 @@ extension on ClosetSortCriterion {
         ClosetSortCriterion.all => false,
         ClosetSortCriterion.wearFrequency => false,
         _ => true,
+      };
+
+  /// 소분류 세그먼트가 값 미선택 상태(그룹 개요)일 때 보여줄 플레이스홀더.
+  /// hasSubClassification==false인 기준은 세그먼트 자체가 안 보이므로 호출되지 않음.
+  String get subClassificationHint => switch (this) {
+        ClosetSortCriterion.dateTime => '연도',
+        ClosetSortCriterion.clothingType => '종류',
+        ClosetSortCriterion.season => '계절',
+        _ => throw StateError('소분류 없는 기준'),
       };
 }
 ```
@@ -160,9 +180,26 @@ enum CompositionSortCriterion { all, dateTime, season, weather }
 final compositionSortCriterionProvider = StateProvider<CompositionSortCriterion>((ref) => CompositionSortCriterion.all);
 final compositionSortAscendingProvider = StateProvider<bool>((ref) => false);
 final compositionDrilledYearProvider = StateProvider<int?>((ref) => null);
-final compositionDrilledWeatherProvider = StateProvider<Weather?>((ref) => null);
-// 계절 소분류는 기존 selectedCompositionSeasonFilterProvider 재사용
 ```
+
+**계절·날씨는 "미분류" 드릴인이 있어서 단순 nullable로는 부족하다** — `null`이 "아직 소분류 안 고름(그룹 개요)"과 "미분류 그룹으로 드릴인함(값이 원래부터 null인 코디만 보기)" 두 가지를 동시에 가리키게 되는 충돌이 생긴다(`Composition.season`/`weather` 둘 다 원래 nullable이라 §3.2에서 확인한 문제). 그래서 이 두 기준만 작은 wrapper로 "미선택"과 "미분류 드릴인"을 구분한다:
+
+```dart
+/// 소분류 provider의 상태 3가지: 미선택(groupOverview) / 특정 값으로 드릴인 / 미분류로 드릴인.
+/// provider 자체가 null이면 미선택, non-null이면 드릴인(그 안의 value가 null이면 미분류).
+class DrilledValue<T> {
+  const DrilledValue.value(T v) : value = v;
+  const DrilledValue.unclassified() : value = null;
+  final T? value; // null == 미분류로 드릴인
+}
+
+final compositionDrilledSeasonProvider = StateProvider<DrilledValue<Season>?>((ref) => null);
+final compositionDrilledWeatherProvider = StateProvider<DrilledValue<Weather>?>((ref) => null);
+// 기존 selectedCompositionSeasonFilterProvider(단순 Season? 필터)는 위 provider로 대체됨 —
+// "전체 시즌"과 "미분류 시즌"이 이제 서로 다른 상태라 하나의 nullable로 겸용 불가능해졌기 때문.
+```
+
+옷장의 `closetDrilledCategoryProvider`/`closetDrilledYearProvider`, 코디의 `compositionDrilledYearProvider`는 대응 필드가 전부 non-nullable이라 이 wrapper가 필요 없다 — 단순 `T?` 그대로 유지(null = 미선택뿐, 미분류 케이스 자체가 없음).
 
 `filteredClosetItemsProvider`/`filteredCompositionsProvider`는 위 provider들을 모두 `watch`해서 (a) 현재 중분류의 소분류 필터 적용 (b) 정렬 기준+방향 적용하도록 확장한다. 기존 시그니처(반환 타입 `List<ClothingItem>`/`List<Composition>`) 그대로 유지 — 소비하는 화면 쪽 변경 없음.
 
@@ -184,7 +221,7 @@ class ClassificationGroupSummary {
   final String label;
   final List<String> thumbnailPaths;
   final int count;
-  final Object value;
+  final Object? value; // null == 미분류 카드(코디의 계절·날씨에서만 나타남)
 }
 
 final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>((ref) {
@@ -195,7 +232,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
 });
 ```
 
-코디도 동일한 모양의 `compositionGroupSummariesProvider`를 둔다. `value`의 런타임 타입은 criterion에 따라 다르므로(`ClothingCategory`/`Season`/`int`(연도)/`Weather`) `Object`로 받고, 그룹 카드 탭 핸들러가 대상 provider에 캐스팅해서 세팅한다 — criterion과 provider의 매핑이 이미 고정돼 있어 안전한 캐스팅(런타임 타입 불일치는 프로그래밍 오류로 취급, 방어적 캐스팅 불필요).
+코디도 동일한 모양의 `compositionGroupSummariesProvider`를 둔다. `value`의 런타임 타입은 criterion에 따라 다르므로(`ClothingCategory`/`Season`/`int`(연도)/`Weather`) `Object?`로 받고, 그룹 카드 탭 핸들러가 대상 provider에 맞게 세팅한다 — criterion과 provider의 매핑이 이미 고정돼 있어 안전한 캐스팅(런타임 타입 불일치는 프로그래밍 오류로 취급, 방어적 캐스팅 불필요). **`value == null`인 카드가 곧 "미분류" 카드**(코디의 계절·날씨에서만 나타남) — 탭하면 `compositionDrilledSeasonProvider`/`compositionDrilledWeatherProvider`에 `DrilledValue.unclassified()`를 세팅하고, 그 외 카드는 `DrilledValue.value(...)`를 세팅한다.
 
 ---
 
