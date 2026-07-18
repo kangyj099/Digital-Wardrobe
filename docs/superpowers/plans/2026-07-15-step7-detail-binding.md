@@ -7,6 +7,8 @@
 > **Task 5/6 추가 경위(2026-07-16)**: 사용자가 Task 3/4 완료 후 실제 화면을 보고 "연결된 코디/스타일일지가 텍스트뿐이라 썸네일 이미지를 추가해달라"고 요청 — `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목 참고. Task 5/6은 원래 Task 5였던 "스타일일지 열람 실데이터 바인딩 + 코디 바인딩"보다 앞에 삽입됐다 — 원 Task 5가 신설되는 `CompositionPreviewCard` 위젯(Task 6 산출물)을 소비하기 때문(뒤로 미루면 앞 참조가 됨). 원 Task 5는 그대로 **Task 7**로 번호만 밀렸다(내용 변경 없음, 카드 콘텐츠 위젯 재사용 부분만 소폭 수정).
 >
 > **Task 8/9 추가 경위(2026-07-16)**: Task 7 완료 직후 1차 Audit이 P1 2건 발견 — 스타일일지 열람의 코디 바인딩 UI가 스펙(`03_스타일 일지.md` "대표이미지→코디 슬롯→추가사진" 카드 순서)과 어긋나고 코디 상세와도 다르게 생김, `AppDetailScaffold.crossReferenceEntries` 계약이 애매해짐. 사용자가 직접 스펙 근거로 정정 지시(**Task 7의 "하단 별도 카드/칩" 구현 방식은 폐기 — 그 방식을 지시한 이전 요청이 있었다면 전부 무효**) — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고.
+>
+> **[정정, 2026-07-18] Task 10~12 추가**: 이 Plan은 Task 1~9(2차 Audit까지) 완료로 끝나지 않고, 사용자의 추가 UI 지시로 Task 10(옷 상세 코디 캐러셀에 옷 목록 표시 — 오해로 되돌림, `git revert`), Task 11(같은 캐러셀을 `PageView`에서 "착용 옷"과 동일한 연속 스크롤로 교체 — 최종 확정), Task 12(코디 상세의 스타일일지 썸네일도 정사각형 통일)까지 이어졌다. Task 10~12는 S/M 사이즈 단독 Task라 별도 Audit 없이 각각 Worker→Review→Tester로 완료됨. 상세는 각 Task 섹션과 `docs/history/Decision.md`의 대응 항목 참고.
 
 **Goal:** BACKLOG.md "다음 세션 작업"이 지정한 Step⑦ 착수 작업을 완료한다 — (1) 선행 정리 2건(`Composition`/`StyleLog.isIncomplete` 필드, `AppDetailScaffold` 계약 확장), (2) Detail 3화면(옷 상세/코디 상세/스타일일지 열람)의 실제 mock 데이터 바인딩과 화면 간 크로스 레퍼런스 네비게이션, (3) 사용자가 이번 라운드에 포함하기로 확정한 코디↔스타일일지 "바인딩"(기존에 연결된 게 없으면 선택 모달로 새로 연결). 겹친 아이템 팝업, 아트보드 실제 렌더링, 추가사진 드래그 순서변경 등 "편집기"급 상호작용은 이번 라운드 스코프 밖 — 별도 후속 작업으로 BACKLOG에 등록한다(이 Plan은 그 등록까지 하지 않고, 완료 후 PM이 세션 인계 시 처리).
 
@@ -2554,3 +2556,5 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 - `CompositionGalleryTile`(코디 메인 그리드, 아직 텍스트 전용) TechDebt 항목은 Task 5의 `compositionCoverImageProvider` 덕에 착수 비용이 낮아졌다고 이미 `TechnicalDebt.md`에 기록해뒀음 — 이번 Plan 스코프는 아니라는 점만 재확인, 별도 착수 여부는 다음 세션 판단.
 - 코디 아이템 개수 상한(15개, `Decision.md`) 실제 코드 반영은 "코디 만들기(Editor)" 구현 시점 — `TechnicalDebt.md`에 이미 등록됨, 이번 라운드엔 손대지 않음.
 - 남은 Step⑦ 스코프(그룹형 드릴다운 실배선 2곳, 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입)는 별도 Plan으로 이어서 진행.
+
+**[추가, 2026-07-18]** 위 항목 작성 후 Task 10~12가 추가로 진행·완료됨(옷 상세/코디 상세 썸네일 UI 최종 확정 — 상세는 파일 상단 Global Constraints 아래 정정 각주와 각 Task 섹션 참고). BACKLOG.md Current는 이미 이 내용까지 반영된 상태(2026-07-18 갱신) — 다음 세션이 새로 반영할 것 없음.
