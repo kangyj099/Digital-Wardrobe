@@ -264,3 +264,19 @@ Task 2 리뷰(원래 문제 발견) → Task 9 fix round 1(세그먼트 매칭�
 비슷한 문제가 반복되거나 작업 여유가 생기면, 정규식 기반 세그먼트 분리 대신 실제 셸 파서(예: `shlex`나 POSIX 셸 문법 파서)로 교체 검토.
 
 ---
+
+[TechDebt] `ClothingItem.copyWith`가 nullable 필드(category/season/color/material)를 명시적으로 null로 되돌릴 수 없음
+
+상태: 미해결 (현재 호출부 없어 즉시 영향 없음)
+
+내용:
+`docs/history/Decision.md`의 "ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)" 결정을 구현하면서(리토핑 커밋), `copyWith`는 기존 관례(`lib/models/style_log.dart`의 `linkedCompositionId ?? this.linkedCompositionId` 패턴)를 그대로 따라 `category: category ?? this.category`식 단순 `??` fallback을 유지했다. Dart의 흔한 nullable-copyWith 함정 그대로 — `copyWith(category: null)`을 호출해도 "안 건드림"과 구분이 안 돼 기존 값이 그대로 유지된다. 즉 한 번 값이 채워진 필드를 나중에 "미분류로 되돌리기"는 지금 구조로 불가능하다. Review(nullable화 리토핑 태스크, 2026-07-19)가 P2로 발견.
+
+영향:
+- 지금은 이 필드들을 수정하는 호출부가 아예 없어(`closet_add_screen.dart`가 아직 스켈레톤) 실제로 발동하는 버그는 아니다.
+- `closet_add_screen.dart`/편집 플로우 구현 시 "이미 채운 태그를 지운다" 인터랙션이 필요해지는 순간 이 한계에 부딪힌다.
+
+조치 방향(착수 조건):
+`closet_add_screen.dart` 실제 구현(편집/수정 폼) 착수 시, sentinel 객체 패턴(예: `Object _unset = Object(); copyWith({Object? category = _unset, ...})`) 또는 별도 `clearCategory()`류 메서드 도입 여부를 그 시점에 결정. 지금 미리 만들지 않는 이유: 실제 소비자가 없는 상태에서 패턴만 먼저 넣는 건 과설계(YAGNI) — 이 프로젝트가 `StyleLog.copyWith`에도 이미 같은 한계를 안고 있어 새로운 문제가 아니라 기존 패턴의 자연스러운 재현.
+
+---
