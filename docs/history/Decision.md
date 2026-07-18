@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] "연결된 스타일일지" 갤러리 — 기본 2열, 1장이면 1열(정사각형 유지, 확대 아님) (UI/Screen, Decision)
+
+결정:
+- `StyleLogCrossReferenceGallery`(옷 상세/코디 상세 공용)의 `SliverGridDelegateWithFixedCrossAxisCount.crossAxisCount`를 고정 `2`에서 `logs.length == 1 ? 1 : 2`로 바꾼다.
+- `childAspectRatio: 1`(정사각형)은 그대로 유지 — 1열일 때도 타일 비율은 정사각형이며, 다만 열이 1개뿐이라 폭이 컨테이너 전체로 넓어져 타일 자체가 더 커 보이는 효과. 바로 앞 Decision("1개면 2칸 확대" 폐기)이 없앤 2:1 와이드 사각형 배치와는 다른 규칙 — 이번엔 스팬이 아니라 열 개수 자체를 줄이는 방식.
+
+사유:
+사용자가 두 화면 모두에서 스타일일지가 1장뿐일 때 2열 그리드의 절반이 비어 보이는 게 어색하다고 판단, 1장이면 1열로 표시해 달라고 직접 지시(2026-07-18).
+
+Impact:
+- `lib/widgets/style_log_cross_reference_gallery.dart` — `GridView.builder`의 `crossAxisCount`를 `logs.length` 기준 동적 값으로 변경.
+- `lib/screens/closet_item_detail_screen.dart`, `lib/screens/composition_detail_screen.dart` — 변경 없음(공용 위젯만 수정, 두 화면 모두 자동 적용).
+- `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md` 19행 — "연결된 스타일 일지 목록(2열, 정사각형 타일)"을 "연결된 스타일 일지 목록(기본 2열, 1장이면 1열, 정사각형 타일)"로 갱신.
+- 관련 통합테스트(`composition_detail_addtile_square_test.dart`, `detail_thumbnail_square_unification_test.dart` 등)가 1장 연결 케이스의 mock 데이터로 그리드 폭을 검증하는지 확인 필요 — Worker 구현 시 점검.
+
+---
+
 [Decision] 코디 상세의 "연결된 스타일일지" 썸네일도 정사각형(1:1)으로 통일 — "1개면 2칸 확대" 스펙 규칙 폐기 (UI/Screen, Decision)
 
 결정:
