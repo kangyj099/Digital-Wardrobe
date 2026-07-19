@@ -18,35 +18,28 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step⑦ 1라운드(Task 1~9) 완료 (2026-07-16).** Detail 3화면(옷 상세/코디 상세/스타일일지 열람) 실데이터 바인딩 + 코디↔스타일일지 바인딩 + 상호참조 썸네일화(캐러셀/갤러리, 정사각형 통일)까지 전부 Worker→Review→Tester 통과, 2차례 Audit(Task 7 직후 1차: P1 2건 발견→즉시 Task 8/9로 흡수, Task 9 직후 2차 최종: P0/P1 없음) 통과. 상세 경위/커밋: `docs/superpowers/plans/2026-07-15-step7-detail-binding.md`, `docs/history/Decision.md`. 2차 Audit이 남긴 P2/P3 후속 항목은 아래 Current 하위 목록에 등록.
+**Step⑦ 나머지 스코프 — 그룹 A(그룹형 드릴다운 캡슐 + 설정 진입점 이동) 완료 (2026-07-19).** `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`를 Task 1~7로 구현 — 옷장/코디 메인의 `groupingBar` skeleton을 `[중분류▾][소분류▾]` 캡슐+3상태(플랫/그룹개요/드릴인) 그리드로 교체, 설정 진입점을 `CategoryToggleDropdown` 메뉴로 이동. 전 Task Worker→Review 통과(일부 P0/P1 재작업 포함, Task 7은 추가로 Tester 12개 신규 테스트+Audit까지 통과, P0 없음). 커밋 4개(`7bc4e84`/`02470c9`/`64f6388`/`6d27c1a`), 문서 갱신(Decision.md/TechnicalDebt.md/구 스펙 2건 정정 각주) 완료. 상세 경위: `docs/superpowers/plans/2026-07-19-classification-drilldown-and-settings-entry.md`, `docs/history/Decision.md` 최상단 항목.
 
 ---
 
 # Current
 
 Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — mock 데이터 기반 UI만, 실제 Firebase/AI 연동 없음. `feature/flutter-hifi-screens` 브랜치(PR #5로 dev 1차 병합, PR #10으로 dev 2차 병합 완료 2026-07-18 — Task 7~13/Step②~⑦ 1라운드 전체, 같은 브랜치에서 계속 진행)에서 Subagent-Driven으로 진행 중.
-- 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(화면 관통 공용 셸 스펙), `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`(Header/HUD·스크롤 컨테이너 정식 스펙 — 지금은 이 3개를 함께 따를 것)
+- 스펙: `docs/superpowers/specs/2026-07-08-flutter-frontend-hifi-screens-design.md`(원 스프린트), `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md`(화면 관통 공용 셸 스펙 — **§2 "그룹형 드릴다운" 절은 2026-07-19에 정정 각주로 대체됨, 나머지 절은 유효**), `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`(Header/HUD·스크롤 컨테이너 정식 스펙), `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`(그룹형 드릴다운 캡슐 + 설정 진입점 최종 스펙, Task 1~7로 구현 완료 — 지금은 이 4개를 함께 따를 것)
 - 원 플랜의 Task 1~7만 유효, Task 8~15는 폐기(대체 근거: `docs/history/Decision.md`의 "화면 관통 공용 UI 셸 아키텍처로 전환" 항목)
 
-**이번 세션에서 추가 완료 (2026-07-16→18, Step⑦ 1라운드 Plan에 Task 10~13으로 이어붙여 진행)**: 옷 상세/코디 상세 썸네일 UI 최종 확정.
-- Task 11: 옷 상세 "연결된 코디" 섹션 — 사용자가 "코디 이미지를 그냥 이미지 넣지 말고 착용옷 캐러셀처럼"이라고 요청 → 여러 차례 오해(Task 10: 개별 옷으로 풀어헤침→되돌림, 이어서 "크기만 통일"로도 오해) 끝에 최종 확인: `CompositionPreviewCarousel`을 `PageView`+점 인디케이터 방식에서 "착용 옷"과 동일한 **연속 가로 스크롤**(고정 96x96 타일, 페이지 넘김/점 없음)로 교체(커밋 `5540dd4`+`fe31488`). Tester가 스크롤 물리 속성까지 정량 비교해 "착용 옷"과 동일 메커니즘임을 확인.
-- Task 12: 코디 상세의 "연결된 스타일일지"도 정사각형(1:1)으로 통일 — `02_코디 (가상 조합).md`의 "1개면 2칸 확대" 스펙 규칙을 사용자 지시로 폐기, `StyleLogCrossReferenceGallery`의 `expandSingle` 파라미터 완전 삭제(옷 상세/코디 상세 둘 다 이제 항상 정사각형 — 아래 P3 "expandSingle 비대칭" 항목은 이걸로 해소됨). 커밋 `424e84f`+`badb675`.
-- Task 13: 같은 갤러리를 "기본 2열, 1장이면 1열"로 재조정 — 사용자가 두 화면 모두에서 1장 연결 시 2열 그리드 절반이 비어 보이는 걸 지적, `crossAxisCount`를 `logs.length == 1 ? 1 : 2`로 동적화(Task 12가 폐기한 "2칸 확대"와는 다른 방식 — 스팬이 아니라 열 개수 자체를 줄임, 타일은 계속 정사각형). 커밋 `4a2dbdd`+테스트 커밋. Tester가 실측 픽셀(1장=컨테이너 전체폭 358px, 2장=175px씩 2열)로 검증.
-- 넷 다 Worker→Review→Tester 통과(별도 Audit 불필요, S/M 사이즈). 상세 경위: `docs/history/Decision.md`의 대응 항목들, `docs/superpowers/plans/2026-07-15-step7-detail-binding.md` Task 10~13 섹션.
-- **PR #10(Task 7~13 전체, 119개 파일) push 후 사용자가 직접 merge, dev 반영 완료(2026-07-18).** 병합 직전 제목/설명이 "Task 7"만 반영한 채 9일간 갱신 안 된 상태였던 걸 발견해 PM이 실제 누적 범위로 갱신 후 merge. `origin/dev`에는 이와 별개로 `feature/harness-agent-readonly-guard`(PR #14, review.md/worker.md 역할경계 수정)도 같은 날 직접 병합됐으나, 이 feature 브랜치엔 동등한 수정이 이미 더 이른 시점(`7079576`/`aaaad68` 커밋)에 반영돼 있어 `git diff HEAD origin/dev`가 완전히 비어있음(내용 차이 없음, 별도 조치 불필요) — 확인 완료.
-- 로컬 feature 브랜치는 `origin/dev`보다 커밋 그래프상 2개(머지 커밋들) 뒤처져 있지만 트리 내용은 동일 — 다음 세션에서 `git fetch origin && git merge origin/dev` 한 번 돌려 그래프도 맞춰두면 좋음(§5 관례, 급하지 않음).
-- 다음 세션은 아래 "다음 세션 작업" 1번부터 이어가면 됨.
-
 **다음 세션 작업**:
-1. **"Step⑦ 나머지 스코프" 진행 중 — 4개 그룹(A~D)으로 분해, 지금은 그룹 A 스펙 승인 대기.**
-   - **그룹 A(그룹형 드릴다운 옷장·코디 2곳 + 설정 진입점 이동)**: 스펙 작성·자체검토·커밋 완료 — `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`. **사용자 최종 검토 대기 중** — 승인되면 `superpowers:writing-plans` 스킬로 구현 플랜 작성 후 Worker→Review→Tester(L 사이즈면 Audit까지) 사이클 착수. 승인 전이면 새 세션이 이 파일부터 다시 읽고 이어갈 것.
-     - 스펙 작업 중 파생된 선행 작업 2건이 이미 별도로 완료됨(둘 다 이 스펙의 전제 조건이었음): (a) `ClothingItem`의 category/season/color/material 4개 필드 nullable화(`docs/history/Decision.md` 해당 항목, 커밋 `88cbea6`/`92d93ef`/`4c5c522`), (b) `ClothingCategory.dress`(원피스) → `onePiece`(한벌옷) 개명+착용순서 재정렬(`docs/history/Decision.md` 해당 항목, 커밋 `9dfd550`).
-     - 스펙 핵심 내용: 옷장(중분류 4종: 날짜/옷종류/계절/착용빈도, 색상은 팔레트 미확정으로 보류)·코디(중분류 3종: 날짜/계절/날씨) 각각 `[중분류▾][소분류▾]` 캡슐 + 플랫/그룹개요(폴더카드)/드릴인 3상태 + 미분류 카드(nullable 필드 대상) + `04_설정.md`의 프로필 아이콘 진입점 조항을 "설정을 카테고리 드롭다운 최하단에" 방식으로 대체.
-   - **그룹 B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기)**: 아직 스펙 착수 전. 브레인스토밍 중 확인된 것 — `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`에 이미 상세 UX 정의 있음(진입점 2가지: [선택]버튼/롱프레스, 즉시휴지통이동+Toast실행취소, 15일 자동영구삭제, 옷 삭제 시 코디 캐스케이드는 스냅샷 아키텍처 전제라 "Editor Draft 구현" 후속으로 공식 이관됨). `ClosetItemsNotifier.softDelete`는 이미 있으나 Composition/StyleLog엔 없음(3-domain 계약 통일 필요). `TrashEntry`는 독립 mock이라 실제 3-domain `isDeleted` 집계로 전환 필요, `deletedAt` 필드 신설 필요(P2, 이미 기록됨). Detail 화면 "⋯더보기" 메뉴는 사실상 이 그룹 소속(유일한 항목이 [삭제]).
+1. **"Step⑦ 나머지 스코프" 진행 중 — 4개 그룹(A~D)으로 분해, 그룹 A 완료(2026-07-19), 그룹 B부터 이어가면 됨.**
+   - ~~그룹 A(그룹형 드릴다운 옷장·코디 2곳 + 설정 진입점 이동)~~ **완료(2026-07-19)** — 위 "Last Completed" 참고. `AppMainScaffold.groupingBar` 슬롯 삭제, `ClassificationDrilldownCapsule`+3상태 그리드 배선, 설정 진입점 이동 전부 반영, 관련 구 스펙 2건(`04_설정.md` §1, `2026-07-12-cross-screen-ui-shell-design.md` §2)에 정정 각주 완료.
+   - **그룹 B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기)**: 아직 스펙 착수 전 — 다음 착수 대상. 브레인스토밍 중 확인된 것 — `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`에 이미 상세 UX 정의 있음(진입점 2가지: [선택]버튼/롱프레스, 즉시휴지통이동+Toast실행취소, 15일 자동영구삭제, 옷 삭제 시 코디 캐스케이드는 스냅샷 아키텍처 전제라 "Editor Draft 구현" 후속으로 공식 이관됨). `ClosetItemsNotifier.softDelete`는 이미 있으나 Composition/StyleLog엔 없음(3-domain 계약 통일 필요). `TrashEntry`는 독립 mock이라 실제 3-domain `isDeleted` 집계로 전환 필요, `deletedAt` 필드 신설 필요(P2, 이미 기록됨). Detail 화면 "⋯더보기" 메뉴는 사실상 이 그룹 소속(유일한 항목이 [삭제]).
    - **그룹 C(설정 나머지 — 알림/다크모드/프로필편집/휴지통 진입)**: 아직 스펙 착수 전. **중요 발견**: `SettingsScreen` 실제 구현이 승인된 스펙(`04_설정.md`, 2026-07-09 확정)과 어긋난 상태(`TechnicalDebt.md`에 이미 P1로 기록됨) — 승인 스펙은 로우 2개(알림 토글, 로그아웃-Toast+Undo)만 규정하는데 실제론 다크모드/프로필편집 로우가 스펙外로 추가돼 있고 로그아웃 로우는 없음. "프로필 편집"은 이 앱에 프로필/로그인 개념 자체가 MVP 기획 어디에도 없어 실체가 불분명(사용자 확인 필요). 다크모드는 코드상 작음(`AppTheme.dark`/토큰 이미 존재, `main.dart`의 `themeMode: ThemeMode.light` 한 줄만 바꾸면 됨)이나 스펙엔 없어 승인 스펙 갱신 여부 결정 필요. 착수 전 사용자가 실제 설정 화면을 먼저 봐야 함(직접 미확인 상태였음).
    - **그룹 D(에디터급 이월 항목 — 겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩)**: 아직 스펙 착수 전. "Editor Draft 구현"(별도 후속 작업)과 인프라 상당 부분 겹칠 가능성 높음 — 아트보드 렌더링은 그룹 B의 코디 삭제 캐스케이드용 스냅샷 아키텍처와도 연결됨.
    - **"Editor Draft 구현"(Step⑦ 전체 완료 후 별도 후속 작업)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위(앱 강제종료 후 복원은 제외). 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리도 함께(P2, Audit 2026-07-15 발견).
-2. **2차(최종) Audit(2026-07-16, Task 9 직후) 발견 P2/P3 — 다음 Step⑦ 나머지 스코프 Plan 착수 전 픽업 검토**:
+2. **그룹 A Audit(2026-07-19, Task 7 직후) 발견 P2/P3 — 다음에 해당 파일 손댈 때 픽업**:
+   - (P2) `02_코디 (가상 조합).md` 8행 "정렬/필터에 날씨·계절 기준 지원(스타일 일지와 공통)" 문구가 실제 구현(코디는 날짜/계절/날씨 3기준, 스타일일지와는 메커니즘 자체가 다름 — 그룹형 드릴다운 vs 플랫+필터)과 어긋남. 이 파일을 다음에 손댈 때 2026-07-19 스펙을 근거로 갱신.
+   - (P2) `lib/widgets/classification_group_card.dart`의 라벨 배지 `vertical: 2` 패딩이 `AppSpacing` 미등재 매직넘버 — `docs/history/TechnicalDebt.md`에 이미 기록됨, 이 파일 다음에 손댈 때 정리.
+   - (P3) `flutter analyze` 미등재 lint 경고 2건 추가 확인(`style_log_gallery_column_count_test.dart`의 `go_router`/`style_log_cross_reference_gallery` unused import) — 기존 `typography_pass3_test.dart` 항목에 함께 기록됨(`TechnicalDebt.md`), 이번 그룹 A 작업과는 무관한 기존 부채.
+3. **2차(최종) Audit(2026-07-16, Task 9 직후) 발견 P2/P3 — 여전히 미픽업, 다음 Step⑦ 나머지 스코프(그룹 B~D) 착수 전 검토**:
    - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 "사용된 옷"/"연결된 스타일일지" 타이틀을 붙이는데 옷 상세는 안 붙임, 비대칭. `closet_item_detail_screen.dart`에 "연결된 코디"/"연결된 스타일일지" `Text(titleSmall)` 헤더 추가로 간단히 해소 가능.
    - (P2/P3) "착용 옷"(구 "추가 사진")이 스타일일지 열람의 스와이프 카드 슬롯 구조(대표이미지→코디 슬롯)에 포함돼야 하는지 미확정 — `03_스타일 일지.md` 23-24행 문언은 포함되는 것처럼 읽히나, 현재 구현(Task 8)은 별도 가로 스크롤 섹션으로 둠. 사용자 확인 필요(다음 세션 질문 후보).
    - (P3) `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목의 Impact 문단에 남은 초안 시절 Task 번호(정정 각주로 이미 보강함, `docs/history/Decision.md` 참고) — 추가 조치 불필요, 기록만.

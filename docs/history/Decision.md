@@ -1,5 +1,26 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 옷장·코디 메인 헤더 — 분류 기준 드릴다운 캡슐 + 설정 진입점 이동 (UI/Screen, Decision — Implementation 완료)
+
+결정:
+- `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`를 그대로 구현(Task 1~7, Worker→Review→Tester 사이클 전부 통과, Task 7 통과 후 Audit 1회 추가 — P0 없음). 옷장/코디 메인의 `groupingBar` skeleton을 `[중분류▾][소분류▾]` 2세그먼트 캡슐로 교체하고, 메인 그리드가 플랫/그룹개요(폴더카드)/드릴인 3상태를 갖도록 배선했다.
+- 이 결정은 두 개의 이전 결정을 **대체**한다: (a) `2026-07-12-cross-screen-ui-shell-design.md` §2의 "그룹형 드릴다운" 설계(`GroupedMainViewMode` 3단계 enum, 계절 전용, `AppMainScaffold.groupingBar` 전체폭 밴드) — 최종 목업과 맞지 않아 폐기, 해당 문서 §2에 정정 각주 추가함. (b) `04_설정.md` §1(설정 진입점=프로필 아이콘) — 최종 목업에 프로필 아이콘이 없어 폐기, `CategoryToggleDropdown` 메뉴 최하단(구분선+작은 폰트)으로 대체, 해당 문서 §1에 정정 각주 추가함.
+- **`ClassificationDrilldownCapsule`이 하나의 `GlassPill`이 아니라 독립된 `GlassPill` 2개를 `Row`로 나열하는 구조로 구현됨**: `glass_pill.dart` docstring이 "여러 컨트롤을 하나의 GlassPill 안에 함께 담지 않는다"(Header/HUD Pinned Rule)고 명시하고, 이 규칙 변경은 사용자 승인이 필요하다고 이 저장소가 이미 규정해뒀음(Pinned Rule 항목, "Layout Principle, 변경 시 사용자 승인 필수"). 최초 구현(Task 5)은 하나의 GlassPill에 두 DropdownButton을 담아 이 규칙과 충돌했고, Review가 이를 지적 — 승인을 구하는 대신 기존 규칙을 그대로 준수하는 구조(독립 GlassPill 2개)로 재구현해 예외 승인 자체를 우회했다. 시각적으로는 여전히 붙어 보이는 2세그먼트 캡슐.
+- **정렬 방향(`ascending`) 의미 — "전역 단순 규칙" 채택**: 스펙 §3.2 "기본 정렬 순서" 표(옷종류=머리→발, 계절=봄가을→여름→겨울, 날씨=맑음→비→눈)와 §3.6의 provider 기본값(`ascending=false`) 사이에 스펙이 명시하지 않은 간극이 있었음(§3.6 주석은 날짜/착용빈도만 근거를 댐). 두 가지 해석 후보를 `docs/work/TO_사용자결정.md`에 기록해 사용자에게 직접 확인 — 사용자가 **"ascending=true는 모든 기준에서 예외 없이 index/날짜 오름차순"이라는 단일 전역 규칙**을 명시적으로 선택(코드 단순성 우선). 그 결과 옷종류/계절/날씨의 **기본 표시는 §3.2 표와 반대 방향**(발→머리, 겨울→여름→봄가을, 눈→비→맑음)이 된다 — 승인된 tradeoff, 재작업 대상 아님. Tester가 실제 화면에서 실측 확인(기본=내림차순 아이콘, 토글 1회=§3.2 표 순서로 전환).
+- `AppMainScaffold.groupingBar`/`groupingBarHeight`/`defaultGroupingBarHeight`는 이 변경 이후 소비자가 0개가 되어 완전히 삭제(YAGNI).
+
+사유:
+`docs/work/BACKLOG.md` "Step⑦ 나머지 스코프" 그룹 A 항목("그룹형 드릴다운 실배선(옷장/코디 메인 2곳) + 설정 진입점 연결") 진행. 사용자가 제공한 최종 확정 목업을 근거로 기존 두 결정(그룹형 드릴다운 설계, 프로필 아이콘 진입점)을 대체하기로 확정(2026-07-19).
+
+Impact:
+- 신규: `lib/providers/classification_models.dart`(`DrilledValue<T>`/`ClassificationGroupSummary`/`compareNullableIndexLast`), `lib/widgets/classification_drilldown_capsule.dart`, `lib/widgets/classification_group_card.dart`/`classification_group_grid.dart`, `Weather` enum(`lib/models/enums.dart`), `ClothingItem.createdAt`/`Composition.createdAt`·`weather` 필드.
+- 수정: `lib/providers/closet_providers.dart`/`composition_providers.dart`(`selectedSeasonFilterProvider`류 대체), `lib/widgets/category_toggle_dropdown.dart`(`DropdownButton`→`PopupMenuButton`, "설정" 항목), `lib/screens/closet_main_screen.dart`/`composition_main_screen.dart`(캡슐 배선), `lib/widgets/app_main_scaffold.dart`(`groupingBar` 슬롯 삭제), `lib/mock/mock_data.dart`(c12/comp02를 미분류 데모용으로 조정).
+- 문서: 이 항목, `2026-07-12-cross-screen-ui-shell-design.md` §2 정정 각주, `04_설정.md` §1 정정 각주.
+- 상세 경위(Task별 Worker/Review/Tester 로그, 진행 중 발견된 여러 plan 공백과 수정 내역)는 `docs/superpowers/plans/2026-07-19-classification-drilldown-and-settings-entry.md` 참고.
+- Audit(2026-07-19, Task 7 직후)이 P0 없이 통과, P1 2건(BACKLOG.md Current 최신화 필요 — 이 커밋과 함께 반영, `2026-07-12` 스펙도 함께 정정 대상이었음 — 이 항목에서 함께 반영)은 이 문서 작업으로 해소. P2/P3(사소한 매직넘버 패딩, `02_코디 UX명세서` 문구 드리프트, lint 경고 인벤토리 누락 2건)는 `docs/history/TechnicalDebt.md`/`docs/work/BACKLOG.md`에 별도 기록.
+
+---
+
 [Decision] "연결된 스타일일지" 갤러리 — 기본 2열, 1장이면 1열(정사각형 유지, 확대 아님) (UI/Screen, Decision)
 
 결정:

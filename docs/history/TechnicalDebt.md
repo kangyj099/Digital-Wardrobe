@@ -19,6 +19,8 @@ Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-
 
 조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, 남은 항목들(`style_log_viewer_screen.dart`의 점 인디케이터 리터럴, `height: 96`/`width: 72`/`width: 96`, `composition_preview_carousel.dart`의 `_tileSize`)을 정식 토큰으로 승격 검토.
 
+**추가(분류 기준 드릴다운 캡슐 기능 Audit, 2026-07-19)**: `lib/widgets/classification_group_card.dart`의 라벨 배지 `padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2)` — `vertical: 2`가 `AppSpacing` 어떤 토큰과도 안 맞는 미등재 리터럴(가장 가까운 게 `xxs`=4). 이 파일을 다음에 손댈 때 `AppSpacing.xxs`로 교체하거나 근거를 이름 붙여 로컬 const로 승격 검토 — 순수 패딩값이라 급하지 않음.
+
 ---
 
 [TechDebt] 코디↔스타일일지 바인딩 액션(`_bindStyleLog`/`_bindComposition`)에 `context.mounted` 가드 부재 (P2)
@@ -68,14 +70,14 @@ Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)
 
 ---
 
-[TechDebt] `integration_test/typography_pass3_test.dart`에 미사용 import 2건 (`closet_main_screen.dart`, `style_log_gallery_tile.dart`)
+[TechDebt] `integration_test/` 파일 3개에 미사용 import 총 4건
 
 상태: 미해결 (사소함)
 
 내용:
-Typography Pass 3 코드 반영 Review 중 발견 — Tester가 작성한 `integration_test/typography_pass3_test.dart`에 `flutter analyze` 기준 unused_import 경고 2건이 있다. 테스트 통과에는 영향 없고 순수 lint 이슈.
+Typography Pass 3 코드 반영 Review 중 `integration_test/typography_pass3_test.dart`의 unused_import 경고 2건(`closet_main_screen.dart`, `style_log_gallery_tile.dart`)을 먼저 발견. 이후 분류 기준 드릴다운 캡슐 기능(2026-07-19) Audit이 같은 성격의 경고 2건을 추가로 확인 — `integration_test/style_log_gallery_column_count_test.dart`의 `go_router`/`style_log_cross_reference_gallery` unused import(둘 다 2026-07-18 커밋 `6984001`부터 존재, 이번 기능과 무관한 기존 부채). 전부 `flutter analyze` 기준 unused_import 경고일 뿐, 테스트 통과에는 영향 없는 순수 lint 이슈.
 
-해결 방향: 다음에 이 파일을 손댈 일이 생기면 (`import` 2줄 제거) 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
+해결 방향: 다음에 각 파일을 손댈 일이 생기면 그때 `import` 줄 제거로 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
 
 ---
 
