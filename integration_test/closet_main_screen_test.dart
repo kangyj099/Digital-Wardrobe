@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
@@ -158,7 +159,7 @@ void main() {
       find.byWidgetPredicate((w) => w is DropdownButton<Season?>);
 
   Finder categoryDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+      find.byType(CategoryToggleDropdown);
 
   Future<void> selectSeason(WidgetTester tester, String label) async {
     await tester.tap(seasonDropdownFinder());
@@ -227,11 +228,13 @@ void main() {
     expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
   });
 
-  testWidgets('봄가을 계절 필터 선택 시 그리드가 9개로 줄어든다', (tester) async {
+  testWidgets('봄가을 계절 필터 선택 시 그리드가 8개로 줄어든다', (tester) async {
     await pumpClosetMain(tester);
 
     await selectSeason(tester, '봄가을');
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(9));
+    // c12는 옷종류/계절 nullable화(2026-07-19) 이후 season이 null(미분류)이라 더 이상
+    // 봄가을 필터에 매칭되지 않는다 — 기존 9개(c12 포함)에서 8개로 줄어든 것이 정상.
+    expect(find.byType(SelectableGalleryTile), findsNWidgets(8));
   });
 
   testWidgets('아이템이 0개인 겨울 계절 선택 시 크래시 없이 빈 그리드로 전환된다', (tester) async {
@@ -417,7 +420,7 @@ void main() {
     '짧은 카테고리 라벨(상의)은 넓은 타일(300px)에서도 텍스트 크기만큼만 좁게 표시되고 '
     '타일 전체 폭을 채우지 않는다',
     (tester) async {
-      const item = ClothingItem(
+      final item = ClothingItem(
         id: 'label-short',
         name: '테스트용 상의',
         category: ClothingCategory.top,
@@ -425,6 +428,7 @@ void main() {
         season: Season.springFall,
         material: ClothingMaterial.cotton,
         imagePath: '',
+        createdAt: DateTime(2025, 1, 1),
       );
       await pumpIsolatedTile(tester, item, 300);
 
@@ -452,7 +456,7 @@ void main() {
     '가장 긴 카테고리 라벨("가방·액세서리")을 가진 아이템이 밀도4 상당의 좁은 타일(50px)에서도 '
     '타일 경계를 넘어 튀어나오지 않고 ellipsis로 실제 truncation이 일어난다',
     (tester) async {
-      const item = ClothingItem(
+      final item = ClothingItem(
         id: 'label-long',
         name: '테스트용 가방',
         category: ClothingCategory.bagAccessory,
@@ -460,6 +464,7 @@ void main() {
         season: Season.springFall,
         material: ClothingMaterial.cotton,
         imagePath: '',
+        createdAt: DateTime(2025, 1, 1),
       );
 
       // 1) 넉넉한 타일(500px)에서 이 라벨의 "자연 폭"(줄바꿈/잘림 없이 필요한 실제 폭)을 먼저 측정.

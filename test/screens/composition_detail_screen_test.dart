@@ -26,7 +26,8 @@ class _FixedStyleLogsNotifier extends StyleLogsNotifier {
 /// 실제 mock 데이터로 검증할 수 없다(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`
 /// Task 7 주의 참고) — 이 화면만 `ProviderScope` override로 격리해 검증한다.
 void main() {
-  const composition = Composition(id: 'test-comp', name: '테스트 코디', items: []);
+  final composition =
+      Composition(id: 'test-comp', name: '테스트 코디', items: const [], createdAt: DateTime(2025, 1, 1));
 
   testWidgets('연결된 스타일일지가 없으면 "스타일일지 연결하기" 바인딩 항목이 보이고, 탭하면 선택 화면으로 이동한다',
       (tester) async {

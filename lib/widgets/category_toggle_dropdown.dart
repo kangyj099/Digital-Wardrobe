@@ -2,19 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
 import '../router/app_router.dart';
-import '../theme/app_spacing.dart';
 import 'glass_pill.dart';
 
-/// 상단 좌측의 `[현재 컨텐츠 이름 ▾]` 카테고리 토글 — 옷장/코디/스타일일지 중 어디로든
-/// 즉시 이동한다(`_공통 규칙.md` "네비게이션 > 상단 헤더"). 화면 간 수평 전환이라
-/// `context.go()`를 쓴다(드릴다운이 아님).
+/// 헤더 좌측 카테고리 드롭다운 — 옷장/코디/스타일일지 전환 + 설정 진입.
 ///
-/// [current]로 호출 화면이 어느 카테고리인지 파라미터로 받는다 — 하드코딩하지 않아야
-/// 옷장/코디/스타일일지 어디서든 재사용 가능하다.
-///
-/// [GlassPill]로 감싸 독립된 floating pill로 렌더링한다 — `AppMainScaffold`는 이 위젯을
-/// 다른 조작 요소(선택 버튼 등)와 하나의 Row/Container로 묶지 않고 물리적으로 독립된
-/// Positioned로 배치한다(`docs/history/Decision.md` Header/HUD Pinned Rule).
+/// `DropdownButton<AppCategory>`는 `AppCategory` 값만 담을 수 있어 "설정"(카테고리가
+/// 아닌 액션)을 넣을 수 없다 — `PopupMenuButton`으로 교체해 구분선 아래 "설정" 항목을
+/// 별도 추가한다(`docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`
+/// §2). "설정"을 골라도 [current] 표시는 바뀌지 않는다 — 메뉴가 닫힌 뒤 보이는 텍스트는
+/// 항상 `current.label`이고, 선택된 메뉴 항목 값과 무관하다.
 class CategoryToggleDropdown extends StatelessWidget {
   const CategoryToggleDropdown({super.key, required this.current});
 
@@ -23,38 +19,50 @@ class CategoryToggleDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassPill(
-      child: DropdownButton<AppCategory>(
-        value: current,
-        underline: const SizedBox.shrink(),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        items: AppCategory.values
-            .map(
-              (c) => DropdownMenuItem<AppCategory>(
-                value: c,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (c == current) ...[
-                      const Icon(Icons.circle, size: 6),
-                      const SizedBox(width: AppSpacing.xxs),
-                    ],
-                    Text(c.label),
+      child: PopupMenuButton<_CategoryMenuEntry>(
+        tooltip: '',
+        initialValue: _CategoryMenuEntry.category(current),
+        onSelected: (entry) => _onSelected(context, entry),
+        itemBuilder: (context) => [
+          for (final category in AppCategory.values)
+            PopupMenuItem(
+              value: _CategoryMenuEntry.category(category),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (category == current) ...[
+                    const Icon(Icons.check, size: 16),
+                    const SizedBox(width: 4),
                   ],
-                ),
+                  Text(category.label),
+                ],
               ),
-            )
-            .toList(),
-        onChanged: (value) => _onChanged(context, value),
+            ),
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: const _CategoryMenuEntry.settings(),
+            child: Text('설정', style: Theme.of(context).textTheme.bodySmall),
+          ),
+        ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(current.label),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
       ),
     );
   }
 
-  void _onChanged(BuildContext context, AppCategory? value) {
-    if (value == null || value == current) {
-      // 이미 보고 있는 카테고리를 다시 선택하면 아무 동작도 하지 않는다.
+  void _onSelected(BuildContext context, _CategoryMenuEntry entry) {
+    if (entry.isSettings) {
+      context.push(AppRoute.settingsMain);
       return;
     }
-    switch (value) {
+    final category = entry.category!;
+    if (category == current) return;
+    switch (category) {
       case AppCategory.closet:
         context.go(AppRoute.closetMain);
       case AppCategory.composition:
@@ -63,4 +71,23 @@ class CategoryToggleDropdown extends StatelessWidget {
         context.go(AppRoute.styleLogMain);
     }
   }
+}
+
+class _CategoryMenuEntry {
+  const _CategoryMenuEntry.category(AppCategory value)
+      : category = value,
+        isSettings = false;
+  const _CategoryMenuEntry.settings()
+      : category = null,
+        isSettings = true;
+
+  final AppCategory? category;
+  final bool isSettings;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _CategoryMenuEntry && other.category == category && other.isSettings == isSettings;
+
+  @override
+  int get hashCode => Object.hash(category, isSettings);
 }

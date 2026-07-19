@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/composition.dart';
-import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/composition_providers.dart';
 import 'package:digittal_wardrobe/providers/style_log_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
@@ -59,7 +59,7 @@ void main() {
   }
 
   Future<void> goToCategory(WidgetTester tester, String label) async {
-    await tester.tap(find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>));
+    await tester.tap(find.byType(CategoryToggleDropdown));
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
@@ -188,8 +188,8 @@ void main() {
       'styleLogsProvider 상태도 실제로 갱신된다',
       (tester) async {
         final container = await pumpApp(tester);
-        const unlinkedComposition =
-            Composition(id: 'test-unlinked-t6', name: '임시 미연결 코디', items: []);
+        final unlinkedComposition = Composition(
+            id: 'test-unlinked-t6', name: '임시 미연결 코디', items: const [], createdAt: DateTime(2025, 1, 1));
         container.read(compositionsProvider.notifier).state = [
           ...container.read(compositionsProvider),
           unlinkedComposition,

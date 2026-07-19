@@ -36,10 +36,11 @@ void main() {
 
   /// 4개 필드(category/season/color/material) 전부 null — 정상 mock 이미지 경로 재사용
   /// (이미지 자체는 이 결정과 무관, asset 존재 실패로 인한 소음을 피하기 위함).
-  const nullFieldsItem = ClothingItem(
+  final nullFieldsItem = ClothingItem(
     id: 'test-nullable-fields-item',
     name: '미분류 테스트 아이템',
     imagePath: 'assets/images/mock/IMG_4262_preview_rev_1.png',
+    createdAt: DateTime(2025, 1, 1),
   );
 
   Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = defaultSize}) async {

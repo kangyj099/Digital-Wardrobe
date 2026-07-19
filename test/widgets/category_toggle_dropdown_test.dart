@@ -39,7 +39,7 @@ void main() {
     await tester.pumpWidget(buildAppWithCurrent(AppCategory.closet));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(DropdownButton<AppCategory>));
+    await tester.tap(find.byIcon(Icons.arrow_drop_down));
     await tester.pumpAndSettle();
     await tester.tap(find.text('옷장').last);
     await tester.pumpAndSettle();
@@ -62,7 +62,7 @@ void main() {
     await tester.pumpWidget(buildAppWithCurrent(AppCategory.composition));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(DropdownButton<AppCategory>));
+    await tester.tap(find.byIcon(Icons.arrow_drop_down));
     await tester.pumpAndSettle();
     await tester.tap(find.text('옷장').last);
     await tester.pumpAndSettle();

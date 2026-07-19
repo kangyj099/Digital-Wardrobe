@@ -44,7 +44,7 @@ void main() {
   }
 
   Finder categoryDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+      find.byType(CategoryToggleDropdown);
 
   Finder seasonDropdownFinder() => find.byWidgetPredicate((w) => w is DropdownButton<Season?>);
 
@@ -114,8 +114,9 @@ void main() {
   );
 
   testWidgets(
-    '코디 메인 계절 드롭다운에서 여름/겨울 선택 시 mock 코디가 전부 봄가을이라 그리드가 '
-    '0개로 줄고(크래시 없음), 봄가을/전체 선택 시 다시 2개로 돌아온다',
+    '코디 메인 계절 드롭다운에서 여름/겨울 선택 시 mock 코디 중 계절이 매칭되는 게 없어 그리드가 '
+    '0개로 줄고(크래시 없음), 봄가을 선택 시 1개(comp01만 봄가을, comp02는 계절 nullable화 이후 '
+    '미분류)로, 전체 선택 시 다시 2개로 돌아온다',
     (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
@@ -129,7 +130,7 @@ void main() {
       expect(find.byType(CompositionGalleryTile), findsNothing);
 
       await selectSeason(tester, '봄가을');
-      expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
+      expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
 
       await selectSeason(tester, '전체');
       expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
@@ -217,7 +218,9 @@ void main() {
       expect(container.read(compositionDensityProvider), 1);
       expect(container.read(selectedCompositionSeasonFilterProvider), Season.springFall);
       expect(crossAxisCount(tester), 1);
-      expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
+      // comp02는 계절 nullable화(2026-07-19) 이후 season이 null(미분류)이라 봄가을 필터에
+      // 더 이상 매칭되지 않는다 — comp01만 남아 1개.
+      expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
     },
   );
 

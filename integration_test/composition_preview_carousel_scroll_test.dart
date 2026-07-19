@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/composition.dart';
-import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/composition_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
@@ -51,7 +51,7 @@ void main() {
   }
 
   Future<void> goToCategory(WidgetTester tester, String label) async {
-    await tester.tap(find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>));
+    await tester.tap(find.byType(CategoryToggleDropdown));
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
@@ -96,6 +96,7 @@ void main() {
         Composition(
           id: 'test-mid-comp-$i',
           name: '중간확인용 코디 $i',
+          createdAt: DateTime(2025, 1, 1),
           items: const [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
         ),
     ];
@@ -133,6 +134,7 @@ void main() {
         Composition(
           id: 'test-snap-comp-$i',
           name: '스냅확인용 코디 $i',
+          createdAt: DateTime(2025, 1, 1),
           items: const [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
         ),
     ];
@@ -187,6 +189,7 @@ void main() {
         Composition(
           id: 'test-phys-comp-$i',
           name: '물리확인용 코디 $i',
+          createdAt: DateTime(2025, 1, 1),
           items: const [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
         ),
     ];

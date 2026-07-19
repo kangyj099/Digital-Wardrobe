@@ -13,10 +13,11 @@ void main() {
     // 폴백보다 우선한다)를 검증하기 위해 CompositionsNotifier에 직접 add해서 만든다.
     // items를 비워두지 않고 c01을 포함시켜, 아이템이 있어도 폴백(첫 옷 이미지)이 아니라
     // coverImagePath가 그대로 반환되는지까지 함께 확인한다.
-    const withCover = Composition(
+    final withCover = Composition(
       id: 'test-with-cover',
       name: '커버 이미지 지정 코디',
-      items: [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
+      createdAt: DateTime(2025, 1, 1),
+      items: const [CompositionItemPlacement(clothingItemId: 'c01', x: 0, y: 0)],
       coverImagePath: 'assets/mock/cover_test.png',
     );
     container.read(compositionsProvider.notifier).state = [
@@ -50,7 +51,7 @@ void main() {
 
     // mock_data.dart에 아이템 0개짜리 코디가 없으므로, 이 케이스는 CompositionsNotifier에
     // 직접 add해서 만든다.
-    const empty = Composition(id: 'test-empty', name: '빈 코디', items: []);
+    final empty = Composition(id: 'test-empty', name: '빈 코디', items: const [], createdAt: DateTime(2025, 1, 1));
     container.read(compositionsProvider.notifier).state = [
       ...container.read(compositionsProvider),
       empty,

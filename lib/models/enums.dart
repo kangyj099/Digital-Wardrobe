@@ -96,3 +96,17 @@ enum ClothingMaterial {
         ClothingMaterial.rubber => '고무·러버',
       };
 }
+
+// TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
+/// [Composition.weather]에 허용되는 값.
+enum Weather {
+  clear,
+  rain,
+  snow;
+
+  String get label => switch (this) {
+        Weather.clear => '맑음',
+        Weather.rain => '비',
+        Weather.snow => '눈',
+      };
+}

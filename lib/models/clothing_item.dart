@@ -9,6 +9,7 @@ class ClothingItem {
     this.season,
     this.material,
     required this.imagePath,
+    required this.createdAt,
     this.location = '',
     this.memo = '',
     this.wearCount = 0,
@@ -23,6 +24,10 @@ class ClothingItem {
   final Season? season;
   final ClothingMaterial? material;
   final String imagePath;
+
+  /// 옷장 "날짜·시간" 분류 기준의 소분류(연도) 근거. non-nullable이라 이 기준엔 미분류
+  /// 카드가 생기지 않는다(`docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md` §3.2).
+  final DateTime createdAt;
   final String location;
   final String memo;
   final int wearCount;
@@ -37,6 +42,7 @@ class ClothingItem {
     Season? season,
     ClothingMaterial? material,
     String? imagePath,
+    DateTime? createdAt,
     String? location,
     String? memo,
     int? wearCount,
@@ -51,6 +57,7 @@ class ClothingItem {
       season: season ?? this.season,
       material: material ?? this.material,
       imagePath: imagePath ?? this.imagePath,
+      createdAt: createdAt ?? this.createdAt,
       location: location ?? this.location,
       memo: memo ?? this.memo,
       wearCount: wearCount ?? this.wearCount,

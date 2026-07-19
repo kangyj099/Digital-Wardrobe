@@ -8,11 +8,12 @@ import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
 void main() {
   testWidgets('season이 있으면 이름과 계절 라벨을 함께 노출한다', (tester) async {
     final handle = tester.ensureSemantics();
-    const composition = Composition(
+    final composition = Composition(
       id: 'comp01',
       name: '데일리 룩',
       season: Season.springFall,
-      items: [],
+      items: const [],
+      createdAt: DateTime(2025, 1, 1),
     );
     await tester.pumpWidget(
       MaterialApp(
@@ -29,7 +30,8 @@ void main() {
 
   testWidgets('season이 없으면 계절 배지를 생략하고 이름만 노출한다', (tester) async {
     final handle = tester.ensureSemantics();
-    const composition = Composition(id: 'comp02', name: '무계절 코디', items: []);
+    final composition =
+        Composition(id: 'comp02', name: '무계절 코디', items: const [], createdAt: DateTime(2025, 1, 1));
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
@@ -44,7 +46,8 @@ void main() {
 
   testWidgets('탭하면 onTap이 호출된다', (tester) async {
     var tapped = false;
-    const composition = Composition(id: 'comp03', name: '탭 테스트', items: []);
+    final composition =
+        Composition(id: 'comp03', name: '탭 테스트', items: const [], createdAt: DateTime(2025, 1, 1));
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
