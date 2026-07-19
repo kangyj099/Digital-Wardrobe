@@ -6,8 +6,8 @@ import '../theme/app_spacing.dart';
 import 'category_toggle_dropdown.dart';
 import 'frosted_back_button.dart';
 
-/// 화면 관통 공용 UI 셸 — 뒤로가기/카테고리 토글/그룹형 드릴다운 바를 화면마다 개별
-/// 구현하지 않고 이 Scaffold 하나가 소유한다
+/// 화면 관통 공용 UI 셸 — 뒤로가기/카테고리 토글을 화면마다 개별 구현하지 않고 이
+/// Scaffold 하나가 소유한다
 /// (`docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §2 "B안").
 ///
 /// `Stack` 기반 구조 — `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`
@@ -28,13 +28,11 @@ import 'frosted_back_button.dart';
 ///   놓이는, 이미 각자 독립적으로 글래스 스타일링된 위젯 리스트다(예: "선택" 버튼을
 ///   `GlassPill`로 감싼 것) — 이 Scaffold는 배치만 하고 스타일을 추가로 씌우지 않는다.
 /// - **Row 2**([secondaryControlsLeft]/[secondaryControlsRight]): 두 번째 툴바 행 —
-///   좌/우 각각 독립 Positioned. 옷장/코디 메인의 계절 세그먼트(좌)와 밀도·기타 버튼(우)
-///   등에 쓰인다. 둘 다 비어 있으면 이 행 자체가 렌더링되지 않는다.
-/// - [groupingBar]는 그룹형 드릴다운 전용 슬롯(옷장/코디 메인만 사용, 그 외 화면은 null로
-///   비워둔다 — Detail도 이 방식으로 처리). 아직 skeleton placeholder 상태라 floating
-///   pill로 전환하지 않고, 전체 폭을 차지하는 독립 밴드로 Positioned된다.
-///   [groupingBarHeight]는 이 밴드의 실제 렌더 높이 — [contentSpacerHeight] 계산에
-///   그대로 반영되므로 `groupingBar`를 만들 때 쓴 높이와 반드시 일치해야 한다.
+///   좌/우 각각 독립 Positioned. 옷장/코디 메인의 분류 기준 드릴다운 캡슐(좌)과 밀도·정렬
+///   버튼(우) 등에 쓰인다. 둘 다 비어 있으면 이 행 자체가 렌더링되지 않는다.
+/// - 그룹형 드릴다운 전용 슬롯(`groupingBar`)은 삭제됨(2026-07-19, 화면별
+///   `ClassificationDrilldownCapsule`로 대체 — `lib/screens/closet_main_screen.dart`/
+///   `composition_main_screen.dart`가 Row 2 좌측에 floating pill로 직접 꽂는다).
 class AppMainScaffold extends StatelessWidget {
   const AppMainScaffold({
     super.key,
@@ -45,8 +43,6 @@ class AppMainScaffold extends StatelessWidget {
     this.headerActions = const [],
     this.secondaryControlsLeft = const [],
     this.secondaryControlsRight = const [],
-    this.groupingBar,
-    this.groupingBarHeight = 0,
     this.floatingActionButton,
   });
 
@@ -72,12 +68,6 @@ class AppMainScaffold extends StatelessWidget {
   /// Row 2 우측 슬롯 — 이미 각자 독립적으로 글래스 스타일링된 위젯 리스트.
   final List<Widget> secondaryControlsRight;
 
-  /// 그룹형 드릴다운 바 슬롯. null이면 자리 자체를 차지하지 않는다.
-  final Widget? groupingBar;
-
-  /// [groupingBar]의 실제 렌더 높이 — [contentSpacerHeight] 계산용.
-  final double groupingBarHeight;
-
   /// FAB passthrough — `Scaffold.floatingActionButton`으로 그대로 전달.
   final Widget? floatingActionButton;
 
@@ -89,32 +79,19 @@ class AppMainScaffold extends StatelessWidget {
   /// 헤더 높이를 계산할 수 있는 전제.
   static const double controlHeight = kMinInteractiveDimension;
 
-  /// 상태바/Row1/Row2/groupingBar 밴드 사이의 간격.
+  /// 상태바/Row1/Row2 밴드 사이의 간격.
   static const double rowGap = AppSpacing.xs;
-
-  /// groupingBar skeleton의 공용 높이 — 이 상수를
-  /// `skeletonRegion(..., height: AppMainScaffold.defaultGroupingBarHeight)`와
-  /// [contentSpacerHeight]의 `groupingBarHeight` 인자 양쪽에 동일하게 써서 두 값이
-  /// 어긋나지 않게 한다.
-  static const double defaultGroupingBarHeight = 48;
 
   /// Content Spacer(스펙 §4) 계산 — 화면이 `body`(보통 [AppScrollContainer]) 내부
   /// 스크롤 콘텐츠의 상단 padding으로 그대로 써야 하는 값. 실측이 아니라 이 Scaffold가
   /// 실제로 Positioned하는 밴드 높이(고정값) 합산이라 스펙 §4 "알려진 고정값" 경로를
   /// 그대로 따른다.
-  static double contentSpacerHeight({
-    bool hasSecondaryRow = false,
-    double groupingBarHeight = 0,
-  }) {
+  static double contentSpacerHeight({bool hasSecondaryRow = false}) {
     double height = rowGap + controlHeight; // Row 1
     if (hasSecondaryRow) height += rowGap + controlHeight; // Row 2
-    if (groupingBarHeight > 0) height += rowGap + groupingBarHeight; // groupingBar 밴드
     height += rowGap; // 마지막 밴드와 실제 콘텐츠 사이 여백
     return height;
   }
-
-  bool get _hasSecondaryRow =>
-      secondaryControlsLeft.isNotEmpty || secondaryControlsRight.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -123,8 +100,6 @@ class AppMainScaffold extends StatelessWidget {
 
     final row1Top = statusBarHeight + rowGap;
     final row2Top = row1Top + controlHeight + rowGap;
-    final lastRowBottom = _hasSecondaryRow ? row2Top + controlHeight : row1Top + controlHeight;
-    final groupingBarTop = lastRowBottom + rowGap;
 
     return Scaffold(
       body: Container(
@@ -200,11 +175,6 @@ class AppMainScaffold extends StatelessWidget {
                   children: _withGaps(secondaryControlsRight),
                 ),
               ),
-
-            // groupingBar — 아직 skeleton placeholder 상태(실제 그룹형 드릴다운 미구현).
-            // floating pill이 아니라 전체 폭을 차지하는 밴드로 배치된다.
-            if (groupingBar != null)
-              Positioned(top: groupingBarTop, left: 0, right: 0, child: groupingBar!),
 
             // 뒤로 갈 곳이 있을 때만 렌더링(스택 최상단에 없으면 자리 자체를 차지하지 않음).
             // 우측은 흔히 floatingActionButton이 쓰고 있어 좌측에 배치.

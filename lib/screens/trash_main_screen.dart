@@ -13,10 +13,11 @@ import '../widgets/trash_gallery_tile.dart';
 
 /// Step⑥(나머지 화면 적용) 산출물 — 공용 셸([AppMainScaffold])에 연결됨.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준
-/// Main-플랫+필터형(휴지통), 뒤로가기=O/카테고리 토글=X/그룹형 드릴다운=X라
-/// `showCategoryToggle: false`로 기본값(true)을 오버라이드하고 `groupingBar`는 비운다.
-/// 그룹형이 아니므로 그리드 밀도 토글도 두지 않는다(`docs/history/Decision.md`
-/// "그리드 밀도 토글은 그룹형 Main 화면 전용" — 스타일일지 메인과 같은 근거).
+/// Main-플랫+필터형(휴지통), 뒤로가기=O/카테고리 토글=X라 `showCategoryToggle: false`로
+/// 기본값(true)을 오버라이드한다(그룹형 드릴다운 슬롯 자체는 2026-07-19 삭제됨 —
+/// `AppMainScaffold` 참고). 그룹형이 아니므로 그리드 밀도 토글도 두지 않는다
+/// (`docs/history/Decision.md` "그리드 밀도 토글은 그룹형 Main 화면 전용" — 스타일일지
+/// 메인과 같은 근거).
 ///
 /// `current`([AppMainScaffold]의 필수 파라미터)는 휴지통이 [AppCategory]의 옷장/코디/
 /// 스타일일지 어디에도 속하지 않아 원래 무관하지만, `showCategoryToggle: false`라

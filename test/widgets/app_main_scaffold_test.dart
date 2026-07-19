@@ -9,7 +9,8 @@ import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 
 /// `AppMainScaffold` 플래그별 렌더링 검증 — Stack 기반 재설계(2026-07-13,
 /// `docs/superpowers/specs/2026-07-13-scroll-container-and-header-hud-architecture.md`) 이후
-/// 계약(headerActions/secondaryControlsLeft/secondaryControlsRight/groupingBar) 기준.
+/// 계약(headerActions/secondaryControlsLeft/secondaryControlsRight) 기준. `groupingBar`
+/// 슬롯은 2026-07-19 삭제됨(화면별 `ClassificationDrilldownCapsule`로 대체).
 void main() {
   const testRoute = '/test-main';
   const pushedRoute = '/test-pushed';
@@ -170,31 +171,6 @@ void main() {
     },
   );
 
-  testWidgets(
-    'groupingBar를 주면 렌더링되고, null이면(기본값) 렌더링되지 않는다',
-    (tester) async {
-      await pumpAt(
-        tester,
-        mainBuilder: (context) => const AppMainScaffold(
-          current: AppCategory.closet,
-          body: SizedBox.shrink(),
-        ),
-      );
-      expect(find.text('그룹 바 자리'), findsNothing);
-
-      await pumpAt(
-        tester,
-        mainBuilder: (context) => AppMainScaffold(
-          current: AppCategory.closet,
-          groupingBar: const Text('그룹 바 자리'),
-          groupingBarHeight: 48,
-          body: const SizedBox.shrink(),
-        ),
-      );
-      expect(find.text('그룹 바 자리'), findsOneWidget);
-    },
-  );
-
   testWidgets('body가 실제로 렌더링된다', (tester) async {
     await pumpAt(
       tester,
@@ -208,17 +184,11 @@ void main() {
   });
 
   group('contentSpacerHeight', () {
-    test('Row1만 있을 때(secondary/groupingBar 없음) 가장 작은 값을 반환한다', () {
+    test('Row1만 있을 때(secondary 없음) 가장 작은 값을 반환한다', () {
       final onlyRow1 = AppMainScaffold.contentSpacerHeight();
       final withSecondary = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
-      final withGroupingBar = AppMainScaffold.contentSpacerHeight(groupingBarHeight: 48);
-      final withBoth =
-          AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true, groupingBarHeight: 48);
 
       expect(onlyRow1, lessThan(withSecondary));
-      expect(onlyRow1, lessThan(withGroupingBar));
-      expect(withSecondary, lessThan(withBoth));
-      expect(withGroupingBar, lessThan(withBoth));
     });
   });
 }
