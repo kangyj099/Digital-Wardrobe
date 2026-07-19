@@ -9,7 +9,13 @@ import 'glass_pill.dart';
 /// 메뉴 폭 전체를 기준으로 가운데 정렬되게 한다 — `PopupMenuItem`은 기본적으로
 /// child를 내용 크기만큼만 감싸(centerStart) 짧은 항목이 왼쪽으로 쏠리므로, 고정
 /// 너비 박스로 감싸는 게 유일한 신뢰 가능한 중앙정렬 방법이다.
-const double _menuItemWidth = 120;
+const double _menuItemWidth = 150;
+
+/// 체크 아이콘(선택된 항목 표시) + 아이콘-텍스트 간격이 차지하는 폭 — 텍스트 앞에
+/// 이 폭만큼을 항상 예약하고, 텍스트 뒤에도 똑같은 폭을 빈 공간으로 예약한다.
+/// 좌우가 대칭이라 아이콘이 있든 없든 텍스트 자체는 [_menuItemWidth] 정중앙에
+/// 고정된다(아이콘이 텍스트를 오른쪽으로 밀어내지 않음).
+const double _checkIconSlotWidth = 20; // Icon(16) + SizedBox(4)
 
 /// 헤더 좌측 카테고리 드롭다운 — 옷장/코디/스타일일지 전환 + 설정 진입.
 ///
@@ -40,11 +46,12 @@ class CategoryToggleDropdown extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (category == current) ...[
-                        const Icon(Icons.check, size: 16),
-                        const SizedBox(width: 4),
-                      ],
+                      SizedBox(
+                        width: _checkIconSlotWidth,
+                        child: category == current ? const Icon(Icons.check, size: 16) : null,
+                      ),
                       Text(category.label, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(width: _checkIconSlotWidth),
                     ],
                   ),
                 ),
