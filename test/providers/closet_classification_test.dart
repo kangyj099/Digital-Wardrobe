@@ -55,20 +55,31 @@ void main() {
     expect(summaries.any((s) => s.label == '미분류'), isTrue); // mock c12가 category null
   });
 
-  test('옷종류 그룹 카드는 기본(ascending=false)일 때 머리→발 순서(ClothingCategory index 오름차순)', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+  test(
+    '옷종류 그룹 카드는 전역 단순 규칙을 따른다 — '
+    'ascending=true면 항상 index 오름차순(머리→발), 기본(false)이면 내림차순(발→머리)',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
 
-    container.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.clothingType;
-    final summaries = container.read(closetGroupSummariesProvider);
-    final classified = summaries.where((s) => s.value != null).toList();
+      container.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.clothingType;
 
-    for (var i = 1; i < classified.length; i++) {
-      final prevIndex = (classified[i - 1].value as ClothingCategory).index;
-      final currIndex = (classified[i].value as ClothingCategory).index;
-      expect(prevIndex, lessThan(currIndex));
-    }
-  });
+      final descending = container.read(closetGroupSummariesProvider).where((s) => s.value != null).toList();
+      for (var i = 1; i < descending.length; i++) {
+        final prevIndex = (descending[i - 1].value as ClothingCategory).index;
+        final currIndex = (descending[i].value as ClothingCategory).index;
+        expect(prevIndex, greaterThan(currIndex));
+      }
+
+      container.read(closetSortAscendingProvider.notifier).state = true;
+      final ascending = container.read(closetGroupSummariesProvider).where((s) => s.value != null).toList();
+      for (var i = 1; i < ascending.length; i++) {
+        final prevIndex = (ascending[i - 1].value as ClothingCategory).index;
+        final currIndex = (ascending[i].value as ClothingCategory).index;
+        expect(prevIndex, lessThan(currIndex));
+      }
+    },
+  );
 
   test('날짜 기준 기본 정렬은 최신순(내림차순)', () {
     final container = ProviderContainer();

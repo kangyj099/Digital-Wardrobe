@@ -396,11 +396,9 @@ git commit -m "feat(nav): move Settings entry point into CategoryToggleDropdown 
 - Produces: `DrilledValue<T>`, `ClassificationGroupSummary`, `compareNullableIndexLast(int? a, int? b, {required bool ascending})`(`classification_models.dart`, Task 4가 그대로 import) / `ClosetSortCriterion`, `closetSortCriterionProvider`, `closetSortAscendingProvider`, `closetDrilledYearProvider`, `closetDrilledCategoryProvider`, `closetDrilledSeasonProvider`, `closetGroupSummariesProvider`, `closetGridDisplayStateProvider`, `ClosetGridDisplayState`(`closet_providers.dart`, Task 7이 소비).
 - Consumes: `ClothingItem.createdAt`(Task 1), `ClothingCategory`/`Season`(`lib/models/enums.dart`).
 
-### 정렬 방향 해석 — TO 문서에 기록할 지점
+### 정렬 방향 해석 — 사용자 확정(2026-07-19)
 
-스펙 §3.2 "기본 정렬 순서" 표는 옷종류=머리→발, 계절=봄가을→여름→겨울을 **기본값**이라 명시하지만, §3.6의 `closetSortAscendingProvider` 기본값은 `false`이고 그 옆 주석은 "기본 내림차순(최신/많이입은순)"이라고만 적혀 있어 날짜·착용빈도 두 기준만 근거를 댄다. `ascending=false`를 "index 내림차순"으로 그대로 해석하면 옷종류/계절 기본 표시가 발→머리/겨울→여름→봄가을이 되어 §3.2 표와 어긋난다.
-
-**이 플랜이 채택하는 해석**: `ascending` 파라미터의 의미를 "그 기준의 §3.2 기본 순서로부터의 상대 방향"으로 정의한다 — 날짜/착용빈도는 자연스러운 방향(`ascending=true`=값 오름차순)이 곧 표의 기본이 아니므로 그대로 두고, 옷종류/계절처럼 표의 기본이 "index 오름차순"과 일치하는 기준은 `!ascending`을 넘겨 기본값(`false`)이 표와 일치하게 만든다. 근거/구현은 아래 Step 2 코드의 `compareNullableIndexLast(..., ascending: !ascending)` 호출부 주석 참고. **이 해석 자체가 스펙에 명시되어 있지 않으므로, `docs/work/TO_사용자결정.md`에 기록해 사용자 확인을 받는다**(Step 5).
+스펙 §3.2 "기본 정렬 순서" 표는 옷종류=머리→발, 계절=봄가을→여름→겨울을 **기본값**이라 명시하지만, §3.6의 `closetSortAscendingProvider` 기본값은 `false`이고 그 옆 주석은 "기본 내림차순(최신/많이입은순)"이라고만 적혀 있어 날짜·착용빈도 두 기준만 근거를 댄다. 이 플랜 초안은 `!ascending` 반전으로 "기본이 항상 §3.2 표와 일치"하게 만드는 해석을 채택했으나, `docs/work/TO_사용자결정.md`로 사용자에게 확인한 결과 **"전역 단순 규칙"(`ascending=true`는 모든 기준에서 예외 없이 index/날짜/착용빈도 오름차순, 반전 트릭 없음)을 명시적으로 선택**했다 — 코드 단순성/일관성을 §3.2 표와의 기본값 일치보다 우선. 결과: 옷종류/계절/날씨의 **기본(ascending=false) 표시는 §3.2 표와 반대 방향**(발→머리, 겨울→여름→봄가을, 눈→비→맑음)이 된다. 이는 명시적으로 승인된 tradeoff이며 재작업 대상이 아니다. `compareNullableIndexLast(..., ascending: ascending)`(반전 없이 그대로 전달)로 아래 코드에 반영됨.
 
 - [ ] **Step 1: `classification_models.dart` 작성**
 
@@ -516,10 +514,10 @@ extension ClosetSortCriterionX on ClosetSortCriterion {
 
 final closetSortCriterionProvider = StateProvider<ClosetSortCriterion>((ref) => ClosetSortCriterion.all);
 
-/// 기본 false(내림차순) — 날짜/착용빈도는 문자 그대로 "최신순"/"많이 입은 순"(스펙 §3.6).
-/// 옷종류/계절은 이 값이 "표의 기본 순서로부터의 상대 방향"으로 재해석된다 — 아래
-/// [filteredClosetItemsProvider]의 `!ascending` 호출부 주석 참고(플랜 "정렬 방향 해석" 절,
-/// `docs/work/TO_사용자결정.md`에 확인 요청 기록됨).
+/// 전역 단순 규칙(사용자 확정, 2026-07-19): true=모든 기준에서 항상 index/날짜/착용빈도
+/// 오름차순, false=내림차순 — 기준마다 의미를 다르게 해석하지 않는다. 기본값 false이므로
+/// 옷종류/계절/날씨의 기본 표시는 스펙 §3.2 표(머리→발 등)와 **반대** 방향이다(위 "정렬
+/// 방향 해석" 절 참고, `docs/work/TO_사용자결정.md`에서 사용자가 명시적으로 선택).
 final closetSortAscendingProvider = StateProvider<bool>((ref) => false);
 
 /// `createdAt`이 non-nullable이라 [DrilledValue] wrapper가 필요 없다 — null=미선택뿐.
@@ -577,12 +575,10 @@ final filteredClosetItemsProvider = Provider<List<ClothingItem>>((ref) {
   result.sort((a, b) => switch (criterion) {
         ClosetSortCriterion.dateTime =>
           ascending ? a.createdAt.compareTo(b.createdAt) : b.createdAt.compareTo(a.createdAt),
-        // !ascending: 기본(ascending=false)이 스펙 §3.2 표의 "머리→발" 기본 순서와
-        // 일치하도록 반전(위 closetSortAscendingProvider 주석/TO 문서 참고).
         ClosetSortCriterion.clothingType =>
-          compareNullableIndexLast(a.category?.index, b.category?.index, ascending: !ascending),
+          compareNullableIndexLast(a.category?.index, b.category?.index, ascending: ascending),
         ClosetSortCriterion.season =>
-          compareNullableIndexLast(a.season?.index, b.season?.index, ascending: !ascending),
+          compareNullableIndexLast(a.season?.index, b.season?.index, ascending: ascending),
         ClosetSortCriterion.wearFrequency =>
           ascending ? a.wearCount.compareTo(b.wearCount) : b.wearCount.compareTo(a.wearCount),
         ClosetSortCriterion.all => 0, // 위에서 이미 return, 도달하지 않음(exhaustive switch용)
@@ -604,7 +600,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
         keyOf: (item) => item.category,
         labelOf: (category) => category.label,
         indexOf: (category) => category.index,
-        ascending: !ascending,
+        ascending: ascending,
       );
     case ClosetSortCriterion.season:
       return _summarize<Season>(
@@ -612,7 +608,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
         keyOf: (item) => item.season,
         labelOf: (season) => season.label,
         indexOf: (season) => season.index,
-        ascending: !ascending,
+        ascending: ascending,
       );
     case ClosetSortCriterion.dateTime:
       return _summarizeByYear(items, ascending: ascending);
@@ -768,20 +764,31 @@ void main() {
     expect(summaries.any((s) => s.label == '미분류'), isTrue); // mock c12가 category null
   });
 
-  test('옷종류 그룹 카드는 기본(ascending=false)일 때 머리→발 순서(ClothingCategory index 오름차순)', () {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
+  test(
+    '옷종류 그룹 카드는 전역 단순 규칙을 따른다 — '
+    'ascending=true면 항상 index 오름차순(머리→발), 기본(false)이면 내림차순(발→머리)',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
 
-    container.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.clothingType;
-    final summaries = container.read(closetGroupSummariesProvider);
-    final classified = summaries.where((s) => s.value != null).toList();
+      container.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.clothingType;
 
-    for (var i = 1; i < classified.length; i++) {
-      final prevIndex = (classified[i - 1].value as ClothingCategory).index;
-      final currIndex = (classified[i].value as ClothingCategory).index;
-      expect(prevIndex, lessThan(currIndex));
-    }
-  });
+      final descending = container.read(closetGroupSummariesProvider).where((s) => s.value != null).toList();
+      for (var i = 1; i < descending.length; i++) {
+        final prevIndex = (descending[i - 1].value as ClothingCategory).index;
+        final currIndex = (descending[i].value as ClothingCategory).index;
+        expect(prevIndex, greaterThan(currIndex));
+      }
+
+      container.read(closetSortAscendingProvider.notifier).state = true;
+      final ascending = container.read(closetGroupSummariesProvider).where((s) => s.value != null).toList();
+      for (var i = 1; i < ascending.length; i++) {
+        final prevIndex = (ascending[i - 1].value as ClothingCategory).index;
+        final currIndex = (ascending[i].value as ClothingCategory).index;
+        expect(prevIndex, lessThan(currIndex));
+      }
+    },
+  );
 
   test('날짜 기준 기본 정렬은 최신순(내림차순)', () {
     final container = ProviderContainer();
@@ -805,29 +812,9 @@ Run: `flutter test test/providers/closet_classification_test.dart -v`
 
 Expected: 전부 PASS. (구현이 Step 2에서 이미 끝났으므로 이 Step은 "먼저 실패를 본다"는 고전적 TDD 순서 대신, 구현+테스트를 같은 Step으로 묶어 검증한다 — 이 프로젝트의 provider 테스트 관례(`test/providers/closet_providers_test.dart`)도 이미 존재하는 구현을 사후 검증하는 형태를 취하고 있어 동일 패턴을 따름.)
 
-- [ ] **Step 5: `docs/work/TO_사용자결정.md`에 정렬 방향 해석 기록**
-
-파일이 없으면 새로 만들고, 있으면 이어서 추가:
-
-```markdown
-# 사용자 확인 필요 — 자고 일어나서 확인 후 삭제
-
-## 옷장/코디 분류 기준 정렬의 "오름차순" 의미 (2026-07-19, Task 3)
-
-**배경**: `2026-07-19-main-header-classification-and-settings-entry-design.md` §3.2가 "기본 정렬
-순서" 표(옷종류=머리→발, 계절=봄가을→여름→겨울 등)를 명시하지만, §3.6의
-`closetSortAscendingProvider` 기본값(`false`)에 대한 주석은 "기본 내림차순(최신/많이입은순)"만
-언급하고 옷종류/계절 케이스는 다루지 않음. 두 조항을 문자 그대로 조합하면 옷종류/계절 기본
-표시가 표와 반대(발→머리, 겨울→여름→봄가을)가 됨.
-
-**이 플랜이 잠정 채택한 해석**: `ascending` 토글의 "false(기본)"은 항상 §3.2 표의 순서와
-일치하도록 정의(옷종류/계절은 index를 반전해서 넘김 — `lib/providers/closet_providers.dart`/
-`composition_providers.dart`의 `compareNullableIndexLast(..., ascending: !ascending)` 호출부).
-즉 토글을 안 건드리면 항상 §3.2 표대로 보이고, 토글하면 반대 방향이 됨.
-
-**확인 필요**: 이 해석이 맞는지, 혹은 "ascending=true가 항상 index 오름차순"이라는 더 단순한
-전역 규칙을 원하는지(그러면 옷종류/계절 기본 표시가 발→머리가 됨). 확정되면 이 항목 삭제.
-```
+- [x] **Step 5(폐기됨, 사용자 확정 완료)**: 정렬 방향 해석은 더 이상 "TO 문서에 기록해 확인 대기"할
+필요가 없다 — 사용자가 대화 중 **"전역 단순 규칙"**을 이미 확정했다(위 "정렬 방향 해석 —
+사용자 확정" 절 참고). `docs/work/TO_사용자결정.md`의 해당 항목은 PM이 직접 정리(삭제)했다.
 
 - [ ] **Step 6: Commit**
 
@@ -838,7 +825,7 @@ git add lib/providers/classification_models.dart lib/providers/closet_providers.
 git commit -m "feat(closet): add classification drilldown providers (criterion/drilled-value/group-summary)"
 ```
 
-**Review 체크포인트**: `compareNullableIndexLast`/`!ascending` 반전 로직이 스펙 §3.2 기본 표와 실제로 일치하는지, dead code(Step 2 자체검토에서 지적한 placeholder 줄)가 남아있지 않은지, `flutter analyze`/`flutter test` 클린 여부.
+**Review 체크포인트**: `compareNullableIndexLast` 호출이 전역 단순 규칙(반전 없음)을 일관되게 따르는지, dead code(Step 2 자체검토에서 지적한 placeholder 줄)가 남아있지 않은지, `flutter analyze`/`flutter test` 클린 여부.
 
 **Tester 불필요**(순수 로직, 아직 화면에 배선 안 됨 — Task 7에서 배선 후 런타임 검증).
 
@@ -904,8 +891,10 @@ extension CompositionSortCriterionX on CompositionSortCriterion {
 final compositionSortCriterionProvider =
     StateProvider<CompositionSortCriterion>((ref) => CompositionSortCriterion.all);
 
-/// 기본 false(내림차순) — 날짜는 "최신순". 계절/날씨는 §3.2 기본 표와 일치하도록 반전해서
-/// 쓴다(`lib/providers/closet_providers.dart`의 동일 주석/`docs/work/TO_사용자결정.md` 참고).
+/// 전역 단순 규칙(사용자 확정, 2026-07-19) — `lib/providers/closet_providers.dart`의
+/// `closetSortAscendingProvider` 주석과 동일: true=모든 기준 index/날짜 오름차순, false=
+/// 내림차순. 계절/날씨 기본 표시는 스펙 §3.2 표와 반대 방향이 되는 tradeoff를 사용자가
+/// 명시적으로 선택함.
 final compositionSortAscendingProvider = StateProvider<bool>((ref) => false);
 
 final compositionDrilledYearProvider = StateProvider<int?>((ref) => null);
@@ -960,9 +949,9 @@ final filteredCompositionsProvider = Provider<List<Composition>>((ref) {
         CompositionSortCriterion.dateTime =>
           ascending ? a.createdAt.compareTo(b.createdAt) : b.createdAt.compareTo(a.createdAt),
         CompositionSortCriterion.season =>
-          compareNullableIndexLast(a.season?.index, b.season?.index, ascending: !ascending),
+          compareNullableIndexLast(a.season?.index, b.season?.index, ascending: ascending),
         CompositionSortCriterion.weather =>
-          compareNullableIndexLast(a.weather?.index, b.weather?.index, ascending: !ascending),
+          compareNullableIndexLast(a.weather?.index, b.weather?.index, ascending: ascending),
         CompositionSortCriterion.all => 0, // 도달하지 않음
       });
   return result;
@@ -980,7 +969,7 @@ final compositionGroupSummariesProvider = Provider<List<ClassificationGroupSumma
         keyOf: (c) => c.season,
         labelOf: (season) => season.label,
         indexOf: (season) => season.index,
-        ascending: !ascending,
+        ascending: ascending,
       );
     case CompositionSortCriterion.weather:
       return _summarizeCompositions<Weather>(
@@ -988,7 +977,7 @@ final compositionGroupSummariesProvider = Provider<List<ClassificationGroupSumma
         keyOf: (c) => c.weather,
         labelOf: (weather) => weather.label,
         indexOf: (weather) => weather.index,
-        ascending: !ascending,
+        ascending: ascending,
       );
     case CompositionSortCriterion.dateTime:
       return _summarizeCompositionsByYear(items, ascending: ascending);
@@ -1395,32 +1384,37 @@ class ClassificationGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.sm),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _ThumbnailCollage(paths: summary.thumbnailPaths),
-            Positioned(
-              left: AppSpacing.xs,
-              right: AppSpacing.xs,
-              bottom: AppSpacing.xs,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(AppSpacing.xxs),
-                ),
-                child: Text(
-                  '${summary.label} · ${summary.count}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
+    return Semantics(
+      button: true,
+      label: '${summary.label}, ${summary.count}개',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _ThumbnailCollage(paths: summary.thumbnailPaths),
+              Positioned(
+                left: AppSpacing.xs,
+                right: AppSpacing.xs,
+                bottom: AppSpacing.xs,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    '${summary.label} · ${summary.count}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1505,11 +1499,14 @@ Create `test/widgets/classification_group_card_test.dart`:
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:digittal_wardrobe/providers/classification_models.dart';
+import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/classification_group_card.dart';
 
 void main() {
-  testWidgets('라벨과 개수를 함께 표시한다', (tester) async {
+  testWidgets('라벨과 개수를 함께 표시하고, Semantics 라벨로도 노출한다', (tester) async {
+    final handle = tester.ensureSemantics();
     await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light,
       home: Scaffold(
         body: ClassificationGroupCard(
           summary: const ClassificationGroupSummary(
@@ -1525,11 +1522,14 @@ void main() {
 
     expect(find.textContaining('상의'), findsOneWidget);
     expect(find.textContaining('5'), findsOneWidget);
+    expect(find.bySemanticsLabel('상의, 5개'), findsOneWidget);
+    handle.dispose();
   });
 
   testWidgets('탭하면 onTap이 호출된다', (tester) async {
     var tapped = false;
     await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light,
       home: Scaffold(
         body: ClassificationGroupCard(
           summary: const ClassificationGroupSummary(label: '미분류', thumbnailPaths: [], count: 1, value: null),
@@ -1639,13 +1639,9 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
   @override
   Widget build(BuildContext context) {
     final criterion = ref.watch(closetSortCriterionProvider);
+    // 전역 단순 규칙(Task 3/4에서 확정) — ascending은 모든 기준에서 그대로 "화면에 보이는
+    // 방향"과 같다(기준별 반전 없음), 그래서 버튼 아이콘/툴팁도 이 값을 그대로 쓴다.
     final ascending = ref.watch(closetSortAscendingProvider);
-    // provider의 raw ascending은 옷종류/계절에서 반전되어 쓰인다(Task 3 참고) — 버튼
-    // 아이콘/툴팁·사용자에게 보이는 의미는 항상 이 값을 써야 실제 정렬 방향과 일치한다.
-    final effectiveAscending = switch (criterion) {
-      ClosetSortCriterion.clothingType || ClosetSortCriterion.season => !ascending,
-      _ => ascending,
-    };
     final displayState = ref.watch(closetGridDisplayStateProvider);
     final density = ref.watch(closetDensityProvider);
 
@@ -1690,13 +1686,9 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
             ref.read(closetDensityProvider.notifier).state = AppDensity.levels[previousIndex];
           },
         ),
-        // 아이콘/툴팁은 "화면에 실제로 보이는 순서"(effectiveAscending) 기준 — 옷종류/계절은
-        // provider의 raw ascending을 반전해서 쓰므로(Task 3의 !ascending 트릭), 버튼 라벨도
-        // 반전 없이 raw 값을 쓰면 실제 정렬 방향과 어긋난다(Review 지적 P0, 직접 시뮬레이션으로
-        // 확인됨). 날짜/착용빈도는 반전이 없어 raw==effective.
         GlassCircleButton(
-          icon: effectiveAscending ? Icons.arrow_upward : Icons.arrow_downward,
-          tooltip: effectiveAscending ? '오름차순' : '내림차순',
+          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
+          tooltip: ascending ? '오름차순' : '내림차순',
           onTap: () => ref.read(closetSortAscendingProvider.notifier).state = !ascending,
         ),
       ],
@@ -1870,13 +1862,8 @@ class CompositionMainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final criterion = ref.watch(compositionSortCriterionProvider);
+    // closet_main_screen.dart와 동일 — 전역 단순 규칙이라 반전 없이 그대로 쓴다.
     final ascending = ref.watch(compositionSortAscendingProvider);
-    // closet_main_screen.dart와 동일한 이유(raw ascending이 계절/날씨에서 반전되어 쓰임)로
-    // 버튼 라벨은 항상 이 값을 쓴다(Review 지적 P0).
-    final effectiveAscending = switch (criterion) {
-      CompositionSortCriterion.season || CompositionSortCriterion.weather => !ascending,
-      _ => ascending,
-    };
     final displayState = ref.watch(compositionGridDisplayStateProvider);
     final density = ref.watch(compositionDensityProvider);
 
@@ -1916,8 +1903,8 @@ class CompositionMainScreen extends ConsumerWidget {
           },
         ),
         GlassCircleButton(
-          icon: effectiveAscending ? Icons.arrow_upward : Icons.arrow_downward,
-          tooltip: effectiveAscending ? '오름차순' : '내림차순',
+          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
+          tooltip: ascending ? '오름차순' : '내림차순',
           onTap: () => ref.read(compositionSortAscendingProvider.notifier).state = !ascending,
         ),
       ],
@@ -2112,7 +2099,7 @@ Tester가 새 통합테스트 파일(예: `integration_test/classification_drill
 2. **Placeholder 스캔**: 초안에 있던 dead-code 줄(`_summarizeByYear`의 placeholder `sort` 호출)은 제거했다(review 1차 검토 P2 반영, 지시문 대신 코드 자체를 정리).
 3. **타입 일관성**: `ClosetSortCriterion`/`CompositionSortCriterion`의 `.index` 순서가 캡슐 `criterionLabels`(이제 `.label` getter로 생성, 하드코딩 리스트 아님) 및 `_subOptionLabels`/`_drillInto`의 인덱스 매핑과 전부 일치. `DrilledValue<T>`/`ClassificationGroupSummary`/`compareNullableIndexLast` 네이밍이 Task 3→4→6→7에서 동일하게 쓰임.
 4. **review 서브에이전트 1차 검토(2026-07-19) 반영 내역** — P0 2건/P1 2건/P2 1건, 전부 이 플랜 본문에 직접 반영 완료:
-   - **P0**: 정렬 토글 버튼의 아이콘/툴팁이 raw `ascending`을 그대로 썼던 것을, `effectiveAscending`(옷종류/계절/날씨는 반전, 날짜/착용빈도는 그대로)으로 계산해 실제 정렬 방향과 항상 일치하도록 수정(Task 7 두 화면 모두).
+   - **P0**(1차 review 시점): 정렬 토글 버튼의 아이콘/툴팁이 raw `ascending`을 그대로 썼던 것을, `effectiveAscending`(옷종류/계절/날씨는 반전, 날짜/착용빈도는 그대로)으로 계산해 실제 정렬 방향과 항상 일치하도록 수정했음. **이후 사용자가 정렬 방향을 "전역 단순 규칙"으로 확정하면서(2026-07-19, Task 3/4 구현 중) `!ascending` 반전 자체가 전부 제거됐고, 그 결과 `effectiveAscending`도 항상 raw `ascending`과 같아져 불필요해져 삭제됨** — 이 P0가 지적한 라벨-실제방향 불일치 문제는 반전을 아예 없애는 더 근본적인 방식으로 해소됨.
    - **P0**: 날짜·시간(연도) 기준에서 그룹 카드 드릴인 시 캡슐 소분류 텍스트가 갱신 안 되던 것을, `_subOptionLabels`/`_selectedSubOptionIndex`/`_drillInto`가 `closetGroupSummariesProvider`/`compositionGroupSummariesProvider`를 라벨·인덱스 소스로 공유하도록 수정 — 두 진입 경로가 실제로 같은 provider를 갱신해 스펙 §3.1 "수렴한다" 요구를 만족.
    - **P1**: `ClosetSortCriterion`/`CompositionSortCriterion`에 다른 폐쇄 어휘 enum과 동일한 `.label` getter를 추가하고, 화면의 하드코딩 병렬 String 리스트(`_closetCriterionLabels` 등)를 제거해 `[for (c in X.values) c.label]`로 대체.
    - **P1**: Task 7 Files 목록에 `groupingBar`를 주석으로만 언급하는 3개 파일(`app_main_scaffold_shell_migration_test.dart`/`trash_main_screen.dart`/`settings_screen.dart`) 추가.

@@ -54,10 +54,11 @@ extension ClosetSortCriterionX on ClosetSortCriterion {
 
 final closetSortCriterionProvider = StateProvider<ClosetSortCriterion>((ref) => ClosetSortCriterion.all);
 
-/// 기본 false(내림차순) — 날짜/착용빈도는 문자 그대로 "최신순"/"많이 입은 순"(스펙 §3.6).
-/// 옷종류/계절은 이 값이 "표의 기본 순서로부터의 상대 방향"으로 재해석된다 — 아래
-/// [filteredClosetItemsProvider]의 `!ascending` 호출부 주석 참고(플랜 "정렬 방향 해석" 절,
-/// `docs/work/TO_사용자결정.md`에 확인 요청 기록됨).
+/// 전역 단순 규칙(사용자 확정, 2026-07-19): true=모든 기준에서 항상 index/날짜/착용빈도
+/// 오름차순, false=내림차순 — 기준마다 의미를 다르게 해석하지 않는다. 기본값 false이므로
+/// 옷종류/계절/날씨의 기본 표시는 스펙 §3.2 표(머리→발 등)와 **반대** 방향(발→머리 등)이다
+/// — 이 tradeoff는 `docs/work/TO_사용자결정.md`에서 사용자가 "전역 단순 규칙"을 명시적으로
+/// 선택해 확정됨(§3.2 표와 항상 일치시키는 대안은 폐기).
 final closetSortAscendingProvider = StateProvider<bool>((ref) => false);
 
 /// `createdAt`이 non-nullable이라 [DrilledValue] wrapper가 필요 없다 — null=미선택뿐.
@@ -115,12 +116,10 @@ final filteredClosetItemsProvider = Provider<List<ClothingItem>>((ref) {
   result.sort((a, b) => switch (criterion) {
         ClosetSortCriterion.dateTime =>
           ascending ? a.createdAt.compareTo(b.createdAt) : b.createdAt.compareTo(a.createdAt),
-        // !ascending: 기본(ascending=false)이 스펙 §3.2 표의 "머리→발" 기본 순서와
-        // 일치하도록 반전(위 closetSortAscendingProvider 주석/TO 문서 참고).
         ClosetSortCriterion.clothingType =>
-          compareNullableIndexLast(a.category?.index, b.category?.index, ascending: !ascending),
+          compareNullableIndexLast(a.category?.index, b.category?.index, ascending: ascending),
         ClosetSortCriterion.season =>
-          compareNullableIndexLast(a.season?.index, b.season?.index, ascending: !ascending),
+          compareNullableIndexLast(a.season?.index, b.season?.index, ascending: ascending),
         ClosetSortCriterion.wearFrequency =>
           ascending ? a.wearCount.compareTo(b.wearCount) : b.wearCount.compareTo(a.wearCount),
         ClosetSortCriterion.all => 0, // 위에서 이미 return, 도달하지 않음(exhaustive switch용)
@@ -142,7 +141,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
         keyOf: (item) => item.category,
         labelOf: (category) => category.label,
         indexOf: (category) => category.index,
-        ascending: !ascending,
+        ascending: ascending,
       );
     case ClosetSortCriterion.season:
       return _summarize<Season>(
@@ -150,7 +149,7 @@ final closetGroupSummariesProvider = Provider<List<ClassificationGroupSummary>>(
         keyOf: (item) => item.season,
         labelOf: (season) => season.label,
         indexOf: (season) => season.index,
-        ascending: !ascending,
+        ascending: ascending,
       );
     case ClosetSortCriterion.dateTime:
       return _summarizeByYear(items, ascending: ascending);
