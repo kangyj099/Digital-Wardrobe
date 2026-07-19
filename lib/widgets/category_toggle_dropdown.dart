@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
 import '../router/app_router.dart';
+import '../theme/app_colors.dart';
 import 'glass_pill.dart';
+
+/// 메뉴 항목 4개(옷장/코디/스타일일지/설정)를 전부 이 너비로 맞춰, 짧은 라벨도
+/// 메뉴 폭 전체를 기준으로 가운데 정렬되게 한다 — `PopupMenuItem`은 기본적으로
+/// child를 내용 크기만큼만 감싸(centerStart) 짧은 항목이 왼쪽으로 쏠리므로, 고정
+/// 너비 박스로 감싸는 게 유일한 신뢰 가능한 중앙정렬 방법이다.
+const double _menuItemWidth = 120;
 
 /// 헤더 좌측 카테고리 드롭다운 — 옷장/코디/스타일일지 전환 + 설정 진입.
 ///
@@ -27,21 +34,33 @@ class CategoryToggleDropdown extends StatelessWidget {
           for (final category in AppCategory.values)
             PopupMenuItem(
               value: _CategoryMenuEntry.category(category),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (category == current) ...[
-                    const Icon(Icons.check, size: 16),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(category.label),
-                ],
+              child: SizedBox(
+                width: _menuItemWidth,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (category == current) ...[
+                        const Icon(Icons.check, size: 16),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(category.label, style: Theme.of(context).textTheme.titleMedium),
+                    ],
+                  ),
+                ),
               ),
             ),
-          const PopupMenuDivider(),
+          PopupMenuDivider(
+            color: Theme.of(context).extension<AppSemanticColors>()!.gray200,
+          ),
           PopupMenuItem(
             value: const _CategoryMenuEntry.settings(),
-            child: Text('설정', style: Theme.of(context).textTheme.bodySmall),
+            child: SizedBox(
+              width: _menuItemWidth,
+              child: Center(
+                child: Text('설정', style: Theme.of(context).textTheme.bodySmall),
+              ),
+            ),
           ),
         ],
         child: Row(

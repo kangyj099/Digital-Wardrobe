@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 헤더 드롭다운 텍스트 확대·중앙정렬, 설정 구분선 연한 색, 분류 캡슐을 단일 GlassPill+내부 구분선으로 재통합 (UI/Screen, Decision — Header/HUD Pinned Rule 예외 포함)
+
+결정:
+- `CategoryToggleDropdown` 메뉴: 옷장/코디/스타일일지 3항목 텍스트를 `titleMedium`(16, w600)으로 확대, 4항목(옷장/코디/스타일일지/설정) 전부 고정폭(120) 박스 안에서 가운데 정렬. "설정" 항목의 `PopupMenuDivider`는 `AppSemanticColors.gray200`(팔레트 기반 연한 회색)로 지정.
+- `ClassificationDrilldownCapsule`: 직전 결정(바로 아래 항목)이 Header/HUD Pinned Rule 준수를 위해 독립 GlassPill 2개로 분리했던 것을 **다시 하나의 GlassPill로 통합**하고, 중분류/소분류 두 `DropdownButton` 사이에 얇은 세로 구분선(1px, `AppSemanticColors.gray200`)을 넣는 구조로 되돌린다.
+- **Pinned Rule 예외 처리**: `glass_pill.dart` docstring 및 Pinned Rule 항목이 "여러 컨트롤을 하나의 GlassPill 안에 함께 담지 않는다 — 변경 시 사용자 승인 필수"라고 명시한 규칙에 대한 명시적 예외다. 사용자가 "캡슐 이미지 하나 쓰고, 중분류 소분류 사이 구분 사이선으로 구분해"라고 대화 중 직접 지시했고, 이 지시 자체가 필요한 사용자 승인으로 간주해 규칙 예외를 적용했다. `glass_pill.dart`의 규칙 서술 자체는 고치지 않음(일반 원칙은 유지, 이 캡슐 하나만 예외).
+
+사유:
+사용자가 실제 화면을 보고 직접 3가지 UI 조정을 지시(2026-07-20): 헤더 드롭다운 텍스트가 작아 보임, 설정 구분선이 너무 진함, 분류 캡슐이 두 개의 분리된 알약처럼 보이는 게 의도와 다름(하나의 캡슐 + 내부 구분선을 원함).
+
+Impact:
+- `lib/widgets/category_toggle_dropdown.dart` — 항목 스타일/정렬, `PopupMenuDivider` color.
+- `lib/widgets/classification_drilldown_capsule.dart` — `Row(GlassPill, SizedBox, GlassPill)` → `GlassPill(Row(...))`, 내부에 `Container` 세로 구분선 추가.
+- `test/widgets/classification_drilldown_capsule_test.dart` — `AppSemanticColors` extension을 쓰는 위젯이라 `MaterialApp(theme: AppTheme.light)` 누락 시 null-check 에러가 남을 발견, 두 테스트 모두 테마 추가.
+- 회귀 확인: `flutter analyze`/`flutter test`(66/66) 전체 통과, `integration_test/`(`app_main_scaffold_shell_migration_test.dart` 3/3 — 360px 좁은 뷰포트 오버플로 없음 확인, `closet_main_screen_test.dart` 28/28, `classification_drilldown_test.dart` 12/12, `selection_modal_test.dart` 7/7) 직접 실행 확인.
+
+---
+
 [Decision] 옷장·코디 메인 헤더 — 분류 기준 드릴다운 캡슐 + 설정 진입점 이동 (UI/Screen, Decision — Implementation 완료)
 
 결정:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'glass_pill.dart';
 
@@ -11,10 +12,12 @@ import 'glass_pill.dart';
 ///
 /// **Header/HUD Pinned Rule과의 관계**: `glass_pill.dart` docstring이 "여러 컨트롤을 하나의
 /// GlassPill 안에 함께 담지 않는다"고 명시하고, 이 규칙 변경은 `docs/history/Decision.md`상
-/// 사용자 승인이 필요하다 — 그 승인을 받지 않고 우회하기 위해, 중분류/소분류 두 세그먼트를
-/// **각각 독립된 [GlassPill]**로 감싸고 그 둘을 `Row`로 나란히 배치한다(Pinned Rule을 그대로
-/// 준수, 시각적으로는 여전히 붙어 보이는 2세그먼트 캡슐). Review(2026-07-19, Task 5)가
-/// 최초 구현(하나의 GlassPill에 두 DropdownButton)이 이 규칙과 충돌한다고 지적해 수정됨.
+/// 사용자 승인이 필요하다. Review(2026-07-19, Task 5)가 최초 구현(하나의 GlassPill에 두
+/// DropdownButton)을 이 규칙 위반으로 지적해 한때 독립 GlassPill 2개로 분리했었으나,
+/// **사용자가 2026-07-20에 "캡슐 이미지 하나로, 중분류/소분류 사이는 구분선으로"라고
+/// 직접 지시 — 이 지시 자체가 필요한 사용자 승인이라 하나의 GlassPill로 되돌리고, 대신
+/// 두 세그먼트 사이에 얇은 세로 구분선(팔레트 연한 회색)을 넣어 시각적으로 구획을
+/// 나눈다**(`docs/history/Decision.md` 해당 항목 참고, 명시적 Pinned Rule 예외로 기록됨).
 class ClassificationDrilldownCapsule extends StatelessWidget {
   const ClassificationDrilldownCapsule({
     super.key,
@@ -54,11 +57,12 @@ class ClassificationDrilldownCapsule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GlassPill(
-          child: DropdownButton<int>(
+    final dividerColor = Theme.of(context).extension<AppSemanticColors>()!.gray200;
+    return GlassPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DropdownButton<int>(
             value: selectedCriterionIndex,
             underline: const SizedBox.shrink(),
             items: [
@@ -69,11 +73,14 @@ class ClassificationDrilldownCapsule extends StatelessWidget {
               if (value != null) onCriterionChanged(value);
             },
           ),
-        ),
-        if (hasSubClassification) ...[
-          const SizedBox(width: AppSpacing.xs),
-          GlassPill(
-            child: DropdownButton<int?>(
+          if (hasSubClassification) ...[
+            Container(
+              width: 1,
+              height: 24,
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              color: dividerColor,
+            ),
+            DropdownButton<int?>(
               value: selectedSubOptionIndex,
               hint: Text(subHint ?? ''),
               underline: const SizedBox.shrink(),
@@ -91,9 +98,9 @@ class ClassificationDrilldownCapsule extends StatelessWidget {
                 }
               },
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/classification_drilldown_capsule.dart';
 
 void main() {
   testWidgets('소분류가 없으면 두 번째 세그먼트가 렌더링되지 않는다', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light,
       home: Scaffold(
         body: ClassificationDrilldownCapsule(
           criterionLabels: const ['전체보기', '착용빈도'],
@@ -21,6 +23,7 @@ void main() {
 
   testWidgets('소분류가 있으면 hint가 표시된다(미선택=그룹 개요 상태)', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light,
       home: Scaffold(
         body: ClassificationDrilldownCapsule(
           criterionLabels: const ['전체보기', '옷 종류'],
