@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
 import '../router/app_router.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import 'glass_pill.dart';
 
 /// 메뉴 항목 4개(옷장/코디/스타일일지/설정)를 전부 이 너비로 맞춰, 짧은 라벨도
@@ -34,6 +35,9 @@ class CategoryToggleDropdown extends StatelessWidget {
     return GlassPill(
       child: PopupMenuButton<_CategoryMenuEntry>(
         tooltip: '',
+        // 기본 offset(Offset.zero)이면 메뉴가 버튼과 겹쳐서 뜬다 — GlassPill 높이
+        // (kMinInteractiveDimension, 48)만큼 아래로 밀어 버튼 바로 아래에 펼쳐지게 한다.
+        offset: const Offset(0, kMinInteractiveDimension + AppSpacing.xxs),
         initialValue: _CategoryMenuEntry.category(current),
         onSelected: (entry) => _onSelected(context, entry),
         itemBuilder: (context) => [
