@@ -35,10 +35,15 @@ class CategoryToggleDropdown extends StatelessWidget {
     return GlassPill(
       child: PopupMenuButton<_CategoryMenuEntry>(
         tooltip: '',
-        // 기본 offset(Offset.zero)이면 메뉴가 버튼과 겹쳐서 뜬다 — GlassPill 높이
-        // (kMinInteractiveDimension, 48)만큼 아래로 밀어 버튼 바로 아래에 펼쳐지게 한다.
+        // `initialValue`를 넘기면 Flutter가 "메뉴 top이 아니라 선택된 항목의 세로 중심"을
+        // 버튼에 맞추려 해서(PopupMenuButton 공식 문서), 선택 위치에 따라 메뉴가 버튼에서
+        // 예측 불가능하게 멀어진다 — 선택 표시는 이미 체크 아이콘으로 직접 그리고 있으니
+        // `initialValue`를 넘기지 않아 "메뉴 top = 버튼 bottom" 단순 정렬로 되돌린다.
+        // offset은 GlassPill 높이(kMinInteractiveDimension, 48)만큼 아래로 민다. 목표
+        // 시각적 간격은 화면 좌측 여백과 동일(AppSpacing.md, 16)이지만, PopupMenuButton의
+        // Material 메뉴 자체가 위쪽에 ~12px 내부 패딩을 갖고 있어(실측 확인, 테마 문서화된
+        // 값 아님) 그만큼을 미리 빼줘야 실제 렌더 간격이 16이 된다.
         offset: const Offset(0, kMinInteractiveDimension + AppSpacing.xxs),
-        initialValue: _CategoryMenuEntry.category(current),
         onSelected: (entry) => _onSelected(context, entry),
         itemBuilder: (context) => [
           for (final category in AppCategory.values)
