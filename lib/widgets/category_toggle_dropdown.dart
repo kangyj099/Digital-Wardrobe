@@ -6,18 +6,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'glass_pill.dart';
 
-/// 메뉴 항목 4개(옷장/코디/스타일일지/설정)를 전부 이 너비로 맞춰, 짧은 라벨도
-/// 메뉴 폭 전체를 기준으로 가운데 정렬되게 한다 — `PopupMenuItem`은 기본적으로
-/// child를 내용 크기만큼만 감싸(centerStart) 짧은 항목이 왼쪽으로 쏠리므로, 고정
-/// 너비 박스로 감싸는 게 유일한 신뢰 가능한 중앙정렬 방법이다.
-const double _menuItemWidth = 150;
-
-/// 체크 아이콘(선택된 항목 표시) + 아이콘-텍스트 간격이 차지하는 폭 — 텍스트 앞에
-/// 이 폭만큼을 항상 예약하고, 텍스트 뒤에도 똑같은 폭을 빈 공간으로 예약한다.
-/// 좌우가 대칭이라 아이콘이 있든 없든 텍스트 자체는 [_menuItemWidth] 정중앙에
-/// 고정된다(아이콘이 텍스트를 오른쪽으로 밀어내지 않음).
-const double _checkIconSlotWidth = 20; // Icon(16) + SizedBox(4)
-
 /// 헤더 좌측 카테고리 드롭다운 — 옷장/코디/스타일일지 전환 + 설정 진입.
 ///
 /// `DropdownButton<AppCategory>`는 `AppCategory` 값만 담을 수 있어 "설정"(카테고리가
@@ -32,51 +20,39 @@ class CategoryToggleDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GlassPill(
       child: PopupMenuButton<_CategoryMenuEntry>(
         tooltip: '',
+        // GlassPill이 이미 자체 padding을 갖고 있어, PopupMenuButton 기본 padding(8)까지
+        // 겹치면 버튼이 불필요하게 커진다 — 여기선 0으로 비운다.
+        padding: EdgeInsets.zero,
         // `initialValue`를 넘기면 Flutter가 "메뉴 top이 아니라 선택된 항목의 세로 중심"을
         // 버튼에 맞추려 해서(PopupMenuButton 공식 문서), 선택 위치에 따라 메뉴가 버튼에서
-        // 예측 불가능하게 멀어진다 — 선택 표시는 이미 체크 아이콘으로 직접 그리고 있으니
-        // `initialValue`를 넘기지 않아 "메뉴 top = 버튼 bottom" 단순 정렬로 되돌린다.
-        // offset은 GlassPill 높이(kMinInteractiveDimension, 48)만큼 아래로 민다. 목표
-        // 시각적 간격은 화면 좌측 여백과 동일(AppSpacing.md, 16)이지만, PopupMenuButton의
-        // Material 메뉴 자체가 위쪽에 ~12px 내부 패딩을 갖고 있어(실측 확인, 테마 문서화된
-        // 값 아님) 그만큼을 미리 빼줘야 실제 렌더 간격이 16이 된다.
+        // 예측 불가능하게 멀어진다 — 선택 표시는 없앴으니(체크 아이콘 제거) 넘길 필요가 아예
+        // 없다. offset은 GlassPill 높이(kMinInteractiveDimension, 48)만큼 아래로 민다.
+        // 목표 시각적 간격은 화면 좌측 여백과 동일(AppSpacing.md, 16)이지만, Material 메뉴
+        // 자체가 위쪽에 내부 패딩을 갖고 있어(실측 확인, 테마 문서화된 값 아님) 그만큼을
+        // 미리 빼줘야 실제 렌더 간격이 16이 된다 — 스타일 변경(색/모서리) 후 다시 실측함.
         offset: const Offset(0, kMinInteractiveDimension + AppSpacing.xxs),
+        // 박스 색/모서리를 버튼(GlassPill)과 비슷한 톤으로 — GlassPill이 쓰는 surface
+        // 색상·pill 모서리 반경과 같은 계열(단, 메뉴는 읽기 쉬워야 하니 GlassPill의
+        // 반투명(0.38)보다는 훨씬 불투명하게).
+        color: colorScheme.surface.withValues(alpha: 0.96),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
         onSelected: (entry) => _onSelected(context, entry),
         itemBuilder: (context) => [
           for (final category in AppCategory.values)
             PopupMenuItem(
               value: _CategoryMenuEntry.category(category),
-              child: SizedBox(
-                width: _menuItemWidth,
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: _checkIconSlotWidth,
-                        child: category == current ? const Icon(Icons.check, size: 16) : null,
-                      ),
-                      Text(category.label, style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(width: _checkIconSlotWidth),
-                    ],
-                  ),
-                ),
-              ),
+              child: Text(category.label, style: Theme.of(context).textTheme.titleMedium),
             ),
           PopupMenuDivider(
             color: Theme.of(context).extension<AppSemanticColors>()!.gray200,
           ),
           PopupMenuItem(
             value: const _CategoryMenuEntry.settings(),
-            child: SizedBox(
-              width: _menuItemWidth,
-              child: Center(
-                child: Text('설정', style: Theme.of(context).textTheme.bodySmall),
-              ),
-            ),
+            child: Text('설정', style: Theme.of(context).textTheme.bodySmall),
           ),
         ],
         child: Row(
