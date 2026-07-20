@@ -78,6 +78,11 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
           onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
           onClearSubSelection: () => _clearDrilldown(ref, criterion),
         ),
+        GlassCircleButton(
+          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
+          tooltip: ascending ? '오름차순' : '내림차순',
+          onTap: () => ref.read(closetSortAscendingProvider.notifier).state = !ascending,
+        ),
       ],
       secondaryControlsRight: [
         GlassCircleButton(
@@ -89,11 +94,6 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
             final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
             ref.read(closetDensityProvider.notifier).state = AppDensity.levels[previousIndex];
           },
-        ),
-        GlassCircleButton(
-          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
-          tooltip: ascending ? '오름차순' : '내림차순',
-          onTap: () => ref.read(closetSortAscendingProvider.notifier).state = !ascending,
         ),
       ],
       body: AppScrollContainer(

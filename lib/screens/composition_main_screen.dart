@@ -61,6 +61,11 @@ class CompositionMainScreen extends ConsumerWidget {
           onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
           onClearSubSelection: () => _clearDrilldown(ref, criterion),
         ),
+        GlassCircleButton(
+          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
+          tooltip: ascending ? '오름차순' : '내림차순',
+          onTap: () => ref.read(compositionSortAscendingProvider.notifier).state = !ascending,
+        ),
       ],
       secondaryControlsRight: [
         GlassCircleButton(
@@ -72,11 +77,6 @@ class CompositionMainScreen extends ConsumerWidget {
             final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
             ref.read(compositionDensityProvider.notifier).state = AppDensity.levels[previousIndex];
           },
-        ),
-        GlassCircleButton(
-          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
-          tooltip: ascending ? '오름차순' : '내림차순',
-          onTap: () => ref.read(compositionSortAscendingProvider.notifier).state = !ascending,
         ),
       ],
       body: AppScrollContainer(
