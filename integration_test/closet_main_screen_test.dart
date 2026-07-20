@@ -167,18 +167,18 @@ void main() {
       find.byType(CategoryToggleDropdown);
 
   // ClassificationDrilldownCapsule의 중분류 세그먼트(criterionLabels, 예: '전체보기'/
-  // '날짜·시간'/'옷 종류'/'계절'/'착용빈도') — 내부적으로 DropdownButton<int>.
+  // '날짜·시간'/'옷 종류'/'계절'/'착용빈도') — 내부적으로 PopupMenuButton<int>.
   //
-  // 주의(2026-07-19 트랩): find.byWidgetPredicate((w) => w is DropdownButton<int?>) 같은
-  // `is` 기반 predicate는 쓰면 안 된다 — Dart 제네릭 공변성 때문에 DropdownButton<int>
-  // 인스턴스도 `is DropdownButton<int?>`를 만족해버려 중분류/소분류 드롭다운이 동시에
+  // 주의(2026-07-19 트랩): find.byWidgetPredicate((w) => w is PopupMenuButton<int?>) 같은
+  // `is` 기반 predicate는 쓰면 안 된다 — Dart 제네릭 공변성 때문에 PopupMenuButton<int>
+  // 인스턴스도 `is PopupMenuButton<int?>`를 만족해버려 중분류/소분류 드롭다운이 동시에
   // 매칭되는 "ambiguously found multiple matching widgets" 에러가 난다. find.byType은
   // runtimeType 정확 일치라 이 문제가 없다.
-  Finder criterionDropdownFinder() => find.byType(DropdownButton<int>);
+  Finder criterionDropdownFinder() => find.byType(PopupMenuButton<int>);
 
   // 소분류 세그먼트(subOptionLabels, 예: 계절 값들+'미분류') — hasSubClassification일 때만
-  // 존재, 내부적으로 DropdownButton<int?>.
-  Finder subCriterionDropdownFinder() => find.byType(DropdownButton<int?>);
+  // 존재, 내부적으로 PopupMenuButton<int?>.
+  Finder subCriterionDropdownFinder() => find.byType(PopupMenuButton<int?>);
 
   /// 중분류 세그먼트에서 [label](예: '계절')을 선택한다.
   Future<void> selectCriterion(WidgetTester tester, String label) async {
@@ -235,16 +235,18 @@ void main() {
       await tester.tap(subCriterionDropdownFinder());
       await tester.pumpAndSettle();
 
-      final rawItems =
-          tester.widgetList<DropdownMenuItem<int?>>(find.byType(DropdownMenuItem<int?>));
+      final rawItems = tester.widgetList<PopupMenuItem<int?>>(find.byType(PopupMenuItem<int?>));
 
-      // 아직 드릴인 전(selectedSubOptionIndex==null)이라 "전체 그룹 보기" 항목(value==null)은
-      // 존재하지 않는다. 정렬 기본순서 표(_공통 규칙.md: "봄가을 → 여름 → 겨울")를 실제
-      // 렌더링 순서로 확인. 주의: 열린 DropdownButton 오버레이는 선택된 항목의
-      // DropdownMenuItem을 내부적으로 중복 렌더링하는 Flutter 프레임워크 동작이 있어, 순서
-      // 비교 전 최초 등장 순서를 보존한 채 중복을 제거한다(LinkedHashSet).
-      final orderedLabels =
-          LinkedHashSet<String>.from(rawItems.map((w) => (w.child as Text).data!)).toList();
+      // 아직 드릴인 전(selectedSubOptionIndex==null)이라 "전체 그룹 보기" 항목(value==
+      // _clearSentinel, `classification_drilldown_capsule.dart` 참고)은 존재하지 않는다.
+      // 정렬 기본순서 표(_공통 규칙.md: "봄가을 → 여름 → 겨울")를 실제 렌더링 순서로 확인.
+      // 항목 라벨은 PopupMenuItem.child(Container).child(Text)에 있다. 주의: 열린 메뉴
+      // 오버레이가 항목을 내부적으로 중복 렌더링할 가능성에 대비해(구 DropdownButton에서
+      // 실제 관찰됐던 동작), 순서 비교 전 최초 등장 순서를 보존한 채 중복을 제거한다
+      // (LinkedHashSet).
+      final orderedLabels = LinkedHashSet<String>.from(
+        rawItems.map((w) => ((w.child! as Container).child! as Text).data!),
+      ).toList();
 
       expect(orderedLabels, ['봄가을', '여름', '겨울', '미분류']);
     },

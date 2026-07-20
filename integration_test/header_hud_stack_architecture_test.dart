@@ -262,7 +262,7 @@ void main() {
       final pixelsBeforeDropdown = scrollable.position.pixels;
       expect(topOpacity(tester), closeTo(0.85, 0.001));
 
-      await tester.tap(find.byType(DropdownButton<int>));
+      await tester.tap(find.byType(PopupMenuButton<int>));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('옷 종류'), findsWidgets); // 드롭다운 오버레이 열림 확인(기본 중분류=전체보기)

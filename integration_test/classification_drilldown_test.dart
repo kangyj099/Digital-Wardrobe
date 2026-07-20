@@ -38,11 +38,11 @@ void main() {
     return container;
   }
 
-  // 옷장/코디 메인 둘 다 첫 DropdownButton<int>이 중분류, 있으면 DropdownButton<int?>이
+  // 옷장/코디 메인 둘 다 첫 PopupMenuButton<int>이 중분류, 있으면 PopupMenuButton<int?>이
   // 소분류 — `closet_main_screen_test.dart`와 동일 패턴(`is` predicate는 공변성 트랩 있음,
   // find.byType만 안전).
-  Finder criterionDropdownFinder() => find.byType(DropdownButton<int>);
-  Finder subCriterionDropdownFinder() => find.byType(DropdownButton<int?>);
+  Finder criterionDropdownFinder() => find.byType(PopupMenuButton<int>);
+  Finder subCriterionDropdownFinder() => find.byType(PopupMenuButton<int?>);
 
   Future<void> selectCriterion(WidgetTester tester, String label) async {
     await tester.tap(criterionDropdownFinder());

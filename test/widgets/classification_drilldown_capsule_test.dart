@@ -18,7 +18,10 @@ void main() {
     ));
 
     expect(find.text('전체보기'), findsOneWidget);
-    expect(find.byType(DropdownButton<int?>), findsNothing);
+    // 중분류=PopupMenuButton<int>(항상 존재), 소분류=PopupMenuButton<int?>(hasSubClassification
+    // 일 때만) — 서로 다른 정적 타입으로 구분된다.
+    expect(find.byType(PopupMenuButton<int>), findsOneWidget);
+    expect(find.byType(PopupMenuButton<int?>), findsNothing);
   });
 
   testWidgets('소분류가 있으면 hint가 표시된다(미선택=그룹 개요 상태)', (tester) async {
@@ -37,5 +40,7 @@ void main() {
     ));
 
     expect(find.text('종류'), findsOneWidget);
+    expect(find.byType(PopupMenuButton<int>), findsOneWidget);
+    expect(find.byType(PopupMenuButton<int?>), findsOneWidget);
   });
 }

@@ -54,12 +54,12 @@ void main() {
       find.byType(CategoryToggleDropdown);
 
   // ClassificationDrilldownCapsule의 중분류 세그먼트(criterionLabels, 예: '전체보기'/
-  // '날짜·시간'/'계절'/'날씨') — 내부적으로 DropdownButton<int>.
-  Finder criterionDropdownFinder() => find.byType(DropdownButton<int>);
+  // '날짜·시간'/'계절'/'날씨') — 내부적으로 PopupMenuButton<int>.
+  Finder criterionDropdownFinder() => find.byType(PopupMenuButton<int>);
 
   // 소분류 세그먼트(subOptionLabels, 예: 계절 값들+'미분류') — hasSubClassification일 때만
-  // 존재, 내부적으로 DropdownButton<int?>.
-  Finder subCriterionDropdownFinder() => find.byType(DropdownButton<int?>);
+  // 존재, 내부적으로 PopupMenuButton<int?>.
+  Finder subCriterionDropdownFinder() => find.byType(PopupMenuButton<int?>);
 
   Future<void> goToCategory(WidgetTester tester, String label) async {
     await tester.tap(categoryDropdownFinder());

@@ -110,13 +110,13 @@ void main() {
 
       // 분류 기준 캡슐 동작 확인(좁은 폭에서도 드롭다운 오버레이가 정상 표시되는지) — "계절"
       // 중분류를 고른 뒤 소분류로 "여름"까지 드릴인.
-      await tester.tap(find.byType(DropdownButton<int>));
+      await tester.tap(find.byType(PopupMenuButton<int>));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('계절').last);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byType(DropdownButton<int?>));
+      await tester.tap(find.byType(PopupMenuButton<int?>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('여름').last);
       await tester.pumpAndSettle();
@@ -145,7 +145,7 @@ void main() {
     (tester) async {
       await pumpApp(tester);
 
-      await tester.tap(find.byType(DropdownButton<int>));
+      await tester.tap(find.byType(PopupMenuButton<int>));
       await tester.pumpAndSettle();
       // 기본 중분류가 "전체보기"라, 열림 여부는 오버레이에서만 보이는 다른 옵션("옷 종류")으로
       // 판단한다.
