@@ -53,7 +53,10 @@ void main() {
       find.byType(CategoryToggleDropdown);
 
   testWidgets(
-    '옷장 메인에서 카테고리 드롭다운으로 옷장 자신을 재선택하면 실제로 아무 화면 전환도 일어나지 않는다',
+    '[갱신됨, 2026-07-20] 옷장 메인에서 카테고리 드롭다운으로 옷장 자신을 재선택하면 '
+    'GoRouter.refresh()로 새로고침되지만(사용자 지시 — 재선택도 "전환한 것처럼" 동작해야 '
+    '함), 실제 화면/위치는 그대로고 뒤로가기 스택도 쌓이지 않는다(canPop 계속 false) — '
+    '과거엔 재선택 자체를 완전히 무시했으나 그 동작이 폐기됨',
     (tester) async {
       await pumpApp(tester);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
@@ -67,6 +70,8 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
       expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      // refresh()는 새 라우트를 push하지 않으므로 뒤로가기 스택이 쌓이지 않아야 한다.
+      expect(find.byTooltip('뒤로가기'), findsNothing);
     },
   );
 

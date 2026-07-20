@@ -61,8 +61,10 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
         ClassificationDrilldownCapsule(
           criterionLabels: [for (final c in ClosetSortCriterion.values) c.label],
           selectedCriterionIndex: criterion.index,
-          onCriterionChanged: (index) =>
-              ref.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.values[index],
+          onCriterionChanged: (index) {
+            ref.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.values[index];
+            _resetAllDrilldowns(ref);
+          },
           hasSubClassification: criterion.hasSubClassification,
           subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
           subOptionLabels: _subOptionLabels(ref, criterion),
@@ -207,6 +209,18 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
       default:
         break;
     }
+  }
+
+  /// 중분류를 바꿀 때마다 모든 소분류 드릴인 상태를 초기화한다 — 그러지 않으면 "옷 종류"
+  /// 에서 "하의"로 드릴인한 뒤 "계절"로 갔다가 다시 "옷 종류"로 돌아왔을 때, 그룹 개요가
+  /// 아니라 이전에 골랐던 "하의" 드릴인 상태가 곧장 다시 나타나는 문제가 있었다(사용자
+  /// 지시, 2026-07-20 — "이전에 동일 중분류에서 선택한 소분류를 기억하고 있음"). 3개
+  /// provider 전부를 무조건 초기화하는 이유: 지금 중분류가 뭐든 상관없이 항상 깨끗한
+  /// 상태에서 시작해야 하고, 관련 없는 provider를 null로 되돌리는 건 부작용이 없다.
+  void _resetAllDrilldowns(WidgetRef ref) {
+    ref.read(closetDrilledCategoryProvider.notifier).state = null;
+    ref.read(closetDrilledSeasonProvider.notifier).state = null;
+    ref.read(closetDrilledYearProvider.notifier).state = null;
   }
 
   void _clearDrilldown(WidgetRef ref, ClosetSortCriterion criterion) {

@@ -45,8 +45,10 @@ class CompositionMainScreen extends ConsumerWidget {
         ClassificationDrilldownCapsule(
           criterionLabels: [for (final c in CompositionSortCriterion.values) c.label],
           selectedCriterionIndex: criterion.index,
-          onCriterionChanged: (index) => ref.read(compositionSortCriterionProvider.notifier).state =
-              CompositionSortCriterion.values[index],
+          onCriterionChanged: (index) {
+            ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.values[index];
+            _resetAllDrilldowns(ref);
+          },
           hasSubClassification: criterion.hasSubClassification,
           subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
           subOptionLabels: _subOptionLabels(ref, criterion),
@@ -175,6 +177,15 @@ class CompositionMainScreen extends ConsumerWidget {
       case CompositionSortCriterion.all:
         break;
     }
+  }
+
+  /// `closet_main_screen.dart`의 `_resetAllDrilldowns`와 동일한 이유(사용자 지시,
+  /// 2026-07-20) — 중분류를 바꿀 때마다 모든 소분류 드릴인 상태를 초기화해, 이전에
+  /// 같은 중분류에서 드릴인했던 값이 그대로 남아 있지 않게 한다.
+  void _resetAllDrilldowns(WidgetRef ref) {
+    ref.read(compositionDrilledSeasonProvider.notifier).state = null;
+    ref.read(compositionDrilledWeatherProvider.notifier).state = null;
+    ref.read(compositionDrilledYearProvider.notifier).state = null;
   }
 
   void _clearDrilldown(WidgetRef ref, CompositionSortCriterion criterion) {

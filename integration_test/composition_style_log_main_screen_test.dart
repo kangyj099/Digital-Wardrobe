@@ -394,8 +394,9 @@ void main() {
   );
 
   testWidgets(
-    '[회귀] 스타일일지에서 자기 자신을 카테고리 드롭다운으로 재선택하면 아무 화면 전환도 '
-    '일어나지 않는다(옷장 메인과 동일한 자기 자신 재선택 무시 동작)',
+    '[갱신됨, 2026-07-20] 스타일일지에서 자기 자신을 카테고리 드롭다운으로 재선택하면 '
+    'GoRouter.refresh()로 새로고침되지만 화면/위치는 그대로고 뒤로가기 스택도 쌓이지 '
+    '않는다(옷장 메인과 동일한 동작 — 과거 "완전 무시" 동작은 폐기됨)',
     (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
@@ -405,6 +406,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogMainScreen), findsOneWidget);
       expect(find.byType(StyleLogGalleryTile), findsNWidgets(2));
+      expect(find.byTooltip('뒤로가기'), findsNothing);
     },
   );
 

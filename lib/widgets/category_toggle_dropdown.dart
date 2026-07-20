@@ -90,7 +90,15 @@ class CategoryToggleDropdown extends StatelessWidget {
       return;
     }
     final category = entry.category!;
-    if (category == current) return;
+    if (category == current) {
+      // 같은 카테고리를 다시 골라도 "전환한 것처럼" 새로고침되게 한다(사용자 지시,
+      // 2026-07-20) — 위치 자체는 안 바뀌니 `context.go(...)`는 go_router가 동일 위치로
+      // 판단해 사실상 no-op이 될 수 있다. `GoRouter.refresh()`가 정확히 "위치는 그대로,
+      // 현재 라우트만 다시 빌드"하는 전용 API라 이 목적에 맞고, 새 스택 엔트리를 만들지
+      // 않는다(뒤로가기 스택 안 쌓임 — go()/push() 자체를 안 부르므로 당연히 만족).
+      GoRouter.of(context).refresh();
+      return;
+    }
     switch (category) {
       case AppCategory.closet:
         context.go(AppRoute.closetMain);

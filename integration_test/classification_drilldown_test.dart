@@ -338,4 +338,49 @@ void main() {
       expectSubDropdownShows(tester, '비');
     },
   );
+
+  // ── 중분류 재선택 시 소분류 초기화(사용자 지시, 2026-07-20) ──────────────────────
+
+  testWidgets(
+    '옷장 메인: "옷 종류"에서 "하의"로 드릴인한 뒤 "계절"로 갔다가 다시 "옷 종류"로 '
+    '돌아오면, 예전에 골랐던 "하의"가 아니라 그룹 개요(카드 5장)로 초기화되어 있다',
+    (tester) async {
+      await pumpApp(tester);
+
+      await selectCriterion(tester, '옷 종류');
+      await tapGroupCard(tester, '하의');
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(4));
+
+      await selectCriterion(tester, '계절');
+      expect(find.byType(ClassificationGroupCard), findsWidgets); // 계절도 그룹 개요로 시작
+
+      await selectCriterion(tester, '옷 종류');
+
+      expect(tester.takeException(), isNull);
+      // 버그였다면 여기서 SelectableGalleryTile 4개(예전 "하의" 드릴인)가 곧장 다시
+      // 나타났을 것 — 그룹 개요(카드 5장)로 초기화되어 있어야 한다.
+      expect(find.byType(ClassificationGroupCard), findsNWidgets(5));
+      expect(find.byType(SelectableGalleryTile), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '코디 메인: "날씨"에서 "맑음"으로 드릴인한 뒤 "계절"로 갔다가 다시 "날씨"로 돌아오면 '
+    '그룹 개요(카드 2장)로 초기화되어 있다',
+    (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+
+      await selectCriterion(tester, '날씨');
+      await tapGroupCard(tester, '맑음');
+      expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
+
+      await selectCriterion(tester, '계절');
+      await selectCriterion(tester, '날씨');
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClassificationGroupCard), findsNWidgets(2));
+      expect(find.byType(CompositionGalleryTile), findsNothing);
+    },
+  );
 }
