@@ -40,12 +40,30 @@ class CategoryToggleDropdown extends StatelessWidget {
         // 반투명(0.38)보다는 훨씬 불투명하게).
         color: colorScheme.surface.withValues(alpha: 0.96),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+        // 선택 항목 배경(아래 Container)이 꽉 찬 사각형이라, 첫/마지막 항목이 선택된 경우
+        // 메뉴의 둥근 모서리 밖으로 각지게 삐져나올 수 있다 — 메뉴 도형에 맞춰 클립.
+        clipBehavior: Clip.antiAlias,
         onSelected: (entry) => _onSelected(context, entry),
         itemBuilder: (context) => [
           for (final category in AppCategory.values)
             PopupMenuItem(
               value: _CategoryMenuEntry.category(category),
-              child: Text(category.label, style: Theme.of(context).textTheme.titleMedium),
+              // 기본 아이템 padding(가로만 16, PopupMenuItemState.build 참고)을 0으로 비우고
+              // 아래 Container가 전부 대체한다 — 그래야 선택 항목의 배경색이 좌우/상하 여백
+              // 없이 행 전체(48높이, 메뉴 폭 전체)를 꽉 채운다.
+              padding: EdgeInsets.zero,
+              child: Container(
+                width: double.infinity,
+                height: kMinInteractiveDimension,
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                // 현재 선택된 항목만 불투명(alpha 1.0) 배경색으로 구분 — 아직 아무 위젯도
+                // 안 쓰던 AppSemanticColors.primaryLight(연한 프라이머리 톤)를 사용.
+                color: category == current
+                    ? Theme.of(context).extension<AppSemanticColors>()!.primaryLight
+                    : null,
+                child: Text(category.label, style: Theme.of(context).textTheme.titleMedium),
+              ),
             ),
           PopupMenuDivider(
             color: Theme.of(context).extension<AppSemanticColors>()!.gray200,
