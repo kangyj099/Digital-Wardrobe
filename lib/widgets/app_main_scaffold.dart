@@ -43,6 +43,7 @@ class AppMainScaffold extends StatelessWidget {
     this.headerActions = const [],
     this.secondaryControlsLeft = const [],
     this.secondaryControlsRight = const [],
+    this.onReselectCurrentCategory,
     this.floatingActionButton,
   });
 
@@ -67,6 +68,13 @@ class AppMainScaffold extends StatelessWidget {
 
   /// Row 2 우측 슬롯 — 이미 각자 독립적으로 글래스 스타일링된 위젯 리스트.
   final List<Widget> secondaryControlsRight;
+
+  /// [CategoryToggleDropdown.onReselectCurrent] passthrough — 이 화면이 [current] 카테고리의
+  /// **메인** 화면일 때만 채워서 넘긴다(예: `ClosetMainScreen`이 `AppCategory.closet`). 헤더
+  /// 드롭다운에서 같은 카테고리를 다시 고르면 네비게이션 없이 이 콜백만 호출된다(뒤로가기
+  /// 스택 그대로 유지). Detail 등 메인이 아닌 화면은 이 값을 안 넘겨(null) 재선택 시
+  /// 그 카테고리의 메인으로 실제 이동+스택 리셋되게 한다(다른 카테고리 선택과 동일 동작).
+  final VoidCallback? onReselectCurrentCategory;
 
   /// FAB passthrough — `Scaffold.floatingActionButton`으로 그대로 전달.
   final Widget? floatingActionButton;
@@ -145,7 +153,10 @@ class AppMainScaffold extends StatelessWidget {
               Positioned(
                 top: row1Top,
                 left: AppSpacing.md,
-                child: CategoryToggleDropdown(current: current),
+                child: CategoryToggleDropdown(
+                  current: current,
+                  onReselectCurrent: onReselectCurrentCategory,
+                ),
               ),
             // Row 1: 헤더 액션(우) — 각 위젯이 이미 독립적으로 글래스 스타일링되어 있으므로
             // 이 Row는 배치용 레이아웃일 뿐 시각적 표면(배경/보더/그림자)을 추가하지 않는다.

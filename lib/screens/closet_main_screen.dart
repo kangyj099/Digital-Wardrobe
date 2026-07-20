@@ -57,6 +57,12 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
         selectionMode: widget.selectionMode,
         onClose: () => context.pop(),
       ),
+      // 이 화면이 옷장의 메인이라는 신호 — 헤더 드롭다운에서 "옷장"을 다시 골라도
+      // 네비게이션 없이 이 콜백만 호출된다(사용자 지시, 2026-07-20).
+      onReselectCurrentCategory: () {
+        ref.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.all;
+        _resetAllDrilldowns(ref);
+      },
       secondaryControlsLeft: [
         ClassificationDrilldownCapsule(
           criterionLabels: [for (final c in ClosetSortCriterion.values) c.label],

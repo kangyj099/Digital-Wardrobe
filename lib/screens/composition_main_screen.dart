@@ -41,6 +41,11 @@ class CompositionMainScreen extends ConsumerWidget {
         selectionMode: selectionMode,
         onClose: () => context.pop(),
       ),
+      // 이 화면이 코디의 메인이라는 신호 — `closet_main_screen.dart`와 동일 이유.
+      onReselectCurrentCategory: () {
+        ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.all;
+        _resetAllDrilldowns(ref);
+      },
       secondaryControlsLeft: [
         ClassificationDrilldownCapsule(
           criterionLabels: [for (final c in CompositionSortCriterion.values) c.label],

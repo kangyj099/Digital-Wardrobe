@@ -394,9 +394,10 @@ void main() {
   );
 
   testWidgets(
-    '[갱신됨, 2026-07-20] 스타일일지에서 자기 자신을 카테고리 드롭다운으로 재선택하면 '
-    'GoRouter.refresh()로 새로고침되지만 화면/위치는 그대로고 뒤로가기 스택도 쌓이지 '
-    '않는다(옷장 메인과 동일한 동작 — 과거 "완전 무시" 동작은 폐기됨)',
+    '[갱신됨, 2026-07-20 최종] 스타일일지 메인(자기 자신의 메인 화면)에서 자기 자신을 '
+    '카테고리 드롭다운으로 재선택하면 네비게이션 없이(뒤로가기 스택 그대로) 처리된다 — '
+    '이 화면은 플랫+필터형이라 초기화할 분류 상태 자체가 없지만, "메인에 있다"는 신호로서 '
+    '콜백이 채워져 있어(빈 콜백) 메인이 아닌 화면과 동일하게 취급되지 않는다',
     (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '스타일일지');
@@ -406,6 +407,49 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogMainScreen), findsOneWidget);
       expect(find.byType(StyleLogGalleryTile), findsNWidgets(2));
+      expect(find.byTooltip('뒤로가기'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '[신규, 2026-07-20] 코디 메인(자기 자신의 메인 화면)에서 코디를 재선택하면 네비게이션 '
+    '없이 분류 캡슐의 중분류/소분류 선택만 초기화된다(옷장 메인과 동일 동작)',
+    (tester) async {
+      final container = await pumpApp(tester);
+      await goToCategory(tester, '코디');
+
+      await selectCriterion(tester, '날씨');
+      await selectSubOption(tester, '맑음');
+      expect(container.read(compositionSortCriterionProvider), CompositionSortCriterion.weather);
+      expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
+
+      await goToCategory(tester, '코디');
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expect(container.read(compositionSortCriterionProvider), CompositionSortCriterion.all);
+      expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
+      expect(find.byTooltip('뒤로가기'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '[신규, 2026-07-20] 코디 상세 화면(메인이 아님)에서 헤더 드롭다운으로 "코디"(현재와 같은 '
+    '카테고리)를 재선택하면 실제로 코디 메인으로 이동하고 뒤로가기 스택이 리셋된다',
+    (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+
+      await tester.tap(find.byType(CompositionGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+      expect(find.byTooltip('뒤로가기'), findsOneWidget);
+
+      await goToCategory(tester, '코디');
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expect(find.byType(CompositionDetailScreen), findsNothing);
       expect(find.byTooltip('뒤로가기'), findsNothing);
     },
   );

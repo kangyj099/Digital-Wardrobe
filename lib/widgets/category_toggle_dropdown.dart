@@ -13,10 +13,22 @@ import 'glass_pill.dart';
 /// 별도 추가한다(`docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`
 /// §2). "설정"을 골라도 [current] 표시는 바뀌지 않는다 — 메뉴가 닫힌 뒤 보이는 텍스트는
 /// 항상 `current.label`이고, 선택된 메뉴 항목 값과 무관하다.
+///
+/// **같은 카테고리 재선택(사용자 지시, 2026-07-20)**: 이 위젯 자신은 "지금 메인 화면에
+/// 있는지"를 모른다(그건 화면 계층의 문제) — 그래서 호출부([onReselectCurrent])가 그
+/// 판단을 대신 내린다. [onReselectCurrent]가 있으면(메인 화면) 네비게이션 없이 그 콜백만
+/// 호출하고, 없으면(Detail 등 메인이 아닌 화면) 그 카테고리의 메인으로 실제 이동한다
+/// (다른 카테고리를 선택했을 때와 동일하게 스택 리셋).
 class CategoryToggleDropdown extends StatelessWidget {
-  const CategoryToggleDropdown({super.key, required this.current});
+  const CategoryToggleDropdown({super.key, required this.current, this.onReselectCurrent});
 
   final AppCategory current;
+
+  /// [current]와 같은 카테고리를 다시 골랐을 때 호출된다 — 이 값이 non-null이라는 것
+  /// 자체가 "지금 이 카테고리의 메인 화면에 있다"는 신호다(호출부가 그렇게 넘길 때만
+  /// 채워야 함). 메인 화면은 여기서 자신의 로컬 상태(분류 캡슐 중분류/소분류 등)를
+  /// 초기화하고, 네비게이션은 전혀 일어나지 않는다(뒤로가기 스택 그대로 유지).
+  final VoidCallback? onReselectCurrent;
 
   @override
   Widget build(BuildContext context) {
@@ -90,15 +102,16 @@ class CategoryToggleDropdown extends StatelessWidget {
       return;
     }
     final category = entry.category!;
-    if (category == current) {
-      // 같은 카테고리를 다시 골라도 "전환한 것처럼" 새로고침되게 한다(사용자 지시,
-      // 2026-07-20) — 위치 자체는 안 바뀌니 `context.go(...)`는 go_router가 동일 위치로
-      // 판단해 사실상 no-op이 될 수 있다. `GoRouter.refresh()`가 정확히 "위치는 그대로,
-      // 현재 라우트만 다시 빌드"하는 전용 API라 이 목적에 맞고, 새 스택 엔트리를 만들지
-      // 않는다(뒤로가기 스택 안 쌓임 — go()/push() 자체를 안 부르므로 당연히 만족).
-      GoRouter.of(context).refresh();
+    if (category == current && onReselectCurrent != null) {
+      // 메인 화면에서 같은 카테고리 재선택(사용자 지시, 2026-07-20) — 네비게이션은 전혀
+      // 안 하고(뒤로가기 스택 그대로) 호출부가 자기 로컬 상태만 초기화하게 맡긴다.
+      onReselectCurrent!();
       return;
     }
+    // 다른 카테고리를 선택했거나, 메인이 아닌 화면(Detail 등)에서 현재 카테고리를
+    // 재선택한 경우 — 둘 다 그 카테고리의 메인으로 실제 이동해 스택을 리셋한다. 후자는
+    // `category == current`라도 `onReselectCurrent`가 없다는 것 자체가 "아직 메인에 없다"는
+    // 뜻이라 go()가 진짜 네비게이션(스택 리셋)을 수행한다.
     switch (category) {
       case AppCategory.closet:
         context.go(AppRoute.closetMain);

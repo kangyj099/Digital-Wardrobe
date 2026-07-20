@@ -43,6 +43,11 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
         selectionMode: widget.selectionMode,
         onClose: () => context.pop(),
       ),
+      // 이 화면이 스타일일지의 메인이라는 신호 — `closet_main_screen.dart`와 동일 이유로
+      // 헤더 드롭다운 재선택 시 네비게이션 없이 처리되게 한다. 이 화면은 플랫+필터형이라
+      // 초기화할 중분류/소분류 상태 자체가 없어 콜백 본문은 비워둔다(그래도 "메인에 있다"는
+      // 신호로서 non-null이어야 재선택 시 메인으로의 불필요한 재이동을 막는다).
+      onReselectCurrentCategory: () {},
       secondaryControlsRight: [
         GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
       ],
