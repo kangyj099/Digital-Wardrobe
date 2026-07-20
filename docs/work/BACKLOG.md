@@ -18,7 +18,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Step⑦ 나머지 스코프 — 그룹 A(그룹형 드릴다운 캡슐 + 설정 진입점 이동) 완료 (2026-07-19).** `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`를 Task 1~7로 구현 — 옷장/코디 메인의 `groupingBar` skeleton을 `[중분류▾][소분류▾]` 캡슐+3상태(플랫/그룹개요/드릴인) 그리드로 교체, 설정 진입점을 `CategoryToggleDropdown` 메뉴로 이동. 전 Task Worker→Review 통과(일부 P0/P1 재작업 포함, Task 7은 추가로 Tester 12개 신규 테스트+Audit까지 통과, P0 없음). 커밋 4개(`7bc4e84`/`02470c9`/`64f6388`/`6d27c1a`), 문서 갱신(Decision.md/TechnicalDebt.md/구 스펙 2건 정정 각주) 완료. 상세 경위: `docs/superpowers/plans/2026-07-19-classification-drilldown-and-settings-entry.md`, `docs/history/Decision.md` 최상단 항목.
+**헤더 카테고리 드롭다운/분류 캡슐 UI 폴리시 + 재선택 동작 정교화 완료 (2026-07-20).** `CategoryToggleDropdown`/`ClassificationDrilldownCapsule`을 `DropdownButton`→`PopupMenuButton`으로 통일 전환(색상/모양/오프셋 일치, 메뉴가 토글 버튼 바로 아래·화면 좌측 여백만큼만 떨어져 열림, 체크아이콘 유무와 무관한 텍스트 중앙정렬), 설정 구분선 연한 톤 적용. 헤더에서 현재 카테고리를 재선택할 때의 동작을 `GoRouter.refresh()` 방식에서 "그 카테고리의 메인 화면에 있으면 제자리에서 분류 상태만 초기화(스택 유지), 메인이 아닌 화면(Detail 등)이면 메인으로 이동+스택 리셋"하는 2-케이스 방식으로 교체(`onReselectCurrentCategory` 콜백, `AppDetailScaffold`는 콜백을 안 넘겨 Detail 화면이 자동으로 "비메인" 취급됨). 전 유닛 테스트(66)와 영향 통합테스트(옷장/코디·스타일일지 메인, 분류 드릴다운, 옷장 셸 회귀 — 총 65개) 전부 통과, 최종 커밋 `aafe91f`.
 
 ---
 
