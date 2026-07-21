@@ -276,6 +276,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     final centerX = canvasSize.width * item.x;
     final centerY = canvasSize.height * item.y;
     return Positioned(
+      key: ValueKey(item.id),
       left: centerX - renderBoxSize / 2,
       top: centerY - renderBoxSize / 2,
       width: renderBoxSize,
@@ -394,6 +395,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     final centerY = canvasSize.height * item.y;
     final isSelected = item.id == widget.selectedItemId;
     return Positioned(
+      key: ValueKey(item.id),
       left: centerX - renderBoxSize / 2,
       top: centerY - renderBoxSize / 2,
       width: renderBoxSize,
@@ -726,6 +728,11 @@ Replace the `_positioned` method (renaming it to `_itemLayer`) with:
       centerY += _dragDelta.dy;
     }
     return Positioned(
+      // 같은 아이템이 자연 위치(시각)와 최상단 고정(상호작용) 두 곳에 각각 렌더링될
+      // 수 있어(선택된 아이템, 아래 build()의 마지막 추가 호출 참고) 단순
+      // ValueKey(item.id)만 쓰면 Stack 안에서 키가 중복돼 런타임 에러가 난다 —
+      // includeVisual로 역할을 구분해 키를 유일하게 만든다.
+      key: ValueKey('${item.id}:${includeVisual ? 'visual' : 'interactive'}'),
       left: centerX - renderBoxSize / 2,
       top: centerY - renderBoxSize / 2,
       width: renderBoxSize,
@@ -907,6 +914,7 @@ Replace the `_itemLayer` method with (adds live resize/rotate + handles; handles
     final handleOffset = math.max(renderBoxSize / 2, _minHandleOffset);
 
     return Positioned(
+      key: ValueKey('${item.id}:${includeVisual ? 'visual' : 'interactive'}'),
       left: centerX - layerSize / 2,
       top: centerY - layerSize / 2,
       width: layerSize,
