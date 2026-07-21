@@ -29,6 +29,7 @@ class Composition {
     this.coverImagePath,
     this.isIncomplete = false,
     this.isDeleted = false,
+    this.deletedAt,
   });
 
   final String id;
@@ -48,4 +49,39 @@ class Composition {
   final String? coverImagePath;
   final bool isIncomplete;
   final bool isDeleted;
+
+  /// 휴지통 이동 시각 — `isDeleted:true`와 함께 세팅, 복원 시 다시 null.
+  /// `daysUntilPurge` 계산 근거(`docs/providers/trash_providers.dart`).
+  final DateTime? deletedAt;
+
+  /// `copyWith`의 nullable 필드용 sentinel — 파라미터 기본값으로 써서 "안 넘김"과
+  /// "명시적으로 null 넘김"을 구분한다(`identical` 비교). 리스트업: season/weather/
+  /// coverImagePath/deletedAt 4개.
+  static const Object _unset = Object();
+
+  Composition copyWith({
+    String? id,
+    String? name,
+    List<CompositionItemPlacement>? items,
+    DateTime? createdAt,
+    Object? season = _unset,
+    Object? weather = _unset,
+    Object? coverImagePath = _unset,
+    bool? isIncomplete,
+    bool? isDeleted,
+    Object? deletedAt = _unset,
+  }) {
+    return Composition(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      items: items ?? this.items,
+      createdAt: createdAt ?? this.createdAt,
+      season: identical(season, _unset) ? this.season : season as Season?,
+      weather: identical(weather, _unset) ? this.weather : weather as Weather?,
+      coverImagePath: identical(coverImagePath, _unset) ? this.coverImagePath : coverImagePath as String?,
+      isIncomplete: isIncomplete ?? this.isIncomplete,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: identical(deletedAt, _unset) ? this.deletedAt : deletedAt as DateTime?,
+    );
+  }
 }

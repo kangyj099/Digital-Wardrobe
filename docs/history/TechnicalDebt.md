@@ -269,7 +269,7 @@ Task 2 리뷰(원래 문제 발견) → Task 9 fix round 1(세그먼트 매칭�
 
 [TechDebt] `ClothingItem.copyWith`가 nullable 필드(category/season/color/material)를 명시적으로 null로 되돌릴 수 없음
 
-상태: 미해결 (현재 호출부 없어 즉시 영향 없음)
+상태: 해소(2026-07-21) — sentinel 패턴 채택, `ClothingItem`(category/color/season/material/deletedAt)/`StyleLog`(linkedCompositionId/deletedAt)/`Composition`(season/weather/coverImagePath/deletedAt, 신규 작성) 전체 적용. 다중선택+휴지통 그룹 B의 `restoreMany`가 실제 소비자.
 
 내용:
 `docs/history/Decision.md`의 "ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)" 결정을 구현하면서(리토핑 커밋), `copyWith`는 기존 관례(`lib/models/style_log.dart`의 `linkedCompositionId ?? this.linkedCompositionId` 패턴)를 그대로 따라 `category: category ?? this.category`식 단순 `??` fallback을 유지했다. Dart의 흔한 nullable-copyWith 함정 그대로 — `copyWith(category: null)`을 호출해도 "안 건드림"과 구분이 안 돼 기존 값이 그대로 유지된다. 즉 한 번 값이 채워진 필드를 나중에 "미분류로 되돌리기"는 지금 구조로 불가능하다. Review(nullable화 리토핑 태스크, 2026-07-19)가 P2로 발견.

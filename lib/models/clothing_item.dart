@@ -15,6 +15,7 @@ class ClothingItem {
     this.wearCount = 0,
     this.isIncomplete = false,
     this.isDeleted = false,
+    this.deletedAt,
   });
 
   final String id;
@@ -34,13 +35,22 @@ class ClothingItem {
   final bool isIncomplete;
   final bool isDeleted;
 
+  /// 휴지통 이동 시각 — `isDeleted:true`와 함께 세팅, 복원 시 다시 null.
+  /// `daysUntilPurge` 계산 근거(`docs/providers/trash_providers.dart`).
+  final DateTime? deletedAt;
+
+  /// `copyWith`의 nullable 필드용 sentinel — 파라미터 기본값으로 써서 "안 넘김"과
+  /// "명시적으로 null 넘김"을 구분한다(`identical` 비교). 리스트업: category/color/season/
+  /// material/deletedAt 5개(`docs/history/TechnicalDebt.md` 원 버그 항목 참고).
+  static const Object _unset = Object();
+
   ClothingItem copyWith({
     String? id,
     String? name,
-    ClothingCategory? category,
-    String? color,
-    Season? season,
-    ClothingMaterial? material,
+    Object? category = _unset,
+    Object? color = _unset,
+    Object? season = _unset,
+    Object? material = _unset,
     String? imagePath,
     DateTime? createdAt,
     String? location,
@@ -48,14 +58,15 @@ class ClothingItem {
     int? wearCount,
     bool? isIncomplete,
     bool? isDeleted,
+    Object? deletedAt = _unset,
   }) {
     return ClothingItem(
       id: id ?? this.id,
       name: name ?? this.name,
-      category: category ?? this.category,
-      color: color ?? this.color,
-      season: season ?? this.season,
-      material: material ?? this.material,
+      category: identical(category, _unset) ? this.category : category as ClothingCategory?,
+      color: identical(color, _unset) ? this.color : color as String?,
+      season: identical(season, _unset) ? this.season : season as Season?,
+      material: identical(material, _unset) ? this.material : material as ClothingMaterial?,
       imagePath: imagePath ?? this.imagePath,
       createdAt: createdAt ?? this.createdAt,
       location: location ?? this.location,
@@ -63,6 +74,7 @@ class ClothingItem {
       wearCount: wearCount ?? this.wearCount,
       isIncomplete: isIncomplete ?? this.isIncomplete,
       isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: identical(deletedAt, _unset) ? this.deletedAt : deletedAt as DateTime?,
     );
   }
 }
