@@ -739,9 +739,9 @@ git commit -m "feat(providers): add softDeleteMany/restoreMany/purgeMany to all 
 - Consumes: Task 2의 3도메인 `softDeleteMany`/`purgeMany`.
 - Produces: `TrashEntry.daysUntilPurge`(`int`), `trashEntriesProvider`(`Provider.autoDispose<List<TrashEntry>>`), `purgeExpiredTrash(ProviderContainer container)`.
 
-- [ ] **Step 1: `TrashEntry` 필드명 변경**
+- [ ] **Step 1: `TrashEntry` 필드명 변경 + `createdAt` 필드 추가**
 
-`lib/models/trash_entry.dart` 전체를 다음으로 교체:
+`05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md` 31-34행은 정보 팝업에 이미지와 "제작된 날짜/시간(삭제일이 아닌 생성일)"을 요구하는데, 기존 `TrashEntry`엔 생성일 필드가 아예 없었다(홀리스틱 Audit 지적) — 이번에 함께 추가한다. `lib/models/trash_entry.dart` 전체를 다음으로 교체:
 ```dart
 import 'enums.dart';
 
@@ -752,12 +752,17 @@ class TrashEntry {
     required this.id,
     required this.category,
     required this.imagePath,
+    required this.createdAt,
     required this.daysUntilPurge,
   });
 
   final String id;
   final AppCategory category;
   final String imagePath;
+
+  /// 제작(생성)일 — 삭제일이 아니다(`ClothingItem.createdAt`/`Composition.createdAt`/
+  /// `StyleLog.wornDate`를 그대로 매핑). 휴지통 정보 팝업의 "제작된 날짜/시간" 표기 근거.
+  final DateTime createdAt;
 
   /// 영구 삭제(purge)까지 남은 일수 — `deletedAt` 기준 매번 다시 계산됨.
   final int daysUntilPurge;
@@ -870,6 +875,7 @@ final trashEntriesProvider = Provider.autoDispose<List<TrashEntry>>((ref) {
         id: item.id,
         category: AppCategory.closet,
         imagePath: item.imagePath,
+        createdAt: item.createdAt,
         daysUntilPurge: _daysUntilPurge(item.deletedAt!),
       ),
     for (final c in compositions)
@@ -877,6 +883,7 @@ final trashEntriesProvider = Provider.autoDispose<List<TrashEntry>>((ref) {
         id: c.id,
         category: AppCategory.composition,
         imagePath: c.coverImagePath ?? '',
+        createdAt: c.createdAt,
         daysUntilPurge: _daysUntilPurge(c.deletedAt!),
       ),
     for (final log in styleLogs)
@@ -884,6 +891,7 @@ final trashEntriesProvider = Provider.autoDispose<List<TrashEntry>>((ref) {
         id: log.id,
         category: AppCategory.styleLog,
         imagePath: log.coverImagePath,
+        createdAt: log.wornDate,
         daysUntilPurge: _daysUntilPurge(log.deletedAt!),
       ),
   ];
@@ -1901,6 +1909,7 @@ git commit -m "feat(toast): add GlassToast widget for undo-style notifications"
 
 **Files:**
 - Create: `lib/widgets/gallery_main_screen.dart`
+- Modify: `lib/widgets/selection_aware_header_actions.dart` (다중선택 신설로 "선택" 버튼 소유권이 옮겨감 — 이 헬퍼가 이제 X버튼 전용으로 좁아짐)
 - Modify: `lib/screens/closet_main_screen.dart` (전면 재작성)
 - Modify: `lib/screens/app_detail_scaffold.dart` (변경 없음 — 참고용, 이 Task에서 안 건드림)
 - Test: `integration_test/closet_multi_select_test.dart` (신규)
@@ -1908,6 +1917,30 @@ git commit -m "feat(toast): add GlassToast widget for undo-style notifications"
 **Interfaces:**
 - Consumes: Task 4(`bottomFloatingActions`), Task 5(그리드 어댑터 `multiSelectMode`/`selectedIds`/`onItemLongPress`), Task 6(`GlassToast`).
 - Produces: `GalleryMainScreen<T>({required current, required itemId, required gridBuilder, classification, showCategoryToggle, showBackButton, headerActions, selectionMode, fab, onItemTap, onReselectCurrentCategory, multiSelectDeleteLabel, onDeleteSelected})`.
+
+- [ ] **Step 0: `buildSelectionAwareHeaderActions`를 X버튼 전용으로 좁힘 (Audit 지적 — "선택" 버튼 중복 렌더링 방지)**
+
+기존 `buildSelectionAwareHeaderActions({required bool selectionMode, required VoidCallback onClose})`는 `selectionMode==false`일 때 "선택" `GlassPill`(no-op 스텁)을 반환했다. 그런데 Task 7 Step 1의 `GalleryMainScreen`은 `selectionMode==false`일 때 `[...widget.headerActions, GlassPill(선택, 진짜 동작)]`로 자기 자신도 "선택" 버튼을 추가한다 — 이 헬퍼를 그대로 두면 옷장/코디/스타일일지 3개 화면 전부 헤더에 "선택" 버튼이 2개(죽은 스텁 하나 + 진짜 하나) 뜬다(프로젝트 홀리스틱 Audit이 발견). 다중선택이 생긴 지금은 "선택" 버튼 렌더링을 `GalleryMainScreen`이 전담해야 하므로, 이 헬퍼는 피커 모달 닫기(X) 전용으로 좁힌다.
+
+`lib/widgets/selection_aware_header_actions.dart` 전체를 다음으로 교체:
+```dart
+import 'package:flutter/material.dart';
+import 'frosted_close_button.dart';
+
+/// Main 화면 3종(옷장/코디/스타일일지)의 재호출 피커 모달(`selectionMode`) 전용 헤더
+/// 액션 — 피커 모달일 때만 닫기(X) 버튼을 반환한다. "선택"(다중선택 진입) 버튼은 더 이상
+/// 이 헬퍼의 책임이 아니다 — `GalleryMainScreen`이 `selectionMode==false`일 때 자기
+/// 헤더 조립 로직 안에서 직접 렌더링한다(두 책임이 겹치면 "선택" 버튼이 중복 렌더링됨 —
+/// 실제로 그랬던 버그를 Audit이 잡음, 2026-07-21).
+List<Widget> buildSelectionAwareHeaderActions({
+  required bool selectionMode,
+  required VoidCallback onClose,
+}) {
+  return [
+    if (selectionMode) FrostedCloseButton(onTap: onClose),
+  ];
+}
+```
 
 - [ ] **Step 1: `GalleryMainScreen<T>` 작성**
 
@@ -2166,6 +2199,7 @@ import '../models/clothing_item.dart';
 import '../models/enums.dart';
 import '../providers/classification_models.dart';
 import '../providers/closet_providers.dart';
+import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/classification_group_grid.dart';
@@ -2242,15 +2276,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
           context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id));
         }
       },
-      onDeleteSelected: (ids) {
-        ref.read(closetItemsProvider.notifier).softDeleteMany(ids);
-        GlassToast.show(
-          context,
-          message: '${ids.length}개 항목이 휴지통으로 이동됨',
-          actionLabel: '실행취소',
-          onAction: () => ref.read(closetItemsProvider.notifier).restoreMany(ids),
-        );
-      },
+      onDeleteSelected: (ids) => _confirmAndDelete(context, ref, ids),
       gridBuilder: ({
         required density,
         required controller,
@@ -2289,6 +2315,37 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
                 ExpandableAddFabOption(label: multiLabel, onTap: () => context.push(AppRoute.closetAdd)),
               ],
             ),
+    );
+  }
+
+  /// 스펙(`05_삭제 & 휴지통.md` 42행)이 요구하는 사전 경고 — 선택된 옷 중 코디에 쓰이는
+  /// 게 있으면 확인을 받는다. "각 코디는 다음 편집 시 자동으로 제거돼요"라는 캐스케이드
+  /// 자동정리 약속은 "Editor Draft 구현" 후속 작업 전까지 실제로 없으므로 문구에서 뺀다
+  /// (프로젝트 홀리스틱 Audit 지적, 2026-07-21 — 이 단순 경고 자체는 Group B 스코프에 포함).
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref, Set<String> ids) async {
+    final linkedCount =
+        ids.where((id) => ref.read(compositionsContainingItemProvider(id)).isNotEmpty).length;
+    if (linkedCount > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('사용 중인 코디가 있어요'),
+          content: Text('선택한 항목 중 $linkedCount개가 사용 중인 코디에 쓰이고 있어요. 삭제하면 휴지통으로 이동해요.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('휴지통으로 이동')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    if (!context.mounted) return;
+    ref.read(closetItemsProvider.notifier).softDeleteMany(ids);
+    GlassToast.show(
+      context,
+      message: '${ids.length}개 항목이 휴지통으로 이동됨',
+      actionLabel: '실행취소',
+      onAction: () => ref.read(closetItemsProvider.notifier).restoreMany(ids),
     );
   }
 
@@ -2433,21 +2490,42 @@ void main() {
     expect(find.byType(MultiSelectCheckmark), findsWidgets);
   });
 
-  testWidgets('여러 개 선택 후 [삭제] 탭 시 실제로 휴지통 이동되고 모드가 종료된다', (tester) async {
+  testWidgets('코디에 안 쓰이는 항목 여러 개 선택 후 [삭제] 탭 시 확인 팝업 없이 바로 휴지통 이동되고 모드가 종료된다', (tester) async {
+    // c02/c06은 mock_data.dart의 어느 코디(comp01/comp02)에도 안 쓰임 — 확인 팝업 없이
+    // 즉시 삭제되는 경로를 검증(`ValueKey`로 정확히 지정, 그리드 순서에 안 기댐).
     final container = await pumpApp(tester);
-    final tiles = find.byType(SelectableGalleryTile);
-    await tester.longPress(tiles.first);
+    await tester.longPress(find.byKey(const ValueKey('c02')));
     await tester.pumpAndSettle();
-    await tester.tap(tiles.at(1));
+    await tester.tap(find.byKey(const ValueKey('c06')));
     await tester.pumpAndSettle();
     expect(find.text('2개 선택'), findsOneWidget);
 
     await tester.tap(find.text('삭제'));
     await tester.pumpAndSettle();
 
+    expect(find.text('사용 중인 코디가 있어요'), findsNothing);
     expect(find.text('1개 선택'), findsNothing);
     final deletedCount = container.read(closetItemsProvider).where((i) => i.isDeleted).length;
     expect(deletedCount, greaterThanOrEqualTo(2));
+  });
+
+  testWidgets('코디에 쓰이는 항목(c01) 선택 후 [삭제] 탭 시 확인 팝업이 뜨고, 확정해야 실제로 삭제된다', (tester) async {
+    // c01은 mock_data.dart의 comp01이 참조 중 — 사전 경고가 떠야 한다(스펙 §05 42행).
+    final container = await pumpApp(tester);
+    await tester.longPress(find.byKey(const ValueKey('c01')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('삭제'));
+    await tester.pumpAndSettle();
+    expect(find.text('사용 중인 코디가 있어요'), findsOneWidget);
+    // 아직 삭제 안 됨 — 확인 모달이 막고 있음.
+    expect(container.read(closetItemsProvider).firstWhere((i) => i.id == 'c01').isDeleted, isFalse);
+
+    await tester.tap(find.text('휴지통으로 이동'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1개 선택'), findsNothing);
+    expect(container.read(closetItemsProvider).firstWhere((i) => i.id == 'c01').isDeleted, isTrue);
   });
 
   testWidgets('X 탭으로 다중선택 모드를 취소하면 선택이 비워진다', (tester) async {
@@ -2989,6 +3067,7 @@ import '../providers/closet_providers.dart';
 import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../providers/trash_providers.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../widgets/app_gallery_grid.dart';
@@ -3085,6 +3164,24 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
                 '${entry.category.label} · 영구 삭제까지 ${entry.daysUntilPurge}일',
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
+              const SizedBox(height: AppSpacing.sm),
+              // 스펙(`05_삭제 & 휴지통.md` 31-34행)이 요구하는 "헤더 아래: 이미지 배치" +
+              // "제작된 날짜/시간(삭제일이 아닌 생성일)" — Audit이 기존 스텁에 이 두 요소가
+              // 빠져 있음을 지적해 추가함.
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: entry.imagePath.isEmpty
+                      ? Container(color: Theme.of(sheetContext).extension<AppSemanticColors>()!.gray200)
+                      : Image.asset(entry.imagePath, fit: BoxFit.cover),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                '${entry.createdAt.year}.${entry.createdAt.month}.${entry.createdAt.day} 제작',
+                style: Theme.of(sheetContext).textTheme.bodyMedium,
+              ),
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
@@ -3157,6 +3254,14 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
         for (final option in [null, AppCategory.closet, AppCategory.composition, AppCategory.styleLog])
           GlassPill(
             child: TextButton(
+              // 선택된 필터만 배경을 구분(`category_toggle_dropdown.dart`가 이미 쓰는
+              // `primaryLight` 하이라이트 패턴 재사용) — 홀리스틱 Audit이 선택 상태 표시가
+              // 없었다고 지적(P3).
+              style: TextButton.styleFrom(
+                backgroundColor: _filter == option
+                    ? Theme.of(context).extension<AppSemanticColors>()!.primaryLight
+                    : null,
+              ),
               onPressed: () => setState(() => _filter = option),
               child: Text(option?.label ?? '전체'),
             ),
@@ -3318,7 +3423,7 @@ void main() {
     expect(find.byType(TrashGalleryTile), findsWidgets);
   });
 
-  testWidgets('타일 탭 시 정보팝업에서 [복원]을 누르면 실제로 복원된다', (tester) async {
+  testWidgets('타일 탭 시 정보팝업에 이미지+제작일이 표시되고, [복원]을 누르면 실제로 복원된다', (tester) async {
     final container = await pumpApp(tester);
     container.read(closetItemsProvider.notifier).softDeleteMany({'c01'});
     container.read(appRouterProvider).push(AppRoute.trashMain);
@@ -3326,6 +3431,10 @@ void main() {
 
     await tester.tap(find.byType(TrashGalleryTile).first);
     await tester.pumpAndSettle();
+    // c01의 createdAt은 mock_data.dart 기준 2024.3.12 — 정보 팝업이 삭제일이 아니라
+    // 제작일을 보여줘야 한다(스펙 §05 31-34행, 홀리스틱 Audit이 이 표시 누락을 지적).
+    expect(find.text('2024.3.12 제작'), findsOneWidget);
+    expect(find.byType(Image), findsWidgets);
     await tester.tap(find.text('복원'));
     await tester.pumpAndSettle();
 
@@ -3497,15 +3606,34 @@ Expected: `closet_item_detail_screen.dart`/`composition_detail_screen.dart`/`sty
 
 - [ ] **Step 3: 3개 Detail 화면에 `onDelete` 배선**
 
-`lib/screens/closet_item_detail_screen.dart`의 `AppDetailScaffold(` 호출부(30행)를 다음으로 교체(import에 `'../widgets/glass_toast.dart';` 추가):
+`lib/screens/closet_item_detail_screen.dart`의 `AppDetailScaffold(` 호출부(30행)를 다음으로 교체(import에 `'../widgets/glass_toast.dart';` 추가). 이 화면이 이미 계산해둔 `linkedCompositions`(`compositionsContainingItemProvider(itemId)`)를 그대로 재사용해, 스펙(`05_삭제 & 휴지통.md` 42행)이 요구하는 "이 옷은 N개의 코디에 사용되고 있어요" 사전 경고를 붙인다(캐스케이드 자동정리 약속은 아직 없으므로 문구에서 뺌 — Task 7의 `_confirmAndDelete`와 동일 원칙, 프로젝트 홀리스틱 Audit 지적):
 ```dart
     return AppDetailScaffold(
       category: AppCategory.closet,
-      onDelete: () {
-        ref.read(closetItemsProvider.notifier).softDeleteMany({itemId});
-        context.pop();
-        GlassToast.show(context, message: '휴지통으로 이동됨');
-      },
+      onDelete: () => _confirmAndDelete(context, ref, itemId, linkedCompositions.length),
+```
+파일 하단(클래스 안, `build` 메서드 다음)에 다음 메서드 추가:
+```dart
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref, String itemId, int linkedCount) async {
+    if (linkedCount > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('사용 중인 코디가 있어요'),
+          content: Text('이 옷은 $linkedCount개의 코디에 사용되고 있어요. 삭제하면 휴지통으로 이동해요.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('휴지통으로 이동')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    if (!context.mounted) return;
+    ref.read(closetItemsProvider.notifier).softDeleteMany({itemId});
+    context.pop();
+    GlassToast.show(context, message: '휴지통으로 이동됨');
+  }
 ```
 
 `lib/screens/composition_detail_screen.dart`의 `AppDetailScaffold(` 호출부(40행)를 다음으로 교체(import에 `'../widgets/glass_toast.dart';` 추가):
@@ -3537,7 +3665,7 @@ Expected: 에러 없음.
 
 - [ ] **Step 5: Detail 삭제 메뉴 통합테스트 작성**
 
-`integration_test/detail_delete_menu_test.dart`(신규):
+`integration_test/detail_delete_menu_test.dart`(신규). mock_data.dart 기준 `c01`은 `comp01`이 참조 중이라 삭제 시 경고가 뜨고, `c02`는 어느 코디에도 안 쓰여 바로 삭제된다 — 두 경로를 각각 검증한다:
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -3547,12 +3675,11 @@ import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
-import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('옷 상세의 더보기 메뉴에서 삭제를 고르면 휴지통 이동+뒤로가기+토스트가 뜬다', (tester) async {
+  Future<ProviderContainer> pumpApp(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 4600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -3563,8 +3690,13 @@ void main() {
       UncontrolledProviderScope(container: container, child: const DigitalWardrobeApp()),
     );
     await tester.pumpAndSettle();
+    return container;
+  }
 
-    await tester.tap(find.byType(SelectableGalleryTile).first);
+  testWidgets('코디에 안 쓰이는 옷(c02) 상세의 더보기→삭제는 확인 팝업 없이 바로 휴지통 이동+뒤로가기+토스트', (tester) async {
+    final container = await pumpApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey('c02')));
     await tester.pumpAndSettle();
     expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
 
@@ -3573,13 +3705,37 @@ void main() {
     await tester.tap(find.text('삭제'));
     await tester.pumpAndSettle();
 
+    expect(find.text('사용 중인 코디가 있어요'), findsNothing);
     expect(find.byType(ClosetMainScreen), findsOneWidget);
     expect(find.byType(ClosetItemDetailScreen), findsNothing);
-    final deletedCount = container.read(closetItemsProvider).where((i) => i.isDeleted).length;
-    expect(deletedCount, greaterThanOrEqualTo(1));
+    expect(container.read(closetItemsProvider).firstWhere((i) => i.id == 'c02').isDeleted, isTrue);
+  });
+
+  testWidgets('코디에 쓰이는 옷(c01) 상세의 더보기→삭제는 확인 팝업이 뜨고, 확정해야 실제로 삭제+뒤로가기된다', (tester) async {
+    final container = await pumpApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey('c01')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+
+    await tester.tap(find.byTooltip('더보기 메뉴'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('삭제'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('사용 중인 코디가 있어요'), findsOneWidget);
+    expect(find.byType(ClosetItemDetailScreen), findsOneWidget); // 아직 안 지워짐, 화면 그대로
+
+    await tester.tap(find.text('휴지통으로 이동'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ClosetMainScreen), findsOneWidget);
+    expect(find.byType(ClosetItemDetailScreen), findsNothing);
+    expect(container.read(closetItemsProvider).firstWhere((i) => i.id == 'c01').isDeleted, isTrue);
   });
 }
 ```
+`SelectableGalleryTile`에 `key: ValueKey(item.id)`가 이미 있으므로(`GroupedGalleryGrid`, Task 5) `find.byKey(const ValueKey('c01'))`로 특정 아이템을 정확히 찾을 수 있다 — 그리드 순서에 의존하지 않는다.
 
 - [ ] **Step 6: 테스트 실행**
 
@@ -3700,6 +3856,21 @@ git commit -m "feat(settings): add trash entry row, making /trash reachable from
   스타일일지 연결끊김 처리) — 캐스케이드 배지 UX는 "Editor Draft 구현" 후속 이관 유지.
 
 ---
+
+[Decision] Group B 완료 시점에 밀려있던 Visual Review 트리거 — 홀리스틱 Audit(2026-07-21) 발견
+
+- Typography Pass 3(2026-07-13~14) 이후 신규 시각 요소(Detail 3화면, 분류 드릴다운 캡슐,
+  이번 그룹 B의 `GlassToast`/`MultiSelectCheckmark`/휴지통 필터칩 등)가 전부 Development
+  트랙(Worker→Review→Tester)만 거쳐 완료 처리됐고, `Workflow_Design.md` §2.1이 요구하는
+  명시적 Visual Review는 그 이후 한 번도 재트리거되지 않았다(§2.1: Development 트랙
+  통과가 Visual Review를 대체하지 않음).
+- 사용자 확정(2026-07-21): 그룹 B 완료 시점에 이 밀린 Visual Review를 한 번 트리거한다 —
+  Typography Pass 3 이후 누적된 모든 신규 화면/컴포넌트를 스코프로 삼는다.
+- 조치: 그룹 B의 Development 사이클(Review·Tester·Audit) 전부 통과 후, PM이
+  `Workflow_Design.md` §2 절차대로 별도 Visual Review를 착수한다 — 이 구현 계획
+  (Task 1~13)의 범위 밖(Design 트랙 작업이라 Development 계획에 안 섞음).
+
+---
 ```
 
 - [ ] **Step 3: `BACKLOG.md` 갱신**
@@ -3717,7 +3888,7 @@ git commit -m "feat(settings): add trash entry row, making /trash reachable from
 ```
 "Current" 섹션의 "다음 세션 작업" 1번 항목에서 "그룹 B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기): 아직 스펙 착수 전 — 다음 착수 대상." 줄을 다음으로 교체:
 ```
-   - ~~그룹 B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기)~~ **완료(2026-07-21)** — 위 "Last Completed" 참고. 다음은 그룹 C(설정 나머지)부터.
+   - ~~그룹 B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기)~~ **완료(2026-07-21)** — 위 "Last Completed" 참고. **다음 착수 전 Visual Review 먼저**(Typography Pass 3 이후 밀린 것, `Decision.md` 참고) — 통과 후 그룹 C(설정 나머지)로.
 ```
 
 - [ ] **Step 4: 커밋**
@@ -3734,3 +3905,4 @@ git commit -m "docs: record Group B completion in TechnicalDebt/Decision/BACKLOG
 - 스펙 커버리지: §2(아키텍처)=Task 7, §3.1~3.3=Task 1~2, §3.4~3.5=Task 3, §3.6=Task 7~10, §3.7=Task 3, §3.8=Task 12, §4=Task 5+7~10, §5=Task 6, §6=전체, §7=해당 없음(리뷰 이력 자체). 전 섹션 커버 확인.
 - Task 7~10은 서로 강하게 의존(순서 고정 필요) — Task 8/9/10 착수 전 Task 7이 반드시 완료·검증돼 있어야 한다.
 - Task 3 Step 6(mock 데이터 시드)이 Task 7/8의 기존 통합테스트 숫자 assertion을 깨뜨리는 걸 알고도 진행하는 구조 — Task 7/8의 Step 3/4가 그 해소를 명시적으로 포함하고 있음을 재확인함.
+- 프로젝트 전체 홀리스틱 Audit(2026-07-21) 반영 완료: (1) Task 7의 "선택" 버튼 중복 렌더링 버그(`selection_aware_header_actions.dart` 축소, Task 7 Step 0) — 좁은 스코프 리뷰 2회가 놓쳤던, 기존 헬퍼와 신규 셸의 조합에서만 드러나는 버그였음. (2) 휴지통 정보 팝업의 이미지/제작일 표시 누락(`TrashEntry.createdAt` 신설, Task 3/10). (3) 옷 삭제 시 사용 중인 코디 개수 사전 경고(Task 7/11, `compositionsContainingItemProvider` 재사용). (4) 휴지통 필터칩 선택 상태 표시(Task 10). (5) Visual Review 재개는 이 계획 범위 밖 — Group B 완료 후 별도 Design 트랙 작업(Decision.md 기록).
