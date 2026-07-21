@@ -1,6 +1,13 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
-[TechDebt] `composition_preview_carousel.dart`/`composition_detail_screen.dart`에 `AppSpacing` 미등재 매직넘버 — 로컬 named const로 유지 중
+[TechDebt] `InteractiveArtboard`(`lib/widgets/interactive_artboard/interactive_artboard.dart`)의 드래그 핸들러에 `onPanCancel` 부재 (P3)
+
+상태: 미해결 (낮은 우선순위로 기록만)
+
+내용:
+`docs/superpowers/plans/2026-07-19-composition-artboard-widget.md` Task 5 Review(2026-07-19)가 지적: `_bodyDragStart`/`_bodyDragUpdate`/`_bodyDragEnd`(및 Task 6의 `_resizeDrag*`/`_rotateDrag*`)가 `onPanStart`/`onPanUpdate`/`onPanEnd`만 연결하고 `onPanCancel`은 없다. 제스처가 비정상 종료(인식기가 arena에서 짐, 포인터 다운 중 위젯 서브트리 리빌드 등)되면 `_draggingItemId`/`_dragDelta`(또는 `_resizingItemId`/`_liveScale`, `_rotatingItemId`/`_liveRotation`) 상태가 리셋되지 않아, 다음 정상 드래그 사이클 전까지 아이템이 커밋된 모델 위치와 시각적으로 어긋난 채 남을 수 있다. 현재 제스처 아키텍처(Tap/Pan 인식기 공존, 타 위젯과의 arena 경합 없음)에서는 발생 확률이 낮지만, Task 7이 드래그 중 `Overlay.insert`를 수행해 서브트리를 건드리므로 이 종류의 트리거 확률이 상대적으로 커진다.
+
+조치 방향(착수 조건): 다음에 이 파일의 드래그 핸들러들을 손댈 때, 각 `GestureDetector`에 `onPanCancel`을 추가해 대응하는 상태(드래그/리사이즈/회전 각각)를 리셋하고 필요시 `_hideDeleteZoneOverlay()`도 호출하도록 정리. 지금은 P3(막지 않음)로 기록만.
 
 상태: 미해결
 
