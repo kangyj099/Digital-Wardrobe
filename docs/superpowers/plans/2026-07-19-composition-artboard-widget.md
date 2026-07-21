@@ -521,7 +521,9 @@ class ArtboardOverlapPopup extends StatefulWidget {
 }
 
 class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
-  late List<ArtboardItem> _order = List.of(widget.items);
+  // `late` 필요 이유: State 필드 초기화는 위젯이 attach되기 전에 실행되므로
+  // widget.items를 즉시 참조하는 non-late 초기화는 실패한다.
+  late final List<ArtboardItem> _order = List.of(widget.items);
 
   @override
   Widget build(BuildContext context) {
@@ -529,11 +531,13 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
       child: ReorderableListView(
         shrinkWrap: true,
         buildDefaultDragHandles: false,
-        onReorder: (oldIndex, newIndex) {
+        // `onReorder`는 이 프로젝트가 쓰는 Flutter SDK(3.44.4)에서 deprecated —
+        // `onReorderItem`이 newIndex를 이미 보정해서 넘겨주므로 수동 보정이 필요 없다
+        // (Worker가 flutter analyze 중 발견, SDK 공식 마이그레이션 예시와 일치).
+        onReorderItem: (oldIndex, newIndex) {
           setState(() {
-            final adjustedNewIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
             final moved = _order.removeAt(oldIndex);
-            _order.insert(adjustedNewIndex, moved);
+            _order.insert(newIndex, moved);
           });
           widget.onReorder(_order.map((item) => item.id).toList());
         },
