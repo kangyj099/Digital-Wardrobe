@@ -2,6 +2,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'artboard_item.dart';
 import 'artboard_item_view.dart';
 import 'artboard_overlap_popup.dart';
@@ -79,6 +80,9 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   String? _rotatingItemId;
   double _rotateStartAngleOffset = 0;
   double? _liveRotation;
+
+  OverlayEntry? _deleteZoneOverlayEntry;
+  bool _isOutOfBounds = false;
 
   @override
   Widget build(BuildContext context) {
@@ -368,9 +372,29 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     setState(() {
       _dragDelta += details.delta;
     });
+    final centerX = canvasSize.width * item.x + _dragDelta.dx;
+    final centerY = canvasSize.height * item.y + _dragDelta.dy;
+    final outOfBounds = _isCenterOutOfBounds(centerX, centerY, canvasSize);
+    if (outOfBounds && !_isOutOfBounds) {
+      HapticFeedback.mediumImpact();
+      _showDeleteZoneOverlay();
+    } else if (!outOfBounds && _isOutOfBounds) {
+      _hideDeleteZoneOverlay();
+    }
+    _isOutOfBounds = outOfBounds;
   }
 
   void _bodyDragEnd(ArtboardItem item, Size canvasSize) {
+    _hideDeleteZoneOverlay();
+    if (_isOutOfBounds) {
+      widget.onItemDeleted(item.id);
+      setState(() {
+        _draggingItemId = null;
+        _dragDelta = Offset.zero;
+        _isOutOfBounds = false;
+      });
+      return;
+    }
     final dxNormalized = _dragDelta.dx / canvasSize.width;
     final dyNormalized = _dragDelta.dy / canvasSize.height;
     final updated = widget.items.map((current) {
@@ -381,7 +405,34 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     setState(() {
       _draggingItemId = null;
       _dragDelta = Offset.zero;
+      _isOutOfBounds = false;
     });
+  }
+
+  bool _isCenterOutOfBounds(double centerX, double centerY, Size canvasSize) {
+    return centerX < 0 || centerX > canvasSize.width || centerY < 0 || centerY > canvasSize.height;
+  }
+
+  void _showDeleteZoneOverlay() {
+    _deleteZoneOverlayEntry = OverlayEntry(
+      builder: (context) => const Positioned.fill(
+        child: IgnorePointer(
+          child: _DeleteZoneVisual(),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(_deleteZoneOverlayEntry!);
+  }
+
+  void _hideDeleteZoneOverlay() {
+    _deleteZoneOverlayEntry?.remove();
+    _deleteZoneOverlayEntry = null;
+  }
+
+  @override
+  void dispose() {
+    _deleteZoneOverlayEntry?.remove();
+    super.dispose();
   }
 
   /// 아이템의 Hit Area(렌더 박스를 [_hitAreaInsetFactor]만큼 축소한, 회전 반영 사각형)
@@ -449,6 +500,29 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
           widget.onItemsChanged(updated);
         },
       ),
+    );
+  }
+}
+
+/// 아이템을 캔버스 밖으로 드래그할 때 [Overlay]에 그리는 딤드+휴지통 아이콘 시각
+/// 피드백(스펙 §4.6) — `interactive_artboard.dart`의 `RenderBox` 경계에 갇히지 않도록
+/// `Overlay`를 통해 화면 전체 위에 그린다.
+class _DeleteZoneVisual extends StatelessWidget {
+  const _DeleteZoneVisual();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(color: Colors.black.withValues(alpha: 0.4)),
+        const Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 32),
+            child: Icon(Icons.delete, color: Colors.white, size: 48),
+          ),
+        ),
+      ],
     );
   }
 }
