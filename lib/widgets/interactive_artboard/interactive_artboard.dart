@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'artboard_item.dart';
 import 'artboard_item_view.dart';
+import 'artboard_overlap_popup.dart';
 
 /// 렌더 박스 대비 Hit Area 축소 비율 — 배경제거 옷 이미지의 투명 여백을 터치판정에서
 /// 제외하기 위함(스펙 §2.2). 85%로 좁혀 실제 불투명 영역을 넉넉히 감싸되 여백은 배제.
@@ -138,7 +139,39 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
       widget.onSelectionChanged(null);
     } else if (matches.length == 1) {
       widget.onSelectionChanged(matches.first.id);
+    } else {
+      _openOverlapPopup(matches);
     }
-    // 2개 이상(겹침) 처리는 Task 4(겹침 팝업)에서 추가.
+  }
+
+  Future<void> _openOverlapPopup(List<ArtboardItem> matches) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => ArtboardOverlapPopup(
+        items: matches,
+        onSelect: (id) {
+          Navigator.of(sheetContext).pop();
+          widget.onSelectionChanged(id);
+        },
+        onReorder: (orderedIds) {
+          // 겹친 아이템들이 원래 갖고 있던 zIndex 값 집합을 그대로 재사용하고
+          // (0..N-1 같은 새 범위로 압축하지 않음), 순서만 새로 배정한다 — 캔버스에
+          // 이 팝업에 없는 다른 아이템들이 이미 그 zIndex 값 사이사이를 차지하고
+          // 있을 수 있어서, 새 범위로 압축하면 그 아이템들과 충돌해 전체 페인트
+          // 순서가 조용히 어긋난다(리뷰 P1 반영).
+          final originalZIndexesDescending = matches.map((item) => item.zIndex).toList()
+            ..sort((a, b) => b.compareTo(a));
+          final newZIndexById = <String, int>{
+            for (var i = 0; i < orderedIds.length; i++)
+              orderedIds[i]: originalZIndexesDescending[i],
+          };
+          final updated = widget.items.map((item) {
+            final newZ = newZIndexById[item.id];
+            return newZ == null ? item : item.copyWith(zIndex: newZ);
+          }).toList();
+          widget.onItemsChanged(updated);
+        },
+      ),
+    );
   }
 }
