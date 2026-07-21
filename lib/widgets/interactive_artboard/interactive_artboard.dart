@@ -12,6 +12,31 @@ import 'artboard_overlap_popup.dart';
 /// 필요하면 이 값을 조정한다.
 const double _hitAreaInsetFactor = 0.85;
 
+/// scale 하한/상한 — 너무 작아지면 조작 불가, 너무 커지면 캔버스를 벗어나 보기
+/// 어려워짐(스펙 §4.3).
+const double _minScale = 0.3;
+const double _maxScale = 3.0;
+
+/// 핸들이 아이템 중심에서 최소 이만큼은 떨어지도록 하는 오프셋(논리픽셀) — 44px
+/// 접근성 최소 터치영역 권장 기준의 절반(스펙 §4.4).
+const double _minHandleOffset = 24.0;
+
+/// 핸들 원형 시각/히트 크기(논리픽셀) — 44x44 접근성 최소 터치영역 기준을 그대로
+/// 적용(`flutter-implementation-conventions` Review 체크리스트 "터치 타겟 44×44
+/// 이상"). 32px로는 이 기준에 못 미쳤던 걸 리뷰에서 지적받아 수정.
+const double _handleVisualDiameter = 44.0;
+
+/// 회전 핸들이 상단 모서리에서 위로 뻗는 연결선 길이(논리픽셀).
+const double _rotateStemLength = 20.0;
+
+/// 아이템 렌더 박스를 감싸는 상호작용 레이어의 여유 마진(논리픽셀) — 핸들(특히
+/// 회전 핸들의 줏대)이 렌더 박스 경계 밖으로 튀어나오는데, `Positioned`에 크기를
+/// 명시하면 `RenderBox.hitTest`가 딱 그 크기 안에서만 자식으로 히트테스트를
+/// 위임한다(`Clip.none`은 페인트 오버플로만 허용하고 히트테스트엔 영향 없음) —
+/// 그래서 레이어 자체를 핸들 최대 도달 거리보다 넉넉히 키워서, 핸들이 항상 이
+/// 레이어의 히트테스트 가능 영역 안에 들어오게 한다(리뷰 P0 반영).
+const double _handleLayerMargin = _minHandleOffset + _rotateStemLength + _handleVisualDiameter;
+
 /// 코디 편집기 아트보드 — 배치/이동/회전/크기조절/겹침처리/삭제의 코어 상호작용을
 /// 제공하는 완전 독립 위젯. `Composition`/`ClothingItem` 모델에 의존하지 않는다.
 ///
@@ -45,6 +70,15 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   final GlobalKey _canvasKey = GlobalKey();
   String? _draggingItemId;
   Offset _dragDelta = Offset.zero;
+
+  String? _resizingItemId;
+  double _resizeStartDistance = 0;
+  double _resizeStartScale = 1;
+  double? _liveScale;
+
+  String? _rotatingItemId;
+  double _rotateStartAngleOffset = 0;
+  double? _liveRotation;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +128,11 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     );
   }
 
+  Offset _toCanvasLocal(Offset globalPosition) {
+    final renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+    return renderBox.globalToLocal(globalPosition);
+  }
+
   Widget _itemLayer(
     ArtboardItem item,
     Size canvasSize,
@@ -102,34 +141,52 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     required bool includeInteraction,
     bool includeVisual = true,
   }) {
-    final renderBoxSize = baseItemSize * item.scale;
+    final effectiveScale =
+        (item.id == _resizingItemId && _liveScale != null) ? _liveScale! : item.scale;
+    final effectiveRotation = (item.id == _rotatingItemId && _liveRotation != null)
+        ? _liveRotation!
+        : item.rotation;
+    final renderBoxSize = baseItemSize * effectiveScale;
     final hitAreaSize = renderBoxSize * _hitAreaInsetFactor;
+    final layerSize = renderBoxSize + 2 * _handleLayerMargin;
+    final layerCenter = layerSize / 2;
     var centerX = canvasSize.width * item.x;
     var centerY = canvasSize.height * item.y;
     if (item.id == _draggingItemId) {
       centerX += _dragDelta.dx;
       centerY += _dragDelta.dy;
     }
+    final handleOffset = math.max(renderBoxSize / 2, _minHandleOffset);
+
     return Positioned(
       // 같은 아이템이 자연 위치(시각)와 최상단 고정(상호작용) 두 곳에 각각 렌더링될
       // 수 있어(선택된 아이템, 아래 build()의 마지막 추가 호출 참고) 단순
       // ValueKey(item.id)만 쓰면 Stack 안에서 키가 중복돼 런타임 에러가 난다 —
       // includeVisual로 역할을 구분해 키를 유일하게 만든다.
       key: ValueKey('${item.id}:${includeVisual ? 'visual' : 'interactive'}'),
-      left: centerX - renderBoxSize / 2,
-      top: centerY - renderBoxSize / 2,
-      width: renderBoxSize,
-      height: renderBoxSize,
+      left: centerX - layerSize / 2,
+      top: centerY - layerSize / 2,
+      width: layerSize,
+      height: layerSize,
       child: Transform.rotate(
-        angle: item.rotation,
+        angle: effectiveRotation,
         alignment: Alignment.center,
         child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
           children: [
-            if (includeVisual) ArtboardItemView(item: item, renderBoxSize: renderBoxSize),
+            if (includeVisual)
+              Positioned(
+                left: layerCenter - renderBoxSize / 2,
+                top: layerCenter - renderBoxSize / 2,
+                width: renderBoxSize,
+                height: renderBoxSize,
+                child: ArtboardItemView(item: item, renderBoxSize: renderBoxSize),
+              ),
             if (includeVisual && isSelected)
-              Positioned.fill(
+              Positioned(
+                left: layerCenter - renderBoxSize / 2,
+                top: layerCenter - renderBoxSize / 2,
+                width: renderBoxSize,
+                height: renderBoxSize,
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -142,7 +199,9 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
                 ),
               ),
             if (includeInteraction)
-              SizedBox(
+              Positioned(
+                left: layerCenter - hitAreaSize / 2,
+                top: layerCenter - hitAreaSize / 2,
                 width: hitAreaSize,
                 height: hitAreaSize,
                 child: GestureDetector(
@@ -152,10 +211,150 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
                   onPanEnd: (_) => _bodyDragEnd(item, canvasSize),
                 ),
               ),
+            if (includeInteraction && isSelected)
+              ..._buildHandles(item, layerCenter, handleOffset, canvasSize),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildHandles(
+    ArtboardItem item,
+    double center,
+    double handleOffset,
+    Size canvasSize,
+  ) {
+    return [
+      // 이동 핸들 — 좌하단
+      _handle(
+        left: center - handleOffset - _handleVisualDiameter / 2,
+        top: center + handleOffset - _handleVisualDiameter / 2,
+        onPanStart: (_) => _bodyDragStart(item),
+        onPanUpdate: (details) => _bodyDragUpdate(item, details, canvasSize),
+        onPanEnd: (_) => _bodyDragEnd(item, canvasSize),
+      ),
+      // 크기조절 핸들 — 우하단
+      _handle(
+        left: center + handleOffset - _handleVisualDiameter / 2,
+        top: center + handleOffset - _handleVisualDiameter / 2,
+        onPanStart: (details) => _resizeDragStart(item, details, canvasSize),
+        onPanUpdate: (details) => _resizeDragUpdate(item, details, canvasSize),
+        onPanEnd: (_) => _resizeDragEnd(item),
+      ),
+      // 회전 핸들 — 상단 중앙에서 위로 뻗은 연결선 끝
+      _handle(
+        left: center - _handleVisualDiameter / 2,
+        top: center - handleOffset - _rotateStemLength - _handleVisualDiameter / 2,
+        onPanStart: (details) => _rotateDragStart(item, details, canvasSize),
+        onPanUpdate: (details) => _rotateDragUpdate(item, details, canvasSize),
+        onPanEnd: (_) => _rotateDragEnd(item),
+      ),
+    ];
+  }
+
+  Widget _handle({
+    required double left,
+    required double top,
+    required GestureDragStartCallback onPanStart,
+    required GestureDragUpdateCallback onPanUpdate,
+    required GestureDragEndCallback onPanEnd,
+  }) {
+    return Positioned(
+      left: left,
+      top: top,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanStart: onPanStart,
+        onPanUpdate: onPanUpdate,
+        onPanEnd: onPanEnd,
+        child: Container(
+          width: _handleVisualDiameter,
+          height: _handleVisualDiameter,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            shape: BoxShape.circle,
+            border: Border.fromBorderSide(
+              BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _resizeDragStart(ArtboardItem item, DragStartDetails details, Size canvasSize) {
+    final canvasCenter = Offset(canvasSize.width * item.x, canvasSize.height * item.y);
+    final pointerLocal = _toCanvasLocal(details.globalPosition);
+    _resizeStartDistance = (pointerLocal - canvasCenter).distance;
+    _resizeStartScale = item.scale;
+    setState(() {
+      _resizingItemId = item.id;
+      _liveScale = item.scale;
+    });
+  }
+
+  void _resizeDragUpdate(ArtboardItem item, DragUpdateDetails details, Size canvasSize) {
+    if (_resizeStartDistance == 0) return;
+    final canvasCenter = Offset(canvasSize.width * item.x, canvasSize.height * item.y);
+    final pointerLocal = _toCanvasLocal(details.globalPosition);
+    final currentDistance = (pointerLocal - canvasCenter).distance;
+    final rawScale = _resizeStartScale * (currentDistance / _resizeStartDistance);
+    setState(() {
+      _liveScale = rawScale.clamp(_minScale, _maxScale);
+    });
+  }
+
+  void _resizeDragEnd(ArtboardItem item) {
+    final finalScale = _liveScale ?? item.scale;
+    final updated = widget.items.map((current) {
+      if (current.id != item.id) return current;
+      return current.copyWith(scale: finalScale);
+    }).toList();
+    widget.onItemsChanged(updated);
+    setState(() {
+      _resizingItemId = null;
+      _liveScale = null;
+    });
+  }
+
+  void _rotateDragStart(ArtboardItem item, DragStartDetails details, Size canvasSize) {
+    final canvasCenter = Offset(canvasSize.width * item.x, canvasSize.height * item.y);
+    final pointerLocal = _toCanvasLocal(details.globalPosition);
+    final pointerAngle = math.atan2(
+      pointerLocal.dy - canvasCenter.dy,
+      pointerLocal.dx - canvasCenter.dx,
+    );
+    _rotateStartAngleOffset = pointerAngle - item.rotation;
+    setState(() {
+      _rotatingItemId = item.id;
+      _liveRotation = item.rotation;
+    });
+  }
+
+  void _rotateDragUpdate(ArtboardItem item, DragUpdateDetails details, Size canvasSize) {
+    final canvasCenter = Offset(canvasSize.width * item.x, canvasSize.height * item.y);
+    final pointerLocal = _toCanvasLocal(details.globalPosition);
+    final pointerAngle = math.atan2(
+      pointerLocal.dy - canvasCenter.dy,
+      pointerLocal.dx - canvasCenter.dx,
+    );
+    setState(() {
+      _liveRotation = pointerAngle - _rotateStartAngleOffset;
+    });
+  }
+
+  void _rotateDragEnd(ArtboardItem item) {
+    final finalRotation = _liveRotation ?? item.rotation;
+    final updated = widget.items.map((current) {
+      if (current.id != item.id) return current;
+      return current.copyWith(rotation: finalRotation);
+    }).toList();
+    widget.onItemsChanged(updated);
+    setState(() {
+      _rotatingItemId = null;
+      _liveRotation = null;
+    });
   }
 
   void _bodyDragStart(ArtboardItem item) {
