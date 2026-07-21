@@ -43,6 +43,8 @@ class InteractiveArtboard extends StatefulWidget {
 
 class _InteractiveArtboardState extends State<InteractiveArtboard> {
   final GlobalKey _canvasKey = GlobalKey();
+  String? _draggingItemId;
+  Offset _dragDelta = Offset.zero;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +54,9 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
         final baseItemSize = canvasSize.shortestSide * widget.baseItemSizeFraction;
         final sortedItems = [...widget.items]
           ..sort((a, b) => a.zIndex.compareTo(b.zIndex));
+        final selectedIndex =
+            widget.items.indexWhere((item) => item.id == widget.selectedItemId);
+        final selectedItem = selectedIndex == -1 ? null : widget.items[selectedIndex];
 
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -61,7 +66,27 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
             clipBehavior: Clip.none,
             children: [
               for (final item in sortedItems)
-                _positioned(item, canvasSize, baseItemSize),
+                _itemLayer(
+                  item,
+                  canvasSize,
+                  baseItemSize,
+                  isSelected: item.id == widget.selectedItemId,
+                  includeInteraction: item.id != widget.selectedItemId,
+                ),
+              // 선택된 아이템의 몸체 히트테스트 영역은 paint 순서(zIndex)와 분리해
+              // 항상 Stack 최상단에 별도로 그린다 — 팝업으로 선택한 아래쪽 아이템이
+              // 위쪽 아이템에 가려져 있어도 계속 드래그로 조작할 수 있게 하기 위함
+              // (스펙 §4.1). 이미지/아웃라인은 위 루프에서 이미 그렸으므로 여기선
+              // 상호작용 레이어만 중복 없이 추가한다(includeVisual: false).
+              if (selectedItem != null)
+                _itemLayer(
+                  selectedItem,
+                  canvasSize,
+                  baseItemSize,
+                  isSelected: true,
+                  includeInteraction: true,
+                  includeVisual: false,
+                ),
             ],
           ),
         );
@@ -69,13 +94,28 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     );
   }
 
-  Widget _positioned(ArtboardItem item, Size canvasSize, double baseItemSize) {
+  Widget _itemLayer(
+    ArtboardItem item,
+    Size canvasSize,
+    double baseItemSize, {
+    required bool isSelected,
+    required bool includeInteraction,
+    bool includeVisual = true,
+  }) {
     final renderBoxSize = baseItemSize * item.scale;
-    final centerX = canvasSize.width * item.x;
-    final centerY = canvasSize.height * item.y;
-    final isSelected = item.id == widget.selectedItemId;
+    final hitAreaSize = renderBoxSize * _hitAreaInsetFactor;
+    var centerX = canvasSize.width * item.x;
+    var centerY = canvasSize.height * item.y;
+    if (item.id == _draggingItemId) {
+      centerX += _dragDelta.dx;
+      centerY += _dragDelta.dy;
+    }
     return Positioned(
-      key: ValueKey(item.id),
+      // 같은 아이템이 자연 위치(시각)와 최상단 고정(상호작용) 두 곳에 각각 렌더링될
+      // 수 있어(선택된 아이템, 아래 build()의 마지막 추가 호출 참고) 단순
+      // ValueKey(item.id)만 쓰면 Stack 안에서 키가 중복돼 런타임 에러가 난다 —
+      // includeVisual로 역할을 구분해 키를 유일하게 만든다.
+      key: ValueKey('${item.id}:${includeVisual ? 'visual' : 'interactive'}'),
       left: centerX - renderBoxSize / 2,
       top: centerY - renderBoxSize / 2,
       width: renderBoxSize,
@@ -87,8 +127,8 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            ArtboardItemView(item: item, renderBoxSize: renderBoxSize),
-            if (isSelected)
+            if (includeVisual) ArtboardItemView(item: item, renderBoxSize: renderBoxSize),
+            if (includeVisual && isSelected)
               Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(
@@ -101,10 +141,48 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
                   ),
                 ),
               ),
+            if (includeInteraction)
+              SizedBox(
+                width: hitAreaSize,
+                height: hitAreaSize,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (_) => _bodyDragStart(item),
+                  onPanUpdate: (details) => _bodyDragUpdate(item, details, canvasSize),
+                  onPanEnd: (_) => _bodyDragEnd(item, canvasSize),
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  void _bodyDragStart(ArtboardItem item) {
+    setState(() {
+      _draggingItemId = item.id;
+      _dragDelta = Offset.zero;
+    });
+  }
+
+  void _bodyDragUpdate(ArtboardItem item, DragUpdateDetails details, Size canvasSize) {
+    setState(() {
+      _dragDelta += details.delta;
+    });
+  }
+
+  void _bodyDragEnd(ArtboardItem item, Size canvasSize) {
+    final dxNormalized = _dragDelta.dx / canvasSize.width;
+    final dyNormalized = _dragDelta.dy / canvasSize.height;
+    final updated = widget.items.map((current) {
+      if (current.id != item.id) return current;
+      return current.copyWith(x: current.x + dxNormalized, y: current.y + dyNormalized);
+    }).toList();
+    widget.onItemsChanged(updated);
+    setState(() {
+      _draggingItemId = null;
+      _dragDelta = Offset.zero;
+    });
   }
 
   /// 아이템의 Hit Area(렌더 박스를 [_hitAreaInsetFactor]만큼 축소한, 회전 반영 사각형)
