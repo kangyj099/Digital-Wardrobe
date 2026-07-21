@@ -51,7 +51,7 @@ class Composition {
   final bool isDeleted;
 
   /// 휴지통 이동 시각 — `isDeleted:true`와 함께 세팅, 복원 시 다시 null.
-  /// `daysUntilPurge` 계산 근거(`docs/providers/trash_providers.dart`).
+  /// `daysUntilPurge` 계산 근거(`lib/providers/trash_providers.dart`).
   final DateTime? deletedAt;
 
   /// `copyWith`의 nullable 필드용 sentinel — 파라미터 기본값으로 써서 "안 넘김"과
