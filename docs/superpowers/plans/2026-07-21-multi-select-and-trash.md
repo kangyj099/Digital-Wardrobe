@@ -929,12 +929,9 @@ Expected: PASS
 
 - [ ] **Step 6: `mock_data.dart` 갱신 — `mockTrashEntries` 삭제 + `deletedAt` 시드**
 
-`lib/mock/mock_data.dart`의 69~76행(휴지통 mock 블록)을 삭제하고, `mockClothingItems`/`mockCompositions`/`mockStyleLogs` 중 각 1개 이상에 `isDeleted`+`deletedAt`을 심는다. 파일 하단(69행 이후)을 다음으로 교체:
-```dart
-```
-(빈 내용 — `mockTrashEntries` 블록 자체를 지운다. 5~6번째 줄의 `import '../models/trash_entry.dart';`도 더 이상 안 쓰이면 제거.)
+`lib/mock/mock_data.dart`의 69~76행(휴지통 mock 블록, `// 휴지통 mock —` 주석부터 `mockTrashEntries` 배열 끝까지)을 삭제하고, `mockClothingItems`/`mockCompositions`/`mockStyleLogs` 중 각 1개 이상에 `isDeleted`+`deletedAt`을 심는다. 69~76행을 통째로 지운다(빈 내용으로 교체). 5번째 줄의 `import '../models/trash_entry.dart';`도 더 이상 안 쓰이면 제거.
 
-`mockClothingItems`의 `c07`(리넨 반바지) 항목을 정상범위 삭제 예시로, `c08`(슬립 드레스)을 15일 초과(자동정리 시연) 예시로 바꾼다 — 8번째/15번째 줄을 각각:
+`mockClothingItems`의 `c07`(리넨 반바지, 실제 14행)을 정상범위 삭제 예시로, `c08`(슬립 드레스, 실제 15행)을 15일 초과(자동정리 시연) 예시로 바꾼다 — `id: 'c07'`/`id: 'c08'` 텍스트로 정확히 그 줄을 찾아 각각 교체:
 ```dart
   ClothingItem(id: 'c07', name: '리넨 반바지', category: ClothingCategory.bottom, color: 'blue', season: Season.summer, material: ClothingMaterial.linen, imagePath: 'assets/images/mock/IMG_4275.PNG', createdAt: DateTime(2025, 7, 22), wearCount: 6, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 3))),
 ```
@@ -1219,7 +1216,22 @@ Expected: PASS
 
 `test/widgets/selectable_gallery_tile_test.dart`에 다음 테스트 추가(파일이 없으면 신규 생성, 있으면 하단에 추가 — 기존 import에 `mockClothingItems`류 픽스처가 있으면 그걸 쓰고, 없으면 아래처럼 직접 `ClothingItem` 인스턴스 생성):
 ```dart
-testWidgets('selected=true면 체크서클이 보이고 롱프레스가 onLongPress를 호출한다', (tester) async {
+testWidgets('multiSelectMode=false면 selected=true여도 체크서클이 안 보인다', (tester) async {
+  final item = ClothingItem(
+    id: 'c1',
+    name: '테스트',
+    imagePath: '',
+    createdAt: DateTime(2026, 1, 1),
+  );
+  await tester.pumpWidget(
+    MaterialApp(
+      home: SelectableGalleryTile(item: item, onTap: () {}, selected: true),
+    ),
+  );
+  expect(find.byType(MultiSelectCheckmark), findsNothing);
+});
+
+testWidgets('multiSelectMode=true, selected=true면 체크서클이 보이고 롱프레스가 onLongPress를 호출한다', (tester) async {
   var longPressed = false;
   final item = ClothingItem(
     id: 'c1',
@@ -1232,6 +1244,7 @@ testWidgets('selected=true면 체크서클이 보이고 롱프레스가 onLongPr
       home: SelectableGalleryTile(
         item: item,
         onTap: () {},
+        multiSelectMode: true,
         selected: true,
         onLongPress: () => longPressed = true,
       ),
@@ -1268,6 +1281,7 @@ class SelectableGalleryTile extends StatelessWidget {
     required this.onTap,
     this.onIncompleteTap,
     this.onLongPress,
+    this.multiSelectMode = false,
     this.selected = false,
   });
 
@@ -1275,6 +1289,11 @@ class SelectableGalleryTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onIncompleteTap;
   final VoidCallback? onLongPress;
+
+  /// true일 때만 체크서클을 그린다(모드 자체가 아니면 [selected]가 false여도 원을 아예
+  /// 안 그림 — `MultiSelectCheckmark`은 "선택됨/안됨"만 알 뿐 "모드 중인지"는 모르므로
+  /// 이 타일이 그 판단을 대신한다).
+  final bool multiSelectMode;
   final bool selected;
 
   @override
@@ -1307,11 +1326,12 @@ class SelectableGalleryTile extends StatelessWidget {
                   ),
                   if (item.isIncomplete)
                     const Positioned(top: AppSpacing.xxs, left: AppSpacing.xxs, child: StatusBadge(label: '미완성')),
-                  Positioned(
-                    top: AppSpacing.xxs,
-                    right: AppSpacing.xxs,
-                    child: MultiSelectCheckmark(selected: selected),
-                  ),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                   GalleryMetaLabel(label: item.category?.label ?? '미분류', maxWidth: constraints.maxWidth),
                 ],
               );
@@ -1324,7 +1344,7 @@ class SelectableGalleryTile extends StatelessWidget {
 }
 ```
 
-`MultiSelectCheckmark`는 항상 렌더링되지만(다중선택 모드가 아닐 때도 `selected=false`인 빈 원이 계속 떠 있는 건 원치 않음) — Task 6(그리드 어댑터)에서 `multiSelectMode=false`일 땐 이 타일 자체에 `selected`를 아예 안 넘기게 해서 자연히 안 그려지게 한다. 여기서는 위젯 레벨 계약만 확정.
+(2차 리뷰 P0 지적 반영: `multiSelectMode` 파라미터를 새로 받아 `if (multiSelectMode)`로 감싸야 평소엔 빈 체크서클이 안 뜬다 — `selected`만으로는 "모드 아님"과 "모드 중 미선택"을 구분할 수 없었던 최초 초안의 버그.)
 
 - [ ] **Step 8: 테스트 재실행해서 통과 확인**
 
@@ -1348,12 +1368,14 @@ class CompositionGalleryTile extends StatelessWidget {
     required this.composition,
     required this.onTap,
     this.onLongPress,
+    this.multiSelectMode = false,
     this.selected = false,
   });
 
   final Composition composition;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final bool multiSelectMode;
   final bool selected;
 
   @override
@@ -1393,11 +1415,12 @@ class CompositionGalleryTile extends StatelessWidget {
                   ),
                   if (season != null)
                     GalleryMetaLabel(label: season.label, maxWidth: constraints.maxWidth),
-                  Positioned(
-                    top: AppSpacing.xxs,
-                    right: AppSpacing.xxs,
-                    child: MultiSelectCheckmark(selected: selected),
-                  ),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                 ],
               );
             },
@@ -1426,12 +1449,14 @@ class StyleLogGalleryTile extends StatelessWidget {
     required this.styleLog,
     required this.onTap,
     this.onLongPress,
+    this.multiSelectMode = false,
     this.selected = false,
   });
 
   final StyleLog styleLog;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final bool multiSelectMode;
   final bool selected;
 
   @override
@@ -1463,11 +1488,12 @@ class StyleLogGalleryTile extends StatelessWidget {
                         : const SizedBox.shrink(),
                   ),
                   GalleryMetaLabel(label: metaLabel, maxWidth: constraints.maxWidth),
-                  Positioned(
-                    top: AppSpacing.xxs,
-                    right: AppSpacing.xxs,
-                    child: MultiSelectCheckmark(selected: selected),
-                  ),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                 ],
               );
             },
@@ -1498,6 +1524,7 @@ class TrashGalleryTile extends StatelessWidget {
     required this.daysUntilPurge,
     required this.onTap,
     this.onLongPress,
+    this.multiSelectMode = false,
     this.selected = false,
   });
 
@@ -1506,6 +1533,7 @@ class TrashGalleryTile extends StatelessWidget {
   final int daysUntilPurge;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final bool multiSelectMode;
   final bool selected;
 
   @override
@@ -1547,11 +1575,12 @@ class TrashGalleryTile extends StatelessWidget {
                       child: Icon(_categoryIcon(category), size: 14),
                     ),
                   ),
-                  Positioned(
-                    top: AppSpacing.xxs,
-                    right: AppSpacing.xxs,
-                    child: MultiSelectCheckmark(selected: selected),
-                  ),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                   GalleryMetaLabel(label: daysLabel, maxWidth: constraints.maxWidth),
                 ],
               );
@@ -1618,7 +1647,8 @@ class GroupedGalleryGrid extends StatelessWidget {
           onTap: () => onItemTap(item),
           onIncompleteTap: onIncompleteTap == null ? null : () => onIncompleteTap!(item),
           onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(item),
-          selected: multiSelectMode && selectedIds.contains(item.id),
+          multiSelectMode: multiSelectMode,
+          selected: selectedIds.contains(item.id),
         );
       },
     );
@@ -1669,7 +1699,8 @@ class CompositionGalleryGrid extends StatelessWidget {
           composition: composition,
           onTap: () => onItemTap(composition),
           onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(composition),
-          selected: multiSelectMode && selectedIds.contains(composition.id),
+          multiSelectMode: multiSelectMode,
+          selected: selectedIds.contains(composition.id),
         );
       },
     );
@@ -1719,7 +1750,8 @@ class StyleLogGalleryGrid extends StatelessWidget {
           styleLog: log,
           onTap: () => onItemTap(log),
           onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(log),
-          selected: multiSelectMode && selectedIds.contains(log.id),
+          multiSelectMode: multiSelectMode,
+          selected: selectedIds.contains(log.id),
         );
       },
     );
@@ -1879,14 +1911,17 @@ git commit -m "feat(toast): add GlassToast widget for undo-style notifications"
 
 - [ ] **Step 1: `GalleryMainScreen<T>` 작성**
 
-이 위젯은 제네릭이라 유닛테스트보다 실제 소비자(옷장 메인)로 바로 검증한다(스펙 §6 "GalleryMainScreen<T>를 가짜 타입으로 고립 테스트하지 않고 첫 실제 소비자로 검증"). `lib/widgets/gallery_main_screen.dart`(신규):
+이 위젯은 제네릭이라 유닛테스트보다 실제 소비자(옷장 메인)로 바로 검증한다(스펙 §6 "GalleryMainScreen<T>를 가짜 타입으로 고립 테스트하지 않고 첫 실제 소비자로 검증"). `lib/widgets/gallery_main_screen.dart`(신규, 아래가 최종본 — 부분 수정 없이 그대로 작성):
 ```dart
 import 'package:flutter/material.dart';
 import '../models/enums.dart';
 import '../theme/app_spacing.dart';
 import 'app_main_scaffold.dart';
-import 'glass_pill.dart';
+import 'app_scroll_container.dart';
+import 'classification_drilldown_capsule.dart';
 import 'frosted_close_button.dart';
+import 'glass_circle_button.dart';
+import 'glass_pill.dart';
 
 /// 그리드 렌더링을 도메인 wrapper에 위임하는 콜백 — `GalleryMainScreen`은 `T`의 런타임
 /// 타입을 분기하지 않는다(각 도메인이 자기 기존 그리드 어댑터를 그대로 인스턴스화).
@@ -1900,8 +1935,10 @@ typedef GalleryGridBuilder<T> = Widget Function({
   required void Function(T item) onItemLongPress,
 });
 
-/// 그룹형(옷장/코디) 전용 — 분류 캡슐+밀도+3상태 그리드 배선에 필요한 값 전부.
-/// null이면 [GalleryMainScreen]이 캡슐/밀도 UI 자체를 렌더링하지 않는다(플랫+필터형).
+/// 그룹형(옷장/코디) 전용 — 분류 캡슐+밀도+정렬 배선에 필요한 값 전부. null이면
+/// [GalleryMainScreen]이 캡슐/밀도 UI 자체를 렌더링하지 않는다(플랫+필터형). 그리드
+/// 콘텐츠 스위칭(그룹카드 vs 아이템 그리드)은 이 config가 아니라 `gridBuilder`(도메인
+/// wrapper)의 책임이다 — 그래서 이 config엔 그룹개요 여부 필드가 없다.
 class ClassificationConfig<T> {
   const ClassificationConfig({
     required this.criterionLabels,
@@ -1914,10 +1951,9 @@ class ClassificationConfig<T> {
     required this.onSubOptionSelected,
     required this.onClearSubSelection,
     required this.density,
+    required this.onDensityChanged,
     required this.ascending,
     required this.onAscendingChanged,
-    required this.isGroupOverview,
-    required this.groupSummaryCount,
   });
 
   final List<String> criterionLabels;
@@ -1930,14 +1966,13 @@ class ClassificationConfig<T> {
   final ValueChanged<int> onSubOptionSelected;
   final VoidCallback onClearSubSelection;
   final int density;
+
+  /// 밀도 버튼 탭 시 호출 — 현재 [density]를 그대로 받아 다음 단계 계산은 호출부(도메인
+  /// wrapper)가 한다("`AppDensity.levels`를 이미 알고 있는 쪽이 순환 로직을 갖는다"는
+  /// 관심사 분리 — 이 config가 순환 로직까지 떠안지 않음).
+  final ValueChanged<int> onDensityChanged;
   final bool ascending;
   final ValueChanged<bool> onAscendingChanged;
-
-  /// true면 지금 그룹 개요 상태(캡슐만 그리고 그리드는 호출부가 별도로 그림) — 이 config는
-  /// 캡슐/밀도/정렬 버튼 배선만 책임지고, 실제 그리드 콘텐츠 스위칭(그룹카드 vs 아이템)은
-  /// 여전히 도메인 wrapper의 `gridBuilder`가 맡는다.
-  final bool isGroupOverview;
-  final int groupSummaryCount;
 }
 
 class GalleryMainScreen<T> extends StatefulWidget {
@@ -1977,9 +2012,9 @@ class GalleryMainScreen<T> extends StatefulWidget {
   final String multiSelectDeleteLabel;
 
   /// non-null이면 다중선택 하단에 [multiSelectDeleteLabel] 버튼 1개가 뜬다. null이면
-  /// (예: 휴지통처럼 버튼 구성이 다른 화면은) 이 위젯 대신 직접 `bottomFloatingActions`를
-  /// 구성해야 하므로, 그 경우 호출부가 `GalleryMainScreen` 대신 더 낮은 레벨을 쓴다 —
-  /// 이 Task 스코프(옷장/코디/스타일일지)에선 항상 non-null.
+  /// (예: 휴지통처럼 버튼 구성이 다른 화면은) 이 위젯 대신 직접 `AppMainScaffold`를
+  /// 써야 하므로, 그 경우 호출부가 `GalleryMainScreen` 대신 더 낮은 레벨을 쓴다(Task 10
+  /// 참고) — 이 Task 스코프(옷장/코디/스타일일지)에선 항상 non-null.
   final void Function(Set<String> selectedIds)? onDeleteSelected;
 
   @override
@@ -1996,12 +2031,10 @@ class _GalleryMainScreenState<T> extends State<GalleryMainScreen<T>> {
       if (!_multiSelectMode) {
         _multiSelectMode = true;
         _selectedIds.add(id);
+      } else if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
       } else {
-        if (_selectedIds.contains(id)) {
-          _selectedIds.remove(id);
-        } else {
-          _selectedIds.add(id);
-        }
+        _selectedIds.add(id);
       }
     });
   }
@@ -2041,9 +2074,7 @@ class _GalleryMainScreenState<T> extends State<GalleryMainScreen<T>> {
         ? widget.headerActions
         : _multiSelectMode
             ? [
-                GlassPill(
-                  child: Text('${_selectedIds.length}개 선택'),
-                ),
+                GlassPill(child: Text('${_selectedIds.length}개 선택')),
                 FrostedCloseButton(onTap: _exitMultiSelect),
               ]
             : [
@@ -2063,88 +2094,6 @@ class _GalleryMainScreenState<T> extends State<GalleryMainScreen<T>> {
       headerActions: headerActions,
       onReselectCurrentCategory: widget.onReselectCurrentCategory,
       floatingActionButton: _multiSelectMode ? null : widget.fab,
-      bottomFloatingActions: _multiSelectMode && widget.onDeleteSelected != null
-          ? [
-              Opacity(
-                opacity: _selectedIds.isEmpty ? 0.4 : 1.0,
-                child: GlassPill(
-                  child: TextButton(
-                    onPressed: _selectedIds.isEmpty ? null : _handleDelete,
-                    child: Text(widget.multiSelectDeleteLabel),
-                  ),
-                ),
-              ),
-            ]
-          : const [],
-      body: widget.gridBuilder(
-        density: widget.classification?.density ?? AppDensity.mid,
-        controller: null,
-        topSpacing: contentTopSpacing,
-        multiSelectMode: _multiSelectMode,
-        selectedIds: _selectedIds,
-        onItemTap: (item) => effectiveOnItemTap(item),
-        onItemLongPress: (item) => effectiveOnLongPress(item),
-      ),
-    );
-  }
-}
-```
-
-`gridBuilder`가 `AppScrollContainer`(스크롤 힌트)까지 책임지는지, `GalleryMainScreen`이 그걸 감싸는지가 애매하다 — 기존 3화면 전부 `body: AppScrollContainer(topHintThreshold: ..., builder: (context, controller) => ...그리드...)` 구조였다. 위 초안의 `body: widget.gridBuilder(...)`는 `controller: null`을 그냥 넘기고 있어 스크롤 힌트가 빠진다 — 이건 잘못이다. `gridBuilder` 호출을 `AppScrollContainer`로 감싸도록 바로 수정한다(위 `build()`의 `body:` 부분을 아래로 교체):
-```dart
-      body: AppScrollContainer(
-        topHintThreshold: contentTopSpacing,
-        builder: (context, controller) => widget.gridBuilder(
-          density: widget.classification?.density ?? AppDensity.mid,
-          controller: controller,
-          topSpacing: contentTopSpacing,
-          multiSelectMode: _multiSelectMode,
-          selectedIds: _selectedIds,
-          onItemTap: (item) => effectiveOnItemTap(item),
-          onItemLongPress: (item) => effectiveOnLongPress(item),
-        ),
-      ),
-```
-파일 상단 import에 `import 'app_scroll_container.dart';` 추가.
-
-분류 캡슐(`ClassificationConfig`)을 실제로 `secondaryControlsLeft`에 꽂는 배선이 위 초안에 빠져있다 — `AppMainScaffold(...)` 호출에 다음을 추가:
-```dart
-      secondaryControlsLeft: widget.classification == null
-          ? const []
-          : [
-              // 캡슐 위젯 자체는 Task 8(코디)/Task 9(스타일일지) 진행 중 실제 옷장
-              // 마이그레이션에서 `ClassificationDrilldownCapsule`을 그대로 여기 꽂는다
-              // (지금 이 Step에선 옷장이 아직 `classification`을 안 넘기므로 미도달 분기).
-            ],
-      secondaryControlsRight: widget.classification == null
-          ? const []
-          : [
-              GlassCircleButton(
-                icon: AppDensity.iconFor(widget.classification!.density),
-                tooltip: '그리드 밀도 전환',
-                onTap: () {}, // 실제 밀도 순환은 도메인 wrapper의 onCriterionChanged와 같은
-                              // 층위에서 배선 — 이 Step(옷장)에서 곧바로 실제 콜백으로 교체.
-              ),
-              GlassCircleButton(
-                icon: widget.classification!.ascending ? Icons.arrow_upward : Icons.arrow_downward,
-                tooltip: widget.classification!.ascending ? '오름차순' : '내림차순',
-                onTap: () => widget.classification!.onAscendingChanged(!widget.classification!.ascending),
-              ),
-            ],
-```
-
-위 밀도 버튼의 `onTap: () {}`는 완성이 아니다 — `ClassificationConfig`에 `onDensityChanged: ValueChanged<int>` 필드를 추가해서 실제 순환을 넘겨받아야 한다. `ClassificationConfig` 클래스 정의에 다음 필드 추가:
-```dart
-  final ValueChanged<int> onDensityChanged;
-```
-생성자에도 `required this.onDensityChanged,` 추가. `secondaryControlsRight`의 밀도 버튼 `onTap`을 다음으로 교체:
-```dart
-                onTap: () => widget.classification!.onDensityChanged(widget.classification!.density),
-```
-"현재 density를 넘기고 다음 단계 계산은 호출부가 한다"는 계약 — 옷장 wrapper가 `AppDensity.levels`를 이미 알고 있으므로 순환 로직은 wrapper 쪽에 남긴다(캡슐 config가 순환 로직까지 떠안지 않음, 관심사 분리).
-
-캡슐 위젯(`ClassificationDrilldownCapsule`) 자체를 `secondaryControlsLeft`에 꽂는 것도 `ClassificationConfig`가 갖고 있는 원시 값들로 이 위젯 안에서 직접 만든다 — `secondaryControlsLeft` 항목을 다음으로 교체:
-```dart
       secondaryControlsLeft: widget.classification == null
           ? const []
           : [
@@ -2160,10 +2109,51 @@ class _GalleryMainScreenState<T> extends State<GalleryMainScreen<T>> {
                 onClearSubSelection: widget.classification!.onClearSubSelection,
               ),
             ],
+      secondaryControlsRight: widget.classification == null
+          ? const []
+          : [
+              GlassCircleButton(
+                icon: AppDensity.iconFor(widget.classification!.density),
+                tooltip: '그리드 밀도 전환',
+                onTap: () => widget.classification!.onDensityChanged(widget.classification!.density),
+              ),
+              GlassCircleButton(
+                icon: widget.classification!.ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                tooltip: widget.classification!.ascending ? '오름차순' : '내림차순',
+                onTap: () => widget.classification!.onAscendingChanged(!widget.classification!.ascending),
+              ),
+            ],
+      bottomFloatingActions: _multiSelectMode && widget.onDeleteSelected != null
+          ? [
+              Opacity(
+                opacity: _selectedIds.isEmpty ? 0.4 : 1.0,
+                child: GlassPill(
+                  child: TextButton(
+                    onPressed: _selectedIds.isEmpty ? null : _handleDelete,
+                    child: Text(widget.multiSelectDeleteLabel),
+                  ),
+                ),
+              ),
+            ]
+          : const [],
+      body: AppScrollContainer(
+        topHintThreshold: contentTopSpacing,
+        builder: (context, controller) => widget.gridBuilder(
+          density: widget.classification?.density ?? AppDensity.mid,
+          controller: controller,
+          topSpacing: contentTopSpacing,
+          multiSelectMode: _multiSelectMode,
+          selectedIds: _selectedIds,
+          onItemTap: (item) => effectiveOnItemTap(item),
+          onItemLongPress: (item) => effectiveOnLongPress(item),
+        ),
+      ),
+    );
+  }
+}
 ```
-import에 `import 'classification_drilldown_capsule.dart';` 추가.
 
-`isGroupOverview`/`groupSummaryCount` 필드는 실제로 이 위젯 안에서 안 쓰인다(그리드 콘텐츠 스위칭은 `gridBuilder` 내부, 즉 도메인 wrapper 책임) — 죽은 필드라 `ClassificationConfig`에서 제거한다(위 정의에서 이 두 필드와 생성자 파라미터를 삭제).
+(2차 리뷰 P1 지적 반영: 이전 초안은 "1차 작성 → 문제 발견 → 부분 패치"를 5단계에 걸쳐 서술해 Worker가 손으로 병합해야 하는 위험이 있었다 — 위 코드가 그 전부를 반영한 최종본이다. `secondaryControlsLeft`/`secondaryControlsRight`/`onDensityChanged`/`AppScrollContainer` 래핑이 전부 처음부터 포함돼 있고, 죽은 `isGroupOverview`/`groupSummaryCount` 필드는 애초에 없다.)
 
 - [ ] **Step 2: 옷장 메인을 `GalleryMainScreen<ClothingItem>`으로 재작성**
 
@@ -2503,8 +2493,81 @@ git commit -m "feat(closet): introduce GalleryMainScreen<T> shell and migrate cl
 
 - [ ] **Step 1: 코디 메인 재작성**
 
-`lib/screens/composition_main_screen.dart`를 Task 7 Step 2의 `closet_main_screen.dart`와 동일 구조로 재작성한다 — `ClothingItem`→`Composition`, `ClosetSortCriterion`→`CompositionSortCriterion`, `closetItemsProvider`→`compositionsProvider`, `GroupedGalleryGrid`→`CompositionGalleryGrid`, `_subOptionLabels`/`_selectedSubOptionIndex`/`_drillInto`/`_drillIntoValue`/`_resetAllDrilldowns`/`_clearDrilldown`은 기존 `composition_main_screen.dart`(이 Task 착수 전 버전)의 로직을 그대로 옮긴다(계절/날씨/날짜 3기준). FAB는 `ExpandableAddFab` 대신 `FloatingActionButton(onPressed: () => context.push(AppRoute.compositionEditor), child: const Icon(Icons.add))`(기존과 동일, 옵션 팝업 없음). `onDeleteSelected`는:
+기존 `composition_main_screen.dart`는 `ConsumerWidget`(로컬 State 없음)이었다 — `GalleryMainScreen`이 다중선택 상태를 전부 갖고 있으므로 이 화면 자체를 `ConsumerStatefulWidget`으로 승격할 이유가 없다(Task 7의 `ClosetMainScreen`이 `ConsumerStatefulWidget`인 건 이 Task 착수 전부터 이미 그랬던 기존 구조를 유지한 것뿐 — 우연히 같아 보일 뿐 다중선택 때문에 그렇게 된 게 아니다). 따라서 `CompositionMainScreen`은 그대로 `ConsumerWidget`으로 유지한다. `lib/screens/composition_main_screen.dart` 전체를 다음으로 교체:
 ```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../models/composition.dart';
+import '../models/enums.dart';
+import '../providers/classification_models.dart';
+import '../providers/composition_providers.dart';
+import '../router/app_router.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/classification_group_grid.dart';
+import '../widgets/composition_gallery_grid.dart';
+import '../widgets/gallery_main_screen.dart';
+import '../widgets/glass_toast.dart';
+import '../widgets/selection_aware_header_actions.dart';
+
+class CompositionMainScreen extends ConsumerWidget {
+  const CompositionMainScreen({super.key, this.selectionMode = false});
+
+  final bool selectionMode;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final criterion = ref.watch(compositionSortCriterionProvider);
+    final ascending = ref.watch(compositionSortAscendingProvider);
+    final displayState = ref.watch(compositionGridDisplayStateProvider);
+    final density = ref.watch(compositionDensityProvider);
+    final compositions = ref.watch(filteredCompositionsProvider);
+    final groups = ref.watch(compositionGroupSummariesProvider);
+
+    return GalleryMainScreen<Composition>(
+      current: AppCategory.composition,
+      items: compositions,
+      itemId: (c) => c.id,
+      showBackButton: !selectionMode,
+      showCategoryToggle: !selectionMode,
+      selectionMode: selectionMode,
+      headerActions: buildSelectionAwareHeaderActions(
+        selectionMode: selectionMode,
+        onClose: () => context.pop(),
+      ),
+      onReselectCurrentCategory: () {
+        ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.all;
+        _resetAllDrilldowns(ref);
+      },
+      classification: ClassificationConfig<Composition>(
+        criterionLabels: [for (final c in CompositionSortCriterion.values) c.label],
+        selectedCriterionIndex: criterion.index,
+        onCriterionChanged: (index) {
+          ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.values[index];
+          _resetAllDrilldowns(ref);
+        },
+        hasSubClassification: criterion.hasSubClassification,
+        subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
+        subOptionLabels: _subOptionLabels(ref, criterion),
+        selectedSubOptionIndex: _selectedSubOptionIndex(ref, criterion),
+        onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
+        onClearSubSelection: () => _clearDrilldown(ref, criterion),
+        density: density,
+        onDensityChanged: (current) {
+          final currentIndex = AppDensity.levels.indexOf(current);
+          final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
+          ref.read(compositionDensityProvider.notifier).state = AppDensity.levels[previousIndex];
+        },
+        ascending: ascending,
+        onAscendingChanged: (value) => ref.read(compositionSortAscendingProvider.notifier).state = value,
+      ),
+      onItemTap: (c) {
+        if (selectionMode) {
+          context.pop(c.id);
+        } else {
+          context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
+        }
+      },
       onDeleteSelected: (ids) {
         ref.read(compositionsProvider.notifier).softDeleteMany(ids);
         GlassToast.show(
@@ -2514,6 +2577,130 @@ git commit -m "feat(closet): introduce GalleryMainScreen<T> shell and migrate cl
           onAction: () => ref.read(compositionsProvider.notifier).restoreMany(ids),
         );
       },
+      gridBuilder: ({
+        required density,
+        required controller,
+        required topSpacing,
+        required multiSelectMode,
+        required selectedIds,
+        required onItemTap,
+        required onItemLongPress,
+      }) {
+        if (displayState == CompositionGridDisplayState.groupOverview) {
+          return ClassificationGroupGrid(
+            groups: groups,
+            density: density,
+            controller: controller,
+            topSpacing: topSpacing,
+            onGroupTap: (group) => _drillIntoValue(ref, criterion, group.value),
+          );
+        }
+        return CompositionGalleryGrid(
+          compositions: compositions,
+          density: density,
+          controller: controller,
+          topSpacing: topSpacing,
+          multiSelectMode: multiSelectMode,
+          selectedIds: selectedIds,
+          onItemTap: onItemTap,
+          onItemLongPress: onItemLongPress,
+        );
+      },
+      fab: selectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => context.push(AppRoute.compositionEditor),
+              child: const Icon(Icons.add),
+            ),
+    );
+  }
+
+  // 아래 6개 메서드는 이 Task 착수 전 `composition_main_screen.dart`에 이미 있던 로직을
+  // 그대로 옮긴 것(계절/날씨/날짜 3기준) — 타입/provider만 옷장 대신 코디 것을 쓴다.
+  List<String> _subOptionLabels(WidgetRef ref, CompositionSortCriterion criterion) {
+    return switch (criterion) {
+      CompositionSortCriterion.season => [for (final season in Season.values) season.label, '미분류'],
+      CompositionSortCriterion.weather => [for (final weather in Weather.values) weather.label, '미분류'],
+      CompositionSortCriterion.dateTime => [
+          for (final group in ref.watch(compositionGroupSummariesProvider)) group.label,
+        ],
+      CompositionSortCriterion.all => const [],
+    };
+  }
+
+  int? _selectedSubOptionIndex(WidgetRef ref, CompositionSortCriterion criterion) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        final drilled = ref.watch(compositionDrilledSeasonProvider);
+        if (drilled == null) return null;
+        return drilled.isUnclassified ? Season.values.length : Season.values.indexOf(drilled.value as Season);
+      case CompositionSortCriterion.weather:
+        final drilled = ref.watch(compositionDrilledWeatherProvider);
+        if (drilled == null) return null;
+        return drilled.isUnclassified ? Weather.values.length : Weather.values.indexOf(drilled.value as Weather);
+      case CompositionSortCriterion.dateTime:
+        final year = ref.watch(compositionDrilledYearProvider);
+        if (year == null) return null;
+        final groups = ref.watch(compositionGroupSummariesProvider);
+        final index = groups.indexWhere((g) => g.value == year);
+        return index == -1 ? null : index;
+      default:
+        return null;
+    }
+  }
+
+  void _drillInto(WidgetRef ref, CompositionSortCriterion criterion, int optionIndex) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        ref.read(compositionDrilledSeasonProvider.notifier).state = optionIndex == Season.values.length
+            ? const DrilledValue.unclassified()
+            : DrilledValue.value(Season.values[optionIndex]);
+      case CompositionSortCriterion.weather:
+        ref.read(compositionDrilledWeatherProvider.notifier).state = optionIndex == Weather.values.length
+            ? const DrilledValue.unclassified()
+            : DrilledValue.value(Weather.values[optionIndex]);
+      case CompositionSortCriterion.dateTime:
+        final groups = ref.read(compositionGroupSummariesProvider);
+        ref.read(compositionDrilledYearProvider.notifier).state = groups[optionIndex].value as int;
+      default:
+        break;
+    }
+  }
+
+  void _drillIntoValue(WidgetRef ref, CompositionSortCriterion criterion, Object? value) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        ref.read(compositionDrilledSeasonProvider.notifier).state =
+            value == null ? const DrilledValue.unclassified() : DrilledValue.value(value as Season);
+      case CompositionSortCriterion.weather:
+        ref.read(compositionDrilledWeatherProvider.notifier).state =
+            value == null ? const DrilledValue.unclassified() : DrilledValue.value(value as Weather);
+      case CompositionSortCriterion.dateTime:
+        ref.read(compositionDrilledYearProvider.notifier).state = value as int?;
+      case CompositionSortCriterion.all:
+        break;
+    }
+  }
+
+  void _resetAllDrilldowns(WidgetRef ref) {
+    ref.read(compositionDrilledSeasonProvider.notifier).state = null;
+    ref.read(compositionDrilledWeatherProvider.notifier).state = null;
+    ref.read(compositionDrilledYearProvider.notifier).state = null;
+  }
+
+  void _clearDrilldown(WidgetRef ref, CompositionSortCriterion criterion) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        ref.read(compositionDrilledSeasonProvider.notifier).state = null;
+      case CompositionSortCriterion.weather:
+        ref.read(compositionDrilledWeatherProvider.notifier).state = null;
+      case CompositionSortCriterion.dateTime:
+        ref.read(compositionDrilledYearProvider.notifier).state = null;
+      case CompositionSortCriterion.all:
+        break;
+    }
+  }
+}
 ```
 
 - [ ] **Step 2: `flutter analyze`로 컴파일 확인**
@@ -2523,7 +2710,69 @@ Expected: 에러 없음.
 
 - [ ] **Step 3: 다중선택 통합테스트 작성 + 실행**
 
-`integration_test/composition_multi_select_test.dart`를 Task 7 Step 4 파일에서 `SelectableGalleryTile`→`CompositionGalleryTile`, `closetItemsProvider`→`compositionsProvider`, `ClosetMainScreen`→`CompositionMainScreen`으로 치환해 작성. 코디는 mock이 2개뿐이라 "2개 선택 후 삭제" 테스트는 "1개 선택 후 삭제"로 조정.
+`integration_test/composition_multi_select_test.dart`(신규) — `comp02`가 Task 3에서 `isDeleted:true`로 시드돼 `filteredCompositionsProvider`엔 `comp01` 1개만 남으므로, Task 7 Step 4(옷장, 2개 선택)와 달리 1개만 선택하는 시나리오로 작성한다:
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/main.dart';
+import 'package:digittal_wardrobe/providers/composition_providers.dart';
+import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  Future<ProviderContainer> pumpApp(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1400, 4600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const DigitalWardrobeApp()),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(CategoryToggleDropdown));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('코디').last);
+    await tester.pumpAndSettle();
+    return container;
+  }
+
+  testWidgets('코디 타일 롱프레스로 다중선택 진입 + 즉시 1개 선택된다', (tester) async {
+    await pumpApp(tester);
+    await tester.longPress(find.byType(CompositionGalleryTile).first);
+    await tester.pumpAndSettle();
+    expect(find.text('1개 선택'), findsOneWidget);
+  });
+
+  testWidgets('선택 후 [삭제] 탭 시 실제로 휴지통 이동되고 모드가 종료된다', (tester) async {
+    final container = await pumpApp(tester);
+    await tester.longPress(find.byType(CompositionGalleryTile).first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('삭제'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1개 선택'), findsNothing);
+    final deletedCount = container.read(compositionsProvider).where((c) => c.isDeleted).length;
+    expect(deletedCount, greaterThanOrEqualTo(1));
+  });
+
+  testWidgets('X 탭으로 다중선택 모드를 취소하면 선택이 비워진다', (tester) async {
+    await pumpApp(tester);
+    await tester.longPress(find.byType(CompositionGalleryTile).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('닫기'));
+    await tester.pumpAndSettle();
+    expect(find.text('1개 선택'), findsNothing);
+  });
+}
+```
+Task 7 Step 5에서 `FrostedCloseButton`의 실제 tooltip을 확인해 `find.byTooltip('닫기')`를 맞춰뒀다면 여기서도 동일 문자열을 쓴다. `CategoryToggleDropdown`으로 코디 진입하는 방식이 `composition_style_log_main_screen_test.dart`의 기존 `goToCategory` 헬퍼와 다르면, 그 파일의 구현을 그대로 옮겨와 `pumpApp`을 교체한다.
 
 Run(taskkill 먼저): `taskkill //F //IM digittal_wardrobe.exe; flutter test integration_test/composition_multi_select_test.dart -d windows`
 Expected: PASS
@@ -2964,6 +3213,7 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
               imagePath: entry.imagePath,
               category: entry.category,
               daysUntilPurge: entry.daysUntilPurge,
+              multiSelectMode: _multiSelectMode,
               selected: selected,
               onLongPress: () => setState(() {
                 if (!_multiSelectMode) {
@@ -3158,6 +3408,7 @@ git commit -m "feat(trash): implement real restore/purge/empty execution with mu
 
 `lib/screens/app_detail_scaffold.dart` 전체를 다음으로 교체:
 ```dart
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/enums.dart';
 import '../theme/app_spacing.dart';
@@ -3217,15 +3468,18 @@ class _MoreMenuButton extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: Container(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
-          child: PopupMenuButton<void>(
-            tooltip: '더보기 메뉴',
-            icon: const Icon(Icons.more_horiz),
-            onSelected: (_) => onDelete(),
-            itemBuilder: (context) => const [
-              PopupMenuItem<void>(value: null, child: Text('삭제')),
-            ],
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
+            child: PopupMenuButton<void>(
+              tooltip: '더보기 메뉴',
+              icon: const Icon(Icons.more_horiz),
+              onSelected: (_) => onDelete(),
+              itemBuilder: (context) => const [
+                PopupMenuItem<void>(value: null, child: Text('삭제')),
+              ],
+            ),
           ),
         ),
       ),
@@ -3233,6 +3487,8 @@ class _MoreMenuButton extends StatelessWidget {
   }
 }
 ```
+
+(2차 리뷰 P0 지적 반영: 최초 초안이 `GlassCircleButton`의 핵심 요소인 `BackdropFilter`/`ImageFilter.blur`를 빠뜨려 "더보기" 버튼만 블러 없이 렌더링될 뻔했다 — `dart:ui` import 추가 + `ClipOval` 안에 `BackdropFilter`로 감싸도록 수정.)
 
 - [ ] **Step 2: `flutter analyze`로 컴파일 확인**
 
