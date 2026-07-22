@@ -16,11 +16,12 @@
 
 - `ArtboardItem` 리스트 배치 렌더링(x/y/scale/rotation/zIndex)
 - 이동(드래그), 크기조절(핸들), 회전(핸들)
-- 겹친 영역 탭 → z-순서 팝업(재배열 + 선택)
+- 겹친 영역 탭 → 터치 포인트 앵커 팝업(재배열 + 선택, §4.5)
 - 화면 밖으로 드래그 → 삭제 콜백
 - 선택 상태를 완전 외부 제어(controlled) 계약으로 노출(§5) — 하단 Thumbnail 목록과의 양방향 바인딩을 나중에 붙일 수 있는 구조까지가 이번 스코프(실제 Thumbnail UI 자체는 아님, §8)
+- 배경색 스와치 버튼(§11, 2026-07-19 스코프 편입 — 원래 §8이 스코프 밖으로 뒀던 항목을 사용자 요청으로 되돌림)
 
-**화면 레벨 책임(이번 스코프 밖, §8)**: 배경색 스와치, 옷 추가 바텀시트, 코디 이름 필드/저장 버튼, 하단 "사용된 옷 목록" 그리드(Thumbnail UI 자체), undo, `selectedItemId`를 실제로 소유·중개할 SelectionManager/provider.
+**화면 레벨 책임(이번 스코프 밖, §8)**: 옷 추가 바텀시트, 코디 이름 필드/저장 버튼, 하단 "사용된 옷 목록" 그리드(Thumbnail UI 자체), undo, `selectedItemId`를 실제로 소유·중개할 SelectionManager/provider.
 
 ---
 
@@ -138,14 +139,36 @@ class ArtboardItem {
 
 핸들 위치는 아이템 크기에 비례해서 무한히 축소되지 않는다 — `핸들 오프셋 = max(아이템 실제 반경, 최소오프셋 상수)`. 여기서 "아이템 실제 반경"은 §2.1 **렌더 박스** 기준이다(§2.2 Hit Area 기준 아님 — 핸들은 Selection Box 소속이므로 항상 렌더 박스 기준). 아이템이 아무리 작아져도 좌하단/우하단/상단 3개 핸들이 서로 붙거나 겹치지 않는다. 최소오프셋 상수 값은 Worker가 터치 히트영역(최소 44x44 논리픽셀 권장, 접근성 일반 기준)을 고려해 결정.
 
-### 4.5 겹침 처리 — 팝업 1개
+### 4.5 겹침 처리 — 터치 포인트 앵커 팝업 (2026-07-19 리디자인, 사용자 요청 반영)
 
-`02_코디.md` 원문("겹친 영역 터치 → 컨텍스트 메뉴(팝업)로 겹친 이미지 리스트 → 드래그로 순서 재배열", "겹친 이미지 이동 시 기본은 최상단 옷, 아래쪽 옷은 컨텍스트 메뉴에서 선택 후 터치+드래그")을 그대로 따른다 — 탭=선택 팝업과 롱프레스=z-index 팝업으로 분리하지 않는다(브레인스토밍 중 정정, 최초 프레이밍 오류였음).
+`02_코디.md` 원문("겹친 영역 터치 → 컨텍스트 메뉴(팝업)로 겹친 이미지 리스트 → 드래그로 순서 재배열", "겹친 이미지 이동 시 기본은 최상단 옷, 아래쪽 옷은 컨텍스트 메뉴에서 선택 후 터치+드래그") 요구사항은 그대로 유지하되, **팝업 컨테이너 자체를 모달 바텀시트에서 터치 지점 근처에 뜨는 컨텍스트 메뉴 스타일로 교체**한다(PC 우클릭 메뉴와 유사한 배치) — 최초 구현이 `showModalBottomSheet`를 썼는데, 이게 재배열 드래그를 간헐적으로 씹는 버그의 근본 원인이었다(§4.5.1).
 
-- 겹친 영역 탭 → `ArtboardOverlapPopup` 오픈: 겹친 아이템들을 z-순서(위→아래)로 나열
-- **행 안에서 탭과 드래그의 히트영역을 분리한다**(리뷰 P1 반영 — 같은 영역에 탭·드래그를 겸하면 터치 오인식 위험): 행의 썸네일+라벨 영역을 탭하면 선택, 행 끝의 별도 드래그핸들 아이콘(예: `Icons.drag_handle`)을 잡고 끌어야 순서가 재배열된다.
-- 드래그핸들로 재배열 → 즉시 `onItemsChanged`로 zIndex 갱신 커밋
-- 썸네일/라벨 영역 탭 → 팝업 닫힘 + 그 아이템 선택(§4.2) — 이후 몸체 드래그/핸들 조작이 그 아이템에 적용됨
+**구현 방식**: `showModalBottomSheet` 대신 `Overlay`(§4.6이 이미 쓰는 것과 같은 메커니즘)에 `OverlayEntry`로 카드를 띄운다.
+- **위치**: 탭 좌표를 기준으로 앵커하되, 카드가 화면 경계를 벗어나지 않도록 좌표를 보정한다(카드 크기를 알고 나서 좌상단 좌표를 화면 크기 안으로 clamp). 정확한 앵커 지점(탭 좌표 기준 좌상단/우상단 등)과 여백은 Worker 재량 — 화면 밖으로 안 나가기만 하면 됨.
+- **닫힘**: 카드보다 먼저 화면 전체를 덮는 투명 배리어(`GestureDetector.onTap`으로 팝업 닫기)를 삽입해 "바깥 탭하면 닫힘"을 구현한다. 바텀시트가 아니므로 "아래로 드래그해서 닫기" 제스처 자체가 없다 — §4.5.1의 근본 원인이 구조적으로 사라짐.
+
+**행 구성** (기존 2-히트영역 → 3-히트영역으로 확장):
+
+| 요소 | 위치 | 동작 |
+|---|---|---|
+| **선택 아이콘**(신규) | 행 맨 왼쪽 | `Icons.check_circle_outline`(미선택) / `Icons.check_circle`(선택됨, `Theme.of(context).colorScheme.primary`로 채움) — 탭 시 `onSelect` 호출. 라디오버튼/체크박스류의 익숙한 "선택 상태" 시각언어를 재사용해, 이 아이콘을 누르면 선택된다는 걸 명확히 함 |
+| 썸네일 + 라벨 | 중앙 | 탭 → `onSelect`(기존과 동일) |
+| 드래그 핸들 | 행 맨 오른쪽 | `Icons.drag_handle`, `ReorderableDragStartListener`로 감쌈 — 끌면 재배열(기존과 동일) |
+
+- **행 안에서 탭과 드래그의 히트영역을 분리한다**(기존 리뷰 P1, 유지): 선택 아이콘과 썸네일/라벨 영역은 탭(선택)만, 드래그 핸들만 끌기(재배열)를 받는다.
+- **현재 선택된 아이템의 행은 배경색을 다르게 한다**(신규, 사용자 요청): `Theme.of(context).colorScheme.primaryContainer` 같은 옅은 강조색으로 행 `Container`를 감싸, 선택 아이콘의 채움 상태와 함께 이중으로 "지금 이게 선택된 아이템"임을 알린다. 이를 위해 `ArtboardOverlapPopup` 생성자에 `selectedItemId`(nullable `String?`)가 새로 추가된다 — 위젯 최상위의 `selectedItemId`(§5)를 그대로 전달.
+- 드래그핸들로 재배열 → 즉시 `onItemsChanged`로 zIndex 갱신 커밋(zIndex 재배정 로직 자체는 변경 없음 — 겹친 아이템들의 기존 zIndex 값 집합을 그대로 재사용, 압축된 새 범위로 바꾸지 않음)
+- 선택 아이콘/썸네일/라벨 탭 → 팝업 닫힘 + 그 아이템 선택(§4.2) — 이후 몸체 드래그/핸들 조작이 그 아이템에 적용됨
+
+#### 4.5.1 재배열이 간헐적으로 실패하던 버그 — 진단과 해소
+
+**증상**(사용자 보고, 2026-07-19): 데모 앱 수동 테스트 중 재배열 드래그가 일정치 않게(재현 조건 특정 안 됨) 씹히는 현상 발견.
+
+**원인 추정**: `showModalBottomSheet`는 기본값이 `enableDrag: true`라, 시트 전체를 아래로 드래그하면 닫히는 제스처를 자체적으로 갖는다. 팝업 안의 `ReorderableDragStartListener`도 같은 수직축 Pan 제스처를 쓴다 — 두 인식기가 같은 제스처 아레나에서 경합하면 터치 시작 위치·속도에 따라 어느 쪽이 이기는지가 갈리고, 이게 간헐적 실패로 드러난 것으로 추정된다. (코드 정적 분석 기반 추정 — 이 개발 환경엔 GUI 자동화 도구가 없어 대화형으로 100% 확증하진 못함.)
+
+**해소**: 팝업을 `showModalBottomSheet`에서 `Overlay` 기반 카드로 교체하면서 바텀시트 고유의 "드래그로 닫기" 제스처 자체가 사라진다 — 경합 대상이 없어지므로 재배열 드래그가 유일한 수직 Pan 인식기가 된다. 별도 버그 픽스 태스크로 분리하지 않고 이번 팝업 리디자인에 흡수해서 해소한다.
+
+**후속 확인 의무**: 이 진단이 틀렸을 가능성(다른 근본 원인이 있을 가능성)에 대비해, Tester가 리디자인 후 재배열을 여러 차례 연속 실행하는 회귀 테스트를 반드시 포함한다(§7 갱신 참고). 리디자인 후에도 재현되면 `docs/history/TechnicalDebt.md`에 별도 항목으로 재기록.
 
 ### 4.6 삭제 (드래그 아웃)
 
@@ -166,6 +189,8 @@ InteractiveArtboard({
   required ValueChanged<String> onItemDeleted,
   required String? selectedItemId,             // 선택 상태의 유일한 진실 소스, 위젯이 내부적으로 들고 있지 않음
   required ValueChanged<String?> onSelectionChanged, // 선택이 바뀌어야 할 때 알리기만 함(위젯이 직접 반영 안 함)
+  required ArtboardBackgroundColor backgroundColor,             // §11 신설 — 배경색의 유일한 진실 소스
+  required ValueChanged<ArtboardBackgroundColor> onBackgroundColorChanged, // §11 신설
 })
 ```
 
@@ -177,15 +202,23 @@ InteractiveArtboard({
 
 ---
 
-## 6. 영향 범위 (신규 파일만, 기존 파일 수정 없음)
+## 6. 영향 범위
 
+**1차 구현(2026-07-19) — 신규 파일만, 기존 파일 수정 없음**:
 - `lib/widgets/interactive_artboard/artboard_item.dart`
 - `lib/widgets/interactive_artboard/interactive_artboard.dart`
 - `lib/widgets/interactive_artboard/artboard_item_view.dart`
 - `lib/widgets/interactive_artboard/artboard_overlap_popup.dart`
 - `integration_test/interactive_artboard_test.dart`
 
-`lib/models/composition.dart`, `lib/mock/mock_data.dart`, `composition_editor_screen.dart` 등 기존 파일은 이번 스코프에서 건드리지 않는다.
+**2차 확장(2026-07-19, 팝업 리디자인 + 배경색 스와치) — 위 파일들을 Modify**:
+- `lib/widgets/interactive_artboard/interactive_artboard.dart` — 팝업을 `showModalBottomSheet`→`Overlay` 기반으로 교체(§4.5), 배경 채움 + 배경색 버튼/스와치 UI 추가(§11)
+- `lib/widgets/interactive_artboard/artboard_overlap_popup.dart` — `selectedItemId` 파라미터 추가, 행에 선택 아이콘 추가, 선택된 행 배경색 처리(§4.5)
+- `lib/widgets/interactive_artboard/artboard_item.dart` — `ArtboardBackgroundColor` enum 추가(§11.1, 또는 Worker 판단으로 별도 파일)
+- `integration_test/interactive_artboard_test.dart` — 신규 시나리오 추가(§7 갱신)
+- `lib/main_artboard_demo.dart` — 수동 테스트용 임시 데모(커밋 대상 아님), 새 생성자 파라미터에 맞춰 갱신
+
+`lib/models/composition.dart`, `lib/mock/mock_data.dart`, `composition_editor_screen.dart` 등 기존 프로젝트 파일은 이번 스코프에서 건드리지 않는다(변함없음).
 
 ---
 
@@ -209,12 +242,18 @@ InteractiveArtboard({
 - **(사용자 요청 반영, 신규)** 테스트 래퍼(로컬 `StatefulWidget`)가 `selectedItemId`를 외부에서 바꾸기만 해도(캔버스 탭 없이) 해당 아이템의 Selection Box가 표시되는지 확인 — Thumbnail 발 선택 변경을 시뮬레이션(§5)
 - **(사용자 요청 반영, 신규)** 캔버스 탭 시 위젯이 스스로 선택을 반영하지 않고 `onSelectionChanged`만 호출하는지 확인 — 테스트 래퍼가 `onSelectionChanged`를 무시(state 갱신 안 함)하면 Selection Box가 안 바뀌어야 함(완전 controlled 검증)
 - **(사용자 요청 반영, 신규)** 겹치지 않은 단일 아이템에서, 렌더 박스 안이지만 Hit Area 바깥(가장자리)을 탭 → 선택 안 됨 확인(§2.2 Hit Area 축소가 실제로 적용됐는지 검증)
+- **(2026-07-19 팝업 리디자인, 신규)** 겹친 영역 탭 → 팝업이 화면 경계 밖으로 나가지 않고 탭 좌표 근처에 뜨는지 확인(화면 가장자리에 가까운 위치에서 탭했을 때도 카드가 잘리거나 화면 밖으로 나가지 않는지 포함)
+- **(2026-07-19 팝업 리디자인, 신규)** 팝업 바깥(배리어) 탭 → 팝업 닫힘, 선택 상태는 안 바뀜 확인
+- **(2026-07-19 팝업 리디자인, 신규)** 팝업 내 재배열을 **여러 차례 연속** 실행 → 매번 정상 반영되는지 확인(§4.5.1 버그 회귀 검증 — 원인으로 추정한 바텀시트-드래그 경합이 실제로 해소됐는지 반복 실행으로 확인)
+- **(2026-07-19 팝업 리디자인, 신규)** 팝업 행의 선택 아이콘 탭 → 그 아이템 선택 + 팝업 닫힘 확인(썸네일/라벨 탭과 동일 결과)
+- **(2026-07-19 팝업 리디자인, 신규)** 현재 선택된 아이템이 팝업에 포함돼 있으면 그 행만 배경색이 다르고 체크 아이콘이 채워진 상태로 표시되는지 확인
+- **(2026-07-19 배경색 스와치, 신규)** 배경색 버튼 탭 → 4개 스와치 노출, 스와치 하나 탭 → `onBackgroundColorChanged` 발생 + 캔버스 배경 즉시 반영 + 스와치 닫힘 확인
+- **(2026-07-19 배경색 스와치, 신규)** 스와치가 펼쳐진 상태에서 스와치 바깥 탭 → 스와치만 닫히고 배경색은 안 바뀜 확인
 
 ---
 
 ## 8. 스코프 경계 (이번 라운드에 포함하지 않음)
 
-- 배경색 스와치 컨트롤
 - 옷 추가 바텀시트(옷장 갤러리 모달)
 - 코디 이름 입력 필드 / 저장(V) 버튼
 - 하단 "사용된 옷 목록" Thumbnail 그리드 UI 자체(위젯은 안 만듦) — 단, Thumbnail이 나중에 붙을 수 있도록 `selectedItemId`/`onSelectionChanged` 양방향 controlled 계약은 이번에 확정(§5)
@@ -237,3 +276,47 @@ InteractiveArtboard({
 
 - **접근성 최소선**: 핸들 3개(이동/크기조절/회전) 각각에 `Semantics(label: ...)`을 붙인다(예: "이동 핸들", "크기조절 핸들", "회전 핸들"). 스크린리더로 실제 드래그까지 조작 가능하게 하는 전체 접근성 지원은 이번 스코프 밖 — 라벨만 최소로 붙여 완전 무대응은 피한다.
 - **성능**: 드래그 중 프레임마다 `setState`가 발생하므로, 아이템 전체를 매 프레임 다시 그리지 않도록 `artboard_item_view.dart` 각 인스턴스를 `RepaintBoundary`로 감싸는 것을 권장한다.
+
+---
+
+## 11. 배경색 스와치 (2026-07-19 신규, 사용자 요청 — §8이 스코프 밖으로 뒀던 항목을 되돌림)
+
+`02_코디.md` 원문("아트보드 모서리에 배경색 스와치 컨트롤 — 현재 배경색 표시, 터치 시 변경... MVP는 흰색/회색/검은색 단색만 지원")을 이번 라운드 스코프 안으로 되돌린다. 최초 스펙(§8)은 이걸 화면 레벨 책임으로 미뤘으나, 사용자가 데모 테스트 중 직접 요청 — 위젯 자체가 배경색을 소유·표시하는 게 "옷 추가 바텀시트" 같은 다른 스코프外 항목보다 훨씬 가벼운 추가라 이번엔 받아들인다.
+
+### 11.1 데이터 계약 — `ArtboardBackgroundColor`
+
+```dart
+// lib/widgets/interactive_artboard/artboard_item.dart 또는 별도 파일에 추가
+enum ArtboardBackgroundColor {
+  white,
+  lightGray,
+  darkGray,
+  black;
+
+  Color get value => switch (this) {
+        ArtboardBackgroundColor.white => Colors.white,
+        ArtboardBackgroundColor.lightGray => Colors.grey.shade300,
+        ArtboardBackgroundColor.darkGray => Colors.grey.shade800,
+        ArtboardBackgroundColor.black => Colors.black,
+      };
+}
+```
+
+닫힌 값 집합(정확히 4개, 사용자가 지정한 값)이라 `Color`를 위젯 경계로 임의값으로 주고받지 않고 enum으로 모델링한다(`lib/models/enums.dart`의 `Season`/`Weather` 전례와 동일한 패턴 — 닫힌 어휘는 enum, annotated String 아님). 화면 쪽이 이 4개 중 하나만 표현 가능해지고, 임의 `Color`를 잘못 넘길 여지가 원천 차단된다.
+
+### 11.2 콜백 계약 확장 (§5에 이미 반영됨)
+
+`backgroundColor`(입력)/`onBackgroundColorChanged`(출력) — `selectedItemId`와 동일한 완전 controlled 패턴이다. 위젯은 배경색을 스스로 바꾸지 않고 `onBackgroundColorChanged`만 호출, 실제 반영은 부모가 `backgroundColor`를 갱신해줘야 이뤄진다.
+
+### 11.3 UI
+
+- **캔버스 배경 채움**: 현재 `Stack`이 투명 배경이던 것을(§3의 build() 구조 참고) `backgroundColor.value`로 채운 `Container`/`ColoredBox`로 감싼다.
+- **배경색 버튼**: 아트보드 우하단 모서리에 원형 버튼, 채움색 = 현재 `backgroundColor.value`. 삭제 딤드 오버레이의 휴지통 아이콘(§4.6, 하단 중앙)과 위치가 겹치지 않는 우하단 고정 자리.
+- **스와치 펼침**: 버튼을 탭하면 버튼 바로 위쪽으로 4개 원형 스와치(흰색/밝은회색/어두운회색/검은색, `ArtboardBackgroundColor`의 4개 값과 1:1 대응, 값 순서 그대로 세로 나열)가 펼쳐진다. 스와치 하나를 탭하면 `onBackgroundColorChanged` 호출 + 스와치 목록 닫힘. 스와치가 펼쳐진 상태에서 배경색 버튼을 다시 탭하거나 스와치 바깥을 탭하면 스와치만 닫힌다(선택은 안 바뀜).
+- **펼침 상태는 controlled 아님**: `selectedItemId`/`backgroundColor`와 달리, "스와치가 펼쳐져 있는가"는 부모가 알 필요 없는 순수 UI 토글이라 위젯 내부 `State`로만 관리한다(예: `bool _isSwatchExpanded`) — 매번 controlled로 만드는 건 §5의 원칙("Thumbnail 같은 다른 화면 요소와 상태를 공유해야 하는 것만 controlled로 노출")과 안 맞는 과설계.
+- 버튼/스와치는 §4.1의 선택 상호작용 레이어와 마찬가지로 캔버스 아이템들보다 항상 위에 그려져야 한다(Stack의 나중 자식).
+- **주의(§4.3/Task 6 교훈 재확인)**: 스와치 4개가 버튼 위로 펼쳐질 때, 버튼이 캔버스의 실제 사각형 경계에 딱 붙어 있으면 펼친 스와치 목록이 캔버스 박스 자체의 `Positioned` 크기를 벗어날 수 있다 — 예전에 핸들에서 정확히 이 이유(부모 `Positioned`가 자기 크기 밖 히트테스트를 거부)로 터치 불가 버그가 났었다(§4.5.1과는 다른 버그, 아트보드 개발 초기 발견). 버튼/스와치 전체를 캔버스 `Stack` 크기 안에 딱 맞춰 넣거나, 필요하면 삭제존과 마찬가지로 `Overlay`를 쓸지 Worker가 실제 배치를 보고 판단.
+
+### 11.4 영향 범위 추가 (§6 갱신)
+
+기존 4개 파일 중 `interactive_artboard.dart`에 배경 렌더링 + 버튼/스와치 UI가 추가되고, `artboard_item.dart`(또는 신규 파일)에 `ArtboardBackgroundColor` enum이 추가된다. 별도 위젯 파일로 분리할지(`artboard_background_swatch.dart`)는 Worker가 코드량 보고 판단 — 강제하지 않음.
