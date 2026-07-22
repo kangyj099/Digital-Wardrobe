@@ -1411,6 +1411,475 @@ git commit -m "chore(artboard): add handle Semantics labels and per-item Repaint
 
 ---
 
-## After all 8 tasks pass Review
+## Round 1 complete (Tasks 1–8)
 
-Per this project's harness (not a task in this plan): once every task above has passed Review, PM spawns Tester to write `integration_test/interactive_artboard_test.dart`, implementing the full checklist already enumerated in spec §7 (18 checks — static Selection Box display, move/resize/rotate isolation, overlap popup reorder/select, drag-out delete with the boundary case, controlled-`selectedItemId` verification, and the Hit Area-vs-render-box edge tap). Tester mounts `InteractiveArtboard` directly inside a bare `MaterialApp`/`Scaffold` with a small local `StatefulWidget` test wrapper playing the "parent" role for `selectedItemId`/`onSelectionChanged`, using local mock `ArtboardItem` fixtures — no `lib/mock/mock_data.dart`, no `Composition` model, per the spec's isolation requirement (§1, §7).
+Per this project's harness: once every Round 1 task above passed Review, PM spawned Tester (`integration_test/interactive_artboard_test.dart`, 14/14 scenarios passing) then Feature Audit (0 P0/P1). This is done — see git history on `feature/composition-artboard-widget`.
+
+---
+
+## Round 2 (2026-07-19): Overlap popup redesign + background color swatch
+
+User tested the Round 1 build via a manual demo (`lib/main_artboard_demo.dart`) and asked for three things, captured in the spec's Round 2 amendment (`docs/superpowers/specs/2026-07-19-composition-artboard-isolated-widget-design.md` §4.5/§4.5.1/§5/§11): a diagnosis+fix for an intermittent reorder-drag failure, a redesign of the overlap popup from a modal bottom sheet to a touch-point-anchored context-menu-style card (with a new per-row selection icon and selected-row highlighting), and a background-color swatch control (previously deferred out of scope in §8, now brought back in per explicit user request).
+
+**Global Constraints still apply** (named consts with rationale, controlled-widget pattern, `onItemsChanged`/`onSelectionChanged` commit-only-on-gesture-end) — Round 2 tasks follow the same conventions Round 1 established.
+
+### Task 9: `ArtboardBackgroundColor` enum + controlled `backgroundColor` prop + canvas fill
+
+**Files:**
+- Create: `lib/widgets/interactive_artboard/artboard_background_color.dart`
+- Modify: `lib/widgets/interactive_artboard/interactive_artboard.dart`
+
+**Interfaces:**
+- Produces: `enum ArtboardBackgroundColor { white, lightGray, darkGray, black }` with a `Color get value` getter. `InteractiveArtboard`'s constructor gains `required ArtboardBackgroundColor backgroundColor` and `required ValueChanged<ArtboardBackgroundColor> onBackgroundColorChanged` — Task 10 reads `widget.backgroundColor`/calls `widget.onBackgroundColorChanged` for the button/swatch UI.
+
+- [ ] **Step 1: Add the enum**
+
+```dart
+// lib/widgets/interactive_artboard/artboard_background_color.dart
+import 'package:flutter/material.dart';
+
+/// 아트보드 배경색의 닫힌 값 집합(스펙 §11.1) — `02_코디.md` "MVP는 흰색/회색/검은색
+/// 단색만 지원" 요구사항을 4단계(사용자 확정, 2026-07-19)로 구현한다. `Color`를 위젯
+/// 경계로 임의값 주고받지 않고 enum으로 모델링한다(`lib/models/enums.dart`의
+/// `Season`/`Weather`와 동일한 패턴 — 닫힌 어휘는 enum, annotated String 아님).
+enum ArtboardBackgroundColor {
+  white,
+  lightGray,
+  darkGray,
+  black;
+
+  Color get value => switch (this) {
+        ArtboardBackgroundColor.white => Colors.white,
+        ArtboardBackgroundColor.lightGray => Colors.grey.shade300,
+        ArtboardBackgroundColor.darkGray => Colors.grey.shade800,
+        ArtboardBackgroundColor.black => Colors.black,
+      };
+}
+```
+
+- [ ] **Step 2: Add the controlled prop and fill the canvas with it**
+
+In `lib/widgets/interactive_artboard/interactive_artboard.dart`:
+
+Add the import:
+
+```dart
+import 'artboard_background_color.dart';
+```
+
+Add to the `InteractiveArtboard` constructor (after `onSelectionChanged`, before `baseItemSizeFraction`):
+
+```dart
+    required this.backgroundColor,
+    required this.onBackgroundColorChanged,
+```
+
+Add to the field list (after `onSelectionChanged`):
+
+```dart
+  final ArtboardBackgroundColor backgroundColor;
+  final ValueChanged<ArtboardBackgroundColor> onBackgroundColorChanged;
+```
+
+In `build()`, wrap the existing `Stack(key: _canvasKey, ...)` in a `ColoredBox` (paints only, no gesture impact — stays inside the existing `GestureDetector`):
+
+```dart
+          child: ColoredBox(
+            color: widget.backgroundColor.value,
+            child: Stack(
+              key: _canvasKey,
+              clipBehavior: Clip.none,
+              children: [
+                // ...existing children unchanged...
+              ],
+            ),
+          ),
+```
+
+- [ ] **Step 3: Run static analysis**
+
+Run: `flutter analyze lib/widgets/interactive_artboard/`
+Expected: `No issues found!`
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/widgets/interactive_artboard/artboard_background_color.dart lib/widgets/interactive_artboard/interactive_artboard.dart
+git commit -m "feat(artboard): add controlled background color and canvas fill"
+```
+
+---
+
+### Task 10: Background color button + swatch picker UI
+
+**Files:**
+- Modify: `lib/widgets/interactive_artboard/interactive_artboard.dart`
+
+**Interfaces:**
+- Consumes: `widget.backgroundColor`/`widget.onBackgroundColorChanged` (Task 9).
+- Produces: `_isSwatchExpanded` state — `_handleTapUp` (existing method) gains a new first check that collapses the swatch on any outside tap without touching item selection.
+
+- [ ] **Step 1: Add button/swatch constants and state**
+
+Add these consts next to the existing ones (e.g. near `_deleteZoneIconSize`):
+
+```dart
+/// 배경색 버튼 지름(논리픽셀) — 핸들(44px)과 동일한 접근성 최소 터치영역.
+const double _backgroundColorButtonDiameter = 44.0;
+
+/// 배경색 버튼이 캔버스 모서리에서 떨어지는 여백(논리픽셀).
+const double _backgroundColorButtonMargin = 16.0;
+
+/// 배경색 스와치 원 지름(논리픽셀) — 버튼과 동일 크기로 시각 통일.
+const double _backgroundSwatchDiameter = 44.0;
+
+/// 스와치끼리, 버튼-첫 스와치 사이의 세로 간격(논리픽셀).
+const double _backgroundSwatchSpacing = 8.0;
+```
+
+Add this field to `_InteractiveArtboardState` (near `_isOutOfBounds`):
+
+```dart
+  bool _isSwatchExpanded = false;
+```
+
+- [ ] **Step 2: Add the button/swatch widgets to the Stack, and make outside-taps collapse the swatch**
+
+Add these two `Positioned` entries as the **last** children of the canvas `Stack` (after the selected-item hoisted layer added in Round 1, so the button/swatch always paint on top):
+
+```dart
+              Positioned(
+                right: _backgroundColorButtonMargin,
+                bottom: _backgroundColorButtonMargin,
+                child: _backgroundColorButton(),
+              ),
+              if (_isSwatchExpanded)
+                Positioned(
+                  right: _backgroundColorButtonMargin,
+                  bottom: _backgroundColorButtonMargin +
+                      _backgroundColorButtonDiameter +
+                      _backgroundSwatchSpacing,
+                  child: _backgroundSwatchList(),
+                ),
+```
+
+Add these methods:
+
+```dart
+  Widget _backgroundColorButton() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _isSwatchExpanded = !_isSwatchExpanded),
+      child: Container(
+        width: _backgroundColorButtonDiameter,
+        height: _backgroundColorButtonDiameter,
+        decoration: BoxDecoration(
+          color: widget.backgroundColor.value,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _backgroundSwatchList() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final option in ArtboardBackgroundColor.values) ...[
+          _backgroundSwatch(option),
+          if (option != ArtboardBackgroundColor.values.last)
+            const SizedBox(height: _backgroundSwatchSpacing),
+        ],
+      ],
+    );
+  }
+
+  Widget _backgroundSwatch(ArtboardBackgroundColor option) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        widget.onBackgroundColorChanged(option);
+        setState(() => _isSwatchExpanded = false);
+      },
+      child: Container(
+        width: _backgroundSwatchDiameter,
+        height: _backgroundSwatchDiameter,
+        decoration: BoxDecoration(
+          color: option.value,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        ),
+      ),
+    );
+  }
+```
+
+Replace the first line of `_handleTapUp` (right after the method signature's opening brace) so an outside tap collapses the swatch without touching item selection (spec §11.3: "스와치 바깥을 탭하면 스와치만 닫힌다(선택은 안 바뀜)") — the button/swatches themselves are `HitTestBehavior.opaque`, so this only ever runs for taps that fall through them:
+
+```dart
+  void _handleTapUp(TapUpDetails details, Size canvasSize, double baseItemSize) {
+    if (_isSwatchExpanded) {
+      setState(() => _isSwatchExpanded = false);
+      return;
+    }
+    final matches = widget.items
+```
+
+(the rest of `_handleTapUp` is unchanged from Round 1 — this only adds the early-return guard before the existing first line)
+
+- [ ] **Step 3: Run static analysis**
+
+Run: `flutter analyze lib/widgets/interactive_artboard/`
+Expected: `No issues found!`
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/widgets/interactive_artboard/interactive_artboard.dart
+git commit -m "feat(artboard): add background color button and swatch picker"
+```
+
+---
+
+### Task 11: Overlap popup redesign — Overlay-anchored card + selection icon + row highlight
+
+**Note on scope**: this task touches two files together in one pass, not split further — `interactive_artboard.dart`'s `_openOverlapPopup` (Step 1) constructs `ArtboardOverlapPopup` with a `selectedItemId:` argument that doesn't exist on that widget's constructor until `artboard_overlap_popup.dart` (Step 2) adds it, so neither half alone leaves the code in a `flutter analyze`-clean state — they're one task, not two, per this plan's Task Right-Sizing rule ("split only where a reviewer could meaningfully reject one task while approving its neighbor").
+
+**Files:**
+- Modify: `lib/widgets/interactive_artboard/interactive_artboard.dart`
+- Modify: `lib/widgets/interactive_artboard/artboard_overlap_popup.dart`
+
+**Interfaces:**
+- Consumes: `ArtboardOverlapPopup` (Round 1, Task 4 — both its hosting mechanism and its own constructor change together here).
+- Produces: `_overlapPopupEntry`/`_closeOverlapPopup()` on `_InteractiveArtboardState` (`dispose()` gains a third cleanup call alongside the two it already has); `ArtboardOverlapPopup`'s constructor gains `required String? selectedItemId`. Nothing here is consumed by a later task — this is the last Round 2 code task; Tester picks up from here.
+
+- [ ] **Step 1: Add popup-card constants and state**
+
+Add these consts:
+
+```dart
+/// 겹침 팝업 카드의 고정 너비(논리픽셀) — 화면 경계 클램핑 계산을 단순하게 하려고
+/// 카드 폭을 고정한다(내용은 세로로만 늘어남).
+const double _overlapPopupCardWidth = 240.0;
+
+/// 팝업 카드가 화면 가장자리에서 최소한 이만큼은 떨어지도록 하는 여백(논리픽셀).
+const double _overlapPopupScreenMargin = 8.0;
+```
+
+Add this field to `_InteractiveArtboardState` (near `_deleteZoneOverlayEntry`):
+
+```dart
+  OverlayEntry? _overlapPopupEntry;
+```
+
+- [ ] **Step 2: Replace `_openOverlapPopup` with an Overlay-anchored version, add `_closeOverlapPopup`, update `_handleTapUp`'s call site and `dispose()`**
+
+Replace the whole `_openOverlapPopup` method with:
+
+```dart
+  void _openOverlapPopup(List<ArtboardItem> matches, Offset anchorGlobalPosition) {
+    _overlapPopupEntry = OverlayEntry(
+      builder: (overlayContext) {
+        final screenSize = MediaQuery.of(overlayContext).size;
+        final left = anchorGlobalPosition.dx.clamp(
+          _overlapPopupScreenMargin,
+          screenSize.width - _overlapPopupCardWidth - _overlapPopupScreenMargin,
+        );
+        final top = anchorGlobalPosition.dy.clamp(
+          _overlapPopupScreenMargin,
+          screenSize.height - _overlapPopupScreenMargin,
+        );
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _closeOverlapPopup,
+              ),
+            ),
+            Positioned(
+              left: left,
+              top: top,
+              width: _overlapPopupCardWidth,
+              child: ArtboardOverlapPopup(
+                items: matches,
+                selectedItemId: widget.selectedItemId,
+                onSelect: (id) {
+                  _closeOverlapPopup();
+                  widget.onSelectionChanged(id);
+                },
+                onReorder: (orderedIds) {
+                  final originalZIndexesDescending =
+                      matches.map((item) => item.zIndex).toList()
+                        ..sort((a, b) => b.compareTo(a));
+                  final newZIndexById = <String, int>{
+                    for (var i = 0; i < orderedIds.length; i++)
+                      orderedIds[i]: originalZIndexesDescending[i],
+                  };
+                  final updated = widget.items.map((item) {
+                    final newZ = newZIndexById[item.id];
+                    return newZ == null ? item : item.copyWith(zIndex: newZ);
+                  }).toList();
+                  widget.onItemsChanged(updated);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    Overlay.of(context).insert(_overlapPopupEntry!);
+  }
+
+  void _closeOverlapPopup() {
+    _overlapPopupEntry?..remove()..dispose();
+    _overlapPopupEntry = null;
+  }
+```
+
+**Note on the `top` clamp**: it only guards against the anchor point itself being too close to the top/bottom screen edges — it does not know the card's actual rendered height in advance (item count varies), so a popup opened very low on a short screen with many overlapping items could still extend past the bottom edge. This matches the spec's explicit "정확한 앵커 지점과 여백은 Worker 재량 — 화면 밖으로 안 나가기만 하면 됨" allowance; if this proves visually wrong in practice, wrap the card content in a `ConstrainedBox(maxHeight: ...)` + scrollable as a follow-up (not required for this task, note as a `TechnicalDebt.md` candidate if observed).
+
+In `_handleTapUp`, change the call site to pass the global position:
+
+```dart
+    } else {
+      _openOverlapPopup(matches, details.globalPosition);
+    }
+```
+
+In `dispose()`, add the third cleanup call alongside the existing two:
+
+```dart
+  @override
+  void dispose() {
+    _deleteZoneOverlayEntry?..remove()..dispose();
+    _overlapPopupEntry?..remove()..dispose();
+    super.dispose();
+  }
+```
+
+- [ ] **Step 3: Update `ArtboardOverlapPopup`'s own file — add `selectedItemId`, the selection icon, and row highlighting**
+
+Replace the full content of `lib/widgets/interactive_artboard/artboard_overlap_popup.dart` with:
+
+```dart
+// lib/widgets/interactive_artboard/artboard_overlap_popup.dart
+import 'package:flutter/material.dart';
+import 'artboard_item.dart';
+
+/// 팝업 행의 썸네일 한 변 길이(논리픽셀) — `ListTile.leading` 표준 아이콘/썸네일
+/// 크기에 맞춘 값, 목록 행 높이 안에서 라벨과 균형 있게 보이도록 고정한다.
+const double _thumbnailSize = 40;
+
+/// 겹친 아이템 목록을 z-순서(위→아래)로 보여주는, 터치 지점 근처에 뜨는 팝업 카드
+/// (스펙 §4.5, 2026-07-19 리디자인). 호스팅(화면 위 위치 계산/배리어)은
+/// `interactive_artboard.dart`의 `_openOverlapPopup`이 담당하고, 이 위젯은 카드
+/// 내용(행 목록)만 책임진다.
+/// - 행의 선택 아이콘/썸네일/라벨 탭 → [onSelect]
+/// - 행 끝 드래그핸들로 재배열 → [onReorder](재배열된 새 순서의 id 리스트, 위→아래)
+///
+/// 탭(선택)과 드래그(재배열)의 히트영역을 분리한다 — `ReorderableListView`의
+/// `buildDefaultDragHandles: false` + `ReorderableDragStartListener`로 드래그 트리거를
+/// trailing 아이콘에만 한정하고, `ListTile.onTap`은 그대로 탭 선택에 쓴다.
+class ArtboardOverlapPopup extends StatefulWidget {
+  const ArtboardOverlapPopup({
+    super.key,
+    required this.items,
+    required this.selectedItemId,
+    required this.onSelect,
+    required this.onReorder,
+  });
+
+  /// z-순서 내림차순(위→아래)으로 이미 정렬되어 들어온다.
+  final List<ArtboardItem> items;
+
+  /// 현재 아트보드에서 선택된 아이템 id — 이 목록에 포함돼 있으면 그 행만 강조 표시.
+  final String? selectedItemId;
+  final ValueChanged<String> onSelect;
+  final ValueChanged<List<String>> onReorder;
+
+  @override
+  State<ArtboardOverlapPopup> createState() => _ArtboardOverlapPopupState();
+}
+
+class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
+  late final List<ArtboardItem> _order = List.of(widget.items);
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 4,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: ReorderableListView(
+        shrinkWrap: true,
+        buildDefaultDragHandles: false,
+        onReorderItem: (oldIndex, newIndex) {
+          setState(() {
+            final moved = _order.removeAt(oldIndex);
+            _order.insert(newIndex, moved);
+          });
+          widget.onReorder(_order.map((item) => item.id).toList());
+        },
+        children: [
+          for (var i = 0; i < _order.length; i++) _row(context, _order[i], i, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(BuildContext context, ArtboardItem item, int index, ColorScheme colorScheme) {
+    final isSelected = item.id == widget.selectedItemId;
+    return Container(
+      key: ValueKey(item.id),
+      color: isSelected ? colorScheme.primaryContainer : null,
+      child: ListTile(
+        leading: Icon(
+          isSelected ? Icons.check_circle : Icons.check_circle_outline,
+          color: isSelected ? colorScheme.primary : null,
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              item.imagePath,
+              width: _thumbnailSize,
+              height: _thumbnailSize,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Flexible(child: Text(item.id, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+        onTap: () => widget.onSelect(item.id),
+        trailing: ReorderableDragStartListener(
+          index: index,
+          child: const Icon(Icons.drag_handle),
+        ),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Step 4: Run static analysis**
+
+Run: `flutter analyze lib/widgets/interactive_artboard/`
+Expected: `No issues found!` (both files from Steps 1–3 must be in place together for this to pass)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/widgets/interactive_artboard/interactive_artboard.dart lib/widgets/interactive_artboard/artboard_overlap_popup.dart
+git commit -m "feat(artboard): replace overlap popup with Overlay-anchored card, add selection icon and row highlight"
+```
+
+---
+
+## After Round 2 tasks pass Review
+
+Same pattern as Round 1: once Tasks 9–11 all pass Review, PM spawns Tester to extend `integration_test/interactive_artboard_test.dart` with the new scenarios spec §7 lists under "2026-07-19 팝업 리디자인"/"2026-07-19 배경색 스와치" (screen-boundary clamping, barrier-tap-dismiss, **repeated reorder regression check** for the bug diagnosed in spec §4.5.1, selection-icon tap, selected-row highlight, background color button/swatch behavior). Given Round 2 adds a new architectural pattern (Overlay-anchored popup) and a new controlled prop surface (background color), PM should run Feature Audit again after Tester passes — same L-task convention Round 1 followed.
+
+PM should also update `lib/main_artboard_demo.dart` (not committed) to pass the two new required constructor params (`backgroundColor`/`onBackgroundColorChanged`, with local `ArtboardBackgroundColor` state) so the user can re-test the live demo after Round 2 lands.
