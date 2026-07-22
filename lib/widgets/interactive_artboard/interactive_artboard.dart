@@ -89,6 +89,8 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   OverlayEntry? _deleteZoneOverlayEntry;
   bool _isOutOfBounds = false;
 
+  bool _isSwatchExpanded = false;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -131,6 +133,19 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
                     isSelected: true,
                     includeInteraction: true,
                     includeVisual: false,
+                  ),
+                Positioned(
+                  right: _backgroundColorButtonMargin,
+                  bottom: _backgroundColorButtonMargin,
+                  child: _backgroundColorButton(),
+                ),
+                if (_isSwatchExpanded)
+                  Positioned(
+                    right: _backgroundColorButtonMargin,
+                    bottom: _backgroundColorButtonMargin +
+                        _backgroundColorButtonDiameter +
+                        _backgroundSwatchSpacing,
+                    child: _backgroundSwatchList(),
                   ),
               ],
             ),
@@ -478,6 +493,10 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   }
 
   void _handleTapUp(TapUpDetails details, Size canvasSize, double baseItemSize) {
+    if (_isSwatchExpanded) {
+      setState(() => _isSwatchExpanded = false);
+      return;
+    }
     final matches = widget.items
         .where((item) =>
             _hitAreaContains(item, details.localPosition, canvasSize, baseItemSize))
@@ -523,6 +542,54 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
       ),
     );
   }
+
+  Widget _backgroundColorButton() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _isSwatchExpanded = !_isSwatchExpanded),
+      child: Container(
+        width: _backgroundColorButtonDiameter,
+        height: _backgroundColorButtonDiameter,
+        decoration: BoxDecoration(
+          color: widget.backgroundColor.value,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _backgroundSwatchList() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final option in ArtboardBackgroundColor.values) ...[
+          _backgroundSwatch(option),
+          if (option != ArtboardBackgroundColor.values.last)
+            const SizedBox(height: _backgroundSwatchSpacing),
+        ],
+      ],
+    );
+  }
+
+  Widget _backgroundSwatch(ArtboardBackgroundColor option) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        widget.onBackgroundColorChanged(option);
+        setState(() => _isSwatchExpanded = false);
+      },
+      child: Container(
+        width: _backgroundSwatchDiameter,
+        height: _backgroundSwatchDiameter,
+        decoration: BoxDecoration(
+          color: option.value,
+          shape: BoxShape.circle,
+          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        ),
+      ),
+    );
+  }
 }
 
 /// 딤드 오버레이의 반투명도 — 아이템이 삭제 가능 상태임을 알아볼 수 있을 만큼
@@ -537,6 +604,18 @@ const double _deleteZoneIconBottomPadding = 32.0;
 /// 휴지통 아이콘 크기(논리픽셀) — 화면 전체를 덮는 딤드 오버레이 위에서 눈에 띄게
 /// 하려고 핸들(44px)보다 큰 크기로 잡음.
 const double _deleteZoneIconSize = 48.0;
+
+/// 배경색 버튼 지름(논리픽셀) — 핸들(44px)과 동일한 접근성 최소 터치영역.
+const double _backgroundColorButtonDiameter = 44.0;
+
+/// 배경색 버튼이 캔버스 모서리에서 떨어지는 여백(논리픽셀).
+const double _backgroundColorButtonMargin = 16.0;
+
+/// 배경색 스와치 원 지름(논리픽셀) — 버튼과 동일 크기로 시각 통일.
+const double _backgroundSwatchDiameter = 44.0;
+
+/// 스와치끼리, 버튼-첫 스와치 사이의 세로 간격(논리픽셀).
+const double _backgroundSwatchSpacing = 8.0;
 
 /// 아이템을 캔버스 밖으로 드래그할 때 [Overlay]에 그리는 딤드+휴지통 아이콘 시각
 /// 피드백(스펙 §4.6) — `interactive_artboard.dart`의 `RenderBox` 경계에 갇히지 않도록
