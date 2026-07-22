@@ -1,5 +1,18 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `InteractiveArtboard` 관련 Audit(2026-07-19) 발견 P3 2건 — 터치타겟 상수 이원화, zIndex 동률 정렬 불안정성
+
+상태: 미해결 (낮은 우선순위로 기록만)
+
+내용:
+8개 태스크 빌드 완료 후 Audit이 발견:
+1. `_handleVisualDiameter = 44.0`(`interactive_artboard.dart`)가 접근성 최소 터치영역 44px를 독자적으로 상수화했는데, 기존 `GlassPill`/`GlassCircleButton`은 같은 개념을 Flutter의 `kMinInteractiveDimension`(48.0)으로 이미 표준화해 쓰고 있다. 두 값 다 각자 근거는 있지만(44=WCAG 최소, 48=Material 상수+`AppMainScaffold` 헤더 간격 계산과 결합) 서로 참조가 없어 "이 프로젝트엔 캐노니컬 최소 터치크기가 2개"라는 사실이 코드만 봐선 안 드러남.
+2. `build()`의 `sortedItems`와 `_handleTapUp`의 `matches..sort(...)`가 Dart 기본 `List.sort`(안정 정렬 미보장)를 쓴다. `ArtboardItem.zIndex` 기본값이 0이라, 아직 서로 다른 zIndex를 부여받지 않은 아이템들(예: 막 추가된 직후) 사이에 동률이 생기면 리빌드마다 페인트/히트우선순위 순서가 조용히 뒤바뀔 수 있다.
+
+조치 방향(착수 조건): 1번은 `composition_editor_screen.dart` 연결 라운드에서 아트보드 핸들이 GlassPill/GlassCircleButton 크롬과 시각적으로 인접하게 배치될 때 재검토(지금은 코드 변경 불필요). 2번은 다음에 이 파일을 손댈 때 `(zIndex, id)` 같은 타이브레이커를 추가해 동률 정렬을 결정적으로 만들 것.
+
+---
+
 [TechDebt] `InteractiveArtboard`(`lib/widgets/interactive_artboard/interactive_artboard.dart`)의 드래그 핸들러에 `onPanCancel` 부재 (P3)
 
 상태: 미해결 (낮은 우선순위로 기록만)
