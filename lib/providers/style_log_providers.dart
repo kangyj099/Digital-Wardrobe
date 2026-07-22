@@ -15,6 +15,25 @@ class StyleLogsNotifier extends StateNotifier<List<StyleLog>> {
         if (log.id == logId) log.copyWith(linkedCompositionId: compositionId) else log,
     ];
   }
+
+  void softDeleteMany(Set<String> ids) {
+    final now = DateTime.now();
+    state = [
+      for (final log in state)
+        if (ids.contains(log.id)) log.copyWith(isDeleted: true, deletedAt: now) else log,
+    ];
+  }
+
+  void restoreMany(Set<String> ids) {
+    state = [
+      for (final log in state)
+        if (ids.contains(log.id)) log.copyWith(isDeleted: false, deletedAt: null) else log,
+    ];
+  }
+
+  void purgeMany(Set<String> ids) {
+    state = [for (final log in state) if (!ids.contains(log.id)) log];
+  }
 }
 
 final styleLogsProvider =

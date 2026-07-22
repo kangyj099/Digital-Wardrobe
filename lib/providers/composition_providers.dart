@@ -9,6 +9,25 @@ import 'closet_providers.dart';
 
 class CompositionsNotifier extends StateNotifier<List<Composition>> {
   CompositionsNotifier() : super(mockCompositions);
+
+  void softDeleteMany(Set<String> ids) {
+    final now = DateTime.now();
+    state = [
+      for (final c in state)
+        if (ids.contains(c.id)) c.copyWith(isDeleted: true, deletedAt: now) else c,
+    ];
+  }
+
+  void restoreMany(Set<String> ids) {
+    state = [
+      for (final c in state)
+        if (ids.contains(c.id)) c.copyWith(isDeleted: false, deletedAt: null) else c,
+    ];
+  }
+
+  void purgeMany(Set<String> ids) {
+    state = [for (final c in state) if (!ids.contains(c.id)) c];
+  }
 }
 
 final compositionsProvider =
