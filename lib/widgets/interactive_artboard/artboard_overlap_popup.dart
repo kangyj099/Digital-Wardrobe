@@ -2,6 +2,10 @@
 import 'package:flutter/material.dart';
 import 'artboard_item.dart';
 
+/// 팝업 행의 썸네일 한 변 길이(논리픽셀) — `ListTile.leading` 표준 아이콘/썸네일
+/// 크기에 맞춘 값, 목록 행 높이 안에서 라벨과 균형 있게 보이도록 고정한다.
+const double _thumbnailSize = 40;
+
 /// 겹친 아이템 목록을 z-순서(위→아래)로 보여주는 팝업(스펙 §4.5).
 /// - 행의 썸네일/라벨 탭 → [onSelect]
 /// - 행 끝 드래그핸들로 재배열 → [onReorder](재배열된 새 순서의 id 리스트, 위→아래)
@@ -51,8 +55,8 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
               key: ValueKey(_order[i].id),
               leading: Image.asset(
                 _order[i].imagePath,
-                width: 40,
-                height: 40,
+                width: _thumbnailSize,
+                height: _thumbnailSize,
                 fit: BoxFit.contain,
               ),
               title: Text(_order[i].id),
