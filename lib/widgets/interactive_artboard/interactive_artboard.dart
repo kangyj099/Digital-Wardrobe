@@ -39,6 +39,13 @@ const double _rotateStemLength = 20.0;
 /// 레이어의 히트테스트 가능 영역 안에 들어오게 한다(리뷰 P0 반영).
 const double _handleLayerMargin = _minHandleOffset + _rotateStemLength + _handleVisualDiameter;
 
+/// 겹침 팝업 카드의 고정 너비(논리픽셀) — 화면 경계 클램핑 계산을 단순하게 하려고
+/// 카드 폭을 고정한다(내용은 세로로만 늘어남).
+const double _overlapPopupCardWidth = 240.0;
+
+/// 팝업 카드가 화면 가장자리에서 최소한 이만큼은 떨어지도록 하는 여백(논리픽셀).
+const double _overlapPopupScreenMargin = 8.0;
+
 /// 코디 편집기 아트보드 — 배치/이동/회전/크기조절/겹침처리/삭제의 코어 상호작용을
 /// 제공하는 완전 독립 위젯. `Composition`/`ClothingItem` 모델에 의존하지 않는다.
 ///
@@ -88,6 +95,8 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
 
   OverlayEntry? _deleteZoneOverlayEntry;
   bool _isOutOfBounds = false;
+
+  OverlayEntry? _overlapPopupEntry;
 
   bool _isSwatchExpanded = false;
 
@@ -468,6 +477,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   @override
   void dispose() {
     _deleteZoneOverlayEntry?..remove()..dispose();
+    _overlapPopupEntry?..remove()..dispose();
     super.dispose();
   }
 
@@ -508,39 +518,72 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     } else if (matches.length == 1) {
       widget.onSelectionChanged(matches.first.id);
     } else {
-      _openOverlapPopup(matches);
+      _openOverlapPopup(matches, details.globalPosition);
     }
   }
 
-  Future<void> _openOverlapPopup(List<ArtboardItem> matches) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) => ArtboardOverlapPopup(
-        items: matches,
-        onSelect: (id) {
-          Navigator.of(sheetContext).pop();
-          widget.onSelectionChanged(id);
-        },
-        onReorder: (orderedIds) {
-          // 겹친 아이템들이 원래 갖고 있던 zIndex 값 집합을 그대로 재사용하고
-          // (0..N-1 같은 새 범위로 압축하지 않음), 순서만 새로 배정한다 — 캔버스에
-          // 이 팝업에 없는 다른 아이템들이 이미 그 zIndex 값 사이사이를 차지하고
-          // 있을 수 있어서, 새 범위로 압축하면 그 아이템들과 충돌해 전체 페인트
-          // 순서가 조용히 어긋난다(리뷰 P1 반영).
-          final originalZIndexesDescending = matches.map((item) => item.zIndex).toList()
-            ..sort((a, b) => b.compareTo(a));
-          final newZIndexById = <String, int>{
-            for (var i = 0; i < orderedIds.length; i++)
-              orderedIds[i]: originalZIndexesDescending[i],
-          };
-          final updated = widget.items.map((item) {
-            final newZ = newZIndexById[item.id];
-            return newZ == null ? item : item.copyWith(zIndex: newZ);
-          }).toList();
-          widget.onItemsChanged(updated);
-        },
-      ),
+  void _openOverlapPopup(List<ArtboardItem> matches, Offset anchorGlobalPosition) {
+    _overlapPopupEntry = OverlayEntry(
+      builder: (overlayContext) {
+        final screenSize = MediaQuery.of(overlayContext).size;
+        final left = anchorGlobalPosition.dx.clamp(
+          _overlapPopupScreenMargin,
+          screenSize.width - _overlapPopupCardWidth - _overlapPopupScreenMargin,
+        );
+        final top = anchorGlobalPosition.dy.clamp(
+          _overlapPopupScreenMargin,
+          screenSize.height - _overlapPopupScreenMargin,
+        );
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _closeOverlapPopup,
+              ),
+            ),
+            Positioned(
+              left: left,
+              top: top,
+              width: _overlapPopupCardWidth,
+              child: ArtboardOverlapPopup(
+                items: matches,
+                selectedItemId: widget.selectedItemId,
+                onSelect: (id) {
+                  _closeOverlapPopup();
+                  widget.onSelectionChanged(id);
+                },
+                onReorder: (orderedIds) {
+                  // 겹친 아이템들이 원래 갖고 있던 zIndex 값 집합을 그대로 재사용하고
+                  // (0..N-1 같은 새 범위로 압축하지 않음), 순서만 새로 배정한다 —
+                  // 캔버스에 이 팝업에 없는 다른 아이템들이 이미 그 zIndex 값
+                  // 사이사이를 차지하고 있을 수 있어서, 새 범위로 압축하면 그
+                  // 아이템들과 충돌해 전체 페인트 순서가 조용히 어긋난다(리뷰 P1 반영).
+                  final originalZIndexesDescending =
+                      matches.map((item) => item.zIndex).toList()
+                        ..sort((a, b) => b.compareTo(a));
+                  final newZIndexById = <String, int>{
+                    for (var i = 0; i < orderedIds.length; i++)
+                      orderedIds[i]: originalZIndexesDescending[i],
+                  };
+                  final updated = widget.items.map((item) {
+                    final newZ = newZIndexById[item.id];
+                    return newZ == null ? item : item.copyWith(zIndex: newZ);
+                  }).toList();
+                  widget.onItemsChanged(updated);
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
+    Overlay.of(context).insert(_overlapPopupEntry!);
+  }
+
+  void _closeOverlapPopup() {
+    _overlapPopupEntry?..remove()..dispose();
+    _overlapPopupEntry = null;
   }
 
   Widget _backgroundColorButton() {

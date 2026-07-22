@@ -6,8 +6,11 @@ import 'artboard_item.dart';
 /// 크기에 맞춘 값, 목록 행 높이 안에서 라벨과 균형 있게 보이도록 고정한다.
 const double _thumbnailSize = 40;
 
-/// 겹친 아이템 목록을 z-순서(위→아래)로 보여주는 팝업(스펙 §4.5).
-/// - 행의 썸네일/라벨 탭 → [onSelect]
+/// 겹친 아이템 목록을 z-순서(위→아래)로 보여주는, 터치 지점 근처에 뜨는 팝업 카드
+/// (스펙 §4.5, 2026-07-19 리디자인). 호스팅(화면 위 위치 계산/배리어)은
+/// `interactive_artboard.dart`의 `_openOverlapPopup`이 담당하고, 이 위젯은 카드
+/// 내용(행 목록)만 책임진다.
+/// - 행의 선택 아이콘/썸네일/라벨 탭 → [onSelect]
 /// - 행 끝 드래그핸들로 재배열 → [onReorder](재배열된 새 순서의 id 리스트, 위→아래)
 ///
 /// 탭(선택)과 드래그(재배열)의 히트영역을 분리한다 — `ReorderableListView`의
@@ -17,12 +20,16 @@ class ArtboardOverlapPopup extends StatefulWidget {
   const ArtboardOverlapPopup({
     super.key,
     required this.items,
+    required this.selectedItemId,
     required this.onSelect,
     required this.onReorder,
   });
 
   /// z-순서 내림차순(위→아래)으로 이미 정렬되어 들어온다.
   final List<ArtboardItem> items;
+
+  /// 현재 아트보드에서 선택된 아이템 id — 이 목록에 포함돼 있으면 그 행만 강조 표시.
+  final String? selectedItemId;
   final ValueChanged<String> onSelect;
   final ValueChanged<List<String>> onReorder;
 
@@ -35,7 +42,11 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      elevation: 4,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
       child: ReorderableListView(
         shrinkWrap: true,
         buildDefaultDragHandles: false,
@@ -50,23 +61,40 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
           widget.onReorder(_order.map((item) => item.id).toList());
         },
         children: [
-          for (var i = 0; i < _order.length; i++)
-            ListTile(
-              key: ValueKey(_order[i].id),
-              leading: Image.asset(
-                _order[i].imagePath,
-                width: _thumbnailSize,
-                height: _thumbnailSize,
-                fit: BoxFit.contain,
-              ),
-              title: Text(_order[i].id),
-              onTap: () => widget.onSelect(_order[i].id),
-              trailing: ReorderableDragStartListener(
-                index: i,
-                child: const Icon(Icons.drag_handle),
-              ),
-            ),
+          for (var i = 0; i < _order.length; i++) _row(context, _order[i], i, colorScheme),
         ],
+      ),
+    );
+  }
+
+  Widget _row(BuildContext context, ArtboardItem item, int index, ColorScheme colorScheme) {
+    final isSelected = item.id == widget.selectedItemId;
+    return Container(
+      key: ValueKey(item.id),
+      color: isSelected ? colorScheme.primaryContainer : null,
+      child: ListTile(
+        leading: Icon(
+          isSelected ? Icons.check_circle : Icons.check_circle_outline,
+          color: isSelected ? colorScheme.primary : null,
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              item.imagePath,
+              width: _thumbnailSize,
+              height: _thumbnailSize,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Flexible(child: Text(item.id, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+        onTap: () => widget.onSelect(item.id),
+        trailing: ReorderableDragStartListener(
+          index: index,
+          child: const Icon(Icons.drag_handle),
+        ),
       ),
     );
   }
