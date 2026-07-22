@@ -425,13 +425,17 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   }
 
   void _hideDeleteZoneOverlay() {
-    _deleteZoneOverlayEntry?.remove();
+    // remove()만으로는 부족하다 — OverlayEntry는 remove()(Overlay에서 분리)와
+    // dispose()(리소스 해제, 누수추적 훅 발동)가 분리된 2단계 생명주기다
+    // (Flutter `OverlayEntry` 문서: "remove must be called before dispose").
+    // 매번 새 OverlayEntry를 만들므로 이 호출을 빠뜨리면 누적 누수가 생긴다(리뷰 P1 반영).
+    _deleteZoneOverlayEntry?..remove()..dispose();
     _deleteZoneOverlayEntry = null;
   }
 
   @override
   void dispose() {
-    _deleteZoneOverlayEntry?.remove();
+    _deleteZoneOverlayEntry?..remove()..dispose();
     super.dispose();
   }
 
@@ -504,6 +508,19 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   }
 }
 
+/// 딤드 오버레이의 반투명도 — 아이템이 삭제 가능 상태임을 알아볼 수 있을 만큼
+/// 어둡히되 밑에 있던 캔버스 형태가 여전히 비치는 정도(스펙 §4.6, 정확한 수치는
+/// Worker 재량).
+const double _deleteZoneDimAlpha = 0.4;
+
+/// 휴지통 아이콘을 화면 하단에서 띄우는 여백(논리픽셀) — 하단 안전영역에 아이콘이
+/// 바짝 붙지 않도록 하는 시각적 여유.
+const double _deleteZoneIconBottomPadding = 32.0;
+
+/// 휴지통 아이콘 크기(논리픽셀) — 화면 전체를 덮는 딤드 오버레이 위에서 눈에 띄게
+/// 하려고 핸들(44px)보다 큰 크기로 잡음.
+const double _deleteZoneIconSize = 48.0;
+
 /// 아이템을 캔버스 밖으로 드래그할 때 [Overlay]에 그리는 딤드+휴지통 아이콘 시각
 /// 피드백(스펙 §4.6) — `interactive_artboard.dart`의 `RenderBox` 경계에 갇히지 않도록
 /// `Overlay`를 통해 화면 전체 위에 그린다.
@@ -514,12 +531,12 @@ class _DeleteZoneVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Container(color: Colors.black.withValues(alpha: 0.4)),
+        Container(color: Colors.black.withValues(alpha: _deleteZoneDimAlpha)),
         const Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.only(bottom: 32),
-            child: Icon(Icons.delete, color: Colors.white, size: 48),
+            padding: EdgeInsets.only(bottom: _deleteZoneIconBottomPadding),
+            child: Icon(Icons.delete, color: Colors.white, size: _deleteZoneIconSize),
           ),
         ),
       ],
