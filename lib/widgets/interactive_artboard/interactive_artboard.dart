@@ -183,7 +183,9 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
                 top: layerCenter - renderBoxSize / 2,
                 width: renderBoxSize,
                 height: renderBoxSize,
-                child: ArtboardItemView(item: item, renderBoxSize: renderBoxSize),
+                child: RepaintBoundary(
+                  child: ArtboardItemView(item: item, renderBoxSize: renderBoxSize),
+                ),
               ),
             if (includeVisual && isSelected)
               Positioned(
@@ -234,6 +236,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
       _handle(
         left: center - handleOffset - _handleVisualDiameter / 2,
         top: center + handleOffset - _handleVisualDiameter / 2,
+        label: '이동 핸들',
         onPanStart: (_) => _bodyDragStart(item),
         onPanUpdate: (details) => _bodyDragUpdate(item, details, canvasSize),
         onPanEnd: (_) => _bodyDragEnd(item, canvasSize),
@@ -242,6 +245,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
       _handle(
         left: center + handleOffset - _handleVisualDiameter / 2,
         top: center + handleOffset - _handleVisualDiameter / 2,
+        label: '크기조절 핸들',
         onPanStart: (details) => _resizeDragStart(item, details, canvasSize),
         onPanUpdate: (details) => _resizeDragUpdate(item, details, canvasSize),
         onPanEnd: (_) => _resizeDragEnd(item),
@@ -250,6 +254,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
       _handle(
         left: center - _handleVisualDiameter / 2,
         top: center - handleOffset - _rotateStemLength - _handleVisualDiameter / 2,
+        label: '회전 핸들',
         onPanStart: (details) => _rotateDragStart(item, details, canvasSize),
         onPanUpdate: (details) => _rotateDragUpdate(item, details, canvasSize),
         onPanEnd: (_) => _rotateDragEnd(item),
@@ -260,6 +265,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   Widget _handle({
     required double left,
     required double top,
+    required String label,
     required GestureDragStartCallback onPanStart,
     required GestureDragUpdateCallback onPanUpdate,
     required GestureDragEndCallback onPanEnd,
@@ -267,19 +273,22 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     return Positioned(
       left: left,
       top: top,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanStart: onPanStart,
-        onPanUpdate: onPanUpdate,
-        onPanEnd: onPanEnd,
-        child: Container(
-          width: _handleVisualDiameter,
-          height: _handleVisualDiameter,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            shape: BoxShape.circle,
-            border: Border.fromBorderSide(
-              BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+      child: Semantics(
+        label: label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: onPanStart,
+          onPanUpdate: onPanUpdate,
+          onPanEnd: onPanEnd,
+          child: Container(
+            width: _handleVisualDiameter,
+            height: _handleVisualDiameter,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.fromBorderSide(
+                BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+              ),
             ),
           ),
         ),
