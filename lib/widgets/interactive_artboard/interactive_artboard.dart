@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'artboard_background_color.dart';
 import 'artboard_item.dart';
 import 'artboard_item_view.dart';
 import 'artboard_overlap_popup.dart';
@@ -51,6 +52,8 @@ class InteractiveArtboard extends StatefulWidget {
     required this.onItemDeleted,
     required this.selectedItemId,
     required this.onSelectionChanged,
+    required this.backgroundColor,
+    required this.onBackgroundColorChanged,
     this.baseItemSizeFraction = 0.28,
   });
 
@@ -59,6 +62,8 @@ class InteractiveArtboard extends StatefulWidget {
   final ValueChanged<String> onItemDeleted;
   final String? selectedItemId;
   final ValueChanged<String?> onSelectionChanged;
+  final ArtboardBackgroundColor backgroundColor;
+  final ValueChanged<ArtboardBackgroundColor> onBackgroundColorChanged;
 
   /// 캔버스 짧은 변 대비 baseItemSize 비율(스펙 §2.1, 권장 범위 25~30%의 중간값).
   final double baseItemSizeFraction;
@@ -99,33 +104,36 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTapUp: (details) => _handleTapUp(details, canvasSize, baseItemSize),
-          child: Stack(
-            key: _canvasKey,
-            clipBehavior: Clip.none,
-            children: [
-              for (final item in sortedItems)
-                _itemLayer(
-                  item,
-                  canvasSize,
-                  baseItemSize,
-                  isSelected: item.id == widget.selectedItemId,
-                  includeInteraction: item.id != widget.selectedItemId,
-                ),
-              // 선택된 아이템의 몸체 히트테스트 영역은 paint 순서(zIndex)와 분리해
-              // 항상 Stack 최상단에 별도로 그린다 — 팝업으로 선택한 아래쪽 아이템이
-              // 위쪽 아이템에 가려져 있어도 계속 드래그로 조작할 수 있게 하기 위함
-              // (스펙 §4.1). 이미지/아웃라인은 위 루프에서 이미 그렸으므로 여기선
-              // 상호작용 레이어만 중복 없이 추가한다(includeVisual: false).
-              if (selectedItem != null)
-                _itemLayer(
-                  selectedItem,
-                  canvasSize,
-                  baseItemSize,
-                  isSelected: true,
-                  includeInteraction: true,
-                  includeVisual: false,
-                ),
-            ],
+          child: ColoredBox(
+            color: widget.backgroundColor.value,
+            child: Stack(
+              key: _canvasKey,
+              clipBehavior: Clip.none,
+              children: [
+                for (final item in sortedItems)
+                  _itemLayer(
+                    item,
+                    canvasSize,
+                    baseItemSize,
+                    isSelected: item.id == widget.selectedItemId,
+                    includeInteraction: item.id != widget.selectedItemId,
+                  ),
+                // 선택된 아이템의 몸체 히트테스트 영역은 paint 순서(zIndex)와 분리해
+                // 항상 Stack 최상단에 별도로 그린다 — 팝업으로 선택한 아래쪽 아이템이
+                // 위쪽 아이템에 가려져 있어도 계속 드래그로 조작할 수 있게 하기 위함
+                // (스펙 §4.1). 이미지/아웃라인은 위 루프에서 이미 그렸으므로 여기선
+                // 상호작용 레이어만 중복 없이 추가한다(includeVisual: false).
+                if (selectedItem != null)
+                  _itemLayer(
+                    selectedItem,
+                    canvasSize,
+                    baseItemSize,
+                    isSelected: true,
+                    includeInteraction: true,
+                    includeVisual: false,
+                  ),
+              ],
+            ),
           ),
         );
       },
