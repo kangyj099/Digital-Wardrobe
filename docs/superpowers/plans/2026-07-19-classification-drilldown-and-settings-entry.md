@@ -40,7 +40,7 @@
 - `lib/widgets/app_main_scaffold.dart` — `groupingBar`/`groupingBarHeight`/`defaultGroupingBarHeight` 삭제.
 - `test/providers/closet_providers_test.dart`, `test/providers/composition_providers_test.dart` — 제거되는 provider의 테스트 정리.
 - `test/widgets/app_main_scaffold_test.dart`, `integration_test/header_hud_stack_architecture_test.dart`, `integration_test/composition_style_log_main_screen_test.dart`, `integration_test/selection_modal_test.dart` — `groupingBar` 관련 assertion 정리.
-- `docs/reference/plan/03_화면별UX명세서.md` §4-1 — 정정 각주(PM 직접 수정).
+- `docs/reference/plan/03_화면별UX명세서/04_설정.md` — §1 정정 각주(PM 직접 수정).
 - `docs/history/Decision.md` — override 기록(PM 직접 수정).
 
 ---
@@ -1620,7 +1620,7 @@ import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/selection_aware_header_actions.dart';
 
 /// [selectionMode]가 true면 별도 화면을 새로 만들지 않고 이 Main 화면을 "선택 모달"로
-/// 재호출한다 — 기능 재사용 원칙(`03_화면별UX명세서.md` §공통 규칙), 표는
+/// 재호출한다 — 기능 재사용 원칙(`_공통 규칙.md`), 표는
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 "선택 모달(옷장/
 /// 코디 재호출)" 행. 뒤로가기/카테고리 토글/FAB은 숨기고 헤더 우상단은 "선택"(다중선택)
 /// 대신 닫기(X) 버튼으로 바뀐다. 분류 기준 캡슐은 원 화면과 동일 사양으로 유지된다(표에
@@ -2069,15 +2069,15 @@ Tester가 새 통합테스트 파일(예: `integration_test/classification_drill
 
 ---
 
-## Task 8: 문서 갱신 — `03_화면별UX명세서.md` §4 각주 + `Decision.md` override 기록
+## Task 8: 문서 갱신 — `04_설정.md` 각주 + `Decision.md` override 기록
 
 **Layer×Stage**: 이 Task는 Worker에게 위임하지 않고 **PM(이 세션)이 직접 수정**한다 — `CLAUDE.md` "결정문서 diff 확인" 원칙(`docs/history/*`, `docs/reference/**` 수정은 항상 일반 Edit 승인 흐름).
 
 **Files:**
-- Modify: `docs/reference/plan/03_화면별UX명세서.md` §4
+- Modify: `docs/reference/plan/03_화면별UX명세서/04_설정.md`
 - Modify: `docs/history/Decision.md`
 
-- [ ] **Step 1**: `03_화면별UX명세서.md` §4-1 제목 바로 아래에 정정 각주 삽입:
+- [ ] **Step 1**: `04_설정.md` §1(L12) 제목 바로 아래에 정정 각주 삽입:
 
 ```markdown
 > **[정정, 2026-07-19]** 아래 §1 전체(프로필 아이콘 진입점)는
@@ -2087,9 +2087,9 @@ Tester가 새 통합테스트 파일(예: `integration_test/classification_drill
 > 보존한다.
 ```
 
-- [ ] **Step 2**: `Decision.md` 최상단(L1 주석 바로 아래)에 override 항목 추가 — 위 두 예시(L792-813, L815-831) 포맷을 따라 제목에 `(UI/Screen, Decision)` 태그, 배경에 대체 대상(`03_화면별UX명세서.md` §4-1, `2026-07-12-cross-screen-ui-shell-design.md`의 그룹형 드릴다운 설계) 명시, Impact에 Task 1~7의 실제 변경 파일 나열.
+- [ ] **Step 2**: `Decision.md` 최상단(L1 주석 바로 아래)에 override 항목 추가 — 위 두 예시(L792-813, L815-831) 포맷을 따라 제목에 `(UI/Screen, Decision)` 태그, 배경에 대체 대상(`04_설정.md` §1, `2026-07-12-cross-screen-ui-shell-design.md`의 그룹형 드릴다운 설계) 명시, Impact에 Task 1~7의 실제 변경 파일 나열.
 
-- [ ] **Step 3**: `git add docs/reference/plan/03_화면별UX명세서.md docs/history/Decision.md && git commit -m "docs: record classification-drilldown spec as override of settings entry-point and grouped-drilldown decisions"`
+- [ ] **Step 3**: `git add docs/reference/plan/03_화면별UX명세서/04_설정.md docs/history/Decision.md && git commit -m "docs: record classification-drilldown spec as override of settings entry-point and grouped-drilldown decisions"`
 
 ---
 

@@ -14,7 +14,7 @@ import '../widgets/app_scroll_container.dart';
 /// 스타일일지 어디에도 속하지 않아 원래 무관하지만, `showCategoryToggle: false`라
 /// 실제로 렌더링되지 않으므로 임의로 [AppCategory.closet]을 고정값으로 채운다.
 ///
-/// 본문은 `03_화면별UX명세서.md` §0의 Utility형 규칙(리스트-로우 패턴)을 따른다. 현재 이
+/// 본문은 `00_페이지 타입 정의.md`의 Utility형 규칙(리스트-로우 패턴)을 따른다. 현재 이
 /// 화면엔 파괴적 액션 로우가 없다. 실제 설정 값 저장/영속화(Provider/DB
 /// 연동)는 Step⑦(기능 구현) 몫이라 알림/다크모드 `Switch`는 이 화면 로컬 `bool` state로만
 /// 토글된다(`closet_main_screen.dart`의 밀도 버튼·FAB 확장처럼, 탭하면 화면에 바로

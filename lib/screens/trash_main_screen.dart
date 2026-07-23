@@ -23,7 +23,7 @@ import '../widgets/trash_gallery_tile.dart';
 /// 스타일일지 어디에도 속하지 않아 원래 무관하지만, `showCategoryToggle: false`라
 /// 실제로 렌더링되지 않으므로 임의로 [AppCategory.closet]을 고정값으로 채운다.
 ///
-/// 본문은 `03_화면별UX명세서.md` §0의 Main형 공통 요소("우상단 [선택] 버튼 → 다중 선택
+/// 본문은 `00_페이지 타입 정의.md`의 Main형 공통 요소("우상단 [선택] 버튼 → 다중 선택
 /// 모드") + "휴지통의 추가 확장 요소"를 함께 따른다: 제목 없이 이미지 중심인 순수
 /// 썸네일 그리드([TrashGalleryTile]), 헤더의 "선택"(다중 선택, no-op 스텁 — 다른 3개
 /// Main형과 동일한 패턴)과 "비우기"(강한 확인 모달 스텁) 버튼, 타일 탭 시 상세 페이지
@@ -83,7 +83,7 @@ class TrashMainScreen extends ConsumerWidget {
     );
   }
 
-  /// "비우기" — 파괴적 액션이라 강한 확인 모달 필요(`03_화면별UX명세서.md` §0).
+  /// "비우기" — 파괴적 액션이라 강한 확인 모달 필요(`00_페이지 타입 정의.md`).
   /// 확인을 눌러도 실제 삭제는 실행하지 않는다(Step⑦ 몫).
   void _confirmEmptyTrash(BuildContext context) {
     showDialog<void>(
@@ -105,7 +105,7 @@ class TrashMainScreen extends ConsumerWidget {
     );
   }
 
-  /// 타일 탭 → 상세 페이지 전환이 아니라 정보 팝업(`03_화면별UX명세서.md` §0).
+  /// 타일 탭 → 상세 페이지 전환이 아니라 정보 팝업(`00_페이지 타입 정의.md`).
   /// 복원/영구삭제 버튼은 있지만 onPressed는 no-op(Step⑦ 몫).
   void _showTrashItemInfo(BuildContext context, TrashEntry entry) {
     showModalBottomSheet<void>(

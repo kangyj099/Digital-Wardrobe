@@ -6,7 +6,7 @@ import '../theme/app_spacing.dart';
 ///
 /// 원래 `GroupedGalleryGrid`가 `List<ClothingItem>` 타입에 고정된 `GridView.builder`였던
 /// 것에서 레이아웃 부분만 분리한 것 — `GroupedGalleryGrid`는 이제 이 위 얇은 어댑터로 남는다
-/// (`docs/reference/design/00_DesignPrinciples.md` §Stage 6 — Component Strategy, C2가 구현하는
+/// (`docs/reference/design/00_DesignPrinciples/06_Component Strategy.md` C2가 구현하는
 /// L4/T6 "3단계 density" 규칙은 이 위젯이 실제로 구현한다).
 class AppGalleryGrid extends StatelessWidget {
   const AppGalleryGrid({

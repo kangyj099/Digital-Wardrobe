@@ -11,7 +11,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/composition_preview_card.dart';
 import 'app_detail_scaffold.dart';
 
-/// 스타일일지 열람 — 카드 구조를 스펙 원문(`03_화면별UX명세서.md` §3 "대표이미지(1번, 고정) →
+/// 스타일일지 열람 — 카드 구조를 스펙 원문(`03_스타일 일지.md` "대표이미지(1번, 고정) →
 /// 코디 슬롯(2번, 고정) → 추가 사진(3번~)") 그대로 따른다: 대표이미지/코디 슬롯을 하나의
 /// 정사각형 2페이지 `PageView`로 묶고(하단 별도 카드/칩 방식은 폐기 —
 /// `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정" 참고),

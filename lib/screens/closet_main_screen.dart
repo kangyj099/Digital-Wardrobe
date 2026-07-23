@@ -16,7 +16,7 @@ import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/selection_aware_header_actions.dart';
 
 /// [selectionMode]가 true면 별도 화면을 새로 만들지 않고 이 Main 화면을 "선택 모달"로
-/// 재호출한다 — 기능 재사용 원칙(`03_화면별UX명세서.md` §공통 규칙), 표는
+/// 재호출한다 — 기능 재사용 원칙(`_공통 규칙.md`), 표는
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 "선택 모달(옷장/
 /// 코디 재호출)" 행. 뒤로가기/카테고리 토글/FAB은 숨기고 헤더 우상단은 "선택"(다중선택)
 /// 대신 닫기(X) 버튼으로 바뀐다. 분류 기준 캡슐은 원 화면과 동일 사양으로 유지된다(표에

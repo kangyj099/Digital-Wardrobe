@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 라우터+앵커 재통합 부분 롤백 — 5개 중 2개(핫패스 참조 문서)는 서브파일 구조로 복귀 (Data/Architecture, Decision — 바로 아래 "라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합" 항목의 스코프 축소)
+
+결정:
+- `docs/reference/design/00_DesignPrinciples.md`(6개 서브파일)와 `docs/reference/plan/03_화면별UX명세서.md`(7개 서브파일) — 방금 병합했던 5개 중 이 2개만 서브파일 구조로 되돌린다. 나머지 3개(`Workflow_Project.md`/`Workflow_Design.md`/`Workflow_Development.md`)는 병합 유지.
+- 이 2개를 되돌리는 이유: §12.1 Required Materials에 직접 걸려 있어 진행 중인 Flutter Hi-Fi 스프린트의 거의 모든 화면 Task마다 Worker/Review에게 "특정 섹션 하나만" 좁게 Read되는 핫패스 문서인데, `Read` 툴이 기본적으로 파일 전체(최대 2000줄)를 읽어들이는 구조상 병합 후엔 필요 없는 다른 5~6개 섹션까지 매번 컨텍스트에 딸려 들어와 오히려 토큰 낭비였음. 반면 정책 문서 3종은 PM이 스스로 전체를 훑는 빈도가 훨씬 높고 Worker에게 좁게 슬라이스해 넘기는 빈도는 낮아 병합 손해가 작음.
+- 되돌린 2개 문서의 버전은 이번 세션에서 실질적으로 내용이 바뀐 게 없어(구조만 병합→복귀를 왕복) 2.0 그대로 유지 — 범프하지 않음.
+- 이 2개 문서를 가리키던 ~30개 상호참조(lib/, integration_test/, docs/superpowers/, docs/work/, TechnicalDebt.md)도 전부 서브파일 경로로 재복귀. `Workflow_Project.md` §12.4 Task Manifest 예시도 원래의 서브파일 경로 예시로 되돌림.
+
+사유:
+사용자가 병합 직후 실사용 관점에서 재검토 — "토큰이 빨리 녹아서 요새 문제"라는 피드백. 열람 편의(원래 목적)와 토큰 비용을 다시 저울질한 결과, 5개를 뭉뚱그려 판단하지 않고 실제 사용 패턴(핫패스 vs PM 전용 정책 문서)에 따라 문서별로 다르게 판단하는 게 맞다고 확인.
+
+Impact:
+- `docs/reference/design/00_DesignPrinciples.md` + 6개 서브파일 복원
+- `docs/reference/plan/03_화면별UX명세서.md` + 7개 서브파일 복원
+- `.claude/policies/Workflow_Project.md` §12.4 예시 복원
+- 위 두 문서를 가리키던 상호참조 전체 원복(약 30개 지점)
+
+---
+
 [Decision] 설계/계획 확정 전 Audit 필수화 — 크기 무관 신규 Decision-Stage Pipeline (Data/Architecture, Decision — Operational process change)
 
 결정:

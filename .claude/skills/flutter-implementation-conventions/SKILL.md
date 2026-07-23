@@ -88,7 +88,7 @@ Layer=UI/Screen × Stage=Implementation(Frontend) 태스크의 Worker/Review가 
 | Bugs | 컨트롤러 `dispose()` 여부, `async` 갭 이후 `mounted` 체크, `ref.watch`/`ref.read` 올바른 위치 | `Workflow_Development.md` §4 |
 | Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음 | `Workflow_Development.md` §4 |
 | UX | 이 프로젝트 Design/Interaction Principles(P4/P7 등, `00_DesignPrinciples.md`)와 일치 여부 | `Workflow_Development.md` §4 |
-| Exception handling | 성공/로딩/빈 상태/실패 상태가 스펙대로 구현됐는지(`03_화면별UX명세서.md` §공통 규칙의 AI 처리 실패 상태: 지수 백오프 재시도, 실패 팝업 등), 실패 시 사용자에게 재시도 경로가 있는지 | `Workflow_Development.md` §4 |
+| Exception handling | 성공/로딩/빈 상태/실패 상태가 스펙대로 구현됐는지(`_공통 규칙.md`의 AI 처리 실패 상태: 지수 백오프 재시도, 실패 팝업 등), 실패 시 사용자에게 재시도 경로가 있는지 | `Workflow_Development.md` §4 |
 | Accessibility | Semantics label 존재 및 `excludeSemantics` 처리 여부, 터치 타겟 44×44 이상(A1/A10), 색상 단독으로 의미 전달하지 않는지(A2), 다크모드 대비비(A3) | `Workflow_Project.md` §12.1의 "Development Review **+ spec-compliance check**" — Design 단계(Decision)에서 이미 정해진 접근성 요구사항을 구현이 지켰는지 확인하는 것이며, §4의 기본 Review Areas 확장이 아니다 |
 
 ---

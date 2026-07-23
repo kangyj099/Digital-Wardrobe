@@ -433,7 +433,7 @@ A `Skill: <name>` entry is always Read — invoking a skill never grants edit ac
 **Example** (Worker dispatch for a UI/Screen × Implementation(Frontend) task):
 
 ```
-Read: docs/reference/design/00_DesignPrinciples.md §3, docs/reference/plan/03_화면별UX명세서.md §1
+Read: docs/reference/design/00_DesignPrinciples/03_Layout Principles.md, docs/reference/plan/03_화면별UX명세서/01_옷장.md
 Edit: lib/screens/closet/closet_main_screen.dart
 Write: lib/widgets/closet_item_tile.dart
 Skill: flutter-implementation-conventions

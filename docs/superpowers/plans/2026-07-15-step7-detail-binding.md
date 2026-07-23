@@ -6,7 +6,7 @@
 >
 > **Task 5/6 추가 경위(2026-07-16)**: 사용자가 Task 3/4 완료 후 실제 화면을 보고 "연결된 코디/스타일일지가 텍스트뿐이라 썸네일 이미지를 추가해달라"고 요청 — `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목 참고. Task 5/6은 원래 Task 5였던 "스타일일지 열람 실데이터 바인딩 + 코디 바인딩"보다 앞에 삽입됐다 — 원 Task 5가 신설되는 `CompositionPreviewCard` 위젯(Task 6 산출물)을 소비하기 때문(뒤로 미루면 앞 참조가 됨). 원 Task 5는 그대로 **Task 7**로 번호만 밀렸다(내용 변경 없음, 카드 콘텐츠 위젯 재사용 부분만 소폭 수정).
 >
-> **Task 8/9 추가 경위(2026-07-16)**: Task 7 완료 직후 1차 Audit이 P1 2건 발견 — 스타일일지 열람의 코디 바인딩 UI가 스펙(`03_화면별UX명세서.md` §3 "대표이미지→코디 슬롯→추가사진" 카드 순서)과 어긋나고 코디 상세와도 다르게 생김, `AppDetailScaffold.crossReferenceEntries` 계약이 애매해짐. 사용자가 직접 스펙 근거로 정정 지시(**Task 7의 "하단 별도 카드/칩" 구현 방식은 폐기 — 그 방식을 지시한 이전 요청이 있었다면 전부 무효**) — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고.
+> **Task 8/9 추가 경위(2026-07-16)**: Task 7 완료 직후 1차 Audit이 P1 2건 발견 — 스타일일지 열람의 코디 바인딩 UI가 스펙(`03_스타일 일지.md` "대표이미지→코디 슬롯→추가사진" 카드 순서)과 어긋나고 코디 상세와도 다르게 생김, `AppDetailScaffold.crossReferenceEntries` 계약이 애매해짐. 사용자가 직접 스펙 근거로 정정 지시(**Task 7의 "하단 별도 카드/칩" 구현 방식은 폐기 — 그 방식을 지시한 이전 요청이 있었다면 전부 무효**) — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고.
 >
 > **[정정, 2026-07-18] Task 10~13 추가**: 이 Plan은 Task 1~9(2차 Audit까지) 완료로 끝나지 않고, 사용자의 추가 UI 지시로 Task 10(옷 상세 코디 캐러셀에 옷 목록 표시 — 오해로 되돌림, `git revert`), Task 11(같은 캐러셀을 `PageView`에서 "착용 옷"과 동일한 연속 스크롤로 교체 — 최종 확정), Task 12(코디 상세의 스타일일지 썸네일도 정사각형 통일), Task 13(연결된 스타일일지 갤러리 — 기본 2열, 1장이면 1열)까지 이어졌다. Task 10~13은 S/M 사이즈 단독 Task라 별도 Audit 없이 각각 Worker→Review→Tester로 완료됨. 상세는 각 Task 섹션과 `docs/history/Decision.md`의 대응 항목 참고.
 
@@ -2090,7 +2090,7 @@ git commit -m "feat(screen): bind real data to 스타일일지 열람 + wire com
 
 ### Task 8: 스타일일지 열람 카드 캐러셀 재구현 — 대표이미지/코디 슬롯 2페이지 스와이프 (UI/Screen, Implementation/Frontend)
 
-**배경**: Audit(2026-07-16)이 스타일일지 열람의 코디 바인딩 UI가 코디 상세와 다르게 생겼고, `03_화면별UX명세서.md` §3의 카드 순서(대표이미지→코디 슬롯→추가사진)와도 어긋난다고 P1 지적. 사용자가 직접 확인 후 정정 지시 — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고. **Task 7에서 구현한 "하단 별도 `CompositionPreviewCard`/칩" 방식은 이 Task로 완전히 대체된다.**
+**배경**: Audit(2026-07-16)이 스타일일지 열람의 코디 바인딩 UI가 코디 상세와 다르게 생겼고, `03_스타일 일지.md`의 카드 순서(대표이미지→코디 슬롯→추가사진)와도 어긋난다고 P1 지적. 사용자가 직접 확인 후 정정 지시 — `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정..." 참고. **Task 7에서 구현한 "하단 별도 `CompositionPreviewCard`/칩" 방식은 이 Task로 완전히 대체된다.**
 
 **Files:**
 - Modify: `lib/screens/style_log_viewer_screen.dart`
@@ -2529,13 +2529,13 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 
 ### Task 12: 코디 상세의 "연결된 스타일일지" 썸네일도 정사각형(1:1)으로 통일 (UI/Screen, Implementation/Frontend)
 
-**배경**: `docs/history/Decision.md` "코디 상세의 '연결된 스타일일지' 썸네일도 정사각형(1:1)으로 통일..." 참고. 사용자가 코디 상세의 스타일일지 썸네일 비율을 1:1로 바꿔달라고 지시 — `03_화면별UX명세서.md` §2의 "1개면 2칸 확대" 규칙 자체를 폐기하고, 옷 상세와 동일하게 항상 정사각형으로 통일한다.
+**배경**: `docs/history/Decision.md` "코디 상세의 '연결된 스타일일지' 썸네일도 정사각형(1:1)으로 통일..." 참고. 사용자가 코디 상세의 스타일일지 썸네일 비율을 1:1로 바꿔달라고 지시 — `02_코디 (가상 조합).md`의 "1개면 2칸 확대" 규칙 자체를 폐기하고, 옷 상세와 동일하게 항상 정사각형으로 통일한다.
 
 **Files:**
 - Modify: `lib/widgets/style_log_cross_reference_gallery.dart` (`expandSingle` 파라미터 제거, 항상 `crossAxisCount: 2`/`childAspectRatio: 1`, `_AddTile`도 `aspectRatio: 1`로)
 - Modify: `lib/screens/closet_item_detail_screen.dart` (더 이상 필요 없는 `expandSingle: false` 인자 제거)
 - Modify: `integration_test/detail_thumbnail_square_unification_test.dart` (그룹 3 "코디 상세는 여전히 2:1" assertion을 "코디 상세도 정사각형"으로 갱신 — 파일명 자체가 이제 목적과 다시 맞아떨어짐)
-- Modify: `docs/reference/plan/03_화면별UX명세서.md` §2 — PM이 이미 반영 완료("1개면 2칸 확대 배치" → "정사각형 타일")
+- Modify: `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md` — PM이 이미 반영 완료("1개면 2칸 확대 배치" → "정사각형 타일")
 
 **Interfaces:**
 - Produces: `StyleLogCrossReferenceGallery({required logs, required onTap, onAddTap})` — `expandSingle` 파라미터 삭제, 항상 정사각형 그리드.

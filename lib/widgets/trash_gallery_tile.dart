@@ -5,7 +5,7 @@ import '../theme/app_spacing.dart';
 import 'gallery_meta_label.dart';
 
 /// 휴지통 전용 순수 썸네일 타일 — 옷장/코디처럼 그룹 계층이 있는 그리드가 아니라
-/// 제목 텍스트 없이 이미지 중심(`03_화면별UX명세서.md` §0 "휴지통의 추가 확장 요소").
+/// 제목 텍스트 없이 이미지 중심(`00_페이지 타입 정의.md` "휴지통의 추가 확장 요소").
 /// `StyleLogGalleryTile`/`SelectableGalleryTile`과 같은 Stack 오버레이 패턴을 재사용해
 /// 좌상단에 유형 아이콘 배지, 좌하단에 "N일"(영구 삭제까지 남은 일수) 텍스트를 얹는다.
 ///

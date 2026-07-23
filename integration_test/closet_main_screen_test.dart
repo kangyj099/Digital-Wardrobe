@@ -109,7 +109,7 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 /// 파괴적 액션 확인 다이얼로그, 타일 탭 정보 팝업, 스크롤 힌트 등)은 이 파일이 아니라 전용 파일
 /// `settings_trash_shell_test.dart`에서 검증한다(대형 회귀축 파일에 중복 작성하지 않음).
 ///
-/// [갱신, 2026-07-15] Audit이 "전체 데이터 삭제" 로우가 승인된 `03_화면별UX명세서.md` §4 스펙에 없는
+/// [갱신, 2026-07-15] Audit이 "전체 데이터 삭제" 로우가 승인된 `04_설정.md` 스펙에 없는
 /// 항목임을 지적해 Worker가 `SettingsScreen`에서 해당 로우를 완전히 제거했다. 28번 테스트가
 /// 이 로우의 존재를 단언하던 assertion을 제거한다(나머지 로우 확인은 그대로 유지).
 ///
@@ -239,7 +239,7 @@ void main() {
 
       // 아직 드릴인 전(selectedSubOptionIndex==null)이라 "전체 그룹 보기" 항목(value==
       // _clearSentinel, `classification_drilldown_capsule.dart` 참고)은 존재하지 않는다.
-      // 정렬 기본순서 표(03_화면별UX명세서.md §공통 규칙: "봄가을 → 여름 → 겨울")를 실제 렌더링 순서로 확인.
+      // 정렬 기본순서 표(_공통 규칙.md: "봄가을 → 여름 → 겨울")를 실제 렌더링 순서로 확인.
       // 항목 라벨은 PopupMenuItem.child(Container).child(Text)에 있다. 주의: 열린 메뉴
       // 오버레이가 항목을 내부적으로 중복 렌더링할 가능성에 대비해(구 DropdownButton에서
       // 실제 관찰됐던 동작), 순서 비교 전 최초 등장 순서를 보존한 채 중복을 제거한다
@@ -862,7 +862,7 @@ void main() {
     '[갱신됨, 2026-07-15] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
     '실제로 렌더링되고, 리스트-로우(알림/다크모드/프로필 편집)가 모두 화면에 나타난다 (정상 UI '
     '플로우로는 아직 도달 불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 플랜에 명시된 '
-    '의도된 상태. "전체 데이터 삭제" 로우는 승인된 스펙(`03_화면별UX명세서.md` §4)에 없어 제거되어 이 목록에서도 '
+    '의도된 상태. "전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되어 이 목록에서도 '
     '함께 빠졌다 — 부재 자체는 `settings_trash_shell_test.dart`의 전용 회귀 테스트가 검증한다)',
     (tester) async {
       await pumpClosetMain(tester);
