@@ -2,44 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
+import '../providers/classification_models.dart';
 import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
+import '../widgets/classification_drilldown_capsule.dart';
+import '../widgets/classification_group_grid.dart';
 import '../widgets/composition_gallery_grid.dart';
 import '../widgets/glass_circle_button.dart';
-import '../widgets/glass_pill.dart';
 import '../widgets/selection_aware_header_actions.dart';
-import 'skeleton_region.dart';
 
 /// Main-그룹형(옷장 메인과 동일 페이지 타입) — `closet_main_screen.dart` 패턴을 그대로 이식.
-/// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1/§3 참고.
 ///
 /// [selectionMode]가 true면 이 화면이 "선택 모달(코디 재호출)"로 동작한다 — 타일 탭 시
-/// `context.pop(composition.id)`로 결과를 반환한다. 호출부는
-/// `context.push<String>(AppRoute.compositionSelect)`로 열고 반환값을 기다리면 된다
-/// (`lib/screens/style_log_viewer_screen.dart` 사용례 참고). `Composition` 모델에는
-/// 아직 `isIncomplete` 같은 미완성 필드가 없어(`lib/models/composition.dart`), 미완성
-/// 항목→완성 화면 이동 분기는 만들지 않았다 — Step⑦에서 그 필드가 생기면
-/// `closet_main_screen.dart`의 `onIncompleteTap` 패턴을 그대로 이식하면 된다.
+/// `context.pop(composition.id)`로 결과를 반환한다.
 class CompositionMainScreen extends ConsumerWidget {
   const CompositionMainScreen({super.key, this.selectionMode = false});
 
-  /// true면 선택 모달로 동작 — 타일 탭 시 상세 화면 대신 `context.pop(id)`로 결과 반환.
   final bool selectionMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final compositions = ref.watch(filteredCompositionsProvider);
-    final season = ref.watch(selectedCompositionSeasonFilterProvider);
+    final criterion = ref.watch(compositionSortCriterionProvider);
+    // closet_main_screen.dart와 동일 — 전역 단순 규칙이라 반전 없이 그대로 쓴다.
+    final ascending = ref.watch(compositionSortAscendingProvider);
+    final displayState = ref.watch(compositionGridDisplayStateProvider);
     final density = ref.watch(compositionDensityProvider);
 
-    // Content Spacer(스펙 §4) — closet_main_screen.dart와 동일 계산(Row1+Row2+groupingBar).
-    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(
-      hasSecondaryRow: true,
-      groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
-    );
+    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
 
     return AppMainScaffold(
       current: AppCategory.composition,
@@ -49,21 +41,30 @@ class CompositionMainScreen extends ConsumerWidget {
         selectionMode: selectionMode,
         onClose: () => context.pop(),
       ),
+      // 이 화면이 코디의 메인이라는 신호 — `closet_main_screen.dart`와 동일 이유.
+      onReselectCurrentCategory: () {
+        ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.all;
+        _resetAllDrilldowns(ref);
+      },
       secondaryControlsLeft: [
-        GlassPill(
-          child: DropdownButton<Season?>(
-            value: season,
-            hint: const Text('계절'),
-            underline: const SizedBox.shrink(),
-            items: [
-              const DropdownMenuItem<Season?>(value: null, child: Text('전체')),
-              ...Season.values.map(
-                (s) => DropdownMenuItem<Season?>(value: s, child: Text(s.label)),
-              ),
-            ],
-            onChanged: (value) =>
-                ref.read(selectedCompositionSeasonFilterProvider.notifier).state = value,
-          ),
+        ClassificationDrilldownCapsule(
+          criterionLabels: [for (final c in CompositionSortCriterion.values) c.label],
+          selectedCriterionIndex: criterion.index,
+          onCriterionChanged: (index) {
+            ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.values[index];
+            _resetAllDrilldowns(ref);
+          },
+          hasSubClassification: criterion.hasSubClassification,
+          subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
+          subOptionLabels: _subOptionLabels(ref, criterion),
+          selectedSubOptionIndex: _selectedSubOptionIndex(ref, criterion),
+          onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
+          onClearSubSelection: () => _clearDrilldown(ref, criterion),
+        ),
+        GlassCircleButton(
+          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
+          tooltip: ascending ? '오름차순' : '내림차순',
+          onTap: () => ref.read(compositionSortAscendingProvider.notifier).state = !ascending,
         ),
       ],
       secondaryControlsRight: [
@@ -73,36 +74,39 @@ class CompositionMainScreen extends ConsumerWidget {
           onTap: () {
             final current = ref.read(compositionDensityProvider);
             final currentIndex = AppDensity.levels.indexOf(current);
-            final previousIndex = currentIndex - 1 < 0
-                ? AppDensity.levels.length - 1
-                : currentIndex - 1;
-            final next = AppDensity.levels[previousIndex];
-            ref.read(compositionDensityProvider.notifier).state = next;
+            final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
+            ref.read(compositionDensityProvider.notifier).state = AppDensity.levels[previousIndex];
           },
         ),
-        GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
       ],
-      groupingBar: skeletonRegion(
-        context,
-        '분류 선택 바 (그룹형 드릴다운) — Step⑦(기능 구현)에서 실제 드릴다운으로 대체 예정',
-        height: AppMainScaffold.defaultGroupingBarHeight,
-      ),
-      groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
       body: AppScrollContainer(
         topHintThreshold: contentTopSpacing,
-        builder: (context, controller) => CompositionGalleryGrid(
-          compositions: compositions,
-          density: density,
-          controller: controller,
-          topSpacing: contentTopSpacing,
-          onItemTap: (c) {
-            if (selectionMode) {
-              context.pop(c.id);
-            } else {
-              context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
-            }
-          },
-        ),
+        builder: (context, controller) {
+          if (displayState == CompositionGridDisplayState.groupOverview) {
+            final groups = ref.watch(compositionGroupSummariesProvider);
+            return ClassificationGroupGrid(
+              groups: groups,
+              density: density,
+              controller: controller,
+              topSpacing: contentTopSpacing,
+              onGroupTap: (group) => _drillIntoValue(ref, criterion, group.value),
+            );
+          }
+          final compositions = ref.watch(filteredCompositionsProvider);
+          return CompositionGalleryGrid(
+            compositions: compositions,
+            density: density,
+            controller: controller,
+            topSpacing: contentTopSpacing,
+            onItemTap: (c) {
+              if (selectionMode) {
+                context.pop(c.id);
+              } else {
+                context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
+              }
+            },
+          );
+        },
       ),
       floatingActionButton: selectionMode
           ? null
@@ -111,5 +115,94 @@ class CompositionMainScreen extends ConsumerWidget {
               child: const Icon(Icons.add),
             ),
     );
+  }
+
+  // closet_main_screen.dart와 동일한 이유로 날짜·시간(연도)은 closetGroupSummariesProvider의
+  // 코디 버전(compositionGroupSummariesProvider)을 라벨/인덱스 소스로 공유한다.
+  List<String> _subOptionLabels(WidgetRef ref, CompositionSortCriterion criterion) {
+    return switch (criterion) {
+      CompositionSortCriterion.season => [for (final season in Season.values) season.label, '미분류'],
+      CompositionSortCriterion.weather => [for (final weather in Weather.values) weather.label, '미분류'],
+      CompositionSortCriterion.dateTime => [
+          for (final group in ref.watch(compositionGroupSummariesProvider)) group.label,
+        ],
+      CompositionSortCriterion.all => const [],
+    };
+  }
+
+  int? _selectedSubOptionIndex(WidgetRef ref, CompositionSortCriterion criterion) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        final drilled = ref.watch(compositionDrilledSeasonProvider);
+        if (drilled == null) return null;
+        return drilled.isUnclassified ? Season.values.length : Season.values.indexOf(drilled.value as Season);
+      case CompositionSortCriterion.weather:
+        final drilled = ref.watch(compositionDrilledWeatherProvider);
+        if (drilled == null) return null;
+        return drilled.isUnclassified ? Weather.values.length : Weather.values.indexOf(drilled.value as Weather);
+      case CompositionSortCriterion.dateTime:
+        final year = ref.watch(compositionDrilledYearProvider);
+        if (year == null) return null;
+        final groups = ref.watch(compositionGroupSummariesProvider);
+        final index = groups.indexWhere((g) => g.value == year);
+        return index == -1 ? null : index;
+      default:
+        return null;
+    }
+  }
+
+  void _drillInto(WidgetRef ref, CompositionSortCriterion criterion, int optionIndex) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        ref.read(compositionDrilledSeasonProvider.notifier).state = optionIndex == Season.values.length
+            ? const DrilledValue.unclassified()
+            : DrilledValue.value(Season.values[optionIndex]);
+      case CompositionSortCriterion.weather:
+        ref.read(compositionDrilledWeatherProvider.notifier).state = optionIndex == Weather.values.length
+            ? const DrilledValue.unclassified()
+            : DrilledValue.value(Weather.values[optionIndex]);
+      case CompositionSortCriterion.dateTime:
+        final groups = ref.read(compositionGroupSummariesProvider);
+        ref.read(compositionDrilledYearProvider.notifier).state = groups[optionIndex].value as int;
+      default:
+        break;
+    }
+  }
+
+  void _drillIntoValue(WidgetRef ref, CompositionSortCriterion criterion, Object? value) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        ref.read(compositionDrilledSeasonProvider.notifier).state =
+            value == null ? const DrilledValue.unclassified() : DrilledValue.value(value as Season);
+      case CompositionSortCriterion.weather:
+        ref.read(compositionDrilledWeatherProvider.notifier).state =
+            value == null ? const DrilledValue.unclassified() : DrilledValue.value(value as Weather);
+      case CompositionSortCriterion.dateTime:
+        ref.read(compositionDrilledYearProvider.notifier).state = value as int?;
+      case CompositionSortCriterion.all:
+        break;
+    }
+  }
+
+  /// `closet_main_screen.dart`의 `_resetAllDrilldowns`와 동일한 이유(사용자 지시,
+  /// 2026-07-20) — 중분류를 바꿀 때마다 모든 소분류 드릴인 상태를 초기화해, 이전에
+  /// 같은 중분류에서 드릴인했던 값이 그대로 남아 있지 않게 한다.
+  void _resetAllDrilldowns(WidgetRef ref) {
+    ref.read(compositionDrilledSeasonProvider.notifier).state = null;
+    ref.read(compositionDrilledWeatherProvider.notifier).state = null;
+    ref.read(compositionDrilledYearProvider.notifier).state = null;
+  }
+
+  void _clearDrilldown(WidgetRef ref, CompositionSortCriterion criterion) {
+    switch (criterion) {
+      case CompositionSortCriterion.season:
+        ref.read(compositionDrilledSeasonProvider.notifier).state = null;
+      case CompositionSortCriterion.weather:
+        ref.read(compositionDrilledWeatherProvider.notifier).state = null;
+      case CompositionSortCriterion.dateTime:
+        ref.read(compositionDrilledYearProvider.notifier).state = null;
+      case CompositionSortCriterion.all:
+        break;
+    }
   }
 }

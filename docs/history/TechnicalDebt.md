@@ -19,6 +19,8 @@ Task 6(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) Review(2026-
 
 조치 방향(착수 조건): `AppSpacing`이 다음에 Edit 대상에 포함되는 작업에서, 남은 항목들(`style_log_viewer_screen.dart`의 점 인디케이터 리터럴, `height: 96`/`width: 72`/`width: 96`, `composition_preview_carousel.dart`의 `_tileSize`)을 정식 토큰으로 승격 검토.
 
+**추가(분류 기준 드릴다운 캡슐 기능 Audit, 2026-07-19)**: `lib/widgets/classification_group_card.dart`의 라벨 배지 `padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2)` — `vertical: 2`가 `AppSpacing` 어떤 토큰과도 안 맞는 미등재 리터럴(가장 가까운 게 `xxs`=4). 이 파일을 다음에 손댈 때 `AppSpacing.xxs`로 교체하거나 근거를 이름 붙여 로컬 const로 승격 검토 — 순수 패딩값이라 급하지 않음.
+
 ---
 
 [TechDebt] 코디↔스타일일지 바인딩 액션(`_bindStyleLog`/`_bindComposition`)에 `context.mounted` 가드 부재 (P2)
@@ -68,14 +70,14 @@ Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)
 
 ---
 
-[TechDebt] `integration_test/typography_pass3_test.dart`에 미사용 import 2건 (`closet_main_screen.dart`, `style_log_gallery_tile.dart`)
+[TechDebt] `integration_test/` 파일 3개에 미사용 import 총 4건
 
 상태: 미해결 (사소함)
 
 내용:
-Typography Pass 3 코드 반영 Review 중 발견 — Tester가 작성한 `integration_test/typography_pass3_test.dart`에 `flutter analyze` 기준 unused_import 경고 2건이 있다. 테스트 통과에는 영향 없고 순수 lint 이슈.
+Typography Pass 3 코드 반영 Review 중 `integration_test/typography_pass3_test.dart`의 unused_import 경고 2건(`closet_main_screen.dart`, `style_log_gallery_tile.dart`)을 먼저 발견. 이후 분류 기준 드릴다운 캡슐 기능(2026-07-19) Audit이 같은 성격의 경고 2건을 추가로 확인 — `integration_test/style_log_gallery_column_count_test.dart`의 `go_router`/`style_log_cross_reference_gallery` unused import(둘 다 2026-07-18 커밋 `6984001`부터 존재, 이번 기능과 무관한 기존 부채). 전부 `flutter analyze` 기준 unused_import 경고일 뿐, 테스트 통과에는 영향 없는 순수 lint 이슈.
 
-해결 방향: 다음에 이 파일을 손댈 일이 생기면 (`import` 2줄 제거) 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
+해결 방향: 다음에 각 파일을 손댈 일이 생기면 그때 `import` 줄 제거로 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
 
 ---
 
@@ -262,5 +264,21 @@ Task 2 리뷰(원래 문제 발견) → Task 9 fix round 1(세그먼트 매칭�
 
 조치 방향(착수 조건):
 비슷한 문제가 반복되거나 작업 여유가 생기면, 정규식 기반 세그먼트 분리 대신 실제 셸 파서(예: `shlex`나 POSIX 셸 문법 파서)로 교체 검토.
+
+---
+
+[TechDebt] `ClothingItem.copyWith`가 nullable 필드(category/season/color/material)를 명시적으로 null로 되돌릴 수 없음
+
+상태: 해소(2026-07-21) — sentinel 패턴 채택, `ClothingItem`(category/color/season/material/deletedAt)/`StyleLog`(linkedCompositionId/deletedAt)/`Composition`(season/weather/coverImagePath/deletedAt, 신규 작성) 전체 적용. 다중선택+휴지통 그룹 B의 `restoreMany`가 실제 소비자.
+
+내용:
+`docs/history/Decision.md`의 "ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)" 결정을 구현하면서(리토핑 커밋), `copyWith`는 기존 관례(`lib/models/style_log.dart`의 `linkedCompositionId ?? this.linkedCompositionId` 패턴)를 그대로 따라 `category: category ?? this.category`식 단순 `??` fallback을 유지했다. Dart의 흔한 nullable-copyWith 함정 그대로 — `copyWith(category: null)`을 호출해도 "안 건드림"과 구분이 안 돼 기존 값이 그대로 유지된다. 즉 한 번 값이 채워진 필드를 나중에 "미분류로 되돌리기"는 지금 구조로 불가능하다. Review(nullable화 리토핑 태스크, 2026-07-19)가 P2로 발견.
+
+영향:
+- 지금은 이 필드들을 수정하는 호출부가 아예 없어(`closet_add_screen.dart`가 아직 스켈레톤) 실제로 발동하는 버그는 아니다.
+- `closet_add_screen.dart`/편집 플로우 구현 시 "이미 채운 태그를 지운다" 인터랙션이 필요해지는 순간 이 한계에 부딪힌다.
+
+조치 방향(착수 조건):
+`closet_add_screen.dart` 실제 구현(편집/수정 폼) 착수 시, sentinel 객체 패턴(예: `Object _unset = Object(); copyWith({Object? category = _unset, ...})`) 또는 별도 `clearCategory()`류 메서드 도입 여부를 그 시점에 결정. 지금 미리 만들지 않는 이유: 실제 소비자가 없는 상태에서 패턴만 먼저 넣는 건 과설계(YAGNI) — 이 프로젝트가 `StyleLog.copyWith`에도 이미 같은 한계를 안고 있어 새로운 문제가 아니라 기존 패턴의 자연스러운 재현.
 
 ---

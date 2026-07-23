@@ -6,9 +6,9 @@ import '../widgets/app_scroll_container.dart';
 
 /// Step⑥(나머지 화면 적용) 산출물 — 공용 셸([AppMainScaffold])에 연결됨.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준
-/// Utility형(설정), 뒤로가기=O/카테고리 토글=X/그룹형 드릴다운=X라 `showCategoryToggle:
-/// false`로 기본값(true)을 오버라이드하고 `groupingBar`는 비워둔다(둘 다 기본값 자체가
-/// null/true라 groupingBar는 별도 지정 불필요).
+/// Utility형(설정), 뒤로가기=O/카테고리 토글=X라 `showCategoryToggle: false`로 기본값
+/// (true)을 오버라이드한다(그룹형 드릴다운 슬롯 자체는 2026-07-19 삭제됨 — `AppMainScaffold`
+/// 참고).
 ///
 /// `current`([AppMainScaffold]의 필수 파라미터)는 설정이 [AppCategory]의 옷장/코디/
 /// 스타일일지 어디에도 속하지 않아 원래 무관하지만, `showCategoryToggle: false`라

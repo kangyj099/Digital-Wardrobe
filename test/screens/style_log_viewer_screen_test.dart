@@ -73,7 +73,8 @@ void main() {
   });
 
   testWidgets('연결된 코디가 있으면 바인딩 항목 대신 실제 연결 목록이 보인다', (tester) async {
-    const linkedComposition = Composition(id: 'test-comp', name: '연결된 코디', items: []);
+    final linkedComposition =
+        Composition(id: 'test-comp', name: '연결된 코디', items: const [], createdAt: DateTime(2025, 1, 1));
     final log = StyleLog(
       id: 'test-log',
       coverImagePath: '',

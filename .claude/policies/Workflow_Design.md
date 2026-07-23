@@ -1,13 +1,27 @@
 # Design Workflow
 
-> Version 2.2
+> Version 3.0
 >
-> Purpose: A design workflow policy for efficiently collaborating with AI on Flutter-based mobile app design.
+> Purpose: A design workflow policy for efficiently collaborating with AI on Flutter-based mobile app design. Single consolidated document (former `workflow_design/` subfiles merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
 
 ---
 
 # 1. Core Principles
-→ .claude\policies\workflow_design\01_core principles.md
+
+Design is the process of building a consistent Design System.
+
+All screens follow the structure below.
+
+```text
+Design Principles
+↓
+Design System
+↓
+Component Library
+```
+
+## Layer Boundary Rule (Design System Governance Rule)
+→ Skill: `uiux-design-conventions` (`.claude/skills/uiux-design-conventions/SKILL.md`) — invoke before making a Decision-stage design call.
 
 # 2. Design Process
 
@@ -66,7 +80,7 @@ After the Design Tokens are finalized, changes to layout structure or visual lan
 If structural changes are required after Design Tokens are approved, the representative High-Fidelity Sample must be reviewed and updated first.
 
 # 6. Design Review
-→ .claude\policies\workflow_design\06_design review.md
+→ Skill: `uiux-design-conventions` (`.claude/skills/uiux-design-conventions/SKILL.md`) — Design Review / Visual Review checklists live here.
 
 # 7. Design Audit
 

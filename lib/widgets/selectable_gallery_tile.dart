@@ -30,7 +30,7 @@ class SelectableGalleryTile extends StatelessWidget {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     return Semantics(
       button: true,
-      label: '${item.name}, ${item.color}, 착용 ${item.wearCount}회'
+      label: '${item.name}, ${item.color ?? '미분류'}, 착용 ${item.wearCount}회'
           '${item.isIncomplete ? ", 미완성" : ""}',
       excludeSemantics: true,
       child: GestureDetector(
@@ -52,7 +52,7 @@ class SelectableGalleryTile extends StatelessWidget {
                   ),
                   if (item.isIncomplete)
                     const Positioned(top: AppSpacing.xxs, left: AppSpacing.xxs, child: StatusBadge(label: '미완성')),
-                  GalleryMetaLabel(label: item.category.label, maxWidth: constraints.maxWidth),
+                  GalleryMetaLabel(label: item.category?.label ?? '미분류', maxWidth: constraints.maxWidth),
                 ],
               );
             },

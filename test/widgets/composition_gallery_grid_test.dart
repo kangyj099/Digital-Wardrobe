@@ -16,9 +16,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    const compositions = [
-      Composition(id: 'comp01', name: '데일리 룩', items: []),
-      Composition(id: 'comp02', name: '포멀 코디', items: []),
+    final compositions = [
+      Composition(id: 'comp01', name: '데일리 룩', items: const [], createdAt: DateTime(2025, 1, 1)),
+      Composition(id: 'comp02', name: '포멀 코디', items: const [], createdAt: DateTime(2025, 1, 2)),
     ];
 
     await tester.pumpWidget(
@@ -43,8 +43,8 @@ void main() {
 
   testWidgets('타일 탭 시 해당 composition으로 onItemTap이 호출된다', (tester) async {
     Composition? tapped;
-    const compositions = [
-      Composition(id: 'comp01', name: '데일리 룩', items: []),
+    final compositions = [
+      Composition(id: 'comp01', name: '데일리 룩', items: const [], createdAt: DateTime(2025, 1, 1)),
     ];
 
     await tester.pumpWidget(

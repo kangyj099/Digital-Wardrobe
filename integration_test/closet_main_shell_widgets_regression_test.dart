@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/clothing_item.dart';
-import 'package:digittal_wardrobe/models/enums.dart';
+import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
@@ -51,14 +51,28 @@ void main() {
   }
 
   Finder categoryDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+      find.byType(CategoryToggleDropdown);
 
   testWidgets(
-    '옷장 메인에서 카테고리 드롭다운으로 옷장 자신을 재선택하면 실제로 아무 화면 전환도 일어나지 않는다',
+    '[갱신됨, 2026-07-20 최종] 옷장 메인(자기 자신의 메인 화면)에서 카테고리 드롭다운으로 '
+    '옷장을 재선택하면 네비게이션이 전혀 일어나지 않고(뒤로가기 스택 그대로) 분류 캡슐의 '
+    '중분류/소분류 선택만 초기화된다 — 이전엔 GoRouter.refresh()로 새로고침하는 방식이었으나 '
+    '사용자가 "메인에서는 스택 유지 + 상태 초기화, 메인이 아닌 화면에서는 메인으로 이동"으로 '
+    '동작을 더 구체화해 최종 확정',
     (tester) async {
-      await pumpApp(tester);
+      final container = await pumpApp(tester);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
       expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+
+      // 중분류를 "옷 종류"로 바꾸고 "하의"로 드릴인해서, 재선택으로 초기화될 상태를 만든다.
+      await tester.tap(find.byType(PopupMenuButton<int>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('옷 종류').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('하의')));
+      await tester.pumpAndSettle();
+      expect(container.read(closetSortCriterionProvider), ClosetSortCriterion.clothingType);
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(4));
 
       await tester.tap(categoryDropdownFinder());
       await tester.pumpAndSettle();
@@ -67,7 +81,35 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
+      expect(container.read(closetSortCriterionProvider), ClosetSortCriterion.all);
       expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      // 네비게이션 자체가 안 일어나므로 뒤로가기 스택도 당연히 안 쌓인다.
+      expect(find.byTooltip('뒤로가기'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '[신규, 2026-07-20] 옷 상세 화면(메인이 아님)에서 헤더 드롭다운으로 "옷장"(현재와 같은 '
+    '카테고리)을 재선택하면, 메인이 아닌 화면에서의 재선택이라 실제로 옷장 메인으로 '
+    '이동하고 뒤로가기 스택이 리셋된다(다른 카테고리를 골랐을 때와 동일 동작)',
+    (tester) async {
+      await pumpApp(tester);
+
+      await tester.tap(find.byType(SelectableGalleryTile).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+      expect(find.byTooltip('뒤로가기'), findsOneWidget); // push로 스택에 쌓인 상태
+
+      await tester.tap(categoryDropdownFinder());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('옷장').last);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ClosetMainScreen), findsOneWidget);
+      expect(find.byType(ClosetItemDetailScreen), findsNothing);
+      // go()가 스택을 리셋했으니 더 이상 뒤로 갈 곳이 없어야 한다.
+      expect(find.byTooltip('뒤로가기'), findsNothing);
     },
   );
 

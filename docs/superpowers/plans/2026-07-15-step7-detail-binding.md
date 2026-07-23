@@ -2575,4 +2575,4 @@ git commit -m "refactor(widgets): square-unify 옷 상세 composition/style-log 
 - 코디 아이템 개수 상한(15개, `Decision.md`) 실제 코드 반영은 "코디 만들기(Editor)" 구현 시점 — `TechnicalDebt.md`에 이미 등록됨, 이번 라운드엔 손대지 않음.
 - 남은 Step⑦ 스코프(그룹형 드릴다운 실배선 2곳, 선택 버튼 진입/다중선택 자체, 휴지통 복원·영구삭제·비우기 실행, 설정 알림/다크모드/프로필 진입)는 별도 Plan으로 이어서 진행.
 
-**[추가, 2026-07-18]** 위 항목 작성 후 Task 10~12가 추가로 진행·완료됨(옷 상세/코디 상세 썸네일 UI 최종 확정 — 상세는 파일 상단 Global Constraints 아래 정정 각주와 각 Task 섹션 참고). BACKLOG.md Current는 이미 이 내용까지 반영된 상태(2026-07-18 갱신) — 다음 세션이 새로 반영할 것 없음.
+**[추가, 2026-07-18]** 위 항목 작성 후 Task 10~13이 추가로 진행·완료됨(옷 상세/코디 상세 썸네일 UI 최종 확정 — 상세는 파일 상단 Global Constraints 아래 정정 각주와 각 Task 섹션 참고). 이 Plan 전체(Task 1~13)를 담은 PR #10이 dev에 병합 완료(2026-07-18). BACKLOG.md Current는 이미 이 내용까지 반영된 상태 — 다음 세션이 새로 반영할 것 없음.

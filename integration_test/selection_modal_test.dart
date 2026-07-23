@@ -12,6 +12,7 @@ import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
+import 'package:digittal_wardrobe/widgets/classification_drilldown_capsule.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
@@ -20,9 +21,9 @@ import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 /// 검증. Review 통과분(`app_router.dart`에 `/closet/select`, `/composition/select`,
 /// `/style-log/select` 3개 라우트 신설) 대상. 이 Step은 정적 구조 검증 단계(실제 선택 결과
 /// 바인딩·go_router result 반환은 Step⑦ 몫)라, 여기서는 (1) 닫기 버튼으로 교체, (2) 카테고리
-/// 토글/FAB 미노출, (3) groupingBar 유지(스타일일지는 원래도 없음), (4) 타일 탭 시 상세 화면
-/// 미이동 + 콜백 트리거, (5) 옷장 미완성 항목 탭 시 완성 화면 이동, (6) 네이티브 진입 경로
-/// 회귀 없음까지만 확인한다.
+/// 토글/FAB 미노출, (3) 분류 기준 캡슐 유지(스타일일지는 원래도 없음, `groupingBar` 슬롯 자체는
+/// 2026-07-19 삭제됨), (4) 타일 탭 시 상세 화면 미이동 + 콜백 트리거, (5) 옷장 미완성 항목 탭 시
+/// 완성 화면 이동, (6) 네이티브 진입 경로 회귀 없음까지만 확인한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -47,7 +48,7 @@ void main() {
 
   testWidgets(
     '옷장 선택 모달(/closet/select) 진입 시 닫기 버튼만 나타나고, canPop==true인 상황에서도 '
-    '뒤로가기 버튼은 나타나지 않으며, 카테고리 토글/FAB도 없고 groupingBar는 그대로 노출된다',
+    '뒤로가기 버튼은 나타나지 않으며, 카테고리 토글/FAB도 없고 분류 기준 캡슐은 그대로 노출된다',
     (tester) async {
       await pumpApp(tester);
 
@@ -61,7 +62,7 @@ void main() {
       expect(backButtonFinder(), findsNothing);
       expect(find.byType(CategoryToggleDropdown), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.textContaining('분류 선택 바'), findsOneWidget);
+      expect(find.byType(ClassificationDrilldownCapsule), findsOneWidget);
       // 그리드 자체는 그대로 12개 렌더링(선택 모달도 콘텐츠는 동일).
       expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
     },
@@ -131,7 +132,7 @@ void main() {
 
   testWidgets(
     '코디 선택 모달(/composition/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
-    '없으며 groupingBar는 그대로 노출된다. 타일 탭 시 context.pop(id)로 결과를 반환한다',
+    '없으며 분류 기준 캡슐은 그대로 노출된다. 타일 탭 시 context.pop(id)로 결과를 반환한다',
     (tester) async {
       await pumpApp(tester);
 
@@ -148,7 +149,7 @@ void main() {
       expect(backButtonFinder(), findsNothing);
       expect(find.byType(CategoryToggleDropdown), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.textContaining('분류 선택 바'), findsOneWidget);
+      expect(find.byType(ClassificationDrilldownCapsule), findsOneWidget);
       expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
 
       await tester.tap(find.byKey(const ValueKey('comp01')));
@@ -163,7 +164,7 @@ void main() {
 
   testWidgets(
     '스타일일지 선택 모달(/style-log/select)도 닫기 버튼으로 교체되고, 카테고리 토글/FAB는 '
-    '없으며, 원래도 그룹형이 아니라 groupingBar는 (변화 없이) 여전히 없다. 타일 탭 시 '
+    '없으며, 원래도 그룹형이 아니라 분류 기준 캡슐은 (변화 없이) 여전히 없다. 타일 탭 시 '
     'context.pop(id)로 결과를 반환한다',
     (tester) async {
       await pumpApp(tester);
@@ -181,7 +182,7 @@ void main() {
       expect(backButtonFinder(), findsNothing);
       expect(find.byType(CategoryToggleDropdown), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.textContaining('분류 선택 바'), findsNothing);
+      expect(find.byType(ClassificationDrilldownCapsule), findsNothing);
       expect(find.byType(StyleLogGalleryTile), findsNWidgets(2));
 
       await tester.tap(find.byKey(const ValueKey('log01')));

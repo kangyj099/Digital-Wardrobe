@@ -3,8 +3,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
-import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
@@ -42,7 +42,7 @@ void main() {
   }
 
   Finder categoryDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+      find.byType(CategoryToggleDropdown);
 
   Future<void> goToCategory(WidgetTester tester, String label) async {
     await tester.tap(categoryDropdownFinder());
@@ -128,10 +128,10 @@ void main() {
       await pumpApp(tester);
 
       final actionSize = labelSmallRenderedFontSize(tester, find.text('선택'));
-      // c01(원피스) 타일의 카테고리 태그.
+      // c01(한벌옷) 타일의 카테고리 태그.
       final tagFinder = find.descendant(
         of: find.byKey(const ValueKey('c01')),
-        matching: find.text('원피스'),
+        matching: find.text('한벌옷'),
       );
       expect(tagFinder, findsOneWidget);
       final tagSize = labelSmallRenderedFontSize(tester, tagFinder);

@@ -2,20 +2,20 @@
 /// [ClothingItem.category]에 허용되는 값. 머리부터 발끝 착용 순서를 따른다.
 enum ClothingCategory {
   hat,
+  onePiece,
   top,
   outer,
   bottom,
-  dress,
   socks,
   shoes,
   bagAccessory;
 
   String get label => switch (this) {
         ClothingCategory.hat => '모자',
+        ClothingCategory.onePiece => '한벌옷',
         ClothingCategory.top => '상의',
         ClothingCategory.outer => '아우터',
         ClothingCategory.bottom => '하의',
-        ClothingCategory.dress => '원피스',
         ClothingCategory.socks => '양말',
         ClothingCategory.shoes => '신발',
         ClothingCategory.bagAccessory => '가방·액세서리',
@@ -94,5 +94,19 @@ enum ClothingMaterial {
         ClothingMaterial.canvasFabric => '캔버스·패브릭',
         ClothingMaterial.suede => '스웨이드',
         ClothingMaterial.rubber => '고무·러버',
+      };
+}
+
+// TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
+/// [Composition.weather]에 허용되는 값.
+enum Weather {
+  clear,
+  rain,
+  snow;
+
+  String get label => switch (this) {
+        Weather.clear => '맑음',
+        Weather.rain => '비',
+        Weather.snow => '눈',
       };
 }

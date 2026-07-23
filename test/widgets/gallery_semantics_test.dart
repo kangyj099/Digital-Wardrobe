@@ -18,7 +18,7 @@ void main() {
 
   testWidgets('SelectableGalleryTile exposes name/color/wearCount via Semantics', (tester) async {
     final handle = tester.ensureSemantics();
-    const item = ClothingItem(
+    final item = ClothingItem(
       id: 'c01',
       name: 'padding jacket',
       category: ClothingCategory.outer,
@@ -27,6 +27,7 @@ void main() {
       material: ClothingMaterial.padding,
       imagePath: '',
       wearCount: 5,
+      createdAt: DateTime(2025, 1, 1),
     );
     await tester.pumpWidget(
       MaterialApp(theme: AppTheme.light, home: Scaffold(body: SelectableGalleryTile(item: item, onTap: () {}))),
@@ -37,7 +38,7 @@ void main() {
 
   testWidgets('SelectableGalleryTile marks incomplete items via Semantics', (tester) async {
     final handle = tester.ensureSemantics();
-    const item = ClothingItem(
+    final item = ClothingItem(
       id: 'c06',
       name: 'fleece pants',
       category: ClothingCategory.bottom,
@@ -46,6 +47,7 @@ void main() {
       material: ClothingMaterial.fleece,
       imagePath: '',
       isIncomplete: true,
+      createdAt: DateTime(2025, 1, 1),
     );
     await tester.pumpWidget(
       MaterialApp(theme: AppTheme.light, home: Scaffold(body: SelectableGalleryTile(item: item, onTap: () {}))),

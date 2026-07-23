@@ -60,9 +60,9 @@ void main() {
       expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
       expect(find.text('플로럴 원피스'), findsOneWidget);
       expect(
-        find.textContaining('원피스'),
+        find.textContaining('한벌옷'),
         findsWidgets,
-        reason: 'ClothingCategory.dress의 label(원피스)이 메타데이터 줄에 보여야 한다',
+        reason: 'ClothingCategory.onePiece의 label(한벌옷)이 메타데이터 줄에 보여야 한다',
       );
       expect(find.textContaining('보관 위치: 옷장 2단'), findsOneWidget);
       expect(find.textContaining('착용 3회'), findsOneWidget);

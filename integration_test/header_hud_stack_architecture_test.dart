@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
-import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
@@ -22,7 +22,8 @@ import 'package:digittal_wardrobe/widgets/app_main_scaffold.dart';
 /// 카테고리 이동/뒤로가기 시나리오는 중복 작성하지 않는다. 이 파일은 이번 Stack 전환에서만
 /// 새로 생긴 위험만 다룬다: (1) 스크롤 위치 기반 그라디언트 오버레이의 실제 표시/숨김 전이,
 /// (2) 콘텐츠가 화면 전체를 차지하는 Stack 구조에서 floating control의 히트테스트 우선순위,
-/// (3) groupingBar의 실제 배치 좌표, (4) 스크롤+플로팅 오버레이 동시 존재 시 크래시 여부.
+/// (3) 스크롤+플로팅 오버레이 동시 존재 시 크래시 여부. (구 (3) groupingBar 배치 회귀 테스트는
+/// 그 밴드 자체가 2026-07-19 삭제되어 더 이상 회귀 대상이 아니므로 제거됨.)
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -46,7 +47,7 @@ void main() {
   }
 
   Finder categoryDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+      find.byType(CategoryToggleDropdown);
 
   Future<void> goToCategory(WidgetTester tester, String label) async {
     await tester.tap(categoryDropdownFinder());
@@ -88,11 +89,8 @@ void main() {
     );
 
     // ClosetMainScreen이 AppScrollContainer에 넘기는 것과 동일한 계산 —
-    // 화면 쪽 헤더 구성(Row1+Row2+groupingBar)이 바뀌면 이 값도 같이 따라간다.
-    final topThreshold = AppMainScaffold.contentSpacerHeight(
-      hasSecondaryRow: true,
-      groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
-    );
+    // 화면 쪽 헤더 구성(Row1+Row2)이 바뀌면 이 값도 같이 따라간다.
+    final topThreshold = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
 
     expect(
       scrollable.position.maxScrollExtent,
@@ -248,38 +246,6 @@ void main() {
     );
   });
 
-  // ── 3) groupingBar 배치 회귀 ─────────────────────────────────────────────
-
-  testWidgets(
-    'groupingBar(skeleton) 밴드가 Row2 버튼들 아래·그리드 첫 타일 위에 겹치지 않고 순서대로 '
-    '배치된다(Content Spacer 계산이 실제 렌더 좌표와 일치)',
-    (tester) async {
-      await pumpApp(tester);
-
-      final row2ButtonRect = tester.getRect(find.byTooltip('그리드 밀도 전환'));
-      final groupingBarRect = tester.getRect(
-        find.ancestor(of: find.textContaining('분류 선택 바'), matching: find.byType(Container)).first,
-      );
-      final firstTileRect = tester.getRect(find.byType(SelectableGalleryTile).first);
-
-      expect(tester.takeException(), isNull);
-      // Row2 버튼이 groupingBar보다 위에 있어야 하고, 서로 겹치지 않아야 한다.
-      expect(
-        row2ButtonRect.bottom,
-        lessThanOrEqualTo(groupingBarRect.top),
-        reason: 'Row2=$row2ButtonRect, groupingBar=$groupingBarRect',
-      );
-      // groupingBar가 첫 타일보다 위에 있어야 하고, 서로 겹치지 않아야 한다.
-      expect(
-        groupingBarRect.bottom,
-        lessThanOrEqualTo(firstTileRect.top),
-        reason: 'groupingBar=$groupingBarRect, firstTile=$firstTileRect',
-      );
-      // groupingBar가 화면 폭 전체를 차지하는 밴드인지(좌우 여백 없이 전체 폭).
-      expect(groupingBarRect.width, closeTo(scrollableSize.width, 1));
-    },
-  );
-
   // ── 4) 비정형 흐름: 스크롤 도중 드롭다운 여닫기 ────────────────────────────────
 
   testWidgets(
@@ -290,19 +256,16 @@ void main() {
       await pumpApp(tester);
 
       final scrollable = tester.state<ScrollableState>(find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)));
-      final topThreshold = AppMainScaffold.contentSpacerHeight(
-        hasSecondaryRow: true,
-        groupingBarHeight: AppMainScaffold.defaultGroupingBarHeight,
-      );
+      final topThreshold = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
       await tester.drag(find.byType(GridView), Offset(0, -(topThreshold + 20)));
       await tester.pumpAndSettle();
       final pixelsBeforeDropdown = scrollable.position.pixels;
       expect(topOpacity(tester), closeTo(0.85, 0.001));
 
-      await tester.tap(find.byWidgetPredicate((w) => w is DropdownButton<Season?>));
+      await tester.tap(find.byType(PopupMenuButton<int>));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('겨울'), findsWidgets); // 드롭다운 오버레이 열림 확인
+      expect(find.text('옷 종류'), findsWidgets); // 드롭다운 오버레이 열림 확인(기본 중분류=전체보기)
 
       // 옵션을 고르지 않고 화면 바깥(좌상단 빈 공간)을 탭해 모달 배리어로 닫는다.
       await tester.tapAt(const Offset(10, 10));

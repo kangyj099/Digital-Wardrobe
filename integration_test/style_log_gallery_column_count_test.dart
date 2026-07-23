@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
-import 'package:digittal_wardrobe/models/enums.dart';
 import 'package:digittal_wardrobe/models/style_log.dart';
 import 'package:digittal_wardrobe/providers/style_log_providers.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
@@ -57,7 +57,7 @@ void main() {
   }
 
   Future<void> goToCategory(WidgetTester tester, String label) async {
-    await tester.tap(find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>));
+    await tester.tap(find.byType(CategoryToggleDropdown));
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();

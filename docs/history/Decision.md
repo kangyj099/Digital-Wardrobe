@@ -1,5 +1,115 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 라우터+앵커 재통합 부분 롤백 — 5개 중 2개(핫패스 참조 문서)는 서브파일 구조로 복귀 (Data/Architecture, Decision — 바로 아래 "라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합" 항목의 스코프 축소)
+
+결정:
+- `docs/reference/design/00_DesignPrinciples.md`(6개 서브파일)와 `docs/reference/plan/03_화면별UX명세서.md`(7개 서브파일) — 방금 병합했던 5개 중 이 2개만 서브파일 구조로 되돌린다. 나머지 3개(`Workflow_Project.md`/`Workflow_Design.md`/`Workflow_Development.md`)는 병합 유지.
+- 이 2개를 되돌리는 이유: §12.1 Required Materials에 직접 걸려 있어 진행 중인 Flutter Hi-Fi 스프린트의 거의 모든 화면 Task마다 Worker/Review에게 "특정 섹션 하나만" 좁게 Read되는 핫패스 문서인데, `Read` 툴이 기본적으로 파일 전체(최대 2000줄)를 읽어들이는 구조상 병합 후엔 필요 없는 다른 5~6개 섹션까지 매번 컨텍스트에 딸려 들어와 오히려 토큰 낭비였음. 반면 정책 문서 3종은 PM이 스스로 전체를 훑는 빈도가 훨씬 높고 Worker에게 좁게 슬라이스해 넘기는 빈도는 낮아 병합 손해가 작음.
+- 되돌린 2개 문서의 버전은 이번 세션에서 실질적으로 내용이 바뀐 게 없어(구조만 병합→복귀를 왕복) 2.0 그대로 유지 — 범프하지 않음.
+- 이 2개 문서를 가리키던 ~30개 상호참조(lib/, integration_test/, docs/superpowers/, docs/work/, TechnicalDebt.md)도 전부 서브파일 경로로 재복귀. `Workflow_Project.md` §12.4 Task Manifest 예시도 원래의 서브파일 경로 예시로 되돌림.
+
+사유:
+사용자가 병합 직후 실사용 관점에서 재검토 — "토큰이 빨리 녹아서 요새 문제"라는 피드백. 열람 편의(원래 목적)와 토큰 비용을 다시 저울질한 결과, 5개를 뭉뚱그려 판단하지 않고 실제 사용 패턴(핫패스 vs PM 전용 정책 문서)에 따라 문서별로 다르게 판단하는 게 맞다고 확인.
+
+Impact:
+- `docs/reference/design/00_DesignPrinciples.md` + 6개 서브파일 복원
+- `docs/reference/plan/03_화면별UX명세서.md` + 7개 서브파일 복원
+- `.claude/policies/Workflow_Project.md` §12.4 예시 복원
+- 위 두 문서를 가리키던 상호참조 전체 원복(약 30개 지점)
+
+---
+
+[Decision] 설계/계획 확정 전 Audit 필수화 — 크기 무관 신규 Decision-Stage Pipeline (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §5에 "Decision-Stage (Design & Plan) Pipeline" 신설: 설계 스펙(UI/Screen×Decision)·구현 계획(Logic/Feature×Decision) 모두, 크기 무관, "작은 단위 Review 반복 → 초안 조립 → Audit 1회(항상) → 확정" 흐름을 따른다.
+- §12.1 표 두 행(UI/Screen×Decision(Design), Logic/Feature×Decision(Planning)) 모두 "+ mandatory Audit before confirmation (크기 무관)"으로 갱신 — §5 본문과 §12.1 표가 따로 놀아 어긋나는 걸(과거 "§7 vs §12.1 모순" 사례와 같은 유형) 미리 방지.
+- Planning 단계의 "작은 단위 Review"는 `writing-plans` 스킬의 구조화된 Self-Review(Spec coverage/Placeholder scan/Type consistency) + 관련 정책 문서 대조 승인이 있으면 별도 `review` 서브에이전트 호출 없이 충족되는 것으로 인정(단, 이 경우도 확정 전 Audit은 예외 없이 돈다) — 이는 §1.1(Role Separation)이 요구하는 완전한 독립 검증은 아니라는 걸 인지한 상태의 의도적 트레이드오프다: (a) Design 단계는 이미 독립 Review가 강제되어 비대칭이 없고, (b) Audit이라는 두 번째 독립적 눈이 Planning 단계에도 항상 걸리며, (c) 매 plan 섹션마다 subagent를 부르면 오버헤드가 커져 원칙 자체가 실무에서 지켜지지 않을 위험이 크다는 실용적 판단.
+- `.claude/agents/audit.md`의 frontmatter description과 "When you run" 섹션에 이 새 트리거 지점(설계/계획 확정 전, 크기 무관) 반영.
+
+사유:
+사용자가 이번 세션에서 직접 요청 — "작업 전에 항상 설계와 계획을 먼저 선행하고, 설계와 계획은 작은단위로 review, 확정 전 audit 검수 꼭 하기". 지금까지 Audit은 L/XL 구현 태스크가 끝난 뒤에만 자동으로 돌아, 설계/계획 단계의 결함(정책 충돌, 프로젝트 전체와의 불일치)이 구현 이후에야 발견되는 구조였음 — 발견이 늦을수록 재작업 비용이 커지므로, 확정 이전 시점에 Audit 게이트를 추가.
+이 원칙 자체가 즉시 자기 자신에게 적용됨: 이 항목을 포함한 이번 세션 전체 작업 플랜이 실행 전에 `review` 1회(P0 없음, P1 2건/P2 3건 전부 반영) → `audit` 1회(P1 3건/P2 1건/P3 1건, P3 제외 전부 반영)를 거쳐 확정됐음 — 사용자가 "이 계획에 대해서부터 review, audit을 새 원칙대로 진행 가능해?"라고 명시적으로 요청.
+
+Impact:
+- `Workflow_Project.md` §5/§12.1
+- `.claude/agents/audit.md`
+
+---
+
+[Decision] Task 완료 시 연속성 시뮬레이션 + `/clear` 권유 절차 신설 (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §3에 "Post-Completion Continuity Simulation & `/clear` Recommendation" 신설, §10 Definition of Done에 체크박스 추가. Task 단계가 완료됐고 PM이 "세션 내 후속 작업이 더 없다"고 판단하면, `docs/work/BACKLOG.md`(+ 방금 추가된 Decision.md/TechnicalDebt.md 항목)를 새 세션 입장에서 재검토해 연속성을 시뮬레이션하고, 문제 없으면 사용자에게 `/clear`를 (실행이 아니라) 권유한다. Task 크기(S/M/L/XL) 무관 적용 — 단, PM이 세션 내 후속 작업이 이미 대기 중이라고 판단하면 매번 반복하지 않는다.
+- `CLAUDE.md` "필수 체크포인트"에 짧은 포인터 문장 추가.
+
+사유:
+사용자가 이번 세션에서 직접 요청 — "연속 작업이 필요 없을 것 같은 작업에 대해 BACKLOG 기록 후 새 세션 인계를 시뮬레이션해서 문제없으면 clear를 권유하는 멘트를 했으면 좋겠다". 기존 §3 "Skill-Internal Ledgers vs. Official Handoff"에 있던 "recorded so a future session can continue라고 보고하기 전 실제로 그 경로를 검증하라"는 원칙을 애드혹 체크에서 공식 필수 절차로 격상하고, 여기에 `/clear` 권유 액션을 결합했다.
+
+Impact:
+- `Workflow_Project.md` §3/§10
+- `CLAUDE.md` 필수 체크포인트 목록
+
+---
+
+[Decision] 라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합 (Data/Architecture, Decision) — 2026-07-10 결정 일부 되돌림 + 미기록 분리 3건 통합
+
+결정:
+- `.claude/policies/Workflow_Project.md`(서브파일 8개), `Workflow_Design.md`(2개), `Workflow_Development.md`(1개), `docs/reference/design/00_DesignPrinciples.md`(6개), `docs/reference/plan/03_화면별UX명세서.md`(7개) — 총 24개 서브파일을 각 부모 파일 하나로 재병합하고 서브파일은 삭제.
+- 이 중 2개(`Workflow_Project.md`/`Workflow_Design.md`)는 2026-07-10에 명시적으로 기록된 라우터+앵커 결정(아래 관련 항목 참고)을 되돌리는 것이고, 나머지 3개(`Workflow_Development.md`/`00_DesignPrinciples.md`/`03_화면별UX명세서.md`)는 같은 시기 같은 패턴으로 분리됐으나 그 분리 자체를 기록한 Decision.md 항목이 애초에 없었던 것을 이번에 통합한 것 — 두 성격을 구분해 기록한다.
+- 5개 파일 모두 §1.6 기준 구조 변경(major)으로 버전 범프: `Workflow_Project.md` 2.6→3.0(같은 세션에서 바로 이어 진행한 §3/§5/§10/§12.1 내용 추가(아래 두 항목)까지 포함해 한 리비전 패스로 3.0 하나만 부여), `Workflow_Design.md` 2.2→3.0, `Workflow_Development.md` 1.3→2.0, `00_DesignPrinciples.md` 2.0→3.0, `03_화면별UX명세서.md` 2.0→3.0.
+- `Workflow_Project.md`/`00_DesignPrinciples.md`/`03_화면별UX명세서.md`/`Workflow_Development.md` 4개 파일 상단에 목차(TOC) 추가 — `Workflow_Design.md`는 병합 순증이 적어(~15줄) TOC 없이도 스캔 가능해 생략.
+- 저장소 전체(`lib/`, `integration_test/`, `.claude/`, `docs/superpowers/`, `docs/work/`)에서 옛 서브파일 경로/파일명을 참조하던 지점을 새 경로("파일 §섹션")로 갱신. `docs/history/Decision.md`는 과거 시점 기록이라 전혀 손대지 않음(옛 경로가 그대로 남아있는 게 정상 — 이 항목이 그 예). `docs/history/TechnicalDebt.md`는 원칙적으로 동일하게 두되, 아직 미해결(open) 상태인 항목들은 죽은 경로가 다음 세션 연속성을 실제로 해칠 수 있어 예외적으로 경로만(내용/판단은 불변) 갱신했다.
+- `00_DesignPrinciples.md` Stage 2/3(Interaction/Layout Principles) 헤딩은 부모의 구 포인터 헤딩이 아니라 서브파일의 실제 헤딩("(Revised)"/"(Revised v2)")을 채택 — 서브파일 쪽이 최신 유효 버전이었음.
+
+사유:
+사용자가 이번 세션에서 "문서 세부항목 앵커화 되어있는 것 통합"을 직접 요청 — 목적은 Claude가 문서를 열람할 때 여러 파일을 오가지 않고 한 파일 안에서 맥락을 파악할 수 있게 하는 것. 2026-07-10 결정의 원래 근거("Task Manifest가 좁은 스코프만 넘길 수 있게")는 여전히 유효하지만, 병합 후에도 Task Manifest는 "파일 §섹션" 단위로 여전히 좁게 지정 가능해 그 이점이 크게 훼손되지 않는다고 판단한 반면, 여러 파일을 오가는 열람 비용은 이 시점에 더 크다고 사용자가 명시적으로 판단해 재우선순위화했다.
+
+Impact:
+- (파일별 세부 변경은 위 결정 문단 참고)
+- 이 병합 작업 자체가 바로 위 두 항목이 신설한 "Decision-Stage Pipeline" 원칙을 스스로 적용받음 — `review` 1회(P0 없음, P1 2건/P2 3건 전부 반영) → `audit` 1회(P1 3건/P2 1건/P3 1건, P3 제외 전부 반영) 통과 후 확정.
+
+---
+
+[Decision] 헤더 드롭다운 텍스트 확대·중앙정렬, 설정 구분선 연한 색, 분류 캡슐을 단일 GlassPill+내부 구분선으로 재통합 (UI/Screen, Decision — Header/HUD Pinned Rule 예외 포함)
+
+결정:
+- `CategoryToggleDropdown` 메뉴: 옷장/코디/스타일일지 3항목 텍스트를 `titleMedium`(16, w600)으로 확대, 4항목(옷장/코디/스타일일지/설정) 전부 고정폭(120) 박스 안에서 가운데 정렬. "설정" 항목의 `PopupMenuDivider`는 `AppSemanticColors.gray200`(팔레트 기반 연한 회색)로 지정.
+- `ClassificationDrilldownCapsule`: 직전 결정(바로 아래 항목)이 Header/HUD Pinned Rule 준수를 위해 독립 GlassPill 2개로 분리했던 것을 **다시 하나의 GlassPill로 통합**하고, 중분류/소분류 두 `DropdownButton` 사이에 얇은 세로 구분선(1px, `AppSemanticColors.gray200`)을 넣는 구조로 되돌린다.
+- **Pinned Rule 예외 처리**: `glass_pill.dart` docstring 및 Pinned Rule 항목이 "여러 컨트롤을 하나의 GlassPill 안에 함께 담지 않는다 — 변경 시 사용자 승인 필수"라고 명시한 규칙에 대한 명시적 예외다. 사용자가 "캡슐 이미지 하나 쓰고, 중분류 소분류 사이 구분 사이선으로 구분해"라고 대화 중 직접 지시했고, 이 지시 자체가 필요한 사용자 승인으로 간주해 규칙 예외를 적용했다. `glass_pill.dart`의 규칙 서술 자체는 고치지 않음(일반 원칙은 유지, 이 캡슐 하나만 예외).
+
+사유:
+사용자가 실제 화면을 보고 직접 3가지 UI 조정을 지시(2026-07-20): 헤더 드롭다운 텍스트가 작아 보임, 설정 구분선이 너무 진함, 분류 캡슐이 두 개의 분리된 알약처럼 보이는 게 의도와 다름(하나의 캡슐 + 내부 구분선을 원함).
+
+Impact:
+- `lib/widgets/category_toggle_dropdown.dart` — 항목 스타일/정렬, `PopupMenuDivider` color.
+- `lib/widgets/classification_drilldown_capsule.dart` — `Row(GlassPill, SizedBox, GlassPill)` → `GlassPill(Row(...))`, 내부에 `Container` 세로 구분선 추가.
+- `test/widgets/classification_drilldown_capsule_test.dart` — `AppSemanticColors` extension을 쓰는 위젯이라 `MaterialApp(theme: AppTheme.light)` 누락 시 null-check 에러가 남을 발견, 두 테스트 모두 테마 추가.
+- 회귀 확인: `flutter analyze`/`flutter test`(66/66) 전체 통과, `integration_test/`(`app_main_scaffold_shell_migration_test.dart` 3/3 — 360px 좁은 뷰포트 오버플로 없음 확인, `closet_main_screen_test.dart` 28/28, `classification_drilldown_test.dart` 12/12, `selection_modal_test.dart` 7/7) 직접 실행 확인.
+
+---
+
+[Decision] 옷장·코디 메인 헤더 — 분류 기준 드릴다운 캡슐 + 설정 진입점 이동 (UI/Screen, Decision — Implementation 완료)
+
+결정:
+- `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`를 그대로 구현(Task 1~7, Worker→Review→Tester 사이클 전부 통과, Task 7 통과 후 Audit 1회 추가 — P0 없음). 옷장/코디 메인의 `groupingBar` skeleton을 `[중분류▾][소분류▾]` 2세그먼트 캡슐로 교체하고, 메인 그리드가 플랫/그룹개요(폴더카드)/드릴인 3상태를 갖도록 배선했다.
+- 이 결정은 두 개의 이전 결정을 **대체**한다: (a) `2026-07-12-cross-screen-ui-shell-design.md` §2의 "그룹형 드릴다운" 설계(`GroupedMainViewMode` 3단계 enum, 계절 전용, `AppMainScaffold.groupingBar` 전체폭 밴드) — 최종 목업과 맞지 않아 폐기, 해당 문서 §2에 정정 각주 추가함. (b) `04_설정.md` §1(설정 진입점=프로필 아이콘) — 최종 목업에 프로필 아이콘이 없어 폐기, `CategoryToggleDropdown` 메뉴 최하단(구분선+작은 폰트)으로 대체, 해당 문서 §1에 정정 각주 추가함.
+- **`ClassificationDrilldownCapsule`이 하나의 `GlassPill`이 아니라 독립된 `GlassPill` 2개를 `Row`로 나열하는 구조로 구현됨**: `glass_pill.dart` docstring이 "여러 컨트롤을 하나의 GlassPill 안에 함께 담지 않는다"(Header/HUD Pinned Rule)고 명시하고, 이 규칙 변경은 사용자 승인이 필요하다고 이 저장소가 이미 규정해뒀음(Pinned Rule 항목, "Layout Principle, 변경 시 사용자 승인 필수"). 최초 구현(Task 5)은 하나의 GlassPill에 두 DropdownButton을 담아 이 규칙과 충돌했고, Review가 이를 지적 — 승인을 구하는 대신 기존 규칙을 그대로 준수하는 구조(독립 GlassPill 2개)로 재구현해 예외 승인 자체를 우회했다. 시각적으로는 여전히 붙어 보이는 2세그먼트 캡슐.
+- **정렬 방향(`ascending`) 의미 — "전역 단순 규칙" 채택**: 스펙 §3.2 "기본 정렬 순서" 표(옷종류=머리→발, 계절=봄가을→여름→겨울, 날씨=맑음→비→눈)와 §3.6의 provider 기본값(`ascending=false`) 사이에 스펙이 명시하지 않은 간극이 있었음(§3.6 주석은 날짜/착용빈도만 근거를 댐). 두 가지 해석 후보를 `docs/work/TO_사용자결정.md`에 기록해 사용자에게 직접 확인 — 사용자가 **"ascending=true는 모든 기준에서 예외 없이 index/날짜 오름차순"이라는 단일 전역 규칙**을 명시적으로 선택(코드 단순성 우선). 그 결과 옷종류/계절/날씨의 **기본 표시는 §3.2 표와 반대 방향**(발→머리, 겨울→여름→봄가을, 눈→비→맑음)이 된다 — 승인된 tradeoff, 재작업 대상 아님. Tester가 실제 화면에서 실측 확인(기본=내림차순 아이콘, 토글 1회=§3.2 표 순서로 전환).
+- `AppMainScaffold.groupingBar`/`groupingBarHeight`/`defaultGroupingBarHeight`는 이 변경 이후 소비자가 0개가 되어 완전히 삭제(YAGNI).
+
+사유:
+`docs/work/BACKLOG.md` "Step⑦ 나머지 스코프" 그룹 A 항목("그룹형 드릴다운 실배선(옷장/코디 메인 2곳) + 설정 진입점 연결") 진행. 사용자가 제공한 최종 확정 목업을 근거로 기존 두 결정(그룹형 드릴다운 설계, 프로필 아이콘 진입점)을 대체하기로 확정(2026-07-19).
+
+Impact:
+- 신규: `lib/providers/classification_models.dart`(`DrilledValue<T>`/`ClassificationGroupSummary`/`compareNullableIndexLast`), `lib/widgets/classification_drilldown_capsule.dart`, `lib/widgets/classification_group_card.dart`/`classification_group_grid.dart`, `Weather` enum(`lib/models/enums.dart`), `ClothingItem.createdAt`/`Composition.createdAt`·`weather` 필드.
+- 수정: `lib/providers/closet_providers.dart`/`composition_providers.dart`(`selectedSeasonFilterProvider`류 대체), `lib/widgets/category_toggle_dropdown.dart`(`DropdownButton`→`PopupMenuButton`, "설정" 항목), `lib/screens/closet_main_screen.dart`/`composition_main_screen.dart`(캡슐 배선), `lib/widgets/app_main_scaffold.dart`(`groupingBar` 슬롯 삭제), `lib/mock/mock_data.dart`(c12/comp02를 미분류 데모용으로 조정).
+- 문서: 이 항목, `2026-07-12-cross-screen-ui-shell-design.md` §2 정정 각주, `04_설정.md` §1 정정 각주.
+- 상세 경위(Task별 Worker/Review/Tester 로그, 진행 중 발견된 여러 plan 공백과 수정 내역)는 `docs/superpowers/plans/2026-07-19-classification-drilldown-and-settings-entry.md` 참고.
+- Audit(2026-07-19, Task 7 직후)이 P0 없이 통과, P1 2건(BACKLOG.md Current 최신화 필요 — 이 커밋과 함께 반영, `2026-07-12` 스펙도 함께 정정 대상이었음 — 이 항목에서 함께 반영)은 이 문서 작업으로 해소. P2/P3(사소한 매직넘버 패딩, `02_코디 UX명세서` 문구 드리프트, lint 경고 인벤토리 누락 2건)는 `docs/history/TechnicalDebt.md`/`docs/work/BACKLOG.md`에 별도 기록.
+
+---
+
 [Decision] "연결된 스타일일지" 갤러리 — 기본 2열, 1장이면 1열(정사각형 유지, 확대 아님) (UI/Screen, Decision)
 
 결정:
@@ -786,3 +896,47 @@ Design System, Component Library. 화면/기획 문서 변경 없음.
 
 Follow-up:
 Brand Guide 확정 시 PLACEHOLDER 값 전수 교체 Task 필요 (TechnicalDebt.md 등록 대상 여부는 별도 확인).
+
+---
+
+[Decision] ClothingItem의 category/season/color/material 4개 필수 필드를 선택 필드로 전환(nullable화)
+
+상태: **리토핑 완료(2026-07-19)** — 실제 영향 파일은 이 항목 최초 작성 시점의 grep(아래 Impact의 13개)이 과대 집계였음이 리토핑 과정에서 밝혀짐(`TrashEntry.category`/`AppDetailScaffold.category`는 `AppCategory` 타입이라 무관, `Composition.season`은 이미 nullable이라 무관) — 실제로는 `lib/models/clothing_item.dart`, `lib/mock/mock_data.dart`, `lib/screens/closet_item_detail_screen.dart`, `lib/widgets/selectable_gallery_tile.dart` 4개 파일만 수정. `lib/providers/closet_providers.dart`는 기존 필터 로직이 이미 null-safe해 변경 불필요로 확인. Worker→Review(1차 P0: mock 아이템 추가 방식이 기존 통합테스트 개수 assertion을 깨뜨림 → 전역 mock 대신 테스트 로컬 주입 패턴으로 재작업)→Review(2차 통과)→Tester(7개 시나리오 전부 통과, `integration_test/closet_item_nullable_fields_test.dart` 신설) 전체 사이클 완료. 커밋 `88cbea6`/`92d93ef`/`4c5c522`. Review가 발견한 P2(copyWith가 null로 명시적으로 되돌리는 걸 지원 안 함)는 `docs/history/TechnicalDebt.md`에 별도 기록, `closet_add_screen.dart` 구현 시점까지 의도적으로 미해결 보류.
+
+배경:
+`2026-07-19-main-header-classification-and-settings-entry-design.md` 스펙 작업 중 사용자가 "옷장 category/season이 지금 왜 non-nullable이냐"고 확인, 그 배경에서 제기됨.
+
+결정:
+- `ClothingItem.category`/`season`/`color`/`material` 4개 필드를 전부 `required` → nullable(선택 필드)로 전환한다.
+- 대상은 `ClothingItem`뿐 — `Composition`/`StyleLog`는 이 결정 범위 밖(별도 검토).
+
+사유:
+앱의 본질적 가치는 "옷 등록 — 아카이브 사진 연결"이고, 종류/계절/색상/소재 같은 태그 정보는 부가적이라고 판단. AI 자동 라벨링(`01_옷장.md` "여러 장 한 번에 추가하기")이 보통은 채워주지만 (a) 사용자가 원하는 선택지가 폐쇄형 어휘에 없을 수 있고 (b) 태그를 건너뛰고 빠르게 등록만 하고 싶을 수 있음 — 두 경우 모두 저장 자체를 막아서는 안 된다는 게 사용자 판단.
+
+Impact:
+- 이미 이 4개 필드를 non-null로 전제하고 읽는 파일 13개가 리토핑 대상(grep 확인, 2026-07-19 기준): `lib/widgets/trash_gallery_tile.dart`, `lib/widgets/selectable_gallery_tile.dart`, `lib/widgets/composition_gallery_tile.dart`, `lib/screens/trash_main_screen.dart`, `lib/screens/composition_detail_screen.dart`, `lib/screens/closet_item_detail_screen.dart`, `lib/screens/app_detail_scaffold.dart`, `lib/providers/composition_providers.dart`, `lib/providers/closet_providers.dart`, `lib/models/trash_entry.dart`, `lib/models/enums.dart`, `lib/models/composition.dart`, `lib/models/clothing_item.dart`.
+- **`2026-07-19-main-header-classification-and-settings-entry-design.md`(옷장·코디 메인 헤더 드릴다운 캡슐 스펙)와의 관계**: 그 스펙은 "옷장의 4개 분류 기준(날짜/종류/계절/착용빈도)은 대응 필드가 전부 non-nullable이라 미분류 카드가 없다"고 명시하는데, 이 결정이 실행되면 옷종류·계절 두 필드가 nullable이 되어 그 전제가 깨진다 — 옷장도 코디(계절·날씨)와 동일하게 미분류 그룹 카드가 필요해짐. 두 작업 착수 순서에 따라 어느 한쪽이 먼저 완료되면 나머지가 그 변경을 반영해야 한다.
+- `closet_add_screen.dart`(아직 스켈레톤, 미착수) 구현 시 필수/선택 필드 검증 로직에 반영 필요 — 현재는 착수 전이라 즉시 영향 없음.
+
+착수 방식: 별도 Decision + 리토핑 태스크로 분리한다(사용자 확정, 2026-07-19) — 위 헤더 드릴다운 스펙엔 포함하지 않고 진행 중인 채로 둔다. `docs/work/BACKLOG.md`에 후속 작업으로 등록.
+
+---
+
+[Decision] ClothingCategory "원피스" 값을 "한벌옷"(onePiece)으로 개명 + 착용순서 위치 변경
+
+배경:
+`_공통 규칙.md` "분류 기준별 정렬 기준표" 편집 중 사용자가 옷 종류 착용순서에 "한벌옷"(원피스+점프수트를 포괄하는 상위 개념)을 추가 — 기존 "ClothingItem.category ... 폐쇄형 어휘 확정" 결정(위 §)이 확정한 8종 중 `dress`("원피스")를 대체한다.
+
+결정:
+- `lib/models/enums.dart`의 `ClothingCategory.dress`(라벨 "원피스")를 **`ClothingCategory.onePiece`(라벨 "한벌옷")로 개명**한다. 영어 "dress"는 점프수트를 포함하지 않는 좁은 개념이라 넓어진 범위(원피스+점프수트)와 어긋나 식별자도 함께 바꿈("영어 dress → 원피스만, 한글 한벌옷 → 원피스·점프수트 포괄"이 서로 안 맞다고 판단, 사용자 확정).
+- **선언 순서(=착용순서) 변경**: 기존 `hat, top, outer, bottom, dress, socks, shoes, bagAccessory`(원피스가 5번째, 하의 다음)에서 → `hat, onePiece, top, outer, bottom, socks, shoes, bagAccessory`(한벌옷이 2번째, 모자 다음)로 이동. `_공통 규칙.md`가 이미 이 순서로 편집됨(사용자 직접) — enum 쪽이 그 순서를 따라간다.
+
+사유:
+한벌옷(원피스/점프수트)은 상의+하의를 동시에 대체하는 옷이라 "이것부터 입으면 별도 상/하의가 필요 없다"는 논리로 착용순서 앞쪽(모자 다음)에 두는 게 사용자 판단상 자연스러움.
+
+Impact:
+- `lib/models/enums.dart` — enum 값 개명+재정렬, 라벨 텍스트 변경
+- `lib/mock/mock_data.dart` — `ClothingCategory.dress` 참조 2건(`c01`, `c08`)을 `.onePiece`로 교체
+- `integration_test/closet_item_detail_data_binding_test.dart` — `.dress` 참조 갱신
+- `2026-07-19-main-header-classification-and-settings-entry-design.md`의 "ClothingCategory 선언 순서가 이미 착용순서와 일치해 추가 매핑 불필요" 서술은 이 변경 이후에도 여전히 유효(개명+재정렬 이후 순서가 착용순서 그대로이므로) — 별도 스펙 수정 불필요.
+- 순수 rename+재정렬이라 런타임 동작 변화 없음 — Worker→Review만 진행(Tester 불필요, Task 1/5 선례와 동일 성격).

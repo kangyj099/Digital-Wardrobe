@@ -1,9 +1,22 @@
-> Version 1.3
-> Purpose: A development implementation policy for solo app development projects using Claude Code that **minimizes token usage while maintaining project quality and consistency.**
+> Version 2.0
+> Purpose: A development implementation policy for solo app development projects using Claude Code that **minimizes token usage while maintaining project quality and consistency.** Single consolidated document (former `workflow_development/04_Roles.md` merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
 
 ---
 
 # Development Workflow
+
+## 목차
+
+- [1. Core Principles](#1-core-principles)
+- [2. Information Handoff Between Sessions](#2-information-handoff-between-sessions)
+- [3. Pipeline by Task Size](#3-pipeline-by-task-size)
+- [4. Roles](#4-roles)
+- [5. Document Policy](#5-document-policy)
+- [6. Overall Workflow](#6-overall-workflow)
+- [7. Core Operating Principles](#7-core-operating-principles)
+- [8. Exception Handling Rules](#8-exception-handling-rules)
+
+---
 
 # 1. Core Principles
 
@@ -119,7 +132,123 @@ If the classification is ambiguous, prioritize the impact scope.
 ---
 
 # 4. Roles
-→ .claude\policies\workflow_development\04_Roles.md
+
+## PM (Project Manager)
+
+Manages the entire project (not limited to development).
+
+**Responsibilities**
+
+* Project management
+* Prioritization
+* Scheduling
+* Feature planning
+* Selecting the next task
+
+**Does not**
+
+* Write code
+
+---
+
+## Worker
+
+**Responsibilities**
+
+* Implementation
+* Modifications
+* Refactoring
+
+**Does not**
+
+* Change product planning
+* Manage the project
+
+Before writing or reviewing implementation code, invoke the `engineering-principles` skill (`.claude/skills/engineering-principles/SKILL.md`) — this applies to Review as well as Worker, per §12.1 Required Materials.
+
+---
+
+## Review
+
+By default, a single Review session is used.
+
+**Review Areas**
+
+* Code quality
+* Architecture
+* Bugs
+* Performance
+* Exception handling
+* Security
+* Testing (static only — whether test code exists and is well-structured/covers the right cases; does not run the app. Actual runtime behavior is Tester's job, below)
+* UX
+* Alignment with product requirements
+
+### Development Review (Optional)
+
+Used only for large-scale tasks.
+
+**Reviews**
+
+* Code
+* Architecture
+* Performance
+* Security
+
+### Product / UX Review (Optional)
+
+Used only for large-scale tasks.
+
+**Reviews**
+
+* UX
+* Accessibility
+* Usability
+* Alignment with product requirements
+
+---
+
+## Tester
+
+Runs after Review passes. Exercises the actual running app (Flutter `integration_test`) to check what static review can't see — runtime behavior, not code.
+
+**Responsibilities**
+
+* Check behavior results, not code
+* Cover realistic non-standard flows, not just the happy path
+* Check regressions in existing features connected to the change
+* Check every defined state (success, loading, empty, error, retry, cancel) that's actually implemented
+* Check that the same data displays consistently across screens
+* Check that saved data survives navigation/re-entry
+* Check that repeated input or duplicate requests don't create duplicate data
+* Check behavior against Reference documents and project policy
+* Design and commit its own `integration_test/` scripts (never touches `lib/`)
+* Report Pass/Fail with mandatory reproduction steps for every Fail
+
+**Does not**
+
+* Implement or fix anything
+* Propose refactors
+* Evaluate code style (that's Review's job)
+* Invent scenarios for features that aren't actually implemented yet
+
+---
+
+## Integrator
+
+**Default policy:** Performed by a human. Use an AI session only when necessary.
+
+**Responsibilities**
+
+* Consolidate review results
+* Remove duplicates
+* Prioritize issues
+* Produce the final revision list
+
+---
+
+## Feature Audit
+→ `Workflow_Project.md` §2 Feature Audit (per §1.7, this role has no development-specific elaboration — defers to the project-wide definition).
 
 # 5. Document Policy
 

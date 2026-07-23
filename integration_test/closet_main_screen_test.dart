@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/clothing_item.dart';
 import 'package:digittal_wardrobe/models/enums.dart';
@@ -111,6 +112,14 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 /// [갱신, 2026-07-15] Audit이 "전체 데이터 삭제" 로우가 승인된 `04_설정.md` 스펙에 없는
 /// 항목임을 지적해 Worker가 `SettingsScreen`에서 해당 로우를 완전히 제거했다. 28번 테스트가
 /// 이 로우의 존재를 단언하던 assertion을 제거한다(나머지 로우 확인은 그대로 유지).
+///
+/// [갱신, 2026-07-19] Task 7이 옷장 메인의 계절 필터를 `selectedSeasonFilterProvider` 단독
+/// `DropdownButton<Season?>`에서 `ClassificationDrilldownCapsule`(중분류=`ClosetSortCriterion`
+/// 세그먼트 선택 후 소분류 드릴다운)로 완전히 교체했다. `seasonDropdownFinder`/`selectSeason`
+/// 헬퍼와 그걸 쓰던 테스트들을 `composition_style_log_main_screen_test.dart`와 동일한
+/// `criterionDropdownFinder`/`subCriterionDropdownFinder`/`selectCriterion`/`selectSubOption`
+/// 패턴으로 갱신하고, "계절 선택 즉시 필터링"이던 예전 동작을 "중분류=계절 선택 → 그룹
+/// 개요 → 소분류 드릴인 → 실제 아이템 그리드"라는 2단계 흐름에 맞게 재작성한다.
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -154,14 +163,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder seasonDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<Season?>);
-
   Finder categoryDropdownFinder() =>
-      find.byWidgetPredicate((w) => w is DropdownButton<AppCategory>);
+      find.byType(CategoryToggleDropdown);
 
-  Future<void> selectSeason(WidgetTester tester, String label) async {
-    await tester.tap(seasonDropdownFinder());
+  // ClassificationDrilldownCapsule의 중분류 세그먼트(criterionLabels, 예: '전체보기'/
+  // '날짜·시간'/'옷 종류'/'계절'/'착용빈도') — 내부적으로 PopupMenuButton<int>.
+  //
+  // 주의(2026-07-19 트랩): find.byWidgetPredicate((w) => w is PopupMenuButton<int?>) 같은
+  // `is` 기반 predicate는 쓰면 안 된다 — Dart 제네릭 공변성 때문에 PopupMenuButton<int>
+  // 인스턴스도 `is PopupMenuButton<int?>`를 만족해버려 중분류/소분류 드롭다운이 동시에
+  // 매칭되는 "ambiguously found multiple matching widgets" 에러가 난다. find.byType은
+  // runtimeType 정확 일치라 이 문제가 없다.
+  Finder criterionDropdownFinder() => find.byType(PopupMenuButton<int>);
+
+  // 소분류 세그먼트(subOptionLabels, 예: 계절 값들+'미분류') — hasSubClassification일 때만
+  // 존재, 내부적으로 PopupMenuButton<int?>.
+  Finder subCriterionDropdownFinder() => find.byType(PopupMenuButton<int?>);
+
+  /// 중분류 세그먼트에서 [label](예: '계절')을 선택한다.
+  Future<void> selectCriterion(WidgetTester tester, String label) async {
+    await tester.tap(criterionDropdownFinder());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  /// 소분류 세그먼트에서 [label](예: '여름')을 선택해 드릴인한다.
+  Future<void> selectSubOption(WidgetTester tester, String label) async {
+    await tester.tap(subCriterionDropdownFinder());
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
@@ -195,49 +224,64 @@ void main() {
     expect(find.text('미완성'), findsOneWidget);
   });
 
-  testWidgets('계절 드롭다운에 전체 + 3개 계절 옵션이 실제로 나타나고, 봄가을→여름→겨울 순으로 정렬된다', (tester) async {
+  testWidgets(
+    '중분류를 "계절"로 선택하면 소분류 드롭다운에 봄가을·여름·겨울·미분류 4개 옵션이 '
+    '그 순서대로 나타난다',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      await selectCriterion(tester, '계절');
+
+      await tester.tap(subCriterionDropdownFinder());
+      await tester.pumpAndSettle();
+
+      final rawItems = tester.widgetList<PopupMenuItem<int?>>(find.byType(PopupMenuItem<int?>));
+
+      // 아직 드릴인 전(selectedSubOptionIndex==null)이라 "전체 그룹 보기" 항목(value==
+      // _clearSentinel, `classification_drilldown_capsule.dart` 참고)은 존재하지 않는다.
+      // 정렬 기본순서 표(_공통 규칙.md: "봄가을 → 여름 → 겨울")를 실제 렌더링 순서로 확인.
+      // 항목 라벨은 PopupMenuItem.child(Container).child(Text)에 있다. 주의: 열린 메뉴
+      // 오버레이가 항목을 내부적으로 중복 렌더링할 가능성에 대비해(구 DropdownButton에서
+      // 실제 관찰됐던 동작), 순서 비교 전 최초 등장 순서를 보존한 채 중복을 제거한다
+      // (LinkedHashSet).
+      final orderedLabels = LinkedHashSet<String>.from(
+        rawItems.map((w) => ((w.child! as Container).child! as Text).data!),
+      ).toList();
+
+      expect(orderedLabels, ['봄가을', '여름', '겨울', '미분류']);
+    },
+  );
+
+  testWidgets(
+    '중분류 "계절"→소분류 "여름" 드릴인 시 그리드가 3개로 줄어들고, 중분류를 "전체보기"로 '
+    '되돌리면 12개로 복원된다',
+    (tester) async {
+      await pumpClosetMain(tester);
+
+      await selectCriterion(tester, '계절');
+      await selectSubOption(tester, '여름');
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
+
+      await selectCriterion(tester, '전체보기');
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+    },
+  );
+
+  testWidgets('중분류 "계절"→소분류 "봄가을" 드릴인 시 그리드가 8개로 줄어든다', (tester) async {
     await pumpClosetMain(tester);
 
-    await tester.tap(seasonDropdownFinder());
-    await tester.pumpAndSettle();
-
-    final rawItems = tester
-        .widgetList<DropdownMenuItem<Season?>>(find.byType(DropdownMenuItem<Season?>));
-
-    final values = rawItems.map((w) => w.value).toSet();
-    expect(values, {null, ...Season.values});
-
-    // 정렬 기본순서 표(_공통 규칙.md: "봄가을 → 여름 → 겨울")를 실제 렌더링 순서로 확인.
-    // 주의: 열린 DropdownButton 오버레이는 선택된 항목의 DropdownMenuItem을 내부적으로
-    // 중복 렌더링하는 Flutter 프레임워크 동작이 있어(현재 선택값=전체), 순서 비교 전
-    // 최초 등장 순서를 보존한 채 중복을 제거한다(LinkedHashSet).
-    final orderedLabels =
-        LinkedHashSet<String>.from(rawItems.map((w) => w.value?.label ?? '전체')).toList();
-
-    expect(orderedLabels, ['전체', '봄가을', '여름', '겨울']);
+    await selectCriterion(tester, '계절');
+    await selectSubOption(tester, '봄가을');
+    // c12는 옷종류/계절 nullable화(2026-07-19) 이후 season이 null(미분류)이라 더 이상
+    // 봄가을 필터에 매칭되지 않는다 — 기존 9개(c12 포함)에서 8개로 줄어든 것이 정상.
+    expect(find.byType(SelectableGalleryTile), findsNWidgets(8));
   });
 
-  testWidgets('여름 계절 필터 선택 시 그리드가 3개로 줄어들고, 전체로 되돌리면 12개로 복원된다', (tester) async {
+  testWidgets('아이템이 0개인 겨울로 드릴인 시 크래시 없이 빈 그리드로 전환된다', (tester) async {
     await pumpClosetMain(tester);
 
-    await selectSeason(tester, '여름');
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
-
-    await selectSeason(tester, '전체');
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
-  });
-
-  testWidgets('봄가을 계절 필터 선택 시 그리드가 9개로 줄어든다', (tester) async {
-    await pumpClosetMain(tester);
-
-    await selectSeason(tester, '봄가을');
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(9));
-  });
-
-  testWidgets('아이템이 0개인 겨울 계절 선택 시 크래시 없이 빈 그리드로 전환된다', (tester) async {
-    await pumpClosetMain(tester);
-
-    await selectSeason(tester, '겨울');
+    await selectCriterion(tester, '계절');
+    await selectSubOption(tester, '겨울');
 
     expect(tester.takeException(), isNull);
     expect(find.byType(SelectableGalleryTile), findsNothing);
@@ -355,28 +399,33 @@ void main() {
     expect(find.text('여러 장 추가하기'), findsNothing);
   });
 
-  testWidgets('FAB 펼침 상태에서 계절을 전체→특정 계절로 바꾸면 옵션 라벨이 "이 분류에 ~"로 바뀐다', (tester) async {
-    await pumpClosetMain(tester);
+  testWidgets(
+    'FAB 펼침 상태에서 중분류를 "전체보기"→"계절"(소분류 "여름" 드릴인)로 바꾸면 옵션 '
+    '라벨이 "이 분류에 ~"로 바뀐다',
+    (tester) async {
+      await pumpClosetMain(tester);
 
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
 
-    expect(find.text('한 장 추가하기'), findsOneWidget);
-    expect(find.text('여러 장 추가하기'), findsOneWidget);
+      expect(find.text('한 장 추가하기'), findsOneWidget);
+      expect(find.text('여러 장 추가하기'), findsOneWidget);
 
-    await selectSeason(tester, '여름');
+      await selectCriterion(tester, '계절');
+      await selectSubOption(tester, '여름');
 
-    expect(find.text('이 분류에 한 장 추가하기'), findsOneWidget);
-    expect(find.text('이 분류에 여러 장 추가하기'), findsOneWidget);
-    expect(find.text('한 장 추가하기'), findsNothing);
-    expect(find.text('여러 장 추가하기'), findsNothing);
+      expect(find.text('이 분류에 한 장 추가하기'), findsOneWidget);
+      expect(find.text('이 분류에 여러 장 추가하기'), findsOneWidget);
+      expect(find.text('한 장 추가하기'), findsNothing);
+      expect(find.text('여러 장 추가하기'), findsNothing);
 
-    await selectSeason(tester, '전체');
+      await selectCriterion(tester, '전체보기');
 
-    expect(find.text('한 장 추가하기'), findsOneWidget);
-    expect(find.text('여러 장 추가하기'), findsOneWidget);
-    expect(find.text('이 분류에 한 장 추가하기'), findsNothing);
-  });
+      expect(find.text('한 장 추가하기'), findsOneWidget);
+      expect(find.text('여러 장 추가하기'), findsOneWidget);
+      expect(find.text('이 분류에 한 장 추가하기'), findsNothing);
+    },
+  );
 
   testWidgets('FAB 펼침 메뉴에서 옵션을 탭하면 /closet/add 로 이동한다', (tester) async {
     await pumpClosetMain(tester);
@@ -404,8 +453,8 @@ void main() {
   testWidgets('그리드 타일 라벨이 상품명이 아닌 옷 종류(카테고리)로 표시된다', (tester) async {
     await pumpClosetMain(tester);
 
-    // c01(플로럴 원피스), c08(슬립 드레스)은 둘 다 category=dress → "원피스" 라벨.
-    expect(find.text('원피스'), findsNWidgets(2));
+    // c01(플로럴 원피스), c08(슬립 드레스)은 둘 다 category=onePiece → "한벌옷" 라벨.
+    expect(find.text('한벌옷'), findsNWidgets(2));
     // 상품명 자체는 화면 어디에도 노출되지 않아야 한다.
     expect(find.text('플로럴 원피스'), findsNothing);
     expect(find.text('슬립 드레스'), findsNothing);
@@ -417,7 +466,7 @@ void main() {
     '짧은 카테고리 라벨(상의)은 넓은 타일(300px)에서도 텍스트 크기만큼만 좁게 표시되고 '
     '타일 전체 폭을 채우지 않는다',
     (tester) async {
-      const item = ClothingItem(
+      final item = ClothingItem(
         id: 'label-short',
         name: '테스트용 상의',
         category: ClothingCategory.top,
@@ -425,6 +474,7 @@ void main() {
         season: Season.springFall,
         material: ClothingMaterial.cotton,
         imagePath: '',
+        createdAt: DateTime(2025, 1, 1),
       );
       await pumpIsolatedTile(tester, item, 300);
 
@@ -452,7 +502,7 @@ void main() {
     '가장 긴 카테고리 라벨("가방·액세서리")을 가진 아이템이 밀도4 상당의 좁은 타일(50px)에서도 '
     '타일 경계를 넘어 튀어나오지 않고 ellipsis로 실제 truncation이 일어난다',
     (tester) async {
-      const item = ClothingItem(
+      final item = ClothingItem(
         id: 'label-long',
         name: '테스트용 가방',
         category: ClothingCategory.bagAccessory,
@@ -460,6 +510,7 @@ void main() {
         season: Season.springFall,
         material: ClothingMaterial.cotton,
         imagePath: '',
+        createdAt: DateTime(2025, 1, 1),
       );
 
       // 1) 넉넉한 타일(500px)에서 이 라벨의 "자연 폭"(줄바꿈/잘림 없이 필요한 실제 폭)을 먼저 측정.
@@ -674,8 +725,9 @@ void main() {
       expect(crossAxisCount(tester), 1);
       expect(backButtonFinder(), findsOneWidget);
 
-      // 계절 필터 정상 동작(여름 선택 시 3개로 축소).
-      await selectSeason(tester, '여름');
+      // 계절 드릴다운 정상 동작(중분류 계절→소분류 여름 드릴인 시 3개로 축소).
+      await selectCriterion(tester, '계절');
+      await selectSubOption(tester, '여름');
       expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
       expect(backButtonFinder(), findsOneWidget);
 

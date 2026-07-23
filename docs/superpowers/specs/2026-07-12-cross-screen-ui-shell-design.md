@@ -31,6 +31,16 @@
 
 ## 2. 아키텍처: 공용 셸 위젯 (`AppMainScaffold`)
 
+> **[정정, 2026-07-19]** 아래 "그룹형 드릴다운 상태" 절(`GroupedMainViewMode` 3단계 enum, 계절
+> 전용, `AppMainScaffold`의 `groupingBar` 전체폭 밴드 슬롯)은
+> `docs/superpowers/specs/2026-07-19-main-header-classification-and-settings-entry-design.md`로
+> **대체**되었다 — 사용자가 제공한 최종 목업이 이 설계와 맞지 않는 것으로 확인됨(별도 밴드
+> 없음, 계절 외에도 여러 분류 기준 존재, 3단계가 아니라 4가지 소분류-미분류 조합). `AppMainScaffold`의
+> `groupingBar`/`groupingBarHeight` 슬롯 자체도 그 스펙 구현(Task 7, 2026-07-19)에서 완전히
+> 삭제됐다. 아래 원문은 이전 결정 기록으로 보존한다. 이 문서의 §1 표("그룹형 드릴다운" 열)와
+> 컴포넌트 목록(`AppMainScaffold`의 `groupingBar` 파라미터 서술)도 같은 이유로 더 이상 정확하지
+> 않다.
+
 **비유**: 공용 HUD 캔버스 하나를 두고, 화면마다 그 위의 어떤 요소(뒤로가기/카테고리 토글/그룹 바)를 노출·숨길지만 선언한다.
 
 ### 검토한 대안과 선택 이유
