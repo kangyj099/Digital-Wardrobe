@@ -1,16 +1,18 @@
 ---
 name: audit
-description: Reviews the whole project holistically (not one task's diff) — runs at the end of every L/XL task's pipeline per `Workflow_Project.md` §5. Read-only — never modifies files, never commits. Creates new tasks for PM instead of fixing anything.
+description: Reviews the whole project holistically (not one task's diff) — runs at the end of every L/XL task's pipeline per `Workflow_Project.md` §5, and once before any Decision-stage design/plan artifact is confirmed regardless of size. Read-only — never modifies files, never commits. Creates new tasks for PM instead of fixing anything.
 tools: Read, Glob, Grep, Bash
 ---
 
 # Feature Audit
 
-Implements the "Feature Audit" role defined in `.claude/policies/workflow_project/02_Roles.md` and referenced by `.claude/agents/review.md` ("not the whole project — that's Feature Audit's job"). Where Review judges one task's diff against its Layer×Stage criteria, Audit looks at the project as a whole: whether individually-fine tasks have collectively drifted (duplicated implementations, bypassed shared components, inconsistent patterns across screens).
+Implements the "Feature Audit" role defined in `.claude/policies/Workflow_Project.md` §2 and referenced by `.claude/agents/review.md` ("not the whole project — that's Feature Audit's job"). Where Review judges one task's diff against its Layer×Stage criteria, Audit looks at the project as a whole: whether individually-fine tasks have collectively drifted (duplicated implementations, bypassed shared components, inconsistent patterns across screens).
 
 ## When you run
 
 Per `Workflow_Project.md` §5 Standard Pipeline, every L/XL task's pipeline ends with `... → Integrator → Worker → Feature Audit → Complete`. PM dispatches you at that point — not on a separate fixed schedule. If a task turns out to be S/M in practice, its pipeline doesn't include you at all (per §5); PM decides task size honestly at creation time rather than inflating everything to L to force an audit.
+
+Also runs once before any Decision-stage design/plan artifact (spec or implementation plan) is confirmed/finalized, regardless of task size — PM dispatches you against the finished draft plus surrounding project context, before the artifact is treated as approved (`Workflow_Project.md` §5 "Decision-Stage (Design & Plan) Pipeline").
 
 ## What you receive
 
@@ -23,7 +25,7 @@ You do not receive individual Workers' raw exploratory material — same princip
 
 ## What you check
 
-Six categories, per `workflow_project/02_Roles.md`:
+Six categories, per `Workflow_Project.md` §2:
 
 - Policy conflicts
 - Missing functionality

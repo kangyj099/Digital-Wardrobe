@@ -36,12 +36,12 @@ Step⑦ 1라운드(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) 
 
 ---
 
-[TechDebt] `SettingsScreen`이 이미 승인된 `04_설정.md` 스펙과 어긋남 — "전체 데이터 삭제"만 제거, 나머지는 보류 (P1)
+[TechDebt] `SettingsScreen`이 이미 승인된 `03_화면별UX명세서.md` §4 스펙과 어긋남 — "전체 데이터 삭제"만 제거, 나머지는 보류 (P1)
 
 상태: 부분 해결 — 사용자 확인 필요한 부분 보류 중
 
 내용:
-Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `docs/reference/plan/03_화면별UX명세서/04_설정.md`는 2026-07-09 Design Review에서 승인 확정된 문서로, 로우 2개(알림 토글, 로그아웃/Toast+Undo — confirm 모달 명시적으로 미사용)만 규정하고, 프로필 아이콘 진입점은 옷장/코디/스타일일지 3개 Main 화면 헤더에 있어야 한다고 규정한다. 실제 Step⑥-A 구현(`lib/screens/settings_screen.dart`)은 이 스펙을 참고하지 않고 "다크 모드"/"프로필 편집"/"전체 데이터 삭제"(confirm 모달) 로우를 임의로 추가했다 — PM이 Worker 태스크 스코프 지정 시 이 화면 전용 스펙 문서를 놓치고 `00_페이지 타입 정의.md`의 일반 Utility형 규칙만 참조한 게 원인.
+Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `docs/reference/plan/03_화면별UX명세서.md` §4는 2026-07-09 Design Review에서 승인 확정된 문서로, 로우 2개(알림 토글, 로그아웃/Toast+Undo — confirm 모달 명시적으로 미사용)만 규정하고, 프로필 아이콘 진입점은 옷장/코디/스타일일지 3개 Main 화면 헤더에 있어야 한다고 규정한다. 실제 Step⑥-A 구현(`lib/screens/settings_screen.dart`)은 이 스펙을 참고하지 않고 "다크 모드"/"프로필 편집"/"전체 데이터 삭제"(confirm 모달) 로우를 임의로 추가했다 — PM이 Worker 태스크 스코프 지정 시 이 화면 전용 스펙 문서를 놓치고 §0(페이지 타입 정의)의 일반 Utility형 규칙만 참조한 게 원인.
 
 사용자 확인(2026-07-15): "전체 데이터 삭제" 로우(스펙에 아예 없는 데다 존재하지 않는 위험 기능을 노출)만 제거, "다크 모드"/"프로필 편집" 로우는 이번엔 그대로 두고 전체 스펙 재작성 여부는 보류.
 
@@ -51,16 +51,16 @@ Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `doc
 - 로그아웃 confirm 모달 대신 Toast+Undo 패턴 미구현(애초에 로그아웃 로우가 없어 해당 없음).
 - 3개 Main 화면 헤더에 프로필 아이콘 진입점이 없어 `/settings`가 UI로는 도달 불가능한 라우트(직접 URL 진입만 가능).
 
-조치 방향(착수 조건): 이 화면을 다음에 다시 손댈 때, 04_설정.md 원문대로 재구현할지 아니면 현재 확장을 정식 스펙 갱신 대상으로 삼을지부터 사용자 확인 후 진행.
+조치 방향(착수 조건): 이 화면을 다음에 다시 손댈 때, `03_화면별UX명세서.md` §4 원문대로 재구현할지 아니면 현재 확장을 정식 스펙 갱신 대상으로 삼을지부터 사용자 확인 후 진행.
 
 ---
 
-[TechDebt] `Composition`/`StyleLog` 모델에 `isIncomplete` 등가 필드 부재 — `05_삭제 & 휴지통.md` 캐스케이드 요구사항 미충족 (P1, 필드 신설은 확정·값 로직은 후속 작업)
+[TechDebt] `Composition`/`StyleLog` 모델에 `isIncomplete` 등가 필드 부재 — `03_화면별UX명세서.md` §5 캐스케이드 요구사항 미충족 (P1, 필드 신설은 확정·값 로직은 후속 작업)
 
 상태: 부분 해결 — 필드 신설 방식 확정(2026-07-15), 실제 값 설정/해제 로직은 "Editor Draft 구현" 후속 작업으로 이관
 
 내용:
-Step⑥ 완료 시점 Audit(2026-07-15)이 발견: `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`가 "옷 삭제 시 코디 캐스케이드 처리"로 "정리 후 0개 남으면 기존 '미완성' 처리 재사용"을 명시하는데, 이는 `Composition` 모델이 이미 `isIncomplete`(또는 동등 개념) 필드를 가져야 함을 스펙이 요구하는 것. 현재 `lib/models/composition.dart`엔 그 필드가 없음(`isDeleted`만 있음). `StyleLog`도 구조적으로 같은 문제가 있을 개연성이 있어 함께 검토했음.
+Step⑥ 완료 시점 Audit(2026-07-15)이 발견: `03_화면별UX명세서.md` §5가 "옷 삭제 시 코디 캐스케이드 처리"로 "정리 후 0개 남으면 기존 '미완성' 처리 재사용"을 명시하는데, 이는 `Composition` 모델이 이미 `isIncomplete`(또는 동등 개념) 필드를 가져야 함을 스펙이 요구하는 것. 현재 `lib/models/composition.dart`엔 그 필드가 없음(`isDeleted`만 있음). `StyleLog`도 구조적으로 같은 문제가 있을 개연성이 있어 함께 검토했음.
 
 **Decision(2026-07-15, 사용자 확정)**: 두 모델 모두 `ClothingItem.isIncomplete`와 동일하게 **저장 필드**(`bool isIncomplete = false`)로 추가한다(파생 계산 방식 기각). 같은 날 이어진 "Editor 저장 모델 전환"(`Decision.md` 참고) 논의로 판정 기준 자체가 바뀜 — 값을 채우는 로직은 더 이상 "필드 미입력"이나 "캐스케이드로 0개 남음" 같은 데이터 완결성이 아니라 **해당 레코드에 연결된 미커밋 Editor Draft가 존재하는가**로 재정의됨. 이 토글 로직은 Editor 3화면(옷 추가/코디 만들기/스타일일지 추가) 저장 배선과 묶여 있어 Step⑦ 범위 밖, "Editor Draft 구현" 후속 작업에서 함께 처리.
 
@@ -128,7 +128,7 @@ Header/HUD Stack 재설계(2026-07-13) 후 Audit이 발견: `lib/widgets/glass_p
 상태: 미해결 (방향 확정, 미착수 — 단 착수 비용이 낮아짐, 2026-07-16)
 
 내용:
-Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widgets/composition_gallery_tile.dart`)이 코디 이름+계절 텍스트만 표시해 `02_코디 (가상 조합).md`의 "옷장과 동일한 레이아웃/버튼 패턴"(실제 사진 타일) 요구와 어긋난다. 대응 방식 3가지(대표 아이템 이미지 1장 재사용 / 미니 아트보드 합성 렌더 / `StyleLog`처럼 `coverImagePath` 필드 신설)를 검토한 결과 사용자가 **`coverImagePath` 필드 신설**로 확정(2026-07-13) — 단, 지금 당장 착수하지 않고 현행 텍스트 표시를 유지한 채 이후 라운드로 미룬다. 필드 신설 시 사용자가 대표 이미지를 지정/캡처하는 로직(신규 기능)이 선행돼야 하므로 순수 Frontend 표시 변경이 아니라 Data/Architecture 결정 + Editor(Step⑤) 연동이 함께 필요.
+Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widgets/composition_gallery_tile.dart`)이 코디 이름+계절 텍스트만 표시해 `03_화면별UX명세서.md` §2의 "옷장과 동일한 레이아웃/버튼 패턴"(실제 사진 타일) 요구와 어긋난다. 대응 방식 3가지(대표 아이템 이미지 1장 재사용 / 미니 아트보드 합성 렌더 / `StyleLog`처럼 `coverImagePath` 필드 신설)를 검토한 결과 사용자가 **`coverImagePath` 필드 신설**로 확정(2026-07-13) — 단, 지금 당장 착수하지 않고 현행 텍스트 표시를 유지한 채 이후 라운드로 미룬다. 필드 신설 시 사용자가 대표 이미지를 지정/캡처하는 로직(신규 기능)이 선행돼야 하므로 순수 Frontend 표시 변경이 아니라 Data/Architecture 결정 + Editor(Step⑤) 연동이 함께 필요.
 
 **갱신(2026-07-16)**: Step⑦ 상호참조 썸네일 작업(Task 6, `docs/history/Decision.md` "Detail 화면 상호참조를 텍스트 칩 → 썸네일 캐러셀/갤러리로 확장" 항목)에서 `Composition.coverImagePath` 필드 + "null이면 첫 옷 이미지로 폴백" 파생 provider가 이미 생긴다. `CompositionGalleryTile`을 이 provider로 갈아끼우기만 하면 되므로 착수 비용이 크게 낮아졌다 — 여전히 착수하지는 않음(이번 라운드 스코프 아님), 다음에 이 파일을 만질 때 저비용으로 처리 가능하다는 점만 기록.
 
@@ -158,7 +158,7 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 상태: 미해결
 
 내용:
-`03_스타일 일지.md` UX명세서는 스타일일지 메인의 정렬/필터로 "날짜, 옷 종류, 날씨, 계절 기준 지원(역순 보기 옵션 포함)"을 요구하지만, `StyleLog`(`lib/models/style_log.dart`) 모델에 `season`/`weather`/착용 옷 종류에 대응하는 필드가 전혀 없다(날짜만 `wornDate`로 존재). Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 `style_log_main_screen.dart`를 `AppMainScaffold`로 마이그레이션하며 Review가 이 사실을 지적 — 이전 Step①(전체 화면 Skeleton) 단계엔 "헤더 (스타일 일지 ▾ + 필터 칩)"이라는 placeholder 주석이라도 있었으나, 이번 마이그레이션에서 비기능 정렬 아이콘 하나만 남기고 그 흔적이 사라졌다. 실제 필터 구현은 `StyleLog` 모델 확장(Data/Architecture 레이어 결정) 없이는 불가능 — 모델 필드 추가가 선행돼야 함.
+`03_화면별UX명세서.md` §3 UX명세서는 스타일일지 메인의 정렬/필터로 "날짜, 옷 종류, 날씨, 계절 기준 지원(역순 보기 옵션 포함)"을 요구하지만, `StyleLog`(`lib/models/style_log.dart`) 모델에 `season`/`weather`/착용 옷 종류에 대응하는 필드가 전혀 없다(날짜만 `wornDate`로 존재). Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 `style_log_main_screen.dart`를 `AppMainScaffold`로 마이그레이션하며 Review가 이 사실을 지적 — 이전 Step①(전체 화면 Skeleton) 단계엔 "헤더 (스타일 일지 ▾ + 필터 칩)"이라는 placeholder 주석이라도 있었으나, 이번 마이그레이션에서 비기능 정렬 아이콘 하나만 남기고 그 흔적이 사라졌다. 실제 필터 구현은 `StyleLog` 모델 확장(Data/Architecture 레이어 결정) 없이는 불가능 — 모델 필드 추가가 선행돼야 함.
 
 ---
 
@@ -176,7 +176,7 @@ Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 Review가 지적
 **해소(2026-07-15)**: 1~5번 사례 전부 공용 위젯으로 추출 완료 — `ExpandableAddFab`(`lib/widgets/expandable_add_fab.dart`, FAB 펼침), `GalleryMetaLabel`(`lib/widgets/gallery_meta_label.dart`, 갤러리 타일 좌하단 라벨 pill, 4곳), `buildSelectionAwareHeaderActions`(`lib/widgets/selection_aware_header_actions.dart`, selectionMode 헤더 분기), `AppDensity.iconFor`(`lib/theme/app_spacing.dart`, 밀도 아이콘), `AppDetailScaffold`(`lib/screens/app_detail_scaffold.dart`, Detail 3화면 공용 셸 — 4번째 사례도 함께 해소). Worker→Review(P0 없음)→Tester(12개 통합테스트 파일, 130+ 케이스 전부 Pass, `TrashGalleryTile` 신규 폭 제약 버그 잡아냄)→Audit(P0 없음) 전부 완료.
 
 **Audit(2026-07-15)이 새로 발견한 후속 항목**(별도 우선순위):
-- (P1) `AppDetailScaffold`의 파라미터가 너무 좁다(`placeholderLabel`/`crossReferenceLabel` 단일 문자열뿐, `body` 슬롯도 실제 cross-reference entry 리스트도 없음) — `02_코디 (가상 조합).md`가 요구하는 실제 Detail 바디(사용된 옷 목록/연결된 스타일일지 목록 등)를 Step⑦에서 바인딩하려면 이 계약을 먼저 넓혀야 한다. Step⑦의 Detail 3화면 착수 시 가장 먼저 처리(호출부 3곳이 아직 적을 때 고치는 게 저렴).
+- (P1) `AppDetailScaffold`의 파라미터가 너무 좁다(`placeholderLabel`/`crossReferenceLabel` 단일 문자열뿐, `body` 슬롯도 실제 cross-reference entry 리스트도 없음) — `03_화면별UX명세서.md` §2가 요구하는 실제 Detail 바디(사용된 옷 목록/연결된 스타일일지 목록 등)를 Step⑦에서 바인딩하려면 이 계약을 먼저 넓혀야 한다. Step⑦의 Detail 3화면 착수 시 가장 먼저 처리(호출부 3곳이 아직 적을 때 고치는 게 저렴).
 - (P2) `AppDetailScaffold`가 `lib/widgets/`가 아니라 `lib/screens/`에 배치됨 — 같은 역할(Layout-tier 셸)인 `AppMainScaffold`는 `lib/widgets/`에 있어 관례가 어긋난다. 근거로 든 "widgets/ → screens/ 역의존 금지"는 `skeleton_region.dart`(Step②에 은퇴 예정이라고 스스로 명시한 임시 파일) 의존을 피하려던 것이라 오히려 근거가 약함. Editor Draft 구현 이전 아무 때나 낮은 비용으로 정리 가능.
 - (P2) `AutoSaveIndicator`(`lib/widgets/auto_save_indicator.dart`) 독스트링과 Editor 3화면(`closet_add_screen.dart`/`composition_editor_screen.dart`/`style_log_add_screen.dart`)의 skeleton 라벨이 여전히 "상시 저장(드래프트 없음)" 구 정책을 서술 — "Editor 저장 모델 전환" Decision(같은 날) 이후로 내용이 안 맞음. 위젯 자체는 아직 어디서도 호출 안 됨(unwired)이라 지금 당장 화면에 영향은 없음 — "Editor Draft 구현" 착수 시 함께 정리.
 - (P3, 의도적 보류) Editor 3화면(옷 추가/코디 만들기/스타일일지 추가)이 `EditorHeader`+`skeletonRegion` 2개로 구성된 동일 구조를 텍스트만 바꿔 반복하는 **6번째 사례**를 발견했으나, 이 3화면은 "Editor Draft 구현" 착수 시 통째로 실제 로직으로 재작성될 예정이라 지금 추출하면 이중작업 위험 — Audit 권고대로 지금은 추출하지 않고 기록만.

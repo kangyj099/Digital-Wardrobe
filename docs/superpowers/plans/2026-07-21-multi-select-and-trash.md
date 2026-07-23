@@ -741,7 +741,7 @@ git commit -m "feat(providers): add softDeleteMany/restoreMany/purgeMany to all 
 
 - [ ] **Step 1: `TrashEntry` 필드명 변경 + `createdAt` 필드 추가**
 
-`05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md` 31-34행은 정보 팝업에 이미지와 "제작된 날짜/시간(삭제일이 아닌 생성일)"을 요구하는데, 기존 `TrashEntry`엔 생성일 필드가 아예 없었다(홀리스틱 Audit 지적) — 이번에 함께 추가한다. `lib/models/trash_entry.dart` 전체를 다음으로 교체:
+`03_화면별UX명세서.md` §5는 정보 팝업에 이미지와 "제작된 날짜/시간(삭제일이 아닌 생성일)"을 요구하는데, 기존 `TrashEntry`엔 생성일 필드가 아예 없었다(홀리스틱 Audit 지적) — 이번에 함께 추가한다. `lib/models/trash_entry.dart` 전체를 다음으로 교체:
 ```dart
 import 'enums.dart';
 
@@ -2318,7 +2318,7 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     );
   }
 
-  /// 스펙(`05_삭제 & 휴지통.md` 42행)이 요구하는 사전 경고 — 선택된 옷 중 코디에 쓰이는
+  /// 스펙(`03_화면별UX명세서.md` §5)이 요구하는 사전 경고 — 선택된 옷 중 코디에 쓰이는
   /// 게 있으면 확인을 받는다. "각 코디는 다음 편집 시 자동으로 제거돼요"라는 캐스케이드
   /// 자동정리 약속은 "Editor Draft 구현" 후속 작업 전까지 실제로 없으므로 문구에서 뺀다
   /// (프로젝트 홀리스틱 Audit 지적, 2026-07-21 — 이 단순 경고 자체는 Group B 스코프에 포함).
@@ -3165,7 +3165,7 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
               const SizedBox(height: AppSpacing.sm),
-              // 스펙(`05_삭제 & 휴지통.md` 31-34행)이 요구하는 "헤더 아래: 이미지 배치" +
+              // 스펙(`03_화면별UX명세서.md` §5)이 요구하는 "헤더 아래: 이미지 배치" +
               // "제작된 날짜/시간(삭제일이 아닌 생성일)" — Audit이 기존 스텁에 이 두 요소가
               // 빠져 있음을 지적해 추가함.
               ClipRRect(
@@ -3606,7 +3606,7 @@ Expected: `closet_item_detail_screen.dart`/`composition_detail_screen.dart`/`sty
 
 - [ ] **Step 3: 3개 Detail 화면에 `onDelete` 배선**
 
-`lib/screens/closet_item_detail_screen.dart`의 `AppDetailScaffold(` 호출부(30행)를 다음으로 교체(import에 `'../widgets/glass_toast.dart';` 추가). 이 화면이 이미 계산해둔 `linkedCompositions`(`compositionsContainingItemProvider(itemId)`)를 그대로 재사용해, 스펙(`05_삭제 & 휴지통.md` 42행)이 요구하는 "이 옷은 N개의 코디에 사용되고 있어요" 사전 경고를 붙인다(캐스케이드 자동정리 약속은 아직 없으므로 문구에서 뺌 — Task 7의 `_confirmAndDelete`와 동일 원칙, 프로젝트 홀리스틱 Audit 지적):
+`lib/screens/closet_item_detail_screen.dart`의 `AppDetailScaffold(` 호출부(30행)를 다음으로 교체(import에 `'../widgets/glass_toast.dart';` 추가). 이 화면이 이미 계산해둔 `linkedCompositions`(`compositionsContainingItemProvider(itemId)`)를 그대로 재사용해, 스펙(`03_화면별UX명세서.md` §5)이 요구하는 "이 옷은 N개의 코디에 사용되고 있어요" 사전 경고를 붙인다(캐스케이드 자동정리 약속은 아직 없으므로 문구에서 뺌 — Task 7의 `_confirmAndDelete`와 동일 원칙, 프로젝트 홀리스틱 Audit 지적):
 ```dart
     return AppDetailScaffold(
       category: AppCategory.closet,

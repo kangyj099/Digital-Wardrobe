@@ -17,7 +17,7 @@
 - **상호작용 금지**: FAB의 `onPressed`는 전부 `() {}`(no-op). 실제 네비게이션 배선은 Step⑦(기능 구현) 몫.
 - **라우트 분리**: 기존 `AppRoute.settingsTrash`('/settings' 하나로 설정+휴지통을 겸용)를 `AppRoute.settingsMain`('/settings', 그대로 유지)과 신규 `AppRoute.trashMain`('/trash')으로 분리한다 — §1 표에서 설정(Utility)과 휴지통(Main-플랫+필터형)은 서로 다른 페이지 타입이라 화면이 다르다.
 - **Tester 생략**: `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §4 — "Step①(스켈레톤)은 실동작이 없는 순수 구조 코드라 Tester 불필요(Review만)". 이 Plan의 모든 Task는 Worker→Review만 돌고 끝난다.
-- **선택 모달 2종은 이 Plan의 대상이 아니다**: `docs/reference/plan/03_화면별UX명세서/_공통 규칙.md`의 "기능 재사용 원칙"에 따라 별도 화면을 만들지 않고 기존 메인 화면을 모달로 재호출하는 방식이라, 이 Plan에서 만들 새 파일이 없다. Step⑥("나머지 화면 적용")에서 그 시점까지 완성된 옷장/코디/스타일일지 메인 화면에 모달 프레젠테이션을 씌우는 형태로 다룬다 — Step②의 공용 컴포넌트 후보 리스트업 때 "모달 래퍼"도 후보로 포함시킬 것(이 Plan 완료 후 PM이 다음 세션 인계 시 챙긴다).
+- **선택 모달 2종은 이 Plan의 대상이 아니다**: `docs/reference/plan/03_화면별UX명세서.md` §공통 규칙의 "기능 재사용 원칙"에 따라 별도 화면을 만들지 않고 기존 메인 화면을 모달로 재호출하는 방식이라, 이 Plan에서 만들 새 파일이 없다. Step⑥("나머지 화면 적용")에서 그 시점까지 완성된 옷장/코디/스타일일지 메인 화면에 모달 프레젠테이션을 씌우는 형태로 다룬다 — Step②의 공용 컴포넌트 후보 리스트업 때 "모달 래퍼"도 후보로 포함시킬 것(이 Plan 완료 후 PM이 다음 세션 인계 시 챙긴다).
 - 값(spacing/색상)은 전부 `Theme.of(context)` 또는 `AppSpacing` 참조 — 리터럴 hex/px 금지(`engineering-principles` 스킬).
 
 ---
@@ -271,7 +271,7 @@ import 'package:flutter/material.dart';
 import 'skeleton_region.dart';
 
 /// Step①(전체 화면 Skeleton) 산출물. Main-플랫+필터형, [+] 버튼 없음(휴지통은
-/// 추가 개념이 없는 화면 — `00_페이지 타입 정의.md` 참고).
+/// 추가 개념이 없는 화면 — `03_화면별UX명세서.md` §0 참고).
 class TrashMainScreen extends StatelessWidget {
   const TrashMainScreen({super.key});
 

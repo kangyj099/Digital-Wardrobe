@@ -19,7 +19,7 @@ class SelectableGalleryTile extends StatelessWidget {
 
   /// 미완성 항목 탭 핸들러 — 기본값 null이면 기존과 동일하게 탭 자체가 비활성화된다
   /// (네이티브 진입 시 동작, 변경 없음). 선택 모달(`selectionMode`)에서는 완성 화면으로
-  /// 이동시키는 콜백을 넘겨 탭을 되살린다(`_공통 규칙.md` "미완성/휴지통 항목은 바인딩
+  /// 이동시키는 콜백을 넘겨 탭을 되살린다(`03_화면별UX명세서.md` §공통 규칙 "미완성/휴지통 항목은 바인딩
   /// 불가 — 터치하면 해당 항목의 완성 화면으로 이동").
   final VoidCallback? onIncompleteTap;
   final bool selected;
