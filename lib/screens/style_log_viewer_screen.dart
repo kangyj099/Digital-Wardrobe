@@ -51,7 +51,10 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
     final log = ref.watch(styleLogsProvider).firstWhere((l) => l.id == widget.styleLogId);
     final linkedComposition = log.linkedCompositionId == null
         ? null
-        : ref.watch(compositionsProvider).firstWhere((c) => c.id == log.linkedCompositionId);
+        : ref
+            .watch(compositionsProvider)
+            .where((c) => c.id == log.linkedCompositionId)
+            .firstOrNull;
     final closetItems = ref.watch(closetItemsProvider);
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
 

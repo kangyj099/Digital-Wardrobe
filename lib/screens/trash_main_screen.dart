@@ -74,7 +74,7 @@ class TrashMainScreen extends ConsumerWidget {
               key: ValueKey(entry.id),
               imagePath: entry.imagePath,
               category: entry.category,
-              remainingDays: entry.remainingDays,
+              remainingDays: entry.daysUntilPurge,
               onTap: () => _showTrashItemInfo(context, entry),
             );
           },
@@ -118,7 +118,7 @@ class TrashMainScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${entry.category.label} · 영구 삭제까지 ${entry.remainingDays}일',
+                '${entry.category.label} · 영구 삭제까지 ${entry.daysUntilPurge}일',
                 style: Theme.of(sheetContext).textTheme.titleMedium,
               ),
               const SizedBox(height: AppSpacing.md),

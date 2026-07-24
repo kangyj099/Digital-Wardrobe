@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/clothing_item.dart';
 import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../providers/composition_providers.dart';
@@ -31,9 +32,9 @@ class CompositionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final composition = ref.watch(compositionsProvider).firstWhere((c) => c.id == compositionId);
     final closetItems = ref.watch(closetItemsProvider);
-    final usedItems = [
+    final usedItems = <ClothingItem>[
       for (final placement in composition.items)
-        closetItems.firstWhere((item) => item.id == placement.clothingItemId),
+        ...closetItems.where((item) => item.id == placement.clothingItemId),
     ];
     final linkedStyleLogs = ref.watch(styleLogsLinkedToCompositionProvider(compositionId));
 

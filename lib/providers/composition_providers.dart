@@ -235,8 +235,10 @@ final compositionsContainingItemProvider = Provider.family<List<Composition>, St
 final compositionCoverImageProvider = Provider.family<String?, String>((ref, compositionId) {
   final composition = ref.watch(compositionsProvider).firstWhere((c) => c.id == compositionId);
   if (composition.coverImagePath != null) return composition.coverImagePath;
-  if (composition.items.isEmpty) return null;
   final closetItems = ref.watch(closetItemsProvider);
-  final firstItemId = composition.items.first.clothingItemId;
-  return closetItems.firstWhere((item) => item.id == firstItemId).imagePath;
+  for (final placement in composition.items) {
+    final matches = closetItems.where((item) => item.id == placement.clothingItemId);
+    if (matches.isNotEmpty) return matches.first.imagePath;
+  }
+  return null;
 });
