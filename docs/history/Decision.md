@@ -1,5 +1,76 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 라우터+앵커 재통합 부분 롤백 — 5개 중 2개(핫패스 참조 문서)는 서브파일 구조로 복귀 (Data/Architecture, Decision — 바로 아래 "라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합" 항목의 스코프 축소)
+
+결정:
+- `docs/reference/design/00_DesignPrinciples.md`(6개 서브파일)와 `docs/reference/plan/03_화면별UX명세서.md`(7개 서브파일) — 방금 병합했던 5개 중 이 2개만 서브파일 구조로 되돌린다. 나머지 3개(`Workflow_Project.md`/`Workflow_Design.md`/`Workflow_Development.md`)는 병합 유지.
+- 이 2개를 되돌리는 이유: §12.1 Required Materials에 직접 걸려 있어 진행 중인 Flutter Hi-Fi 스프린트의 거의 모든 화면 Task마다 Worker/Review에게 "특정 섹션 하나만" 좁게 Read되는 핫패스 문서인데, `Read` 툴이 기본적으로 파일 전체(최대 2000줄)를 읽어들이는 구조상 병합 후엔 필요 없는 다른 5~6개 섹션까지 매번 컨텍스트에 딸려 들어와 오히려 토큰 낭비였음. 반면 정책 문서 3종은 PM이 스스로 전체를 훑는 빈도가 훨씬 높고 Worker에게 좁게 슬라이스해 넘기는 빈도는 낮아 병합 손해가 작음.
+- 되돌린 2개 문서의 버전은 이번 세션에서 실질적으로 내용이 바뀐 게 없어(구조만 병합→복귀를 왕복) 2.0 그대로 유지 — 범프하지 않음.
+- 이 2개 문서를 가리키던 ~30개 상호참조(lib/, integration_test/, docs/superpowers/, docs/work/, TechnicalDebt.md)도 전부 서브파일 경로로 재복귀. `Workflow_Project.md` §12.4 Task Manifest 예시도 원래의 서브파일 경로 예시로 되돌림.
+
+사유:
+사용자가 병합 직후 실사용 관점에서 재검토 — "토큰이 빨리 녹아서 요새 문제"라는 피드백. 열람 편의(원래 목적)와 토큰 비용을 다시 저울질한 결과, 5개를 뭉뚱그려 판단하지 않고 실제 사용 패턴(핫패스 vs PM 전용 정책 문서)에 따라 문서별로 다르게 판단하는 게 맞다고 확인.
+
+Impact:
+- `docs/reference/design/00_DesignPrinciples.md` + 6개 서브파일 복원
+- `docs/reference/plan/03_화면별UX명세서.md` + 7개 서브파일 복원
+- `.claude/policies/Workflow_Project.md` §12.4 예시 복원
+- 위 두 문서를 가리키던 상호참조 전체 원복(약 30개 지점)
+
+---
+
+[Decision] 설계/계획 확정 전 Audit 필수화 — 크기 무관 신규 Decision-Stage Pipeline (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §5에 "Decision-Stage (Design & Plan) Pipeline" 신설: 설계 스펙(UI/Screen×Decision)·구현 계획(Logic/Feature×Decision) 모두, 크기 무관, "작은 단위 Review 반복 → 초안 조립 → Audit 1회(항상) → 확정" 흐름을 따른다.
+- §12.1 표 두 행(UI/Screen×Decision(Design), Logic/Feature×Decision(Planning)) 모두 "+ mandatory Audit before confirmation (크기 무관)"으로 갱신 — §5 본문과 §12.1 표가 따로 놀아 어긋나는 걸(과거 "§7 vs §12.1 모순" 사례와 같은 유형) 미리 방지.
+- Planning 단계의 "작은 단위 Review"는 `writing-plans` 스킬의 구조화된 Self-Review(Spec coverage/Placeholder scan/Type consistency) + 관련 정책 문서 대조 승인이 있으면 별도 `review` 서브에이전트 호출 없이 충족되는 것으로 인정(단, 이 경우도 확정 전 Audit은 예외 없이 돈다) — 이는 §1.1(Role Separation)이 요구하는 완전한 독립 검증은 아니라는 걸 인지한 상태의 의도적 트레이드오프다: (a) Design 단계는 이미 독립 Review가 강제되어 비대칭이 없고, (b) Audit이라는 두 번째 독립적 눈이 Planning 단계에도 항상 걸리며, (c) 매 plan 섹션마다 subagent를 부르면 오버헤드가 커져 원칙 자체가 실무에서 지켜지지 않을 위험이 크다는 실용적 판단.
+- `.claude/agents/audit.md`의 frontmatter description과 "When you run" 섹션에 이 새 트리거 지점(설계/계획 확정 전, 크기 무관) 반영.
+
+사유:
+사용자가 이번 세션에서 직접 요청 — "작업 전에 항상 설계와 계획을 먼저 선행하고, 설계와 계획은 작은단위로 review, 확정 전 audit 검수 꼭 하기". 지금까지 Audit은 L/XL 구현 태스크가 끝난 뒤에만 자동으로 돌아, 설계/계획 단계의 결함(정책 충돌, 프로젝트 전체와의 불일치)이 구현 이후에야 발견되는 구조였음 — 발견이 늦을수록 재작업 비용이 커지므로, 확정 이전 시점에 Audit 게이트를 추가.
+이 원칙 자체가 즉시 자기 자신에게 적용됨: 이 항목을 포함한 이번 세션 전체 작업 플랜이 실행 전에 `review` 1회(P0 없음, P1 2건/P2 3건 전부 반영) → `audit` 1회(P1 3건/P2 1건/P3 1건, P3 제외 전부 반영)를 거쳐 확정됐음 — 사용자가 "이 계획에 대해서부터 review, audit을 새 원칙대로 진행 가능해?"라고 명시적으로 요청.
+
+Impact:
+- `Workflow_Project.md` §5/§12.1
+- `.claude/agents/audit.md`
+
+---
+
+[Decision] Task 완료 시 연속성 시뮬레이션 + `/clear` 권유 절차 신설 (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §3에 "Post-Completion Continuity Simulation & `/clear` Recommendation" 신설, §10 Definition of Done에 체크박스 추가. Task 단계가 완료됐고 PM이 "세션 내 후속 작업이 더 없다"고 판단하면, `docs/work/BACKLOG.md`(+ 방금 추가된 Decision.md/TechnicalDebt.md 항목)를 새 세션 입장에서 재검토해 연속성을 시뮬레이션하고, 문제 없으면 사용자에게 `/clear`를 (실행이 아니라) 권유한다. Task 크기(S/M/L/XL) 무관 적용 — 단, PM이 세션 내 후속 작업이 이미 대기 중이라고 판단하면 매번 반복하지 않는다.
+- `CLAUDE.md` "필수 체크포인트"에 짧은 포인터 문장 추가.
+
+사유:
+사용자가 이번 세션에서 직접 요청 — "연속 작업이 필요 없을 것 같은 작업에 대해 BACKLOG 기록 후 새 세션 인계를 시뮬레이션해서 문제없으면 clear를 권유하는 멘트를 했으면 좋겠다". 기존 §3 "Skill-Internal Ledgers vs. Official Handoff"에 있던 "recorded so a future session can continue라고 보고하기 전 실제로 그 경로를 검증하라"는 원칙을 애드혹 체크에서 공식 필수 절차로 격상하고, 여기에 `/clear` 권유 액션을 결합했다.
+
+Impact:
+- `Workflow_Project.md` §3/§10
+- `CLAUDE.md` 필수 체크포인트 목록
+
+---
+
+[Decision] 라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합 (Data/Architecture, Decision) — 2026-07-10 결정 일부 되돌림 + 미기록 분리 3건 통합
+
+결정:
+- `.claude/policies/Workflow_Project.md`(서브파일 8개), `Workflow_Design.md`(2개), `Workflow_Development.md`(1개), `docs/reference/design/00_DesignPrinciples.md`(6개), `docs/reference/plan/03_화면별UX명세서.md`(7개) — 총 24개 서브파일을 각 부모 파일 하나로 재병합하고 서브파일은 삭제.
+- 이 중 2개(`Workflow_Project.md`/`Workflow_Design.md`)는 2026-07-10에 명시적으로 기록된 라우터+앵커 결정(아래 관련 항목 참고)을 되돌리는 것이고, 나머지 3개(`Workflow_Development.md`/`00_DesignPrinciples.md`/`03_화면별UX명세서.md`)는 같은 시기 같은 패턴으로 분리됐으나 그 분리 자체를 기록한 Decision.md 항목이 애초에 없었던 것을 이번에 통합한 것 — 두 성격을 구분해 기록한다.
+- 5개 파일 모두 §1.6 기준 구조 변경(major)으로 버전 범프: `Workflow_Project.md` 2.6→3.0(같은 세션에서 바로 이어 진행한 §3/§5/§10/§12.1 내용 추가(아래 두 항목)까지 포함해 한 리비전 패스로 3.0 하나만 부여), `Workflow_Design.md` 2.2→3.0, `Workflow_Development.md` 1.3→2.0, `00_DesignPrinciples.md` 2.0→3.0, `03_화면별UX명세서.md` 2.0→3.0.
+- `Workflow_Project.md`/`00_DesignPrinciples.md`/`03_화면별UX명세서.md`/`Workflow_Development.md` 4개 파일 상단에 목차(TOC) 추가 — `Workflow_Design.md`는 병합 순증이 적어(~15줄) TOC 없이도 스캔 가능해 생략.
+- 저장소 전체(`lib/`, `integration_test/`, `.claude/`, `docs/superpowers/`, `docs/work/`)에서 옛 서브파일 경로/파일명을 참조하던 지점을 새 경로("파일 §섹션")로 갱신. `docs/history/Decision.md`는 과거 시점 기록이라 전혀 손대지 않음(옛 경로가 그대로 남아있는 게 정상 — 이 항목이 그 예). `docs/history/TechnicalDebt.md`는 원칙적으로 동일하게 두되, 아직 미해결(open) 상태인 항목들은 죽은 경로가 다음 세션 연속성을 실제로 해칠 수 있어 예외적으로 경로만(내용/판단은 불변) 갱신했다.
+- `00_DesignPrinciples.md` Stage 2/3(Interaction/Layout Principles) 헤딩은 부모의 구 포인터 헤딩이 아니라 서브파일의 실제 헤딩("(Revised)"/"(Revised v2)")을 채택 — 서브파일 쪽이 최신 유효 버전이었음.
+
+사유:
+사용자가 이번 세션에서 "문서 세부항목 앵커화 되어있는 것 통합"을 직접 요청 — 목적은 Claude가 문서를 열람할 때 여러 파일을 오가지 않고 한 파일 안에서 맥락을 파악할 수 있게 하는 것. 2026-07-10 결정의 원래 근거("Task Manifest가 좁은 스코프만 넘길 수 있게")는 여전히 유효하지만, 병합 후에도 Task Manifest는 "파일 §섹션" 단위로 여전히 좁게 지정 가능해 그 이점이 크게 훼손되지 않는다고 판단한 반면, 여러 파일을 오가는 열람 비용은 이 시점에 더 크다고 사용자가 명시적으로 판단해 재우선순위화했다.
+
+Impact:
+- (파일별 세부 변경은 위 결정 문단 참고)
+- 이 병합 작업 자체가 바로 위 두 항목이 신설한 "Decision-Stage Pipeline" 원칙을 스스로 적용받음 — `review` 1회(P0 없음, P1 2건/P2 3건 전부 반영) → `audit` 1회(P1 3건/P2 1건/P3 1건, P3 제외 전부 반영) 통과 후 확정.
+
+---
+
 [Decision] 헤더 드롭다운 텍스트 확대·중앙정렬, 설정 구분선 연한 색, 분류 캡슐을 단일 GlassPill+내부 구분선으로 재통합 (UI/Screen, Decision — Header/HUD Pinned Rule 예외 포함)
 
 결정:
