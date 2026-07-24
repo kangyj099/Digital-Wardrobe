@@ -47,6 +47,20 @@ final List<Composition> mockCompositions = [
     isDeleted: true,
     deletedAt: DateTime.now().subtract(const Duration(days: 5)),
   ),
+  // comp02가 isDeleted:true가 되며 잃어버린 "season 미지정 + weather:rain" 비삭제
+  // 데모 역할을 이어받는다(Review P1, Task 3 addendum). c04/c05는 comp02와 동일 재사용 —
+  // 별도 asset 없이 가장 저위험.
+  Composition(
+    id: 'comp03',
+    name: '레인 코디',
+    createdAt: DateTime(2026, 2, 2),
+    // season 미지정 — 코디 "계절" 분류의 미분류 카드 데모용.
+    weather: Weather.rain,
+    items: const [
+      CompositionItemPlacement(clothingItemId: 'c04', x: 40, y: 40, zIndex: 0),
+      CompositionItemPlacement(clothingItemId: 'c05', x: 70, y: 140, zIndex: 1),
+    ],
+  ),
 ];
 
 final List<StyleLog> mockStyleLogs = [
