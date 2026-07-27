@@ -44,6 +44,7 @@ class AppMainScaffold extends StatelessWidget {
     this.secondaryControlsLeft = const [],
     this.secondaryControlsRight = const [],
     this.onReselectCurrentCategory,
+    this.bottomFloatingActions = const [],
     this.floatingActionButton,
   });
 
@@ -75,6 +76,11 @@ class AppMainScaffold extends StatelessWidget {
   /// 스택 그대로 유지). Detail 등 메인이 아닌 화면은 이 값을 안 넘겨(null) 재선택 시
   /// 그 카테고리의 메인으로 실제 이동+스택 리셋되게 한다(다른 카테고리 선택과 동일 동작).
   final VoidCallback? onReselectCurrentCategory;
+
+  /// 하단 밴드(뒤로가기와 같은 자리)에 우측 정렬로 얹는 독립 floating pill/circle
+  /// 버튼들 — 다중선택 모드의 [삭제]/[복원]/[영구 삭제] 등. Header/HUD Pinned Rule에
+  /// 따라 이미 각자 독립적으로 글래스 스타일링된 위젯이어야 한다.
+  final List<Widget> bottomFloatingActions;
 
   /// FAB passthrough — `Scaffold.floatingActionButton`으로 그대로 전달.
   final Widget? floatingActionButton;
@@ -194,6 +200,15 @@ class AppMainScaffold extends StatelessWidget {
                 left: AppSpacing.md,
                 bottom: AppSpacing.md,
                 child: FrostedBackButton(onTap: () => context.pop()),
+              ),
+            if (bottomFloatingActions.isNotEmpty)
+              Positioned(
+                right: AppSpacing.md,
+                bottom: AppSpacing.md,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _withGaps(bottomFloatingActions),
+                ),
               ),
           ],
         ),
