@@ -69,32 +69,35 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
 
   Widget _row(BuildContext context, ArtboardItem item, int index, ColorScheme colorScheme) {
     final isSelected = item.id == widget.selectedItemId;
-    return Container(
+    // Tester가 발견한 버그 수정: Container(color: ...)로 ListTile을 감싸면 Flutter가
+    // "ListTile background color or ink splashes may be invisible" FlutterError를
+    // 던진다(ListTile 내부가 Material 위젯을 전제하는데 색 있는 Container/ColoredBox가
+    // 그 사이를 가로막기 때문) — ListTile 자신의 tileColor 파라미터가 정확히 이 용도로
+    // 존재하므로 그걸 대신 쓴다.
+    return ListTile(
       key: ValueKey(item.id),
-      color: isSelected ? colorScheme.primaryContainer : null,
-      child: ListTile(
-        leading: Icon(
-          isSelected ? Icons.check_circle : Icons.check_circle_outline,
-          color: isSelected ? colorScheme.primary : null,
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              item.imagePath,
-              width: _thumbnailSize,
-              height: _thumbnailSize,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Flexible(child: Text(item.id, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-        onTap: () => widget.onSelect(item.id),
-        trailing: ReorderableDragStartListener(
-          index: index,
-          child: const Icon(Icons.drag_handle),
-        ),
+      tileColor: isSelected ? colorScheme.primaryContainer : null,
+      leading: Icon(
+        isSelected ? Icons.check_circle : Icons.check_circle_outline,
+        color: isSelected ? colorScheme.primary : null,
+      ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            item.imagePath,
+            width: _thumbnailSize,
+            height: _thumbnailSize,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 8),
+          Flexible(child: Text(item.id, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+      onTap: () => widget.onSelect(item.id),
+      trailing: ReorderableDragStartListener(
+        index: index,
+        child: const Icon(Icons.drag_handle),
       ),
     );
   }

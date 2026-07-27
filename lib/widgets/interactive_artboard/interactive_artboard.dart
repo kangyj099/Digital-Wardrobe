@@ -46,6 +46,13 @@ const double _overlapPopupCardWidth = 240.0;
 /// 팝업 카드가 화면 가장자리에서 최소한 이만큼은 떨어지도록 하는 여백(논리픽셀).
 const double _overlapPopupScreenMargin = 8.0;
 
+/// 팝업 행 1개의 예상 높이(논리픽셀) — Tester가 실측한 실제 값(항목 2개일 때 카드
+/// 높이 112px → 행당 56px, Flutter 기본 ListTile 높이와 일치)을 그대로 사용한다.
+/// 화면 하단 경계 클램프 계산 전용 근사치다 — 실제 레이아웃 전에는 정확한 카드 높이를
+/// 알 수 없다(Tester 발견 버그 반영: 기존엔 세로 클램프가 카드 높이를 전혀 고려하지
+/// 않아 화면 하단 근처에서 열면 카드가 화면 밖으로 넘어갔다).
+const double _overlapPopupEstimatedRowHeight = 56.0;
+
 /// 코디 편집기 아트보드 — 배치/이동/회전/크기조절/겹침처리/삭제의 코어 상호작용을
 /// 제공하는 완전 독립 위젯. `Composition`/`ClothingItem` 모델에 의존하지 않는다.
 ///
@@ -530,10 +537,17 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
           _overlapPopupScreenMargin,
           screenSize.width - _overlapPopupCardWidth - _overlapPopupScreenMargin,
         );
-        final top = anchorGlobalPosition.dy.clamp(
+        // Tester가 발견한 버그 수정: 카드의 실제 렌더 높이는 항목 개수에 따라
+        // 달라져서 레이아웃 전에는 알 수 없다 — _overlapPopupEstimatedRowHeight로
+        // 추정한 높이를 빼서 하단 경계도 함께 클램프한다. math.max로 화면이 카드보다
+        // 작은 극단적인 경우(항목이 아주 많을 때)에도 clamp()의 lower<=upper 불변식이
+        // 깨지지 않게 방어한다.
+        final estimatedCardHeight = matches.length * _overlapPopupEstimatedRowHeight;
+        final maxTop = math.max(
           _overlapPopupScreenMargin,
-          screenSize.height - _overlapPopupScreenMargin,
+          screenSize.height - estimatedCardHeight - _overlapPopupScreenMargin,
         );
+        final top = anchorGlobalPosition.dy.clamp(_overlapPopupScreenMargin, maxTop);
         return Stack(
           children: [
             Positioned.fill(
