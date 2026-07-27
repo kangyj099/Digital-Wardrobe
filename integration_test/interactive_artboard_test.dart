@@ -942,6 +942,87 @@ void main() {
     assertSelectionBoxVisible();
     expect(selectionRequestLog, isEmpty, reason: '배경색 버튼 탭은 onSelectionChanged를 호출하면 안 됨');
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Audit 제기 이론(P2, 미확인) 확인: 작은 캔버스에서 배경색 스와치 목록이
+  // 캔버스 상단 경계 밖으로 넘칠 때, 넘친 부분이 실제로 탭 가능한지 실측한다.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ── 24. 캔버스 높이가 스와치 리스트 필요 높이보다 작으면, 캔버스 밖으로 넘친
+  //        최상단 스와치는 그려지긴 해도(Clip.none) 탭이 반영되지 않는다 ────────
+  //
+  //        임계값 계산(코드 상수 기준):
+  //        - 스와치 리스트의 bottom 오프셋 = `_backgroundColorButtonMargin`(16)
+  //          + `_backgroundColorButtonDiameter`(44) + `_backgroundSwatchSpacing`(8)
+  //          = 68.
+  //        - 스와치 리스트 자체 높이 = `ArtboardBackgroundColor.values.length`(4)
+  //          * `_backgroundSwatchDiameter`(44) + 3칸 * `_backgroundSwatchSpacing`(8)
+  //          = 176 + 24 = 200.
+  //        - 리스트가 캔버스 안에 완전히 들어가려면 캔버스 높이 >= 68 + 200 = 268
+  //          이 필요하다. 기존 1~23번 시나리오는 전부 400x400/1100x1500이라 이
+  //          임계값(268)을 한 번도 건드리지 않았다.
+  //        - 여기서는 의도적으로 200x200(<268)을 사용한다: 스와치 리스트 top이
+  //          캔버스 로컬 y = 200 - 268 = -68이 되어, 최상단(흰색) 스와치(리스트
+  //          첫 항목, 높이 44)가 로컬 y [-68, -24] 구간, 즉 캔버스 자신의 경계
+  //          [0, 200] 완전히 밖에 위치하게 된다.
+  //
+  //        `Stack`(캔버스) 자신의 `RenderBox.hitTest`는 자식을 살펴보기 전에
+  //        자기 `size.contains(position)`부터 확인한다(Clip.none은 페인트에만
+  //        영향, 히트테스트엔 영향 없음 — Round 1에서 핸들에 대해 이미 확인한
+  //        것과 동일한 메커니즘, `_handleLayerMargin` 주석 참고). 캔버스를
+  //        화면 중앙(Alignment.center)에 배치해, 넘친 스와치가 "화면 자체의
+  //        경계" 밖이 아니라 "화면 안 · 캔버스 자신의 경계 밖"이라는 정확한
+  //        지점에 위치하도록 구분한다.
+  testWidgets(
+      '캔버스 높이(200)가 스와치 리스트 필요 높이(268) 미만이면, 캔버스 경계 밖으로 넘친 최상단 스와치는 시각적으로는 보이지만 탭해도 반영되지 않는다',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    const smallCanvas = Size(200, 200);
+    await pumpArtboard(
+      tester,
+      items: const [],
+      canvasSizeOverride: smallCanvas,
+      canvasAlignment: Alignment.center,
+      backgroundColorRequestLog: backgroundColorRequestLog,
+    );
+
+    final canvasTopLeft = tester.getTopLeft(find.byType(ColoredBox));
+    expect(
+      tester.getSize(find.byType(ColoredBox)),
+      smallCanvas,
+      reason: '캔버스 크기가 override대로 실제 반영됐는지 확인(계산 전제 검증)',
+    );
+
+    await tester.tap(handleByLabel('배경색 버튼'));
+    await tester.pumpAndSettle();
+
+    final whiteSwatchFinder = handleByLabel('배경색: 흰색');
+    expect(whiteSwatchFinder, findsOneWidget,
+        reason: '캔버스 밖으로 넘쳤어도 위젯 자체는 트리에 존재하고 그려져야 함(Clip.none)');
+
+    final whiteSwatchCenter = tester.getCenter(whiteSwatchFinder);
+    expect(
+      whiteSwatchCenter.dy,
+      lessThan(canvasTopLeft.dy),
+      reason: '최상단(흰색) 스와치가 실제로 캔버스 자신의 위쪽 경계 밖에 그려지는지 확인 — '
+          '스와치 중심 y=${whiteSwatchCenter.dy}, 캔버스 top y=${canvasTopLeft.dy}',
+    );
+
+    await tester.tapAt(whiteSwatchCenter);
+    await tester.pumpAndSettle();
+
+    expect(
+      backgroundColorRequestLog,
+      isEmpty,
+      reason:
+          '캔버스 Stack 자신의 히트테스트 경계 밖이라 탭이 onBackgroundColorChanged까지 전달되면 안 됨(버그 확인 시나리오)',
+    );
+    expect(
+      handleByLabel('배경색: 흰색'),
+      findsOneWidget,
+      reason: '탭이 캔버스 자신에게도 전달되지 않았다면 스와치 목록이 닫히지 않은 채(펼쳐진 채로) 남아있어야 함',
+    );
+  });
 }
 
 // ── 테스트 전용 "부모" 호스트 ─────────────────────────────────────────────────
