@@ -1555,11 +1555,19 @@ Add these two `Positioned` entries as the **last** children of the canvas `Stack
               ),
               if (_isSwatchExpanded)
                 Positioned(
+                  // top:0 + bottom: 함께 지정 — 두 값을 다 주면 Stack이 이 자식에게
+                  // "캔버스 상단부터 버튼 바로 위까지"로 꽉 채운 높이 제약을 준다(shrink-wrap
+                  // 아님). 그래서 스와치 리스트의 히트테스트 가능 영역이 캔버스 자기 크기가
+                  // 아무리 작아도 항상 [0, canvasHeight] 안에 있음이 보장된다 — bottom만
+                  // 쓰던 예전 버전은 리스트가 자기 콘텐츠 크기(200px)만큼 위로 자연스럽게
+                  // 커져서, 캔버스가 그보다 작으면 맨 위 스와치가 캔버스 박스 밖으로 나가
+                  // 눌리지 않는 버그가 있었다(Tester 확인, 핸들 때와 같은 종류의 버그).
+                  top: 0,
                   right: _backgroundColorButtonMargin,
                   bottom: _backgroundColorButtonMargin +
                       _backgroundColorButtonDiameter +
                       _backgroundSwatchSpacing,
-                  child: _backgroundSwatchList(),
+                  child: SingleChildScrollView(child: _backgroundSwatchList()),
                 ),
 ```
 
