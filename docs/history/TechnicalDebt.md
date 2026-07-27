@@ -1,5 +1,19 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `MultiSelectCheckmark`가 `AppSemanticColors` 대신 `Colors.white` 하드코딩 + 선택 관련 매직넘버 미등재 (P2/P3)
+
+상태: 미해결
+
+내용:
+Group B Task 5(다중선택 시각 지원) 완료 후 Audit(2026-07-28)이 발견:
+- (P2) `lib/widgets/multi_select_checkmark.dart`의 미선택 상태 배경이 `Colors.white.withValues(alpha: 0.7)`로 하드코딩돼 있는데, 같은 파일군·같은 Stack 안에서 동일한 역할(반투명 near-white 원)을 하는 `trash_gallery_tile.dart`의 카테고리 아이콘 배지는 `semantic.gray50.withValues(alpha: 0.7)`(`Theme.of(context).extension<AppSemanticColors>()!`)를 정확히 쓴다 — 같은 시각 역할을 두 소스로 구현한 불일치. 값 자체는 계획 문서(`docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 1209행)에서 그대로 온 것이라 Worker 귀책 아님(Decision-stage 코드에 이미 있던 갭).
+- (P3) 4개 타일 파일(`selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart`/`trash_gallery_tile.dart`) 전부 `Border.all(color: colorScheme.primary, width: 2)`(선택 시 테두리)를 복붙 반복. `MultiSelectCheckmark` 자체도 `width/height: 22`, `border width: 1.5`, `Icon size: 16` 등 `AppSpacing`/이름 있는 상수 어디에도 안 걸린 리터럴 3개를 가짐 — 위 `classification_group_card.dart` 항목(이 파일 맨 아래, 2026-07-19)과 같은 패턴의 반복.
+- (P3) `flutter analyze`에 새로 잡힌 미등재 경고 1건: `integration_test/trash_purge_safety_test.dart:8`의 `composition_providers.dart` unused import — Task 5 diff 밖(Task 3 잔재로 추정), 아래 "`integration_test/` 파일 3개에 미사용 import" 항목에 파일/건수만 추가하면 됨.
+
+조치 방향(착수 조건): 이 4개 타일 또는 `multi_select_checkmark.dart`를 다음에 손댈 때(유력 후보: 실제 다중선택 모드 진입 배선 Task, 계획 문서 Task 7) `Colors.white`→`semantic.gray50` 교체 + `width: 2`/`22`/`1.5`/`16` 값들을 이름 있는 로컬 const로 승격. 급하지 않음(순수 시각 일관성 문제, 기능 결함 아님).
+
+---
+
 [TechDebt] `composition_preview_carousel.dart`/`composition_detail_screen.dart`에 `AppSpacing` 미등재 매직넘버 — 로컬 named const로 유지 중
 
 상태: 미해결
@@ -78,6 +92,8 @@ Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)
 
 내용:
 Typography Pass 3 코드 반영 Review 중 `integration_test/typography_pass3_test.dart`의 unused_import 경고 2건(`closet_main_screen.dart`, `style_log_gallery_tile.dart`)을 먼저 발견. 이후 분류 기준 드릴다운 캡슐 기능(2026-07-19) Audit이 같은 성격의 경고 2건을 추가로 확인 — `integration_test/style_log_gallery_column_count_test.dart`의 `go_router`/`style_log_cross_reference_gallery` unused import(둘 다 2026-07-18 커밋 `6984001`부터 존재, 이번 기능과 무관한 기존 부채). 전부 `flutter analyze` 기준 unused_import 경고일 뿐, 테스트 통과에는 영향 없는 순수 lint 이슈.
+
+**추가(Group B Task 5 Audit, 2026-07-28)**: `integration_test/trash_purge_safety_test.dart:8`의 `composition_providers.dart` unused import 1건 추가 확인 — Task 3(휴지통 집계 재작성) 잔재로 추정, 이번 Task 5 diff와는 무관.
 
 해결 방향: 다음에 각 파일을 손댈 일이 생기면 그때 `import` 줄 제거로 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
 
