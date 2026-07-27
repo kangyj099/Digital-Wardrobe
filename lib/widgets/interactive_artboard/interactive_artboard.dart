@@ -601,16 +601,19 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   }
 
   Widget _backgroundColorButton() {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _isSwatchExpanded = !_isSwatchExpanded),
-      child: Container(
-        width: _backgroundColorButtonDiameter,
-        height: _backgroundColorButtonDiameter,
-        decoration: BoxDecoration(
-          color: widget.backgroundColor.value,
-          shape: BoxShape.circle,
-          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+    return Semantics(
+      label: '배경색 버튼',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _isSwatchExpanded = !_isSwatchExpanded),
+        child: Container(
+          width: _backgroundColorButtonDiameter,
+          height: _backgroundColorButtonDiameter,
+          decoration: BoxDecoration(
+            color: widget.backgroundColor.value,
+            shape: BoxShape.circle,
+            border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+          ),
         ),
       ),
     );
@@ -630,22 +633,37 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
   }
 
   Widget _backgroundSwatch(ArtboardBackgroundColor option) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        widget.onBackgroundColorChanged(option);
-        setState(() => _isSwatchExpanded = false);
-      },
-      child: Container(
-        width: _backgroundSwatchDiameter,
-        height: _backgroundSwatchDiameter,
-        decoration: BoxDecoration(
-          color: option.value,
-          shape: BoxShape.circle,
-          border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+    return Semantics(
+      label: '배경색: ${_backgroundColorLabel(option)}',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          widget.onBackgroundColorChanged(option);
+          setState(() => _isSwatchExpanded = false);
+        },
+        child: Container(
+          width: _backgroundSwatchDiameter,
+          height: _backgroundSwatchDiameter,
+          decoration: BoxDecoration(
+            color: option.value,
+            shape: BoxShape.circle,
+            border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+          ),
         ),
       ),
     );
+  }
+
+  /// [ArtboardBackgroundColor] 각 값의 한국어 색상명 — 스와치 Semantics 라벨 전용
+  /// (`flutter-implementation-conventions` Review 체크리스트: 터치 타겟엔 Semantics
+  /// 라벨 필요, enum 식별자를 그대로 노출하지 않고 사용자가 읽을 이름으로 매핑).
+  String _backgroundColorLabel(ArtboardBackgroundColor option) {
+    return switch (option) {
+      ArtboardBackgroundColor.white => '흰색',
+      ArtboardBackgroundColor.lightGray => '밝은 회색',
+      ArtboardBackgroundColor.darkGray => '어두운 회색',
+      ArtboardBackgroundColor.black => '검정',
+    };
   }
 }
 
