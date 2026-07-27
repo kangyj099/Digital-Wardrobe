@@ -52,3 +52,12 @@ class AppMotion {
   static const Duration fast = Duration(milliseconds: 200); // 밀도 토글, FAB 회전 등 일반 전환
   static const Duration searchExpand = Duration(milliseconds: 300); // 검색창 확장/축소 전용(추후 Task 4에서 소비)
 }
+
+/// 화면에 잠시 노출되는 UI(Toast 등)의 표시 지속시간 — 애니메이션 전환(`AppMotion`)과는 성격이
+/// 달라 별도 클래스로 분리. `GlassToast`(Glass 셸 화면)와 `UndoableActionToast`(plain Utility
+/// 화면, SnackBar 기반)가 같은 C7 패턴의 두 시각 변형이라 기본 노출 시간을 공유한다.
+class AppDurations {
+  AppDurations._();
+
+  static const Duration toastDefault = Duration(seconds: 4);
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_spacing.dart';
 
 /// C7 `UndoableActionToast` — "즉시 실행 + Toast + 실행취소" UI 패턴의 재사용 가능한
 /// 구현체 (`docs/reference/design/00_DesignPrinciples/06_Component Strategy.md` 참고).
@@ -28,7 +29,7 @@ class UndoableActionToast {
     required String actionLabel,
     required VoidCallback onUndo,
     VoidCallback? onExpire,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = AppDurations.toastDefault,
   }) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
