@@ -1665,6 +1665,13 @@ const double _overlapPopupCardWidth = 240.0;
 
 /// 팝업 카드가 화면 가장자리에서 최소한 이만큼은 떨어지도록 하는 여백(논리픽셀).
 const double _overlapPopupScreenMargin = 8.0;
+
+/// 팝업 행 1개의 예상 높이(논리픽셀) — Tester가 실측한 실제 값(항목 2개일 때 카드
+/// 높이 112px → 행당 56px, Flutter 기본 ListTile 높이와 일치)을 그대로 사용한다.
+/// 화면 하단 경계 클램프 계산 전용 근사치다 — 실제 레이아웃 전에는 정확한 카드 높이를
+/// 알 수 없다(Tester 발견 버그 반영: 기존엔 세로 클램프가 카드 높이를 전혀 고려하지
+/// 않아 화면 하단 근처에서 열면 카드가 화면 밖으로 넘어갔다).
+const double _overlapPopupEstimatedRowHeight = 56.0;
 ```
 
 Add this field to `_InteractiveArtboardState` (near `_deleteZoneOverlayEntry`):
@@ -1686,10 +1693,17 @@ Replace the whole `_openOverlapPopup` method with:
           _overlapPopupScreenMargin,
           screenSize.width - _overlapPopupCardWidth - _overlapPopupScreenMargin,
         );
-        final top = anchorGlobalPosition.dy.clamp(
+        // Tester가 발견한 버그 수정: 카드의 실제 렌더 높이는 항목 개수에 따라
+        // 달라져서 레이아웃 전에는 알 수 없다 — _overlapPopupEstimatedRowHeight로
+        // 추정한 높이를 빼서 하단 경계도 함께 클램프한다. math.max로 화면이 카드보다
+        // 작은 극단적인 경우(항목이 아주 많을 때)에도 clamp()의 lower<=upper 불변식이
+        // 깨지지 않게 방어한다.
+        final estimatedCardHeight = matches.length * _overlapPopupEstimatedRowHeight;
+        final maxTop = math.max(
           _overlapPopupScreenMargin,
-          screenSize.height - _overlapPopupScreenMargin,
+          screenSize.height - estimatedCardHeight - _overlapPopupScreenMargin,
         );
+        final top = anchorGlobalPosition.dy.clamp(_overlapPopupScreenMargin, maxTop);
         return Stack(
           children: [
             Positioned.fill(
@@ -1738,7 +1752,7 @@ Replace the whole `_openOverlapPopup` method with:
   }
 ```
 
-**Note on the `top` clamp**: it only guards against the anchor point itself being too close to the top/bottom screen edges — it does not know the card's actual rendered height in advance (item count varies), so a popup opened very low on a short screen with many overlapping items could still extend past the bottom edge. This matches the spec's explicit "정확한 앵커 지점과 여백은 Worker 재량 — 화면 밖으로 안 나가기만 하면 됨" allowance; if this proves visually wrong in practice, wrap the card content in a `ConstrainedBox(maxHeight: ...)` + scrollable as a follow-up (not required for this task, note as a `TechnicalDebt.md` candidate if observed).
+**Note on the `top` clamp (revised after Tester found the original version broken)**: an earlier version of this clamp only guarded the anchor point against the top/bottom edges without accounting for the card's own height, so a popup opened near the bottom of a canvas that fills most of the screen rendered a measurable few pixels past the bottom edge (Tester repro: 1100×1500 canvas in a 1200×1600 view, tap at y=1495.5, card height=112 → card bottom=1607.5, past the 1600px screen). The fix above uses `_overlapPopupEstimatedRowHeight * matches.length` as a height estimate for the clamp — it's still an estimate (not a post-layout measurement), so an unusually large overlap count could in principle still overflow slightly, but this is not expected in practice (overlap counts are always small in this app) and is an acceptable residual approximation given the spec's "정확한 앵커 지점과 여백은 Worker 재량" allowance.
 
 In `_handleTapUp`, change the call site to pass the global position:
 
@@ -1832,32 +1846,35 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
 
   Widget _row(BuildContext context, ArtboardItem item, int index, ColorScheme colorScheme) {
     final isSelected = item.id == widget.selectedItemId;
-    return Container(
+    // Tester가 발견한 버그 수정: Container(color: ...)로 ListTile을 감싸면 Flutter가
+    // "ListTile background color or ink splashes may be invisible" FlutterError를
+    // 던진다(ListTile 내부가 Material 위젯을 전제하는데 색 있는 Container/ColoredBox가
+    // 그 사이를 가로막기 때문) — ListTile 자신의 tileColor 파라미터가 정확히 이 용도로
+    // 존재하므로 그걸 대신 쓴다.
+    return ListTile(
       key: ValueKey(item.id),
-      color: isSelected ? colorScheme.primaryContainer : null,
-      child: ListTile(
-        leading: Icon(
-          isSelected ? Icons.check_circle : Icons.check_circle_outline,
-          color: isSelected ? colorScheme.primary : null,
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              item.imagePath,
-              width: _thumbnailSize,
-              height: _thumbnailSize,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Flexible(child: Text(item.id, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
-        onTap: () => widget.onSelect(item.id),
-        trailing: ReorderableDragStartListener(
-          index: index,
-          child: const Icon(Icons.drag_handle),
-        ),
+      tileColor: isSelected ? colorScheme.primaryContainer : null,
+      leading: Icon(
+        isSelected ? Icons.check_circle : Icons.check_circle_outline,
+        color: isSelected ? colorScheme.primary : null,
+      ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            item.imagePath,
+            width: _thumbnailSize,
+            height: _thumbnailSize,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 8),
+          Flexible(child: Text(item.id, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+      onTap: () => widget.onSelect(item.id),
+      trailing: ReorderableDragStartListener(
+        index: index,
+        child: const Icon(Icons.drag_handle),
       ),
     );
   }
