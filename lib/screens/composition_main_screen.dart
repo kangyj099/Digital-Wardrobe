@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/composition.dart';
 import '../models/enums.dart';
 import '../providers/classification_models.dart';
 import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../widgets/app_main_scaffold.dart';
-import '../widgets/app_scroll_container.dart';
-import '../widgets/classification_drilldown_capsule.dart';
 import '../widgets/classification_group_grid.dart';
 import '../widgets/composition_gallery_grid.dart';
-import '../widgets/glass_circle_button.dart';
+import '../widgets/gallery_main_screen.dart';
+import '../widgets/glass_toast.dart';
 import '../widgets/selection_aware_header_actions.dart';
 
-/// Main-그룹형(옷장 메인과 동일 페이지 타입) — `closet_main_screen.dart` 패턴을 그대로 이식.
-///
-/// [selectionMode]가 true면 이 화면이 "선택 모달(코디 재호출)"로 동작한다 — 타일 탭 시
-/// `context.pop(composition.id)`로 결과를 반환한다.
 class CompositionMainScreen extends ConsumerWidget {
   const CompositionMainScreen({super.key, this.selectionMode = false});
 
@@ -26,89 +21,101 @@ class CompositionMainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final criterion = ref.watch(compositionSortCriterionProvider);
-    // closet_main_screen.dart와 동일 — 전역 단순 규칙이라 반전 없이 그대로 쓴다.
     final ascending = ref.watch(compositionSortAscendingProvider);
     final displayState = ref.watch(compositionGridDisplayStateProvider);
     final density = ref.watch(compositionDensityProvider);
+    final compositions = ref.watch(filteredCompositionsProvider);
+    final groups = ref.watch(compositionGroupSummariesProvider);
 
-    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
-
-    return AppMainScaffold(
+    return GalleryMainScreen<Composition>(
       current: AppCategory.composition,
+      items: compositions,
+      itemId: (c) => c.id,
       showBackButton: !selectionMode,
       showCategoryToggle: !selectionMode,
+      selectionMode: selectionMode,
       headerActions: buildSelectionAwareHeaderActions(
         selectionMode: selectionMode,
         onClose: () => context.pop(),
       ),
-      // 이 화면이 코디의 메인이라는 신호 — `closet_main_screen.dart`와 동일 이유.
       onReselectCurrentCategory: () {
         ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.all;
         _resetAllDrilldowns(ref);
       },
-      secondaryControlsLeft: [
-        ClassificationDrilldownCapsule(
-          criterionLabels: [for (final c in CompositionSortCriterion.values) c.label],
-          selectedCriterionIndex: criterion.index,
-          onCriterionChanged: (index) {
-            ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.values[index];
-            _resetAllDrilldowns(ref);
-          },
-          hasSubClassification: criterion.hasSubClassification,
-          subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
-          subOptionLabels: _subOptionLabels(ref, criterion),
-          selectedSubOptionIndex: _selectedSubOptionIndex(ref, criterion),
-          onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
-          onClearSubSelection: () => _clearDrilldown(ref, criterion),
-        ),
-        GlassCircleButton(
-          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
-          tooltip: ascending ? '오름차순' : '내림차순',
-          onTap: () => ref.read(compositionSortAscendingProvider.notifier).state = !ascending,
-        ),
-      ],
-      secondaryControlsRight: [
-        GlassCircleButton(
-          icon: AppDensity.iconFor(density),
-          tooltip: '그리드 밀도 전환',
-          onTap: () {
-            final current = ref.read(compositionDensityProvider);
-            final currentIndex = AppDensity.levels.indexOf(current);
-            final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
-            ref.read(compositionDensityProvider.notifier).state = AppDensity.levels[previousIndex];
-          },
-        ),
-      ],
-      body: AppScrollContainer(
-        topHintThreshold: contentTopSpacing,
-        builder: (context, controller) {
-          if (displayState == CompositionGridDisplayState.groupOverview) {
-            final groups = ref.watch(compositionGroupSummariesProvider);
-            return ClassificationGroupGrid(
-              groups: groups,
-              density: density,
-              controller: controller,
-              topSpacing: contentTopSpacing,
-              onGroupTap: (group) => _drillIntoValue(ref, criterion, group.value),
-            );
-          }
-          final compositions = ref.watch(filteredCompositionsProvider);
-          return CompositionGalleryGrid(
-            compositions: compositions,
+      classification: ClassificationConfig<Composition>(
+        criterionLabels: [for (final c in CompositionSortCriterion.values) c.label],
+        selectedCriterionIndex: criterion.index,
+        onCriterionChanged: (index) {
+          ref.read(compositionSortCriterionProvider.notifier).state = CompositionSortCriterion.values[index];
+          _resetAllDrilldowns(ref);
+        },
+        hasSubClassification: criterion.hasSubClassification,
+        subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
+        subOptionLabels: _subOptionLabels(ref, criterion),
+        selectedSubOptionIndex: _selectedSubOptionIndex(ref, criterion),
+        onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
+        onClearSubSelection: () => _clearDrilldown(ref, criterion),
+        density: density,
+        // [정정, Task 7 Review 2026-07-28] `current`(전달받은 값)를 그대로 쓰면 `10d3643`이
+        // 이미 한 번 고친 stale-closure 버그가 재발한다 — 빌드 시점에 고정된 값이라 리빌드
+        // 전에 연속 탭하면 두 번째 탭이 낡은 값을 기준으로 계산된다. 옷장 메인(Task 7)이 이미
+        // `ref.read(...)`로 매번 새로 읽는 방식으로 우회했다 — 여기도 동일하게 적용.
+        onDensityChanged: (_) {
+          final latest = ref.read(compositionDensityProvider);
+          final currentIndex = AppDensity.levels.indexOf(latest);
+          final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
+          ref.read(compositionDensityProvider.notifier).state = AppDensity.levels[previousIndex];
+        },
+        ascending: ascending,
+        onAscendingChanged: (_) =>
+            ref.read(compositionSortAscendingProvider.notifier).state = !ref.read(compositionSortAscendingProvider),
+      ),
+      onItemTap: (c) {
+        if (selectionMode) {
+          context.pop(c.id);
+        } else {
+          context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
+        }
+      },
+      onDeleteSelected: (ids) {
+        ref.read(compositionsProvider.notifier).softDeleteMany(ids);
+        GlassToast.show(
+          context,
+          message: '${ids.length}개 항목이 휴지통으로 이동됨',
+          actionLabel: '실행취소',
+          onAction: () => ref.read(compositionsProvider.notifier).restoreMany(ids),
+        );
+      },
+      gridBuilder: ({
+        required density,
+        required controller,
+        required topSpacing,
+        required multiSelectMode,
+        required selectedIds,
+        required onItemTap,
+        required onItemLongPress,
+      }) {
+        if (displayState == CompositionGridDisplayState.groupOverview) {
+          return ClassificationGroupGrid(
+            groups: groups,
             density: density,
             controller: controller,
-            topSpacing: contentTopSpacing,
-            onItemTap: (c) {
-              if (selectionMode) {
-                context.pop(c.id);
-              } else {
-                context.push(AppRoute.compositionDetail.replaceFirst(':id', c.id));
-              }
-            },
+            topSpacing: topSpacing,
+            onGroupTap: (group) => _drillIntoValue(ref, criterion, group.value),
           );
-        },
-      ),
-      floatingActionButton: selectionMode
+        }
+        return CompositionGalleryGrid(
+          compositions: compositions,
+          density: density,
+          controller: controller,
+          topSpacing: topSpacing,
+          multiSelectMode: multiSelectMode,
+          selectedIds: selectedIds,
+          onItemTap: onItemTap,
+          onItemLongPress: onItemLongPress,
+        );
+      },
+      fab: selectionMode
           ? null
           : FloatingActionButton(
               onPressed: () => context.push(AppRoute.compositionEditor),
@@ -117,8 +124,8 @@ class CompositionMainScreen extends ConsumerWidget {
     );
   }
 
-  // closet_main_screen.dart와 동일한 이유로 날짜·시간(연도)은 closetGroupSummariesProvider의
-  // 코디 버전(compositionGroupSummariesProvider)을 라벨/인덱스 소스로 공유한다.
+  // 아래 6개 메서드는 이 Task 착수 전 `composition_main_screen.dart`에 이미 있던 로직을
+  // 그대로 옮긴 것(계절/날씨/날짜 3기준) — 타입/provider만 옷장 대신 코디 것을 쓴다.
   List<String> _subOptionLabels(WidgetRef ref, CompositionSortCriterion criterion) {
     return switch (criterion) {
       CompositionSortCriterion.season => [for (final season in Season.values) season.label, '미분류'],
@@ -184,9 +191,6 @@ class CompositionMainScreen extends ConsumerWidget {
     }
   }
 
-  /// `closet_main_screen.dart`의 `_resetAllDrilldowns`와 동일한 이유(사용자 지시,
-  /// 2026-07-20) — 중분류를 바꿀 때마다 모든 소분류 드릴인 상태를 초기화해, 이전에
-  /// 같은 중분류에서 드릴인했던 값이 그대로 남아 있지 않게 한다.
   void _resetAllDrilldowns(WidgetRef ref) {
     ref.read(compositionDrilledSeasonProvider.notifier).state = null;
     ref.read(compositionDrilledWeatherProvider.notifier).state = null;
