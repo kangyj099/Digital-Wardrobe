@@ -1,5 +1,21 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] 휴지통 정보팝업이 `05_삭제 & 휴지통.md` 스펙과 3가지 지점에서 어긋남 — 계획 문서 자체의 갭, Decision-stage Audit 누락 추정 (P2)
+
+상태: 미해결
+
+내용:
+Group B Task 10(휴지통 실행 배선) Review(2026-07-28)가 발견 — `lib/screens/trash_main_screen.dart`의 `_showTrashItemInfo`(정보팝업)가 스펙(`docs/reference/plan/03_화면별UX명세서/05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md` 29-38행)과 다음 3가지에서 어긋남:
+1. "팝업 상단: ... 우측 모서리 닫기 버튼" — 명시적 X(닫기) 버튼이 없음. 기본 `showModalBottomSheet` 제스처(바깥 탭/아래로 드래그)로만 닫힘.
+2. "이미지 안쪽 중앙 하단: 'N일' ... 오버레이" — 남은 일수가 이미지 위 오버레이가 아니라 헤더 텍스트 줄(`'${entry.category.label} · 영구 삭제까지 ${entry.daysUntilPurge}일'`)에 들어가 있음.
+3. "팝업 하단: [복원] [영구 삭제] 버튼 — 스크롤 생겨도 버튼은 항상 화면 하단 고정" — 현재는 `Column`(`mainAxisSize: MainAxisSize.min`)의 마지막 자식일 뿐, `SingleChildScrollView`+고정 푸터 분리가 없음. 콘텐츠가 길어지면(현재는 `isScrollControlled: true`로 오버플로는 안 나지만) 버튼이 고정되지 않고 함께 스크롤됨.
+
+3건 전부 계획 문서(`docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 3159-3223행)의 원문 코드 자체에 있던 갭으로, 이번 Worker가 새로 만든 문제가 아님 — 계획 확정 전 Decision-stage Audit(크기 무관 항상 거치는 게이트, `Workflow_Project.md` §5)에서 놓친 것으로 추정됨(다른 유사 사례처럼 "의도적 스코프 컷"으로 기록된 근거 문서가 없음). 기능적으로 깨진 건 없음(닫기는 기본 제스처로 여전히 가능, 일수는 여전히 보임, 오버플로는 `isScrollControlled: true`로 이미 해소됨) — 순수 스펙 대비 시각/구조 불일치.
+
+조치 방향(착수 조건): 다음에 `_showTrashItemInfo`를 손댈 때 3가지 함께 정리 — (1) 우상단 `IconButton(Icons.close)` 추가, (2) 일수 배지를 이미지 `Stack` 안 오버레이로 이동, (3) `Column`을 `Expanded(child: SingleChildScrollView(...))` + 고정 버튼 `Row`로 분리. 급하지 않음(현재 모든 실제 기능은 정상 동작).
+
+---
+
 [TechDebt] `comp02` 소프트삭제로 `tapCompositionById` 기반 통합테스트 4개가 깨져 있음 — Task 7 스코프 밖, 별도 정리 필요 (P1)
 
 상태: 미해결 (실측 확인됨, 아직 미착수)
