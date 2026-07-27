@@ -100,9 +100,11 @@ void main() {
   // ── 코디 메인(/composition) ────────────────────────────────────────────────
 
   testWidgets(
-    '옷장에서 카테고리 드롭다운으로 코디로 이동하면 AppMainScaffold 크롬(카테고리 토글, '
-    '분류 기준 캡슐, mock 코디 2개)이 정상 렌더링되고, 스택 최상단(canPop==false)이라 '
-    '뒤로가기 버튼은 나타나지 않는다',
+    '[갱신, Task 7 재검증] 옷장에서 카테고리 드롭다운으로 코디로 이동하면 AppMainScaffold '
+    '크롬(카테고리 토글, 분류 기준 캡슐, mock 코디 2개)이 정상 렌더링되고, 스택 최상단'
+    '(canPop==false)이라 뒤로가기 버튼은 나타나지 않는다("포멀 코디"였던 comp02가 이후 '
+    '소프트삭제되어 comp03("레인 코디")이 총 개수를 그대로 유지하며 그 자리를 이어받음 — '
+    '`lib/mock/mock_data.dart` 확인)',
     (tester) async {
       await pumpApp(tester);
 
@@ -115,7 +117,7 @@ void main() {
       expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
       expect(find.byType(ClassificationDrilldownCapsule), findsOneWidget);
       expect(find.text('데일리 룩'), findsOneWidget);
-      expect(find.text('포멀 코디'), findsOneWidget);
+      expect(find.text('레인 코디'), findsOneWidget);
     },
   );
 
@@ -136,9 +138,10 @@ void main() {
   );
 
   testWidgets(
-    '코디 메인 분류 기준 캡슐에서 중분류를 "계절"로 바꾼 뒤 소분류로 여름/겨울을 드릴인하면 '
-    'mock 코디 중 계절이 매칭되는 게 없어 그리드가 0개로 줄고(크래시 없음), 봄가을 드릴인 시 '
-    '1개(comp01만 봄가을, comp02는 계절 nullable화 이후 미분류)로, 다시 중분류를 "전체보기"로 '
+    '[갱신, Task 7 재검증] 코디 메인 분류 기준 캡슐에서 중분류를 "계절"로 바꾼 뒤 소분류로 '
+    '여름/겨울을 드릴인하면 mock 코디 중 계절이 매칭되는 게 없어 그리드가 0개로 줄고(크래시 '
+    '없음), 봄가을 드릴인 시 1개(comp01만 봄가을, comp02는 소프트삭제되어 이미 목록에서 제외되고 '
+    '그 자리를 이어받은 comp03은 계절이 nullable화 이후 미분류)로, 다시 중분류를 "전체보기"로 '
     '되돌리면 2개로 돌아온다',
     (tester) async {
       await pumpApp(tester);
@@ -249,8 +252,9 @@ void main() {
       expect(container.read(compositionSortCriterionProvider), CompositionSortCriterion.season);
       expect(container.read(compositionDrilledSeasonProvider)?.value, Season.springFall);
       expect(crossAxisCount(tester), 1);
-      // comp02는 계절 nullable화(2026-07-19) 이후 season이 null(미분류)이라 봄가을 필터에
-      // 더 이상 매칭되지 않는다 — comp01만 남아 1개.
+      // [갱신, Task 7 재검증] comp02는 이후 소프트삭제되어 목록에서 아예 제외되고, 총
+      // 개수를 유지하며 그 자리를 이어받은 comp03은 계절 nullable화(2026-07-19) 이후
+      // season이 null(미분류)이라 봄가을 필터에 매칭되지 않는다 — comp01만 남아 1개.
       expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
     },
   );

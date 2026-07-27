@@ -249,7 +249,10 @@ void main() {
 
   group('TrashMainScreen', () {
     testWidgets(
-      'mock 4개 항목이 크래시 없이 썸네일 그리드로 렌더링되고("N일" 오버레이 포함), 카테고리 '
+      '[갱신, Task 7 재검증] mock 3개 항목(c07/c08/comp02 — comp02는 소프트삭제된 코디, '
+      '나머지 둘은 소프트삭제된 옷)이 크래시 없이 썸네일 그리드로 렌더링되고("N일" 오버레이 '
+      '포함: c07=12일(3일 전 삭제), c08=0일(20일 전 삭제 → 15일 보존기간 초과분은 '
+      '`_daysUntilPurge`가 0으로 clamp), comp02=10일(5일 전 삭제)), 카테고리 '
       '토글은 렌더링되지 않으며(Main-플랫+필터형, showCategoryToggle:false, current 더미값이 실제로 '
       '영향 없음), 뒤로가기 버튼은 나타나며 탭하면 실제 pop되어 옷장 메인으로 돌아간다',
       (tester) async {
@@ -258,11 +261,10 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.byType(TrashMainScreen), findsOneWidget);
         expect(find.byType(CategoryToggleDropdown), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
         expect(find.text('12일'), findsOneWidget);
-        expect(find.text('5일'), findsOneWidget);
-        expect(find.text('27일'), findsOneWidget);
-        expect(find.text('1일'), findsOneWidget);
+        expect(find.text('10일'), findsOneWidget);
+        expect(find.text('0일'), findsOneWidget);
 
         expect(backButtonFinder(), findsOneWidget);
         await tester.tap(backButtonFinder());
@@ -286,7 +288,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
 
         await tester.tap(find.text('비우기'));
         await tester.pumpAndSettle();
@@ -295,8 +297,8 @@ void main() {
     );
 
     testWidgets(
-      '"비우기" 탭 시 강한 확인 다이얼로그가 뜨고, 확인을 눌러도 실제 삭제 없이 그리드 4개 '
-      '항목이 그대로 남는다(no-op)',
+      '[갱신, Task 7 재검증] "비우기" 탭 시 강한 확인 다이얼로그가 뜨고, 확인을 눌러도 실제 '
+      '삭제 없이 그리드 3개 항목이 그대로 남는다(no-op)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
@@ -310,7 +312,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
       },
     );
 
@@ -323,7 +325,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+      expect(find.byType(TrashGalleryTile), findsNWidgets(3));
     });
 
     testWidgets(
@@ -350,12 +352,13 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
 
-        // 바텀시트를 닫고(모달 라우트 pop) 그리드가 4개 그대로인지, 어떤 상세 화면으로도
-        // 전환되지 않았는지 확인한다.
+        // 바텀시트를 닫고(모달 라우트 pop) 그리드가 3개 그대로인지, 어떤 상세 화면으로도
+        // 전환되지 않았는지 확인한다. [갱신, Task 7 재검증] mock 삭제 항목이 실제로는
+        // c07/c08/comp02 3개뿐임.
         Navigator.of(tester.element(find.text('복원'))).pop();
         await tester.pumpAndSettle();
 
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
         expect(find.byType(ClosetItemDetailScreen), findsNothing);
         expect(find.byType(CompositionDetailScreen), findsNothing);
         expect(find.byType(StyleLogViewerScreen), findsNothing);

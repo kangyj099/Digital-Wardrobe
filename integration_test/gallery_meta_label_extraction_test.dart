@@ -119,8 +119,11 @@ void main() {
   );
 
   testWidgets(
-    '실제 앱(/trash, mock t3=27일)에서 좁은 실제 모바일 폭(360px)에서도 TrashGalleryTile 4개가 '
-    '오버플로 렌더 에러 없이 렌더링되고 라벨이 각 타일 경계 안에 들어맞는다',
+    '[갱신, Task 7 재검증] 실제 앱(/trash)에서 좁은 실제 모바일 폭(360px)에서도 TrashGalleryTile '
+    '3개가(mock 삭제 항목이 실제로는 c07/c08/comp02 3개뿐임) 오버플로 렌더 에러 없이 렌더링되고 '
+    '라벨이 각 타일 경계 안에 들어맞는다. 옛 "mock t3=27일" 전제는 이제 존재하지 않는 mock — '
+    '`daysUntilPurge`가 보존 기간 15일로 clamp되어(`lib/providers/trash_providers.dart`) 어떤 '
+    '항목도 15일을 넘는 라벨을 표시할 수 없고, c07(3일 전 삭제 → 12일)이 그 자리를 이어받는다.',
     (tester) async {
       tester.view.physicalSize = const Size(360, 1400);
       tester.view.devicePixelRatio = 1.0;
@@ -140,8 +143,9 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(TrashMainScreen), findsOneWidget);
-      expect(find.byType(TrashGalleryTile), findsNWidgets(4));
-      expect(find.text('27일'), findsOneWidget);
+      expect(find.byType(TrashGalleryTile), findsNWidgets(3));
+      // c07은 3일 전 소프트삭제됨(`mock_data.dart`) → daysUntilPurge = 15 - 3 = 12.
+      expect(find.text('12일'), findsOneWidget);
 
       for (final tileFinder in tester.widgetList(find.byType(TrashGalleryTile))) {
         final key = (tileFinder as TrashGalleryTile).key;
