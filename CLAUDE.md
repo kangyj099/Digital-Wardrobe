@@ -34,7 +34,7 @@ Flutter 프로젝트 (`digittal_wardrobe`).
 
 **작업 태깅 (§12)**: task를 만들 때 Layer(UI/Screen, Logic/Feature, Data/Architecture) × Stage(Decision/Implementation)를 태그하고, 그 조합에 따라 워커/리뷰에게 필요한 자료만 넘긴다 — 전체 reference를 통째로 넘기지 않는다. 매핑은 `Workflow_Project.md` §12.1 표를 따른다.
 
-**워커 인스턴스 수명**: 연속된 스텝이 같은 전문성(예: 디자인 스텝들끼리)이면 `SendMessage`로 같은 워커를 이어 쓰고, 전문성이 바뀌면(예: 디자인→구현) 새로 스폰한다. 매번 PM이 판단한다.
+**에이전트 인스턴스 수명**: 연속된 스텝이 같은 전문성(예: 디자인 스텝들끼리)이면 `SendMessage`로 같은 에이전트를 이어 쓴다. 전문성이 바뀌거나, 캐시가 만료됐을 것으로 보이거나, 현재 Task와 무관한 이력이 많이 누적되어 필요한 정보보다 불필요한 컨텍스트가 더 커진 경우 새로 스폰한다. 매번 PM이 판단한다.
 
 **스코프 확장**: Review가 부여받은 자료 밖의 것이 필요하면 스스로 접근하지 않고 PM(이 세션)에게 요청한다. PM은 Impact Scope를 재평가해 필요한 최소한만 추가로 허용한다.
 
