@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
+import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
+import '../widgets/undoable_action_toast.dart';
 
 /// Step⑥(나머지 화면 적용) 산출물 — 공용 셸([AppMainScaffold])에 연결됨.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준
@@ -14,12 +17,17 @@ import '../widgets/app_scroll_container.dart';
 /// 스타일일지 어디에도 속하지 않아 원래 무관하지만, `showCategoryToggle: false`라
 /// 실제로 렌더링되지 않으므로 임의로 [AppCategory.closet]을 고정값으로 채운다.
 ///
-/// 본문은 `00_페이지 타입 정의.md`의 Utility형 규칙(리스트-로우 패턴)을 따른다. 현재 이
-/// 화면엔 파괴적 액션 로우가 없다. 실제 설정 값 저장/영속화(Provider/DB
-/// 연동)는 Step⑦(기능 구현) 몫이라 알림/다크모드 `Switch`는 이 화면 로컬 `bool` state로만
-/// 토글된다(`closet_main_screen.dart`의 밀도 버튼·FAB 확장처럼, 탭하면 화면에 바로
-/// 반영되는 수준 — Tester가 "값이 항상 false로 고정돼 탭해도 반응 없음"을 지적해
+/// 본문은 `00_페이지 타입 정의.md`의 Utility형 규칙(리스트-로우 패턴)을 따른다. 실제 설정 값
+/// 저장/영속화(Provider/DB 연동)는 Step⑦(기능 구현) 몫이라 알림/다크모드 `Switch`는 이 화면
+/// 로컬 `bool` state로만 토글된다(`closet_main_screen.dart`의 밀도 버튼·FAB 확장처럼, 탭하면
+/// 화면에 바로 반영되는 수준 — Tester가 "값이 항상 false로 고정돼 탭해도 반응 없음"을 지적해
 /// `StatelessWidget`에서 이 상태를 갖는 `StatefulWidget`으로 승격).
+///
+/// 최종 로우 구성(4개: 알림 토글/다크모드 토글/휴지통 진입/로그아웃)은
+/// `04_설정.md`(2026-07-27 확정)를 따른다 — "프로필 편집"은 이 앱에 프로필 엔티티 자체가
+/// 없어 채택하지 않는다. 로그아웃 로우는 파괴적 스타일(Error 색상)이지만 confirm 모달(C11)
+/// 대신 즉시 실행 + Toast+Undo(C7, `UndoableActionToast`)를 쓴다(같은 문서 §3 근거) — 재로그인
+/// 으로 완전히 되돌릴 수 있는 가역 액션이라 I6의 confirm 대상(비가역 액션)에 해당하지 않는다.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -59,16 +67,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onChanged: (value) => setState(() => _darkModeEnabled = value),
               ),
             ),
+            _SettingsRow(
+              title: '휴지통',
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(AppRoute.trashMain),
+            ),
             const SizedBox(height: AppSpacing.md),
             const _SettingsSectionLabel('계정'),
             _SettingsRow(
-              title: '프로필 편집',
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {}, // Step⑦에서 실제 진입 연결
+              title: '로그아웃',
+              leadingIcon: Icons.logout,
+              color: Theme.of(context).colorScheme.error,
+              onTap: () => _handleLogout(context),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// 로그아웃 로우 탭 핸들러 — `04_설정.md` §3(C11 미사용, C7 Toast+Undo 채택) 동작 정의를
+  /// 그대로 구현한다. mock 단계(§5, 실제 로그인/세션 시스템 없음)라 [onUndo]/[onExpire] 모두
+  /// 지금 취할 실제 상태 변경이 없다 — 로그아웃용 세션 상태는 이 화면 전용의 독립 스토어여야
+  /// 한다는 결정(§3)에 따라, 실제 세션 시스템이 생기면 이 자리에 그 화면 전용 상태를 채운다
+  /// (C7의 기존 삭제-항목 상태 스토어와는 절대 공유하지 않는다).
+  void _handleLogout(BuildContext context) {
+    UndoableActionToast.show(
+      context,
+      message: '로그아웃되었습니다',
+      actionLabel: '실행취소',
+      onUndo: () {},
+      onExpire: () {},
     );
   }
 }
@@ -87,16 +116,29 @@ class _SettingsSectionLabel extends StatelessWidget {
   }
 }
 
-/// 설정 리스트-로우 1개 — 제목 + trailing(토글/체브론).
+/// 설정 리스트-로우 1개 — 제목 + 선택적 leading 아이콘 + 선택적 trailing(토글/체브론).
+///
+/// [color]를 지정하면 leading 아이콘과 제목 텍스트 모두에 적용된다 — 로그아웃 로우처럼
+/// destructive 스타일을 색상 단독이 아니라 아이콘+텍스트 병기로 표현할 때 쓴다(A2).
 class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({required this.title, required this.trailing, this.onTap});
+  const _SettingsRow({
+    required this.title,
+    this.leadingIcon,
+    this.trailing,
+    this.color,
+    this.onTap,
+  });
 
   final String title;
-  final Widget trailing;
+  final IconData? leadingIcon;
+  final Widget? trailing;
+  final Color? color;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final titleStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(color: color);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -107,8 +149,12 @@ class _SettingsRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             child: Row(
               children: [
-                Expanded(child: Text(title, style: Theme.of(context).textTheme.bodyLarge)),
-                trailing,
+                if (leadingIcon != null) ...[
+                  Icon(leadingIcon, color: color),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
+                Expanded(child: Text(title, style: titleStyle)),
+                ?trailing,
               ],
             ),
           ),

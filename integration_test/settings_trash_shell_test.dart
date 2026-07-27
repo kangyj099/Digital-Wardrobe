@@ -160,27 +160,62 @@ void main() {
     );
 
     testWidgets(
-      '"전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되었다 — 텍스트/다이얼로그 '
-      '모두 존재하지 않고, 나머지 화면은 크래시 없이 정상 렌더링된다(회귀 확인)',
+      '[갱신, 2026-07-27] "전체 데이터 삭제"/"프로필 편집" 로우는 모두 최종 확정 스펙'
+      '(`04_설정.md`)에 없어 제거되었다 — 텍스트/다이얼로그 모두 존재하지 않고, 나머지 화면은 '
+      '크래시 없이 정상 렌더링된다(회귀 확인)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.settingsMain);
 
         expect(tester.takeException(), isNull);
         expect(find.text('전체 데이터 삭제'), findsNothing);
+        expect(find.text('프로필 편집'), findsNothing);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('알림'), findsOneWidget);
         expect(find.text('다크 모드'), findsOneWidget);
-        expect(find.text('프로필 편집'), findsOneWidget);
+        expect(find.text('휴지통'), findsOneWidget);
+        expect(find.text('로그아웃'), findsOneWidget);
       },
     );
 
-    testWidgets('"프로필 편집" 로우를 탭해도 크래시 없이 같은 화면에 남아있다(진입 로직 no-op, Step⑦ 몫)', (tester) async {
+    testWidgets('"휴지통" 로우를 탭하면 실제로 TrashMainScreen(`/trash`)으로 진입한다', (tester) async {
       await pumpAppAndPush(tester, AppRoute.settingsMain);
 
-      await tester.tap(find.text('프로필 편집'));
+      await tester.tap(find.text('휴지통'));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+      expect(find.byType(TrashMainScreen), findsOneWidget);
+    });
+
+    testWidgets(
+      '"로그아웃" 로우를 탭하면 크래시 없이 실행취소 액션이 있는 Toast(SnackBar)가 뜨고, '
+      '같은 화면(SettingsScreen)에 남아있다(별도 화면 전환 없음, `04_설정.md` §3)',
+      (tester) async {
+        await pumpAppAndPush(tester, AppRoute.settingsMain);
+
+        await tester.tap(find.text('로그아웃'));
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(SettingsScreen), findsOneWidget);
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(find.text('로그아웃되었습니다'), findsOneWidget);
+        expect(find.text('실행취소'), findsOneWidget);
+      },
+    );
+
+    testWidgets('로그아웃 Toast의 "실행취소"를 탭하면 크래시 없이 Toast가 닫힌다', (tester) async {
+      await pumpAppAndPush(tester, AppRoute.settingsMain);
+
+      await tester.tap(find.text('로그아웃'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.tap(find.text('실행취소'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SnackBar), findsNothing);
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
 

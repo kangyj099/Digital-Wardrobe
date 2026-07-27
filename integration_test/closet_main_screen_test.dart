@@ -859,11 +859,12 @@ void main() {
   // ── 아래부터 SettingsScreen(Task F) 검증 ────────────────────────────────────
 
   testWidgets(
-    '[갱신됨, 2026-07-15] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
-    '실제로 렌더링되고, 리스트-로우(알림/다크모드/프로필 편집)가 모두 화면에 나타난다 (정상 UI '
+    '[갱신됨, 2026-07-27] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
+    '실제로 렌더링되고, 리스트-로우(알림/다크모드/휴지통/로그아웃)가 모두 화면에 나타난다 (정상 UI '
     '플로우로는 아직 도달 불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 플랜에 명시된 '
-    '의도된 상태. "전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되어 이 목록에서도 '
-    '함께 빠졌다 — 부재 자체는 `settings_trash_shell_test.dart`의 전용 회귀 테스트가 검증한다)',
+    '의도된 상태. "프로필 편집"은 최종 확정 스펙(`04_설정.md`, 2026-07-27)에 없어 제거되어 이 '
+    '목록에서도 함께 빠졌다 — 부재 자체는 `settings_trash_shell_test.dart`의 전용 회귀 테스트가 '
+    '검증한다)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -875,7 +876,8 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('알림'), findsOneWidget);
       expect(find.text('다크 모드'), findsOneWidget);
-      expect(find.text('프로필 편집'), findsOneWidget);
+      expect(find.text('휴지통'), findsOneWidget);
+      expect(find.text('로그아웃'), findsOneWidget);
     },
   );
 }
