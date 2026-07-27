@@ -1,5 +1,15 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `InteractiveArtboard` Round 2 Audit(2026-07-19) 발견 P2/P3 2건 — 배경색 버튼 비주얼 스타일 불일치, 핸들-버튼 코너 충돌 가능성
+
+상태: 미해결 (낮은 우선순위로 기록만, `composition_editor_screen.dart` 연결 시점에 재검토)
+
+내용:
+1. (P2) `_backgroundColorButton()`/`_backgroundSwatch()`(`interactive_artboard.dart`)가 이 프로젝트의 기존 "플로팅 컨트롤" 관례(`GlassPill`/`GlassCircleButton` — 프로스티드글래스 블러+흰 테두리+그림자+`kMinInteractiveDimension`(48px))를 안 따르고, 단색 `Container`+`colorScheme.outline` 테두리+44px(핸들과 동일 상수)로 따로 구현됨. 위 항목("터치타겟 상수 이원화")과 같은 종류의 드리프트가 한 번 더 늘어난 것 — 화면에 실제로 안 붙어있는 지금은 안 급하지만, 연결 시점에 `GlassCircleButton` 스타일로 재스킨 검토.
+2. (P3, 미확인) 배경색 버튼이 캔버스 우하단 고정 위치(margin 16+지름 44)를 차지하는데, 그 근처에 선택된 아이템을 확대해서 두면 크기조절 핸들과 같은 화면 영역에서 충돌해 핸들이 안 눌릴 가능성이 있음(아직 테스트로 확인 안 됨, Stack에서 배경버튼이 핸들보다 나중 자식이라 이길 것으로 추정). 다음에 이 영역 만질 때 우하단 코너에 아이템을 확대 배치하는 통합테스트로 확인 검토.
+
+---
+
 [TechDebt] `InteractiveArtboard` 관련 Audit(2026-07-19) 발견 P3 2건 — 터치타겟 상수 이원화, zIndex 동률 정렬 불안정성
 
 상태: 미해결 (낮은 우선순위로 기록만)
