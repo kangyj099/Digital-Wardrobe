@@ -8,7 +8,8 @@
 //
 // 선택 상태는 완전 controlled 계약(스펙 §5) — 위젯이 `selectedItemId`를 내부에
 // 소유하지 않으므로, 실제 화면이 나중에 맡을 "부모" 역할을 이 파일의
-// `_ArtboardTestHost`가 대신한다.
+// `_ArtboardTestHost`가 대신한다. 배경색(`backgroundColor`/§11)도 동일한 controlled
+// 패턴이라 호스트가 함께 진실 소스를 대신 보관한다.
 //
 // 제스처 관련 참고(실측으로 확인한 Flutter 프레임워크 동작): `GestureDetector`의
 // Pan 인식기는 이동 임계값(터치 슬롭)을 넘는 순간 드래그로 확정되는데, 그 임계값을
@@ -24,6 +25,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'package:digittal_wardrobe/widgets/interactive_artboard/artboard_background_color.dart';
 import 'package:digittal_wardrobe/widgets/interactive_artboard/artboard_item.dart';
 import 'package:digittal_wardrobe/widgets/interactive_artboard/artboard_overlap_popup.dart';
 import 'package:digittal_wardrobe/widgets/interactive_artboard/interactive_artboard.dart';
@@ -37,6 +39,17 @@ void main() {
   // Pan 인식기의 이동 임계값을 안전하게 넘기기 위한 "아밍" 이동량(위 파일 상단 설명 참고).
   // 축 하나로도 임계값을 넉넉히 넘도록 두 축 모두에 적용.
   const armOffset = Offset(50, 50);
+
+  // 배경색 버튼/스와치의 화면 좌표(캔버스 400x400, 캔버스가 화면 좌상단에 정렬된
+  // 기본 배치 기준) — `interactive_artboard.dart`의 실제 상수
+  // (`_backgroundColorButtonMargin=16`, `_backgroundColorButtonDiameter=44`,
+  // `_backgroundSwatchSpacing=8`)로부터 역산한 값. 위젯이 렌더하는 정확한 위치라
+  // 임의값이 아니다 — 라이브러리 코드 값이 바뀌면 이 상수도 함께 갱신해야 한다.
+  const backgroundButtonCenter = Offset(362, 362); // 400-16-22
+  const backgroundSwatchWhiteCenter = Offset(362, 154);
+  const backgroundSwatchLightGrayCenter = Offset(362, 206);
+  const backgroundSwatchDarkGrayCenter = Offset(362, 258);
+  const backgroundSwatchBlackCenter = Offset(362, 310);
 
   ArtboardItem makeItem(
     String id, {
@@ -58,6 +71,12 @@ void main() {
   }
 
   Finder visualOf(String id) => find.byKey(ValueKey('$id:visual'));
+
+  // 팝업 행(`ArtboardOverlapPopup._row`)의 `ListTile.title`은 Row(썸네일+라벨)라 곧바로
+  // Text로 캐스트할 수 없다(스펙 §4.5 3-히트영역 리디자인으로 leading이 선택 아이콘이
+  // 되면서 썸네일이 title 쪽으로 옮겨졌다) — 라벨 Text만 뽑아내는 헬퍼.
+  String rowLabel(ListTile tile) =>
+      (((tile.title! as Row).children.last as Flexible).child as Text).data!;
 
   Finder handleByLabel(String label) => find.byWidgetPredicate(
         (w) => w is Semantics && w.properties.label == label,
@@ -84,9 +103,14 @@ void main() {
     required List<ArtboardItem> items,
     String? initialSelectedId,
     bool mirrorSelectionChanges = true,
+    ArtboardBackgroundColor initialBackgroundColor = ArtboardBackgroundColor.white,
+    bool mirrorBackgroundColorChanges = true,
+    Alignment canvasAlignment = Alignment.topLeft,
+    Size? canvasSizeOverride,
     List<List<ArtboardItem>>? commitLog,
     List<String>? deletionLog,
     List<String?>? selectionRequestLog,
+    List<ArtboardBackgroundColor>? backgroundColorRequestLog,
   }) async {
     tester.view.physicalSize = const Size(1200, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -98,20 +122,25 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: Align(
-            alignment: Alignment.topLeft,
+            alignment: canvasAlignment,
             child: SizedBox(
-              width: canvasSize.width,
-              height: canvasSize.height,
+              width: (canvasSizeOverride ?? canvasSize).width,
+              height: (canvasSizeOverride ?? canvasSize).height,
               child: _ArtboardTestHost(
                 key: hostKey,
                 initialItems: items,
                 initialSelectedId: initialSelectedId,
                 mirrorSelectionChanges: mirrorSelectionChanges,
+                initialBackgroundColor: initialBackgroundColor,
+                mirrorBackgroundColorChanges: mirrorBackgroundColorChanges,
                 baseItemSizeFraction: baseItemSizeFraction,
                 onCommit: commitLog == null ? null : commitLog.add,
                 onDelete: deletionLog == null ? null : deletionLog.add,
                 onSelectionRequest:
                     selectionRequestLog == null ? null : selectionRequestLog.add,
+                onBackgroundColorRequest: backgroundColorRequestLog == null
+                    ? null
+                    : backgroundColorRequestLog.add,
               ),
             ),
           ),
@@ -323,7 +352,7 @@ void main() {
     final rows = find.byType(ListTile);
     expect(rows, findsNWidgets(2));
     final topRow = tester.widget<ListTile>(rows.first);
-    expect((topRow.title as Text).data, 'blazer', reason: 'zIndex가 큰 쪽이 먼저 나열돼야 함');
+    expect(rowLabel(topRow), 'blazer', reason: 'zIndex가 큰 쪽이 먼저 나열돼야 함');
 
     final dragHandles = find.byIcon(Icons.drag_handle);
     expect(dragHandles, findsNWidgets(2));
@@ -553,11 +582,371 @@ void main() {
     expect(key.currentState!.selected, isNull, reason: '부모가 반영하지 않았으니 selectedId는 그대로여야 함');
     assertNoSelectionBox();
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Round 2: 팝업 리디자인(Overlay 카드) + 배경색 스와치(§4.5/§11, 2026-07-19)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ── 15. 재배열 버그 회귀: 같은 팝업 세션에서 연속 재배열이 매번 반영된다 ────────
+  //        (§4.5.1 — showModalBottomSheet의 드래그-닫기 제스처와 재배열 드래그의
+  //        경합이 간헐적 실패의 원인으로 추정됐고, Overlay 전환으로 해소됐다는
+  //        진단을 검증한다. 여러 차례 연속 실행해 매번 정상 반영되는지 확인.)
+  testWidgets('겹침 팝업에서 재배열을 4회 연속 실행해도 매번 정상 반영된다(재배열 간헐적 실패 회귀 검증)',
+      (tester) async {
+    final commitLog = <List<ArtboardItem>>[];
+    final key = await pumpArtboard(
+      tester,
+      items: [
+        makeItem('a', x: 0.5, y: 0.5, zIndex: 5),
+        makeItem('b', x: 0.5, y: 0.5, zIndex: 3),
+        makeItem('c', x: 0.5, y: 0.5, zIndex: 1),
+      ],
+      commitLog: commitLog,
+    );
+
+    await tester.tapAt(tester.getCenter(visualOf('a')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget);
+
+    List<String> currentRowOrder() =>
+        tester.widgetList<ListTile>(find.byType(ListTile)).map(rowLabel).toList();
+
+    Future<void> reorderDragHandleTo(int fromIndex, String targetLabel) async {
+      final dragHandles = find.byIcon(Icons.drag_handle);
+      final targetCenter = tester.getCenter(find.text(targetLabel));
+      final gesture = await tester.startGesture(tester.getCenter(dragHandles.at(fromIndex)));
+      await tester.pump(const Duration(milliseconds: 100));
+      await gesture.moveTo(targetCenter);
+      await tester.pump(const Duration(milliseconds: 100));
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    expect(currentRowOrder(), ['a', 'b', 'c']);
+
+    // 1회차: c(index2)를 a 위치로 끌어올림 → [c, a, b]
+    await reorderDragHandleTo(2, 'a');
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget, reason: '1회차 재배열 후에도 팝업 유지');
+    expect(currentRowOrder(), ['c', 'a', 'b'], reason: '1회차 재배열 반영 실패');
+    expect(commitLog.length, 1);
+
+    // 2회차: b(index2)를 c 위치로 끌어올림 → [b, c, a]
+    await reorderDragHandleTo(2, 'c');
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget, reason: '2회차 재배열 후에도 팝업 유지');
+    expect(currentRowOrder(), ['b', 'c', 'a'], reason: '2회차 재배열 반영 실패');
+    expect(commitLog.length, 2);
+
+    // 3회차: a(index2)를 c 위치(index1)로 끌어당김 → [b, a, c]
+    await reorderDragHandleTo(2, 'c');
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget, reason: '3회차 재배열 후에도 팝업 유지');
+    expect(currentRowOrder(), ['b', 'a', 'c'], reason: '3회차 재배열 반영 실패');
+    expect(commitLog.length, 3);
+
+    // 4회차: c(index2)를 b 위치(index0)로 끌어올림 → [c, b, a]
+    await reorderDragHandleTo(2, 'b');
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget, reason: '4회차 재배열 후에도 팝업 유지');
+    expect(currentRowOrder(), ['c', 'b', 'a'], reason: '4회차 재배열 반영 실패');
+    expect(commitLog.length, 4);
+
+    // 원래 zIndex 값 집합 {5,3,1}이 최종 순서([c,b,a])에 내림차순으로 재배정됐는지 확인.
+    expect(itemById(key, 'c').zIndex, 5);
+    expect(itemById(key, 'b').zIndex, 3);
+    expect(itemById(key, 'a').zIndex, 1);
+  });
+
+  // ── 16. 팝업이 탭 좌표 근처에 앵커되고, 화면 전체폭 바텀시트가 아니다 ──────────
+  testWidgets('겹침 팝업은 탭 좌표 근처에 고정폭 카드로 뜬다(화면 전체폭 바텀시트가 아님)',
+      (tester) async {
+    await pumpArtboard(
+      tester,
+      items: [
+        makeItem('coat', x: 0.5, y: 0.3, zIndex: 2),
+        makeItem('jacket', x: 0.5, y: 0.3, zIndex: 1),
+      ],
+    );
+
+    final tapPoint = tester.getCenter(visualOf('coat')); // 화면 중앙 근처, 어느 경계에도 안 가까움
+    await tester.tapAt(tapPoint);
+    await tester.pumpAndSettle();
+
+    final popupFinder = find.byType(ArtboardOverlapPopup);
+    expect(popupFinder, findsOneWidget);
+
+    final popupSize = tester.getSize(popupFinder);
+    expect(popupSize.width, lessThan(400), reason: '고정폭 카드여야 함(화면 전체폭 1200이 아님)');
+
+    final popupTopLeft = tester.getTopLeft(popupFinder);
+    // 클램핑이 필요 없는 위치이므로 카드 좌상단이 탭 좌표와 거의 일치해야 한다.
+    expect(popupTopLeft.dx, closeTo(tapPoint.dx, 1.0));
+    expect(popupTopLeft.dy, closeTo(tapPoint.dy, 1.0));
+  });
+
+  // ── 17. 화면 우측 가장자리 근처에서 열어도 카드가 오른쪽 경계 밖으로 나가지 않는다 ──
+  //        (수평 클램프는 카드 폭(240)을 명시적으로 빼고 계산한다 — 실제로 clamp가
+  //        걸리는 조건에서 카드가 화면 안에 머무는지 확인한다.)
+  testWidgets('화면 우측 가장자리 근처에서 겹침 팝업을 열면 카드가 오른쪽 경계 밖으로 나가지 않는다',
+      (tester) async {
+    const bigCanvas = Size(1100, 1500); // 화면(1200x1600) 대부분을 채워, 캔버스 내부
+    // 좌표만으로도 실제 화면 가장자리에 가까운 탭을 만들 수 있게 한다.
+    // 배경색 버튼은 캔버스 우하단 모서리(마진 16, 지름 44 → 캔버스 로컬
+    // x:[1040,1084] y:[1440,1484])에 항상 떠 있으므로, 그 자리와 안 겹치는
+    // 우측-가운데 지점을 택해 버튼이 탭을 가로채지 않게 한다.
+    await pumpArtboard(
+      tester,
+      items: [
+        makeItem('belt', x: 0.98, y: 0.5, zIndex: 2),
+        makeItem('bag', x: 0.98, y: 0.5, zIndex: 1),
+      ],
+      canvasSizeOverride: bigCanvas,
+    );
+
+    final tapPoint = tester.getCenter(visualOf('belt'));
+    await tester.tapAt(tapPoint);
+    await tester.pumpAndSettle();
+
+    final popupFinder = find.byType(ArtboardOverlapPopup);
+    expect(popupFinder, findsOneWidget);
+
+    const screenSize = Size(1200, 1600);
+    final topLeft = tester.getTopLeft(popupFinder);
+    final bottomRight = tester.getBottomRight(popupFinder);
+
+    expect(topLeft.dx, greaterThanOrEqualTo(0), reason: '카드 좌측이 화면 밖(음수)으로 나가면 안 됨');
+    expect(bottomRight.dx, lessThanOrEqualTo(screenSize.width),
+        reason: '카드 우측이 화면 오른쪽 경계를 넘어가면 안 됨(수평 클램프가 카드 폭을 빼고 계산)');
+    // 탭 좌표(화면 우측 근접) 그대로였다면 카드가 훨씬 오른쪽에 있었을 것 — 실제로
+    // 클램프가 작동해 카드 좌표가 탭 좌표보다 왼쪽으로 당겨졌는지도 확인한다.
+    expect(topLeft.dx, lessThan(tapPoint.dx), reason: '클램프가 실제로 걸려 카드가 왼쪽으로 당겨져야 함');
+  });
+
+  // ── 18. 화면 하단 가장자리 근처에서 열면 카드가 아래쪽 경계 밖으로 나가지 않는다 ──
+  //        (소스코드상 수직 클램프(`top`)는 화면 여백(margin)만 빼고 계산하며,
+  //        수평 클램프처럼 카드 자신의 세로 길이를 빼지 않는다 — 화면 하단에 아주
+  //        가까운 탭이면 카드가 화면 아래로 넘칠 수 있는지 실측으로 확인한다.)
+  testWidgets('화면 하단 가장자리 근처에서 겹침 팝업을 열면 카드가 아래쪽 경계 밖으로 나가지 않는다',
+      (tester) async {
+    const bigCanvas = Size(1100, 1500);
+    await pumpArtboard(
+      tester,
+      items: [
+        makeItem('cap', x: 0.1, y: 0.997, zIndex: 2), // 배경색 버튼(우하단)과 안 겹치는 좌측 하단
+        makeItem('scarf', x: 0.1, y: 0.997, zIndex: 1),
+      ],
+      canvasSizeOverride: bigCanvas,
+    );
+
+    final tapPoint = tester.getCenter(visualOf('cap'));
+    await tester.tapAt(tapPoint);
+    await tester.pumpAndSettle();
+
+    final popupFinder = find.byType(ArtboardOverlapPopup);
+    expect(popupFinder, findsOneWidget);
+
+    const screenSize = Size(1200, 1600);
+    final topLeft = tester.getTopLeft(popupFinder);
+    final bottomRight = tester.getBottomRight(popupFinder);
+    final cardHeight = bottomRight.dy - topLeft.dy;
+
+    expect(topLeft.dy, greaterThanOrEqualTo(0), reason: '카드 상단이 화면 밖(음수)으로 나가면 안 됨');
+    expect(
+      bottomRight.dy,
+      lessThanOrEqualTo(screenSize.height),
+      reason: '카드 하단이 화면 아래쪽 경계를 넘어가면 안 됨 — 탭 좌표=${tapPoint.dy}, 카드 top=${topLeft.dy}, '
+          '카드 높이=$cardHeight, 카드 bottom=${bottomRight.dy} (화면 높이 ${screenSize.height})',
+    );
+  });
+
+  // ── 19. 팝업 행의 선택 아이콘 탭 → 선택 + 팝업 닫힘(썸네일/라벨 탭과 동일 결과) ──
+  testWidgets('팝업 행의 선택 아이콘을 탭하면 그 아이템이 선택되고 팝업이 닫힌다', (tester) async {
+    final key = await pumpArtboard(
+      tester,
+      items: [
+        makeItem('scarf', x: 0.5, y: 0.5, zIndex: 2),
+        makeItem('gloves', x: 0.5, y: 0.5, zIndex: 1),
+      ],
+    );
+
+    await tester.tapAt(tester.getCenter(visualOf('scarf')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget);
+
+    // gloves(두 번째 행, index 1)의 선택 아이콘(미선택 상태라 outline)을 탭한다.
+    final selectionIcons = find.byIcon(Icons.check_circle_outline);
+    expect(selectionIcons, findsNWidgets(2));
+    await tester.tap(selectionIcons.at(1));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ArtboardOverlapPopup), findsNothing, reason: '선택 아이콘 탭도 팝업을 닫아야 함');
+    expect(key.currentState!.selected, 'gloves');
+    assertSelectionBoxVisible();
+  });
+
+  // ── 20. 선택된 아이템의 행만 배경 강조 + 채워진 체크 아이콘으로 표시된다 ────────
+  testWidgets('팝업에서 현재 selectedItemId와 일치하는 행만 배경이 강조되고 채워진 체크 아이콘을 보인다',
+      (tester) async {
+    await pumpArtboard(
+      tester,
+      items: [
+        makeItem('scarf', x: 0.5, y: 0.5, zIndex: 2),
+        makeItem('gloves', x: 0.5, y: 0.5, zIndex: 1),
+      ],
+      initialSelectedId: 'gloves',
+    );
+
+    await tester.tapAt(tester.getCenter(visualOf('scarf')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ArtboardOverlapPopup), findsOneWidget);
+
+    final colorScheme = Theme.of(tester.element(find.byType(ArtboardOverlapPopup))).colorScheme;
+
+    final scarfRow = tester.widget<Container>(find.byKey(const ValueKey('scarf')));
+    final glovesRow = tester.widget<Container>(find.byKey(const ValueKey('gloves')));
+    expect(scarfRow.color, isNull, reason: '선택 안 된 행은 강조 배경이 없어야 함');
+    expect(glovesRow.color, colorScheme.primaryContainer, reason: '선택된 행은 강조 배경이어야 함');
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('scarf')),
+        matching: find.byIcon(Icons.check_circle_outline),
+      ),
+      findsOneWidget,
+      reason: '선택 안 된 행은 outline 아이콘',
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('gloves')),
+        matching: find.byIcon(Icons.check_circle),
+      ),
+      findsOneWidget,
+      reason: '선택된 행은 채워진 체크 아이콘',
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('gloves')),
+        matching: find.byIcon(Icons.check_circle_outline),
+      ),
+      findsNothing,
+      reason: '선택된 행에 outline 아이콘이 남아있으면 안 됨',
+    );
+  });
+
+  // ── 21. 배경색 버튼 탭 → 스와치 4개를 각각 탭 → 매번 반영 + 닫힘 ─────────────
+  testWidgets(
+      '배경색 버튼을 탭해 스와치를 펼치고, 스와치 4개를 각각 탭하면 매번 onBackgroundColorChanged가 호출되며 캔버스 배경이 즉시 반영되고 스와치가 닫힌다',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    final selectionRequestLog = <String?>[];
+    await pumpArtboard(
+      tester,
+      items: [makeItem('shirt', x: 0.5, y: 0.5)],
+      backgroundColorRequestLog: backgroundColorRequestLog,
+      selectionRequestLog: selectionRequestLog,
+    );
+
+    expect(
+      tester.widget<ColoredBox>(find.byType(ColoredBox)).color,
+      ArtboardBackgroundColor.white.value,
+      reason: '초기 배경색은 기본값(white)이어야 함',
+    );
+
+    Future<void> pickSwatch(Offset swatchCenter, ArtboardBackgroundColor expected) async {
+      await tester.tapAt(backgroundButtonCenter); // 스와치 펼침
+      await tester.pumpAndSettle();
+      await tester.tapAt(swatchCenter);
+      await tester.pumpAndSettle();
+      expect(backgroundColorRequestLog.last, expected, reason: '$expected 스와치 탭이 반영되지 않음');
+      expect(
+        tester.widget<ColoredBox>(find.byType(ColoredBox)).color,
+        expected.value,
+        reason: '스와치 선택 즉시 캔버스 배경이 반영돼야 함($expected)',
+      );
+    }
+
+    await pickSwatch(backgroundSwatchLightGrayCenter, ArtboardBackgroundColor.lightGray);
+    await pickSwatch(backgroundSwatchDarkGrayCenter, ArtboardBackgroundColor.darkGray);
+    await pickSwatch(backgroundSwatchBlackCenter, ArtboardBackgroundColor.black);
+    await pickSwatch(backgroundSwatchWhiteCenter, ArtboardBackgroundColor.white);
+
+    expect(backgroundColorRequestLog, [
+      ArtboardBackgroundColor.lightGray,
+      ArtboardBackgroundColor.darkGray,
+      ArtboardBackgroundColor.black,
+      ArtboardBackgroundColor.white,
+    ]);
+
+    // 스와치가 매번 선택 직후 닫혔는지 확인: 마지막 선택 뒤 버튼을 다시 열지 않고
+    // 같은 좌표를 탭하면 일반 캔버스 탭으로 처리돼 선택 해제 요청만 와야 한다.
+    await tester.tapAt(backgroundSwatchWhiteCenter);
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.length, 4,
+        reason: '스와치가 닫혔으니 같은 좌표 재탭은 배경색 변경을 다시 일으키면 안 됨');
+    expect(selectionRequestLog, [null], reason: '스와치 닫힌 뒤엔 일반 캔버스 탭(선택 해제)으로 처리돼야 함');
+  });
+
+  // ── 22. 스와치가 펼쳐진 상태에서 바깥(캔버스) 탭 → 스와치만 닫히고 아무것도 안 바뀜 ──
+  testWidgets('스와치가 펼쳐진 상태에서 스와치 바깥 캔버스를 탭하면 스와치만 닫히고 배경색/선택 둘 다 바뀌지 않는다',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    final selectionRequestLog = <String?>[];
+    final key = await pumpArtboard(
+      tester,
+      items: [makeItem('shirt', x: 0.2, y: 0.2)], // 스와치/버튼 영역과 겹치지 않는 위치
+      initialSelectedId: 'shirt',
+      backgroundColorRequestLog: backgroundColorRequestLog,
+      selectionRequestLog: selectionRequestLog,
+    );
+    assertSelectionBoxVisible();
+
+    await tester.tapAt(backgroundButtonCenter);
+    await tester.pumpAndSettle();
+
+    // 스와치/버튼과 무관한 빈 캔버스 영역(shirt와도 겹치지 않는 좌표).
+    const outsideTapPoint = Offset(100, 350);
+    await tester.tapAt(outsideTapPoint);
+    await tester.pumpAndSettle();
+
+    expect(backgroundColorRequestLog, isEmpty, reason: '바깥 탭으로 배경색이 바뀌면 안 됨');
+    expect(selectionRequestLog, isEmpty,
+        reason: '스와치를 닫는 첫 바깥 탭은 onSelectionChanged조차 호출하지 않아야 함(스펙상 즉시 반환)');
+    expect(key.currentState!.selected, 'shirt', reason: '선택 상태가 유지돼야 함');
+    assertSelectionBoxVisible();
+    expect(
+      tester.widget<ColoredBox>(find.byType(ColoredBox)).color,
+      ArtboardBackgroundColor.white.value,
+      reason: '배경색은 그대로 white여야 함',
+    );
+
+    // 스와치가 실제로 닫혔는지 재확인: 같은 좌표를 다시 탭하면 이번엔 일반 캔버스 탭으로
+    // 처리돼 onSelectionChanged(null)이 호출돼야 한다.
+    await tester.tapAt(outsideTapPoint);
+    await tester.pumpAndSettle();
+    expect(selectionRequestLog, [null], reason: '스와치가 닫혔으니 두 번째 탭은 일반 캔버스 탭으로 처리돼야 함');
+  });
+
+  // ── 23. 회귀: 배경색 버튼을 탭해도 기존 아이템 선택 상태에 영향이 없다 ─────────
+  testWidgets('아이템이 선택된 상태에서 배경색 버튼을 탭해도 선택이 해제되지 않는다(레이어 우선순위 회귀 확인)',
+      (tester) async {
+    final selectionRequestLog = <String?>[];
+    final key = await pumpArtboard(
+      tester,
+      items: [makeItem('shirt', x: 0.2, y: 0.2)],
+      initialSelectedId: 'shirt',
+      selectionRequestLog: selectionRequestLog,
+    );
+    assertSelectionBoxVisible();
+
+    await tester.tapAt(backgroundButtonCenter);
+    await tester.pumpAndSettle();
+
+    expect(key.currentState!.selected, 'shirt', reason: '배경색 버튼 탭이 선택 해제를 유발하면 안 됨');
+    assertSelectionBoxVisible();
+    expect(selectionRequestLog, isEmpty, reason: '배경색 버튼 탭은 onSelectionChanged를 호출하면 안 됨');
+  });
 }
 
 // ── 테스트 전용 "부모" 호스트 ─────────────────────────────────────────────────
 //
-// `InteractiveArtboard`는 완전 controlled 위젯(스펙 §5)이라 items/선택 상태를
+// `InteractiveArtboard`는 완전 controlled 위젯(스펙 §5)이라 items/선택 상태/배경색을
 // 스스로 소유하지 않는다. 이 호스트가 실제 화면이 나중에 맡을 역할(진실 소스
 // 보관 + 콜백 반영)을 대신 수행해, 위젯이 controlled 계약을 실제로 지키는지
 // 확인할 수 있게 한다.
@@ -567,19 +956,25 @@ class _ArtboardTestHost extends StatefulWidget {
     required this.initialItems,
     this.initialSelectedId,
     this.mirrorSelectionChanges = true,
+    this.initialBackgroundColor = ArtboardBackgroundColor.white,
+    this.mirrorBackgroundColorChanges = true,
     this.baseItemSizeFraction = 0.28,
     this.onCommit,
     this.onDelete,
     this.onSelectionRequest,
+    this.onBackgroundColorRequest,
   });
 
   final List<ArtboardItem> initialItems;
   final String? initialSelectedId;
   final bool mirrorSelectionChanges;
+  final ArtboardBackgroundColor initialBackgroundColor;
+  final bool mirrorBackgroundColorChanges;
   final double baseItemSizeFraction;
   final void Function(List<ArtboardItem>)? onCommit;
   final void Function(String)? onDelete;
   final void Function(String?)? onSelectionRequest;
+  final void Function(ArtboardBackgroundColor)? onBackgroundColorRequest;
 
   @override
   State<_ArtboardTestHost> createState() => _ArtboardTestHostState();
@@ -588,6 +983,7 @@ class _ArtboardTestHost extends StatefulWidget {
 class _ArtboardTestHostState extends State<_ArtboardTestHost> {
   late List<ArtboardItem> currentItems = widget.initialItems;
   String? selected;
+  late ArtboardBackgroundColor backgroundColor = widget.initialBackgroundColor;
 
   @override
   void initState() {
@@ -607,6 +1003,7 @@ class _ArtboardTestHostState extends State<_ArtboardTestHost> {
       items: currentItems,
       selectedItemId: selected,
       baseItemSizeFraction: widget.baseItemSizeFraction,
+      backgroundColor: backgroundColor,
       onItemsChanged: (updated) {
         widget.onCommit?.call(updated);
         setState(() => currentItems = updated);
@@ -619,6 +1016,12 @@ class _ArtboardTestHostState extends State<_ArtboardTestHost> {
         widget.onSelectionRequest?.call(id);
         if (widget.mirrorSelectionChanges) {
           setState(() => selected = id);
+        }
+      },
+      onBackgroundColorChanged: (color) {
+        widget.onBackgroundColorRequest?.call(color);
+        if (widget.mirrorBackgroundColorChanges) {
+          setState(() => backgroundColor = color);
         }
       },
     );
