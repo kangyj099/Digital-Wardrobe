@@ -10,23 +10,13 @@
 
 **Tech Stack:** Flutter/Dart only (`GestureDetector`, `Transform`, `Overlay`, `ReorderableListView`) — no Riverpod, no external packages, matching `00_MVP.md` §6's "no suitable off-the-shelf package" rationale.
 
-## Current Status (2026-07-24, session ending — read this first)
+## Current Status (2026-07-27 — resolved)
 
-Round 1 (Tasks 1–8) and Round 2 (Tasks 9–11, plus the reorder-clamp/`ListTile.tileColor` fix round and the Semantics-label fix round) are all complete: Worker→Review passed for every task, Tester's `integration_test/interactive_artboard_test.dart` has 24 scenarios, and one full Feature Audit ran after Round 1 and after Round 2 (findings logged to `docs/history/TechnicalDebt.md`).
+Round 1 (Tasks 1–8) and Round 2 (Tasks 9–11, plus the reorder-clamp/`ListTile.tileColor` fix round and the Semantics-label fix round) are all complete: Worker→Review passed for every task, and one full Feature Audit ran after Round 1 and after Round 2 (findings logged to `docs/history/TechnicalDebt.md`).
 
-**One item is mid-fix and UNRESOLVED — do not assume it's done:**
+**Background-swatch small-canvas hit-test bug: resolved (2026-07-27).** The regression left open at the end of the previous session (see git history on this file for the prior write-up) is fixed: the swatch list is now wrapped in `LayoutBuilder` → `SingleChildScrollView` → `ConstrainedBox(minHeight: constraints.maxHeight)` → `Align(alignment: Alignment.bottomCenter)`. On canvases with vertical slack this reproduces the original "hugs the color button" anchor pixel-for-pixel (verified both by Review tracing Flutter's rendering source and by the unchanged scenario-21 hardcoded coordinates still passing); on canvases shorter than ~268px the list fills from the top and becomes scrollable so every swatch stays reachable. Scenario 24 was rewritten to assert the fixed scroll-to-reach behavior instead of confirming the bug. Worker→Review→Tester all passed; Tester added 5 more scenarios (threshold boundary, off-by-one, real fling gesture, scroll persistence across open/close, canvas resize while panel stays open). `integration_test/interactive_artboard_test.dart` now has **29 scenarios**, all green. Committed as `d921e83`. No Audit run (S/M-sized fix per `Workflow_Project.md` §5).
 
-Feature Audit flagged (P2, then Tester confirmed with a concrete repro) that the background-color swatch list becomes untappable on canvases shorter than ~268px (same hit-test-outside-`Positioned`-bounds mechanism as the Round 1 handle bug). A fix was drafted in this plan doc (`top: 0` + `SingleChildScrollView` on the swatch list's `Positioned`, in Task 10's Step 2) and a Worker applied it — **but the Worker found the fix as drafted causes a real regression**: it changes the swatch list's anchor from "hugging the color button" to "pinned to canvas top," which is correct for the small-canvas case but visually relocates the swatch list on normal-sized canvases, breaking scenario 21's hardcoded tap coordinates. The Worker correctly stopped without committing rather than deciding unilaterally.
-
-**Current on-disk state**: `lib/widgets/interactive_artboard/interactive_artboard.dart` has this fix applied **uncommitted** (`git status` shows it modified, not committed). `flutter analyze` is clean; `flutter test integration_test/interactive_artboard_test.dart -d windows` is **22/24 passing** (scenario 21 and scenario 24 fail — see Worker's handoff further down for exact repro/diagnosis).
-
-**Decision needed before this can close** (pick one, or something better):
-1. Keep `top:0`/`SingleChildScrollView` but wrap the swatch column in `Align(alignment: Alignment.bottomCenter, ...)` inside the scroll view so it still hugs the button when there's slack space, only becoming top-anchored/scrollable when the canvas is too short — then update scenario 24's assertions (currently written to assert the *buggy* pre-fix geometry) to check the fixed behavior instead of the bug.
-2. Some other approach entirely (e.g., an `Overlay`-based button/swatch like the delete-zone and popup already use, decoupling entirely from canvas-box size) — more invasive, not attempted yet.
-
-Either way, scenario 21's hardcoded tap coordinates and scenario 24's "confirms the bug" assertions both need updating to match whatever the final fix's actual geometry is — this doesn't need to be done by the same subagent, just needs doing before this bug can be marked resolved.
-
-The rest of this document (all Round 1/Round 2 task specs below) reflects completed, shipped work and does not need to be re-read to pick this back up — only this status section and the uncommitted diff in `interactive_artboard.dart` matter for resuming.
+The rest of this document (all Round 1/Round 2 task specs below) reflects completed, shipped work and does not need to be re-read to resume — the Composition Artboard widget feature is now fully complete with no known open issues.
 
 ---
 
