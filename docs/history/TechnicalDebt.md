@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `comp02` 소프트삭제로 `tapCompositionById` 기반 통합테스트 4개가 깨져 있음 — Task 7 스코프 밖, 별도 정리 필요 (P1)
+
+상태: 미해결 (실측 확인됨, 아직 미착수)
+
+내용:
+Group B Task 7 완료 직후 Audit(2026-07-28)이 `composition_style_log_main_screen_test.dart`의 "포멀 코디"(comp02) 스테일 assertion을 지적한 김에, 같은 패턴(`tapCompositionById(tester, 'comp02')` — 코디 메인 화면에 렌더링된 `CompositionGalleryTile`을 predicate로 찾아 탭)이 다른 파일에도 있는지 PM이 전체 grep으로 확인 → 4개 파일에서 comp02를 직접 탭하는 테스트가 실제로 존재함을 확인. `composition_detail_data_binding_test.dart`를 실제로 실행해 최소 1건 실패를 직접 재현·확인함(`Expected: exactly one matching candidate, Actual: Found 0 widgets` — "코디 comp02 타일을 코디 메인에서 찾을 수 없다"):
+- `integration_test/composition_detail_data_binding_test.dart` — comp02 상세 크로스레퍼런스 테스트 1건(확인된 실패)
+- `integration_test/detail_cross_reference_visuals_test.dart` — comp02 상세 이미지 렌더링 테스트 1건(미실행, 같은 헬퍼/같은 원인이라 실패 추정)
+- `integration_test/detail_thumbnail_square_unification_test.dart` — comp02 상세 스타일일지 타일 정사각 검증 1건(미실행, 동일 추정)
+- `integration_test/style_log_composition_binding_test.dart` — 코디 선택 모달에서 comp02 타일 탭 테스트 1건(미실행, 동일 추정 — 단 이 화면은 `selectionMode:true` 피커 모달이라 일반 코디 메인과 필터 로직이 같은지 별도 확인 필요)
+
+`comp02`는 Task 3(휴지통 집계 재작성, 2026-07-24)에서 소프트삭제됐고 `comp03`이 그 역할(season:null/weather:rain 데모)을 이어받았다 — 즉 이 깨짐은 **Task 7이 만든 게 아니라 Task 3 시점부터 존재했을 가능성이 높은 사전 부채**이며, Task 3 당시 Tester가 5개 특정 런타임 시나리오만 검증해 이 파일들을 못 잡았던 것으로 추정된다. Task 7 스코프(옷장 메인 마이그레이션)와 무관해 이번 태스크에서 처리하지 않음.
+
+조치 방향(착수 조건): 위 4개 파일을 comp02→comp01(또는 여전히 active한 다른 코디)로 교체하거나, `style_log_gallery_column_count_test.dart`가 이미 쓴 방식(런타임 주입으로 임시 코디/스타일일지 추가)을 재사용해 각 테스트의 실제 검증 의도를 훼손하지 않는 선에서 고칠 것. 코디/스타일일지 관련 다음 Task(Group B Task 8/9, 코디·스타일일지 메인 마이그레이션) 착수 시 우선 픽업 권장 — 그 Task들이 코디 메인 화면을 다시 여는 김에 함께 확인하면 저비용.
+
+---
+
 [TechDebt] `GalleryMainScreen<T>`(공용 셸)의 밀도/정렬 토글 콜백에 stale-closure 회귀 위험 잠복 — Task 8/9(코디/스타일일지 마이그레이션) 착수 시 반드시 확인 (P1)
 
 상태: 미해결 (알려진 우회책 있음, 셸 자체는 미수정)
