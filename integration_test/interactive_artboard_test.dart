@@ -944,14 +944,22 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Audit 제기 이론(P2, 미확인) 확인: 작은 캔버스에서 배경색 스와치 목록이
-  // 캔버스 상단 경계 밖으로 넘칠 때, 넘친 부분이 실제로 탭 가능한지 실측한다.
+  // 회귀 확인: 작은 캔버스에서도 스와치 리스트의 모든 스와치가 탭 가능해야 한다.
+  //
+  // 배경: `Stack`(캔버스) 자신의 `RenderBox.hitTest`는 자식을 살펴보기 전에 자기
+  // `size.contains(position)`부터 확인한다(Round 1에서 핸들에 대해 이미 확인한 것과
+  // 동일한 메커니즘, `_handleLayerMargin` 주석 참고). 그래서 스와치 리스트의
+  // `Positioned`가 캔버스 경계 [0, canvasHeight] 밖으로 자연스럽게 자라도록 두면
+  // (bottom만 지정), 캔버스가 작을 때 넘친 스와치가 시각적으로는 그려져도(Clip.none)
+  // 탭에는 반응하지 않는 버그가 있었다(Audit 제기 → Tester 확인). 지금은
+  // `top: 0` + `SingleChildScrollView`로 스와치 리스트 자체의 히트테스트 가능 영역이
+  // 항상 캔버스 경계 안에 있도록 고정하고, 안 들어가는 나머지는 스크롤로 접근한다.
   // ═══════════════════════════════════════════════════════════════════════
 
-  // ── 24. 캔버스 높이가 스와치 리스트 필요 높이보다 작으면, 캔버스 밖으로 넘친
-  //        최상단 스와치는 그려지긴 해도(Clip.none) 탭이 반영되지 않는다 ────────
+  // ── 24. 캔버스 높이(200)가 스와치 리스트 필요 높이(268) 미만이어도, 스크롤을
+  //        통해 스와치 4개 전부가 여전히 탭 가능하고 매번 반영된다 ─────────────
   //
-  //        임계값 계산(코드 상수 기준):
+  //        임계값 계산(코드 상수 기준, 21번 시나리오와 동일한 산식):
   //        - 스와치 리스트의 bottom 오프셋 = `_backgroundColorButtonMargin`(16)
   //          + `_backgroundColorButtonDiameter`(44) + `_backgroundSwatchSpacing`(8)
   //          = 68.
@@ -959,22 +967,11 @@ void main() {
   //          * `_backgroundSwatchDiameter`(44) + 3칸 * `_backgroundSwatchSpacing`(8)
   //          = 176 + 24 = 200.
   //        - 리스트가 캔버스 안에 완전히 들어가려면 캔버스 높이 >= 68 + 200 = 268
-  //          이 필요하다. 기존 1~23번 시나리오는 전부 400x400/1100x1500이라 이
-  //          임계값(268)을 한 번도 건드리지 않았다.
-  //        - 여기서는 의도적으로 200x200(<268)을 사용한다: 스와치 리스트 top이
-  //          캔버스 로컬 y = 200 - 268 = -68이 되어, 최상단(흰색) 스와치(리스트
-  //          첫 항목, 높이 44)가 로컬 y [-68, -24] 구간, 즉 캔버스 자신의 경계
-  //          [0, 200] 완전히 밖에 위치하게 된다.
-  //
-  //        `Stack`(캔버스) 자신의 `RenderBox.hitTest`는 자식을 살펴보기 전에
-  //        자기 `size.contains(position)`부터 확인한다(Clip.none은 페인트에만
-  //        영향, 히트테스트엔 영향 없음 — Round 1에서 핸들에 대해 이미 확인한
-  //        것과 동일한 메커니즘, `_handleLayerMargin` 주석 참고). 캔버스를
-  //        화면 중앙(Alignment.center)에 배치해, 넘친 스와치가 "화면 자체의
-  //        경계" 밖이 아니라 "화면 안 · 캔버스 자신의 경계 밖"이라는 정확한
-  //        지점에 위치하도록 구분한다.
+  //          이 필요하다. 여기서는 의도적으로 200x200(<268)을 사용해 스크롤이
+  //          실제로 필요한 상황을 재현한다: 스와치 리스트가 들어갈 박스 높이는
+  //          200 - 68 = 132뿐이라, 4개(200px)를 한 화면에 다 보여줄 수 없다.
   testWidgets(
-      '캔버스 높이(200)가 스와치 리스트 필요 높이(268) 미만이면, 캔버스 경계 밖으로 넘친 최상단 스와치는 시각적으로는 보이지만 탭해도 반영되지 않는다',
+      '캔버스 높이(200)가 스와치 리스트 필요 높이(268) 미만이어도, 스크롤을 통해 스와치 4개를 각각 탭하면 매번 onBackgroundColorChanged가 호출되고 스와치가 닫힌다',
       (tester) async {
     final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
     const smallCanvas = Size(200, 200);
@@ -986,42 +983,305 @@ void main() {
       backgroundColorRequestLog: backgroundColorRequestLog,
     );
 
-    final canvasTopLeft = tester.getTopLeft(find.byType(ColoredBox));
     expect(
       tester.getSize(find.byType(ColoredBox)),
       smallCanvas,
       reason: '캔버스 크기가 override대로 실제 반영됐는지 확인(계산 전제 검증)',
     );
 
+    Future<void> pickSwatch(String label, ArtboardBackgroundColor expected) async {
+      await tester.tap(handleByLabel('배경색 버튼')); // 매번 다시 펼침(직전 선택으로 닫혔으므로)
+      await tester.pumpAndSettle();
+
+      final swatchFinder = handleByLabel(label);
+      // 박스 높이(132)가 리스트 전체 높이(200)보다 작아 일부 스와치는 스크롤해야만
+      // 탭 가능한 영역에 들어온다 — `tester.ensureVisible`이 스와치 리스트를 감싼
+      // `SingleChildScrollView`를 찾아 필요한 만큼만 스크롤한다.
+      await tester.ensureVisible(swatchFinder);
+      await tester.pumpAndSettle();
+
+      await tester.tap(swatchFinder);
+      await tester.pumpAndSettle();
+      expect(backgroundColorRequestLog.last, expected, reason: '$expected 스와치 탭이 반영되지 않음');
+    }
+
+    await pickSwatch('배경색: 흰색', ArtboardBackgroundColor.white);
+    await pickSwatch('배경색: 밝은 회색', ArtboardBackgroundColor.lightGray);
+    await pickSwatch('배경색: 어두운 회색', ArtboardBackgroundColor.darkGray);
+    await pickSwatch('배경색: 검정', ArtboardBackgroundColor.black);
+
+    expect(backgroundColorRequestLog, [
+      ArtboardBackgroundColor.white,
+      ArtboardBackgroundColor.lightGray,
+      ArtboardBackgroundColor.darkGray,
+      ArtboardBackgroundColor.black,
+    ]);
+
+    // 마지막 선택 직후 스와치 목록이 닫혔는지 확인 — 열려 있었다면 트리에 남아있을
+    // 라벨이 더 이상 없어야 한다.
+    expect(handleByLabel('배경색: 검정'), findsNothing, reason: '스와치 선택 직후 목록이 닫혀야 함');
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Round 3(Tester): 스크롤형 스와치 리스트의 런타임 동작 — 경계값 정확성, 실제
+  // 드래그/플링 제스처, 열린 세션 안에서의 왕복 스크롤, 캔버스 리사이즈에 따른
+  // 스크롤 오프셋 잔류 여부. 정적 리뷰(레이아웃 수식)로는 확인할 수 없는, 실제
+  // 구동 결과만 드러내는 부분들이다.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ── 25. 경계값 정확 일치(268): 스크롤 없이 공식 좌표 그대로 4개 전부 탭 가능 ──
+  //        (24번 주석의 산식 그대로 268을 정확히 대입 — box height(200) ==
+  //        content height(200)인 경계에서 off-by-one 없이 "스크롤 불필요"
+  //        분기가 실제로 성립하는지 확인한다.)
+  testWidgets(
+      '캔버스 높이가 스와치 리스트 필요 높이(268)와 정확히 같으면 스크롤이 전혀 필요 없고, 공식 좌표로 스와치 4개를 바로 탭할 수 있다(경계값 정확성)',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    const exactThresholdCanvas = Size(400, 268);
+    await pumpArtboard(
+      tester,
+      items: const [],
+      canvasSizeOverride: exactThresholdCanvas,
+      backgroundColorRequestLog: backgroundColorRequestLog,
+    );
+
+    // 24번 주석과 동일한 산식: buttonCenterY = H-38, 이후 52px 간격으로 위로.
+    const buttonCenter = Offset(362, 230); // 268-38
+    const swatchBlack = Offset(362, 178);
+    const swatchDarkGray = Offset(362, 126);
+    const swatchLightGray = Offset(362, 74);
+    const swatchWhite = Offset(362, 22); // 리스트 맨 위 — 캔버스 상단(y=0)에 가장 가까움
+
+    await tester.tapAt(buttonCenter);
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, 0.0,
+        reason: '경계값(268)에서는 리스트가 박스에 정확히 맞아 스크롤이 전혀 필요 없어야 함');
+
+    // 위 확인을 위해 열어둔 패널을 닫는다 — 아래 pickSwatch가 매번 "닫힌 상태에서
+    // 버튼을 눌러 연다"고 가정하므로, 열린 채로 두면 첫 호출의 재오픈 탭이 오히려
+    // 패널을 닫아버린다(Tester가 처음 이 테스트를 작성할 때 실제로 겪은 버그).
+    await tester.tapAt(buttonCenter);
+    await tester.pumpAndSettle();
+
+    Future<void> pickSwatch(Offset swatchCenter, ArtboardBackgroundColor expected) async {
+      await tester.tapAt(buttonCenter);
+      await tester.pumpAndSettle();
+      await tester.tapAt(swatchCenter);
+      await tester.pumpAndSettle();
+      expect(backgroundColorRequestLog.last, expected,
+          reason: '$expected 스와치가 공식(스크롤 없는) 좌표에서 탭되지 않음');
+    }
+
+    await pickSwatch(swatchWhite, ArtboardBackgroundColor.white);
+    await pickSwatch(swatchLightGray, ArtboardBackgroundColor.lightGray);
+    await pickSwatch(swatchDarkGray, ArtboardBackgroundColor.darkGray);
+    await pickSwatch(swatchBlack, ArtboardBackgroundColor.black);
+  });
+
+  // ── 26. 경계값 바로 아래(267): 정확히 1px만큼만 스크롤이 필요하고, 그 1px도
+  //        정상적으로 접근 가능해야 한다(off-by-one 확인) ─────────────────────
+  testWidgets(
+      '캔버스 높이가 임계값보다 1px 작으면(267) 정확히 1px 안팎의 스크롤이 필요하고, 그 상태에서도 맨 위/맨 아래 스와치가 모두 탭 가능하다(off-by-one 경계 확인)',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    const justBelowThresholdCanvas = Size(400, 267);
+    await pumpArtboard(
+      tester,
+      items: const [],
+      canvasSizeOverride: justBelowThresholdCanvas,
+      backgroundColorRequestLog: backgroundColorRequestLog,
+    );
+
     await tester.tap(handleByLabel('배경색 버튼'));
     await tester.pumpAndSettle();
 
-    final whiteSwatchFinder = handleByLabel('배경색: 흰색');
-    expect(whiteSwatchFinder, findsOneWidget,
-        reason: '캔버스 밖으로 넘쳤어도 위젯 자체는 트리에 존재하고 그려져야 함(Clip.none)');
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, closeTo(1.0, 0.5),
+        reason: '경계값보다 1px 작을 때는 스크롤 가능 범위가 약 1px이어야 함(0이면 경계 계산이 한쪽으로 치우침)');
 
-    final whiteSwatchCenter = tester.getCenter(whiteSwatchFinder);
-    expect(
-      whiteSwatchCenter.dy,
-      lessThan(canvasTopLeft.dy),
-      reason: '최상단(흰색) 스와치가 실제로 캔버스 자신의 위쪽 경계 밖에 그려지는지 확인 — '
-          '스와치 중심 y=${whiteSwatchCenter.dy}, 캔버스 top y=${canvasTopLeft.dy}',
+    final whiteFinder = handleByLabel('배경색: 흰색');
+    await tester.ensureVisible(whiteFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(whiteFinder);
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.last, ArtboardBackgroundColor.white,
+        reason: '경계 바로 아래에서도 리스트 맨 위(흰색) 스와치가 스크롤로 도달 가능해야 함');
+
+    await tester.tap(handleByLabel('배경색 버튼'));
+    await tester.pumpAndSettle();
+    final blackFinder = handleByLabel('배경색: 검정');
+    await tester.ensureVisible(blackFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(blackFinder);
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.last, ArtboardBackgroundColor.black,
+        reason: '경계 바로 아래에서도 리스트 맨 아래(검정) 스와치가 탭 가능해야 함');
+  });
+
+  // ── 27. 실제 드래그/플링 제스처로 스크롤 → 목표 스와치 탭 (ensureVisible의
+  //        순간이동이 아니라 실측 스크롤 물리로 확인) ─────────────────────────
+  testWidgets('작은 캔버스에서 ensureVisible이 아니라 실제 플링 제스처로 스와치 목록을 스크롤해도 목표 스와치까지 도달해 정상 탭된다',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    const smallCanvas = Size(200, 200);
+    await pumpArtboard(
+      tester,
+      items: const [],
+      canvasSizeOverride: smallCanvas,
+      canvasAlignment: Alignment.center,
+      backgroundColorRequestLog: backgroundColorRequestLog,
     );
 
-    await tester.tapAt(whiteSwatchCenter);
+    await tester.tap(handleByLabel('배경색 버튼'));
     await tester.pumpAndSettle();
 
-    expect(
-      backgroundColorRequestLog,
-      isEmpty,
-      reason:
-          '캔버스 Stack 자신의 히트테스트 경계 밖이라 탭이 onBackgroundColorChanged까지 전달되면 안 됨(버그 확인 시나리오)',
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.pixels, 0.0, reason: '스와치를 처음 열면 스크롤 위치는 0에서 시작해야 함');
+
+    // 검정 스와치(리스트 맨 아래, 버튼과 가장 가까움)는 초기 스크롤 위치(0)에서는
+    // 보이지 않는다(흰색 쪽만 보임) — 실제 사용자가 하듯 위로 플링해(손가락이 위로
+    // 이동 = 콘텐츠가 위로 스크롤 = 리스트 하단이 드러남) 스크롤 물리(감속 애니메이션
+    // 포함)로 도달한 뒤 탭한다.
+    await tester.fling(find.byType(SingleChildScrollView), const Offset(0, -300), 1000);
+    await tester.pumpAndSettle();
+
+    expect(scrollable.position.pixels, greaterThan(0),
+        reason: '실제 플링 제스처로 스크롤 위치가 실제로 이동해야 함(순간이동이 아닌 실측 제스처 확인)');
+
+    final blackFinder = handleByLabel('배경색: 검정');
+    await tester.tap(blackFinder);
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.last, ArtboardBackgroundColor.black,
+        reason: '실제 플링 제스처로 스크롤한 뒤에도 목표 스와치가 정상 탭돼야 함');
+  });
+
+  // ── 28. 같은 open 세션 안에서 아래로 스크롤했다가 다시 위로 왕복해도 양쪽 끝
+  //        스와치가 모두 반응하고, 닫았다 다시 열면 스크롤 위치가 0으로 리셋된다 ──
+  testWidgets(
+      '스와치 목록을 닫지 않은 채로 아래로 스크롤했다가 다시 위로 스크롤해도 양쪽 끝 스와치가 정상 반응하고, 닫았다 다시 열면 스크롤 위치가 0으로 초기화된다',
+      (tester) async {
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    const smallCanvas = Size(200, 200);
+    await pumpArtboard(
+      tester,
+      items: const [],
+      canvasSizeOverride: smallCanvas,
+      canvasAlignment: Alignment.center,
+      backgroundColorRequestLog: backgroundColorRequestLog,
     );
-    expect(
-      handleByLabel('배경색: 흰색'),
-      findsOneWidget,
-      reason: '탭이 캔버스 자신에게도 전달되지 않았다면 스와치 목록이 닫히지 않은 채(펼쳐진 채로) 남아있어야 함',
+
+    await tester.tap(handleByLabel('배경색 버튼'));
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.pixels, 0.0, reason: '처음 열면 스크롤 위치는 0이어야 함');
+
+    // 아래로 스크롤(검정 쪽 방향).
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -80));
+    await tester.pumpAndSettle();
+    final scrolledDownPosition = scrollable.position.pixels;
+    expect(scrolledDownPosition, greaterThan(0), reason: '드래그 후 스크롤 위치가 이동해야 함');
+
+    // 같은 세션 안에서(닫지 않고) 다시 위로 스크롤 — 왕복 응답성 확인.
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 80));
+    await tester.pumpAndSettle();
+    expect(scrollable.position.pixels, lessThan(scrolledDownPosition),
+        reason: '위로 다시 스크롤하면 스크롤 위치가 줄어야 함(양방향 응답, 상태가 한쪽으로 고착되지 않음)');
+
+    // 왕복 스크롤 후에도 맨 위(흰색) 스와치가 정상 탭되는지 확인.
+    final whiteFinder = handleByLabel('배경색: 흰색');
+    await tester.tap(whiteFinder);
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.last, ArtboardBackgroundColor.white,
+        reason: '왕복 스크롤 후에도 맨 위 스와치가 정상 탭돼야 함');
+
+    // 선택으로 패널이 닫혔다 — 다시 열었을 때 이전 세션의 스크롤 위치가 새어들지
+    // 않고 0으로 초기화되는지 확인.
+    await tester.tap(handleByLabel('배경색 버튼'));
+    await tester.pumpAndSettle();
+    final reopenedScrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(reopenedScrollable.position.pixels, 0.0,
+        reason: '닫았다 다시 열면 스크롤 위치가 처음(0)으로 리셋돼야 함(이전 세션의 스크롤 상태가 새면 안 됨)');
+  });
+
+  // ── 29. 작은 캔버스에서 스크롤해 연 상태로 캔버스가 일반 크기로 커지면(같은
+  //        위젯 State가 유지된 채 리빌드), 이전 스크롤 오프셋이 새어들지 않고
+  //        스와치가 스크롤 불필요한 원래(공식) 좌표에 정확히 다시 배치된다 ──────
+  //        (데스크톱 창 리사이즈처럼, 위젯을 새로 마운트하지 않고 제약만 바뀌는
+  //        실제 시나리오를 시뮬레이션한다.)
+  testWidgets(
+      '작은 캔버스에서 스와치를 스크롤해 연 상태로 캔버스가 일반 크기로 커지면, 이전 스크롤 오프셋이 새지 않고 스와치가 공식(스크롤 없는) 좌표에 정확히 재배치된다',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final hostKey = GlobalKey<_ArtboardTestHostState>();
+    final backgroundColorRequestLog = <ArtboardBackgroundColor>[];
+    double canvasEdge = 200; // 정사각형, 작은 캔버스로 시작
+    late StateSetter resize;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                resize = setState;
+                return SizedBox(
+                  width: canvasEdge,
+                  height: canvasEdge,
+                  child: _ArtboardTestHost(
+                    key: hostKey,
+                    initialItems: const [],
+                    onBackgroundColorRequest: backgroundColorRequestLog.add,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
     );
+    await tester.pumpAndSettle();
+
+    // 1) 작은 캔버스(200x200)에서 스와치를 열고 아래로 스크롤.
+    await tester.tap(handleByLabel('배경색 버튼'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -80));
+    await tester.pumpAndSettle();
+    final smallCanvasScrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(smallCanvasScrollable.position.pixels, greaterThan(0),
+        reason: '작은 캔버스에서 스크롤이 실제로 발생해야 함(이후 단계의 전제 조건)');
+
+    // 2) 스와치를 닫지 않은 채로 캔버스를 일반 크기(400x400)로 키운다 — 같은
+    //    _InteractiveArtboardState가 유지된 채 LayoutBuilder 제약만 바뀐다(실제
+    //    데스크톱 창 리사이즈 상황과 동형).
+    resize(() => canvasEdge = 400);
+    await tester.pumpAndSettle();
+
+    // 3) 400 캔버스는 스크롤이 필요 없는 크기이므로, 작은 캔버스에서 남아있던
+    //    스크롤 오프셋이 새어들어와 스와치가 엉뚱한 자리에 있으면 안 된다 — 21번
+    //    시나리오와 동일한 "버튼에 딱 붙는" 공식 좌표에서 그대로 탭 가능해야 한다.
+    const buttonCenter = Offset(362, 362);
+    const swatchWhite = Offset(362, 154);
+    const swatchBlack = Offset(362, 310);
+
+    await tester.tapAt(swatchWhite); // 스와치가 여전히 열려있는 상태라 바로 탭 시도
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.last, ArtboardBackgroundColor.white,
+        reason: '캔버스가 커진 뒤엔 이전 스크롤 오프셋과 무관하게 공식 좌표에서 흰색 스와치가 탭돼야 함');
+
+    await tester.tapAt(buttonCenter); // 재오픈
+    await tester.pumpAndSettle();
+    await tester.tapAt(swatchBlack);
+    await tester.pumpAndSettle();
+    expect(backgroundColorRequestLog.last, ArtboardBackgroundColor.black,
+        reason: '검정 스와치도 공식 좌표에서 정상 탭돼야 함(이전 세션 스크롤 오프셋 잔류 없음)');
   });
 }
 
