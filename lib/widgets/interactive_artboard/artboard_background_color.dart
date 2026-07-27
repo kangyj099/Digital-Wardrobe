@@ -17,4 +17,11 @@ enum ArtboardBackgroundColor {
         ArtboardBackgroundColor.darkGray => Colors.grey.shade800,
         ArtboardBackgroundColor.black => Colors.black,
       };
+
+  String get label => switch (this) {
+        ArtboardBackgroundColor.white => '흰색',
+        ArtboardBackgroundColor.lightGray => '밝은 회색',
+        ArtboardBackgroundColor.darkGray => '어두운 회색',
+        ArtboardBackgroundColor.black => '검정',
+      };
 }

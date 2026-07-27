@@ -634,7 +634,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
 
   Widget _backgroundSwatch(ArtboardBackgroundColor option) {
     return Semantics(
-      label: '배경색: ${_backgroundColorLabel(option)}',
+      label: '배경색: ${option.label}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
@@ -654,17 +654,6 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
     );
   }
 
-  /// [ArtboardBackgroundColor] 각 값의 한국어 색상명 — 스와치 Semantics 라벨 전용
-  /// (`flutter-implementation-conventions` Review 체크리스트: 터치 타겟엔 Semantics
-  /// 라벨 필요, enum 식별자를 그대로 노출하지 않고 사용자가 읽을 이름으로 매핑).
-  String _backgroundColorLabel(ArtboardBackgroundColor option) {
-    return switch (option) {
-      ArtboardBackgroundColor.white => '흰색',
-      ArtboardBackgroundColor.lightGray => '밝은 회색',
-      ArtboardBackgroundColor.darkGray => '어두운 회색',
-      ArtboardBackgroundColor.black => '검정',
-    };
-  }
 }
 
 /// 딤드 오버레이의 반투명도 — 아이템이 삭제 가능 상태임을 알아볼 수 있을 만큼
