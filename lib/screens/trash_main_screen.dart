@@ -74,7 +74,7 @@ class TrashMainScreen extends ConsumerWidget {
               key: ValueKey(entry.id),
               imagePath: entry.imagePath,
               category: entry.category,
-              remainingDays: entry.daysUntilPurge,
+              daysUntilPurge: entry.daysUntilPurge,
               onTap: () => _showTrashItemInfo(context, entry),
             );
           },

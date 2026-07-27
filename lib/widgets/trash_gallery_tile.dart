@@ -3,6 +3,7 @@ import '../models/enums.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'gallery_meta_label.dart';
+import 'multi_select_checkmark.dart';
 
 /// 휴지통 전용 순수 썸네일 타일 — 옷장/코디처럼 그룹 계층이 있는 그리드가 아니라
 /// 제목 텍스트 없이 이미지 중심(`00_페이지 타입 정의.md` "휴지통의 추가 확장 요소").
@@ -23,30 +24,41 @@ class TrashGalleryTile extends StatelessWidget {
     super.key,
     required this.imagePath,
     required this.category,
-    required this.remainingDays,
+    required this.daysUntilPurge,
     required this.onTap,
+    this.onLongPress,
+    this.multiSelectMode = false,
+    this.selected = false,
   });
 
   final String imagePath;
   final AppCategory category;
 
   /// 영구 삭제까지 남은 일수.
-  final int remainingDays;
+  final int daysUntilPurge;
 
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool multiSelectMode;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
-    final daysLabel = '$remainingDays일';
+    final colorScheme = Theme.of(context).colorScheme;
+    final daysLabel = '$daysUntilPurge일';
     return Semantics(
       button: true,
-      label: '${category.label}, 영구 삭제까지 $daysLabel',
+      label: '${category.label}, 영구 삭제까지 $daysLabel${selected ? ', 선택됨' : ''}',
       excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
-          decoration: BoxDecoration(color: semantic.gray200),
+          decoration: BoxDecoration(
+            color: semantic.gray200,
+            border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
+          ),
           child: LayoutBuilder(
             builder: (context, constraints) {
               return Stack(
@@ -69,6 +81,12 @@ class TrashGalleryTile extends StatelessWidget {
                       child: Icon(_categoryIcon(category), size: 14),
                     ),
                   ),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                   GalleryMetaLabel(label: daysLabel, maxWidth: constraints.maxWidth),
                 ],
               );

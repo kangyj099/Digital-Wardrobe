@@ -13,12 +13,24 @@ class StyleLogGalleryGrid extends StatelessWidget {
     super.key,
     required this.logs,
     required this.onItemTap,
+    this.onItemLongPress,
+    this.multiSelectMode = false,
+    this.selectedIds = const {},
     this.controller,
     this.topSpacing = 0,
   });
 
   final List<StyleLog> logs;
   final void Function(StyleLog styleLog) onItemTap;
+
+  /// [StyleLogGalleryTile.onLongPress]로 그대로 전달 — 다중선택 모드 진입 트리거.
+  final void Function(StyleLog styleLog)? onItemLongPress;
+
+  /// [StyleLogGalleryTile.multiSelectMode]로 그대로 전달.
+  final bool multiSelectMode;
+
+  /// 선택된 항목 id 집합 — [StyleLogGalleryTile.selected]로 `log.id` 포함 여부를 변환해 전달.
+  final Set<String> selectedIds;
 
   /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
   final ScrollController? controller;
@@ -39,6 +51,9 @@ class StyleLogGalleryGrid extends StatelessWidget {
           key: ValueKey(log.id),
           styleLog: log,
           onTap: () => onItemTap(log),
+          onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(log),
+          multiSelectMode: multiSelectMode,
+          selected: selectedIds.contains(log.id),
         );
       },
     );

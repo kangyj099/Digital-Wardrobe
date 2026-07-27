@@ -39,7 +39,7 @@ void main() {
               child: TrashGalleryTile(
                 imagePath: '',
                 category: AppCategory.closet,
-                remainingDays: remainingDays,
+                daysUntilPurge: remainingDays,
                 onTap: () {},
               ),
             ),
