@@ -799,10 +799,10 @@ void main() {
 
     final colorScheme = Theme.of(tester.element(find.byType(ArtboardOverlapPopup))).colorScheme;
 
-    final scarfRow = tester.widget<Container>(find.byKey(const ValueKey('scarf')));
-    final glovesRow = tester.widget<Container>(find.byKey(const ValueKey('gloves')));
-    expect(scarfRow.color, isNull, reason: '선택 안 된 행은 강조 배경이 없어야 함');
-    expect(glovesRow.color, colorScheme.primaryContainer, reason: '선택된 행은 강조 배경이어야 함');
+    final scarfRow = tester.widget<ListTile>(find.byKey(const ValueKey('scarf')));
+    final glovesRow = tester.widget<ListTile>(find.byKey(const ValueKey('gloves')));
+    expect(scarfRow.tileColor, isNull, reason: '선택 안 된 행은 강조 배경이 없어야 함');
+    expect(glovesRow.tileColor, colorScheme.primaryContainer, reason: '선택된 행은 강조 배경이어야 함');
 
     expect(
       find.descendant(
