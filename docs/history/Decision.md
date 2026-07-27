@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] `GlassToast`/`UndoableActionToast` 2종 공존 확정 — 화면군별 시각 변형, 중복 아님 (UI/Screen, Decision)
+
+결정:
+- `lib/widgets/glass_toast.dart`(Overlay+`GlassPill` 기반)와 `lib/widgets/undoable_action_toast.dart`(`ScaffoldMessenger`+`SnackBar` 기반)를 하나로 통합하지 않고 그대로 공존시킨다.
+- `GlassToast`는 Glass 셸 화면(옷장/코디/스타일일지 메인+Detail — 다중선택 삭제, Detail "더보기" 삭제)용, `UndoableActionToast`는 plain Utility 화면(설정 — 로그아웃)용으로 화면군에 따라 구분해서 쓴다.
+- 두 위젯 모두 `06_Component Strategy.md`의 "C7 UndoableActionToast"(메시지+액션+자동소멸 타이머, record-level undo) 상호작용 계약을 구현하는 동일 패턴의 서로 다른 시각 변형이다 — 이름이 겹치는 건 우연이며 별도 통합 리네이밍은 하지 않는다(이미 각 소비 화면에 자연스럽게 자리잡은 이름 유지가 혼란이 적음).
+- 공용화한 부분: 자동소멸 기본 지속시간만 `AppDurations.toastDefault`(`lib/theme/app_spacing.dart`)로 추출해 두 위젯이 공유. 그 외(시각 스타일/접근성 wiring 등)는 각자 구현 유지.
+
+사유:
+Group B Task 6(`GlassToast` 신설) Review가 두 위젯이 같은 인터랙션을 중복 구현한 것 아니냐고 P1 지적 — `GlassToast`를 규정한 스펙(`docs/superpowers/specs/2026-07-21-multi-select-and-trash-design.md` §5, 2026-07-21 작성, review 2회 통과)이 작성된 시점엔 코드베이스에 Toast/SnackBar 패턴이 전혀 없어 "이 앱이 이미 쓰는 글래스 팔레트와 일관된 커스텀 위젯을 신설한다"고 명시적으로 결정했었다. `UndoableActionToast`는 그보다 나중(Group C Task 1, 2026-07-27, 설정 로그아웃용)에 별도로 생겨 겹쳐 보이게 됐을 뿐 — 실제로는 화면군(Glass 셸 vs plain Utility, `03_화면별UX명세서.md`의 페이지 타입 분류상 근거 있는 구분)이 달라 시각 언어가 다른 게 맞고, 통합하면 오히려 Glass 셸 화면에 어울리지 않는 기본 `SnackBar`가 노출되거나 Utility 화면에 불필요한 Glass 스타일이 들어가는 역효과가 생긴다. PM이 두 스펙 문서(Component Strategy/multi-select-and-trash-design)를 대조해 확정, 사용자 확인 없이 진행(근거가 이미 승인된 문서에 명시돼 있어 새로운 판단이 아니라 기존 결정의 적용).
+
+Impact:
+- `lib/widgets/glass_toast.dart` — 접근성(A13 라이브 리전) 추가, docstring에 공존 사유 명시
+- `lib/widgets/undoable_action_toast.dart` — `AppDurations.toastDefault` 참조로 소폭 변경(기존 동작 불변)
+- `lib/theme/app_spacing.dart` — `AppDurations` 클래스 신설
+- 향후 Task 7 이후(다중선택 삭제 플로우 실배선) 이 구분을 그대로 따를 것 — 헷갈리지 말고 Glass 셸 화면엔 `GlassToast`, Settings류 plain Utility 화면엔 `UndoableActionToast`
+
 [Decision] 설정 화면 최종 로우 구성 확정 — 프로필 편집 제외, 다크모드/휴지통/로그아웃 확정 (UI/Screen, Decision)
 
 결정:
