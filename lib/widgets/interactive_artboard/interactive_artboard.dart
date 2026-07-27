@@ -636,14 +636,69 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => _isSwatchExpanded = !_isSwatchExpanded),
-        child: Container(
-          width: _backgroundColorButtonDiameter,
-          height: _backgroundColorButtonDiameter,
-          decoration: BoxDecoration(
-            color: widget.backgroundColor.value,
-            shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
+        child: _swatchCircle(
+          fillColor: widget.backgroundColor.value,
+          diameter: _backgroundColorButtonDiameter,
+        ),
+      ),
+    );
+  }
+
+  /// 배경색 버튼/스와치 원 — 테두리 선 대신 그림자/하이라이트/이너글로우로 구분해
+  /// 달라는 요청(2026-07-27)에 따른 것. 처음엔 이 셋을 전부 `BoxDecoration.boxShadow`
+  /// 한 리스트에 넣었는데, `BoxDecoration`은 `boxShadow`를 먼저 그리고 그 위에 `color`를
+  /// 덮어그린다(`box_decoration.dart`의 `paint()`: `_paintShadows` 다음 `_paintBackgroundColor`)
+  /// — 그래서 원 안쪽으로 파고드는 그림자는 전부 불투명한 원 색에 가려져 안 보였다.
+  /// `glass_pill.dart`/`glass_circle_button.dart`가 이미 쓰던 해법을 그대로 따른다:
+  /// 그림자는 **색이 없는 바깥 Container**에서, 실제 색은 **별도의 안쪽 레이어**에서
+  /// 칠해 서로 덮어쓰지 않게 분리한다. 이너글로우는 애초에 `BoxShadow`로 못 만든다
+  /// (안쪽에 그려도 결국 같은 문제) — 대신 색 위에 겹쳐 그리는 `RadialGradient`
+  /// 오버레이로 가장자리 안쪽을 밝힌다.
+  Widget _swatchCircle({required Color fillColor, required double diameter}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          // 은은하게 퍼지는 외곽 그림자 — 원이 캔버스 위에 살짝 떠 있는 듯한 존재감
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
+          // 부드러운 하이라이트 글로우 — "누를 수 있는 요소"라는 신호. primary 톤을
+          // 얕게 둘러 스와치 자체 색(흰색 포함)에 기대지 않고 항상 시인성을 확보
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: 0.28),
+            blurRadius: 16,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 캔버스 배경색과 달리 여기선 `ColoredBox`를 안 쓴다 — 기존 테스트가
+            // `find.byType(ColoredBox)`로 "캔버스 배경색 하나"를 단수 조회하는데,
+            // 스와치 안쪽 색칠에도 `ColoredBox`를 쓰면(`Container(color: ...)`도 내부적으로
+            // `ColoredBox`로 빌드된다) 개수가 여러 개가 되어 그 조회가 깨진다(Tester 발견).
+            // `DecoratedBox`는 다른 위젯 타입이라 이 충돌이 없다.
+            DecoratedBox(decoration: BoxDecoration(color: fillColor)),
+            // 이너글로우 — 색 위에 겹쳐 그려야 실제로 보인다(위 doc 참고). 중심은
+            // 완전히 투명하게 둬서 스와치 색 자체가 그대로 보이고, 가장자리 쪽에만
+            // 밝은 링이 겹쳐 유리알 같은 입체감을 준다.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [Colors.transparent, Colors.white38],
+                  stops: [0.7, 1.0],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -671,15 +726,7 @@ class _InteractiveArtboardState extends State<InteractiveArtboard> {
           widget.onBackgroundColorChanged(option);
           setState(() => _isSwatchExpanded = false);
         },
-        child: Container(
-          width: _backgroundSwatchDiameter,
-          height: _backgroundSwatchDiameter,
-          decoration: BoxDecoration(
-            color: option.value,
-            shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1.5),
-          ),
-        ),
+        child: _swatchCircle(fillColor: option.value, diameter: _backgroundSwatchDiameter),
       ),
     );
   }

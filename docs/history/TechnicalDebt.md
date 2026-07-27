@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `InteractiveArtboard` 배경색 버튼/스와치 이너글로우가 밝은 색에서 흰 띠로 보임 (P3)
+
+상태: 미해결 (기능엔 영향 없음, 사용자 확인 후 낮은 우선순위로 보류)
+
+내용:
+`_swatchCircle()`(`interactive_artboard.dart`)의 이너글로우는 `RadialGradient(colors: [Colors.transparent, Colors.white38], stops: [0.7, 1.0])`를 원 색 위에 겹쳐 그린다. 어두운 스와치(검정/진회색)에서는 의도한 대로 은은한 하이라이트로 보이지만, 밝은 스와치(흰색/연회색)에서는 거의 같은 톤의 흰색이 겹쳐지며 매끄럽게 섞이지 않고 눈에 띄는 흰 띠로 도드라져 보인다(사용자 확인, 2026-07-27). 탭 판정/히트테스트 등 기능에는 영향 없다.
+
+조치 방향(착수 조건): 다음에 이 위젯의 시각 효과를 다시 손댈 때, 그라디언트 색을 스와치 자체 색 대비로 계산(예: 밝은 배경엔 어두운 톤 하이라이트, 어두운 배경엔 밝은 톤 하이라이트를 `ThemeData.estimateBrightnessForColor` 등으로 판별해 분기)하거나 blend mode를 조정해 모든 스와치 색에서 자연스럽게 보이도록 재조정.
+
+---
+
 [TechDebt] `InteractiveArtboard` Round 2 Audit(2026-07-19) 발견 P2/P3 2건 — 배경색 버튼 비주얼 스타일 불일치, 핸들-버튼 코너 충돌 가능성
 
 상태: 미해결 (낮은 우선순위로 기록만, `composition_editor_screen.dart` 연결 시점에 재검토)
