@@ -1,5 +1,27 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 설정 화면 최종 로우 구성 확정 — 프로필 편집 제외, 다크모드/휴지통/로그아웃 확정 (UI/Screen, Decision)
+
+결정:
+- `SettingsScreen` 최종 로우 구성을 4개(알림 토글, 다크모드 토글, 휴지통 진입, 로그아웃)로 확정. "일반"(알림/다크모드/휴지통) + "계정"(로그아웃) 2섹션.
+- "프로필 편집" 로우는 채택하지 않는다 — 이 앱에 사용자 프로필/로그인 개념 자체가 존재하지 않음(MVP 기획 어디에도 프로필 엔티티 없음). 기존 구현(`lib/screens/settings_screen.dart`)에 스펙 밖으로 임의 추가돼 있던 항목이었음.
+- 다크모드 로우는 유지하되, 이 결정은 **UI 토글 로우의 존재만** 확정한다 — 실제 `ThemeMode` 전환(현재 `main.dart`가 `ThemeMode.light` 고정)은 별도 Logic/Feature 구현 태스크로 분리, `BACKLOG.md`에 등록.
+- 휴지통 진입 로우 신설 — 기존에 이미 독립 존재하는 `TrashMainScreen`(`/trash`)으로의 진입 경로만 추가. 화면 신규 제작이나 라우트 재설계는 필요 없음(라우트가 이미 `settingsMain`/`trashMain`으로 분리돼 있어 구 스펙의 라우트 네이밍 충돌 우려는 이미 해소된 상태였음).
+- 로그아웃 로우는 2026-07-09 원 승인 스펙(§2/§3, Toast+Undo 패턴)을 그대로 채택 — 지금까지 미구현 상태였던 것을 이번에 실제 구현 대상으로 확정.
+- 위 결정에 따라 `docs/reference/plan/03_화면별UX명세서/04_설정.md` §2/§4/§6을 정정 각주 방식으로 갱신(원문은 취소선으로 보존).
+
+사유:
+`TechnicalDebt.md`에 P1로 기록돼 있던 "SettingsScreen이 승인 스펙과 어긋남" 항목(다크모드/프로필편집이 스펙 밖으로 추가돼 있고, 로그아웃 로우 자체가 없는 드리프트)의 최종 처리 방향을 사용자가 직접 결정 — 착수 조건이었던 "스펙대로 재구현 vs 현재 확장을 정식 스펙 갱신 대상으로 삼을지"에 대해 후자(확장 일부 정식 채택 + 프로필 편집만 제외)로 답함.
+
+Impact:
+- `docs/reference/plan/03_화면별UX명세서/04_설정.md`(스펙 갱신)
+- `docs/history/TechnicalDebt.md`(해당 P1 항목 해소 처리)
+- `docs/work/BACKLOG.md`(그룹 C 구현 태스크로 등록 — 화면 구현 + 다크모드 실동작 배선 + 프로필 편집 삭제 체크리스트)
+- 구현 대상(다음 세션): `lib/screens/settings_screen.dart`, `integration_test/closet_main_screen_test.dart`, `integration_test/settings_trash_shell_test.dart`
+
+Audit(2026-07-27, Decision-Stage 필수 게이트): P1 1건 — §4 문구가 "휴지통 복원/영구삭제/비우기가 이미 동작"하는 것처럼 읽혔으나 실제로는 `TrashMainScreen`의 해당 버튼이 전부 스텁(그룹 B Task 10 미착수)임을 지적, 즉시 정정 반영. 그 외 4개 파일 간 정합성/라우트 실재 여부/테스트 위치 전부 확인됨 — 확정.
+
+
 [Decision] 라우터+앵커 재통합 부분 롤백 — 5개 중 2개(핫패스 참조 문서)는 서브파일 구조로 복귀 (Data/Architecture, Decision — 바로 아래 "라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합" 항목의 스코프 축소)
 
 결정:
