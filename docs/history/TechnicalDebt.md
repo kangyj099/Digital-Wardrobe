@@ -1,5 +1,31 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `GalleryMainScreen<T>`(공용 셸)의 밀도/정렬 토글 콜백에 stale-closure 회귀 위험 잠복 — Task 8/9(코디/스타일일지 마이그레이션) 착수 시 반드시 확인 (P1)
+
+상태: 미해결 (알려진 우회책 있음, 셸 자체는 미수정)
+
+내용:
+Group B Task 7(`GalleryMainScreen<T>` 셸 신설 + 옷장 메인 마이그레이션) Review(2026-07-28)가 발견: `lib/widgets/gallery_main_screen.dart`의 `GlassCircleButton.onTap: () => widget.classification!.onDensityChanged(widget.classification!.density)`(정렬 방향도 동일 패턴)이 `widget.classification!.density`를 **셸의 마지막 build 시점 값**으로 캡처한다 — 이는 `10d3643` 커밋이 이미 한 번 고쳤던 stale-closure 버그(연속 탭이 리빌드 전에 겹치면 두 번째 탭이 낡은 값을 기준으로 동작)와 구조적으로 동일하다. Worker가 실제로 재현 확인(옷장 메인의 회귀 테스트 2개가 `Expected: 4, Actual: 1`로 실패).
+
+Worker의 조치: 계획 문서가 `gallery_main_screen.dart`를 "최종본, 그대로 구현"으로 명시해 셸 자체는 건드리지 않고, **소비 화면**(`lib/screens/closet_main_screen.dart`)의 `onDensityChanged`/`onAscendingChanged` 콜백 바디에서 전달받은 값을 무시하고 그 안에서 새로 `ref.read(...)`하는 방식으로 옷장 메인만 우회 수정했다(Review가 타당하다고 확인).
+
+남은 위험: 이 우회책은 **소비 화면마다 각자 반복해야** 한다 — 셸 자체엔 여전히 버그가 남아있어, Task 8(코디 메인)/Task 9(스타일일지)가 이 셸을 그대로 갖다 쓰면서 이 워크어라운드를 다시 발견/반복하지 않으면 같은 stale-closure 회귀가 재발한다.
+
+조치 방향(착수 조건): Task 8/9 Worker는 착수 시 이 항목을 먼저 확인 — `CompositionMainScreen`/`StyleLogMainScreen`(가칭)의 `onDensityChanged`/`onAscendingChanged`도 옷장 메인과 동일하게 "전달받은 값 무시 + 콜백 내부에서 fresh `ref.read`" 패턴을 반복 적용할 것. 근본 해결(셸 자체 수정)은 계획 문서의 "최종본 그대로 구현" 지시와 충돌하므로, 여러 소비 화면에서 반복될 경우 셸 레벨 수정으로 승격 검토(현재는 소비처 1곳뿐이라 보류).
+
+---
+
+[TechDebt] `SelectableGalleryTile`이 다중선택 모드에서 미완성(`isIncomplete`) 아이템을 탭으로 선택/해제할 수 없음 (P3)
+
+상태: 미해결
+
+내용:
+Group B Task 7 Review(2026-07-28)가 확인: `lib/widgets/selectable_gallery_tile.dart`의 `onTap` 라우팅이 `item.isIncomplete ? onIncompleteTap : onTap`으로 고정돼 있어 `multiSelectMode` 여부를 고려하지 않는다. `onLongPress`는 무조건 다중선택 진입을 트리거하므로, 미완성 아이템도 롱프레스로 다중선택 모드에 들어갈 수는 있지만, 이후 그 아이템을 탭해 선택/해제하려 하면 `onIncompleteTap`(옷장 메인에선 `null`)으로 라우팅돼 아무 반응이 없다. Task 7 Worker가 발견해 `integration_test/closet_multi_select_test.dart`의 테스트 데이터를 `c06`(미완성)→`c09`(미완성 아님)로 교체해 회피(Review가 `c09`이 유효한 대체인지 `mock_data.dart` 대조로 확인, 타당함).
+
+조치 방향(착수 조건): `SelectableGalleryTile.onTap`이 `multiSelectMode`일 때는 `isIncomplete` 여부와 무관하게 항상 선택/해제 콜백으로 라우팅하도록 수정 필요 — 다음에 이 파일 또는 다중선택 플로우를 손댈 때 함께 정리. 현재는 우회(테스트 데이터 선택)로 충분히 커버됨, 급하지 않음.
+
+---
+
 [TechDebt] `MultiSelectCheckmark`가 `AppSemanticColors` 대신 `Colors.white` 하드코딩 + 선택 관련 매직넘버 미등재 (P2/P3)
 
 상태: 미해결
