@@ -115,7 +115,7 @@ void main() {
   group('Header/HUD Pinned Rule — 카테고리 토글 + 더보기 버튼', () {
     testWidgets(
       '옷 상세 화면에서 카테고리 드롭다운과 더보기 버튼이 서로 독립된 위젯으로 겹치지 않게 배치되고, '
-      '각자 탭에 반응한다(더보기 탭 → 화면 전환 없이 예외 없이 처리, 드롭다운 탭 → 메뉴 열림)',
+      '각자 탭에 반응한다(더보기 탭 → [삭제] 메뉴가 열림, 메뉴를 닫은 뒤 드롭다운 탭 → 카테고리 메뉴 열림)',
       (tester) async {
         await pumpApp(tester);
         await tester.tap(find.byType(SelectableGalleryTile).first);
@@ -134,11 +134,19 @@ void main() {
           reason: 'dropdown=$dropdownRect, more=$moreButtonRect',
         );
 
-        // 더보기 탭 — onTap이 빈 함수라도 예외 없이 처리되고 화면 전환은 없어야 한다.
+        // 더보기 탭 — Task 11부터 더 이상 no-op이 아니라 실제 [삭제] 메뉴가 열린다.
         await tester.tap(moreButton);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
+        expect(find.text('삭제'), findsOneWidget);
         expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+
+        // 메뉴가 열린 채로는 그 모달 배리어가 다른 탭을 흡수해버리므로, 항목을 고르지
+        // 않고 바깥을 탭해 먼저 닫는다.
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('삭제'), findsNothing);
 
         // 카테고리 드롭다운 탭 — 패널이 열려야 한다.
         await tester.tap(categoryDropdownFinder());

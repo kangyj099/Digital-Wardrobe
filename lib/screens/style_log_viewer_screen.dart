@@ -9,6 +9,7 @@ import '../router/app_router.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/composition_preview_card.dart';
+import '../widgets/glass_toast.dart';
 import '../widgets/status_badge.dart';
 import 'app_detail_scaffold.dart';
 
@@ -61,6 +62,11 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
 
     return AppDetailScaffold(
       category: AppCategory.styleLog,
+      onDelete: () {
+        ref.read(styleLogsProvider.notifier).softDeleteMany({widget.styleLogId});
+        context.pop();
+        GlassToast.show(context, message: '휴지통으로 이동됨');
+      },
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(

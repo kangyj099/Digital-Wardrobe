@@ -8,6 +8,7 @@ import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/glass_toast.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
@@ -41,6 +42,11 @@ class CompositionDetailScreen extends ConsumerWidget {
 
     return AppDetailScaffold(
       category: AppCategory.composition,
+      onDelete: () {
+        ref.read(compositionsProvider.notifier).softDeleteMany({compositionId});
+        context.pop();
+        GlassToast.show(context, message: '휴지통으로 이동됨');
+      },
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
