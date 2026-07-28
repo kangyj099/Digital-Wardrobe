@@ -18,19 +18,21 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**버그 수정 2건 완료(2026-07-28)**: (1) `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로채던 문제 — `Center(child: IntrinsicWidth(child: Material(...)))`로 수정, Worker→Review→Tester 통과, 커밋 `28cca3e`+`e175ffc`. (2) (P1) `FlutterError: setState() ... called during build` 크래시 — provider-to-provider watch(`styleLogsLinkedToItemProvider`가 `compositionsContainingItemProvider`를 watch하던 구조)가 build 중 ancestor `setState()` 크래시를 유발하는 게 근본원인이라 확인, `compositionsProvider` 직접 필터 인라인으로 제거. 사용자의 실제 5단계 재연 시나리오 포함 신규 회귀테스트 3개 전부 PASS(Worker→Review 2라운드→Tester 통과), 커밋 `90e44a1`+`52303f6`. Tester가 부수적으로 확인한 comp02 소프트삭제 drift 실패 3건은 기존에 이미 기록된 별개 TechDebt(아래 참고).
+**버그 수정 3건 완료(2026-07-28~29, 세션 중 사용자 자리비움 — PM 자율 진행)**: (1) `GlassToast` 투명 히트박스, 커밋 `28cca3e`+`e175ffc`. (2) (P1) `setState() during build` 크래시 — provider-to-provider watch 제거, 커밋 `90e44a1`+`52303f6`. (3) (P2) 삭제된 옷이 코디/스타일일지 상세에서 정상처럼 탭되던 문제 — `StatusBadge('삭제됨')` 오버레이+탭차단(제외 아님, 사용자 확정 방향), Worker→Review 2라운드(Stack 기본 fit이 loose라 썸네일이 쪼그라드는 P1 발견→`StackFit.expand`+`Positioned.fill`로 해소)→Tester(실기기 물리 탭으로 확인) 통과, 커밋 `636f58e`+`ed85a73`. 3건 전부 `TechnicalDebt.md` 상태 "해결"로 갱신 완료. dev 동기화 확인(변경 없음).
 
 ---
 
 # Current
 
-**Group B Task 11(Detail 3화면 "더보기" 메뉴 — 실제 [삭제] 연결) 착수 예정** — 계획 문서 `docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 3509행~ 참고. Task 12(설정→휴지통 진입 로우)는 이미 완료돼 스킵, Task 13(문서 갱신 마무리)만 Task 11 이후 남음 — 13개 Task 중 11개 완료, 2개만 남은 상태.
+**Group B Task 11(Detail 3화면 "더보기" 메뉴 — 실제 [삭제] 연결) 착수** — 계획 문서 `docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 3509행~. Task 12(설정→휴지통 진입 로우)는 이미 완료돼 스킵, Task 13(문서 갱신 마무리)만 Task 11 이후 남음 — 13개 Task 중 11개 완료, 2개만 남은 상태. **주의**: 계획 문서가 2026-07-21 작성 당시 라인 번호 기준이라 이후 Task 7~10에서 3개 Detail 화면이 실제로 손을 탔으므로(위 P2 수정 포함), 착수 시 라인 번호보다 현재 파일 구조를 우선할 것.
 
-**미착수 — (P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`와 `style_log_viewer_screen.dart:58`가 필터 안 된 원본 `closetItemsProvider`를 씀. 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요. 위 P1 크래시는 이제 해소됐으니 다음에 착수 가능.
+**미확인 — `GlassToast` 히트박스 수정이 사용자가 원래 보고한 증상과 완전히 같은 것인지 사용자 직접 재검증 예정.**
 
-**미확인 — `GlassToast` 히트박스 수정이 사용자가 원래 보고한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 완전히 같은 것인지 사용자 직접 재검증 예정.**
+**판단 보류 — Visual Review 트리거 시점**: Group B 완료 시점에 트리거하기로 사용자 확정된 밀린 Visual Review(`Decision.md`/`Workflow_Design.md` §2.1)를 PM이 혼자 스크린샷 보고 판정할지, 사용자가 직접 볼지 미정 — 사용자 부재 중이라 보류, 상세는 `docs/work/Questions.md` 참고. Task 11/13 완료 후 재검토.
 
-**TechDebt 참고 — comp02 소프트삭제로 깨진 통합테스트**: `composition_detail_data_binding_test.dart`/`detail_cross_reference_visuals_test.dart`/`style_log_composition_binding_test.dart`(확인된 실패, 이번 세션 Tester가 재확인)+`detail_thumbnail_square_unification_test.dart`(미확인 추정) — `TechnicalDebt.md` "[TechDebt] comp02 소프트삭제로 tapCompositionById 기반 통합테스트..." 항목 참고. Group B Task 8/9(코디·스타일일지 메인 마이그레이션)에서 이미 픽업 권장했었는데 아직 안 됨 — Task 11 착수 전에 픽업할지 판단 필요.
+**TechDebt 참고 — comp02 소프트삭제로 깨진 통합테스트**: `composition_detail_data_binding_test.dart`/`detail_cross_reference_visuals_test.dart`/`style_log_composition_binding_test.dart`(확인된 실패, P1/P2 Tester가 반복 재확인)+`detail_thumbnail_square_unification_test.dart`(미확인 추정) — `TechnicalDebt.md` 참고. 여전히 픽업 안 됨 — Task 11 착수 시 어차피 이 3개 화면을 다시 여니 함께 고칠지 PM이 판단.
+
+**TechDebt 신규 — `AppMainScaffold` 헤더 오버레이 때문에 widget test 기본 서페이스에서 `tester.tap()` hit-test가 어긋남(P3)**: P2 수정 중 발견, `integration_test`/실기기에선 재현 안 됨(우회책: `onTap` 콜백 직접 호출). `TechnicalDebt.md` 최상단 항목 참고.
 
 ---
 
