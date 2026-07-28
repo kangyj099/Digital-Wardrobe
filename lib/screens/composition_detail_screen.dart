@@ -8,6 +8,7 @@ import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/status_badge.dart';
 import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
 
@@ -63,17 +64,32 @@ class CompositionDetailScreen extends ConsumerWidget {
                   final item = usedItems[index];
                   return GestureDetector(
                     key: ValueKey(item.id),
-                    onTap: () =>
-                        context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
+                    onTap: item.isDeleted
+                        ? null
+                        : () =>
+                            context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
                           width: 72,
                           height: 72,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            child: Image.asset(item.imagePath, fit: BoxFit.cover),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  child: Image.asset(item.imagePath, fit: BoxFit.cover),
+                                ),
+                              ),
+                              if (item.isDeleted)
+                                const Positioned(
+                                  top: AppSpacing.xxs,
+                                  left: AppSpacing.xxs,
+                                  child: StatusBadge(label: '삭제됨'),
+                                ),
+                            ],
                           ),
                         ),
                         SizedBox(

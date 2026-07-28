@@ -9,6 +9,7 @@ import '../router/app_router.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/composition_preview_card.dart';
+import '../widgets/status_badge.dart';
 import 'app_detail_scaffold.dart';
 
 /// 스타일일지 열람 — 카드 구조를 스펙 원문(`03_스타일 일지.md` "대표이미지(1번, 고정) →
@@ -133,13 +134,30 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
                     final match = closetItems.where((i) => i.imagePath == path);
                     final item = match.isEmpty ? null : match.first;
                     return GestureDetector(
-                      onTap: item == null
+                      onTap: (item == null || item.isDeleted)
                           ? null
                           : () =>
                               context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        child: Image.asset(path, width: 96, fit: BoxFit.cover),
+                      child: SizedBox(
+                        width: 96,
+                        height: 96,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                child: Image.asset(path, fit: BoxFit.cover),
+                              ),
+                            ),
+                            if (item != null && item.isDeleted)
+                              const Positioned(
+                                top: AppSpacing.xxs,
+                                left: AppSpacing.xxs,
+                                child: StatusBadge(label: '삭제됨'),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },
