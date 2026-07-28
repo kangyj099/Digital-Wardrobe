@@ -1,6 +1,20 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
-[TechDebt] `AppMainScaffold` 헤더 오버레이 때문에 widget test 기본 서페이스에서 하위 콘텐츠 `tester.tap()`이 의도한 위젯을 못 맞춤 (P3)
+[TechDebt] Detail 3화면의 자기 자신 id 조회(`firstWhere`)가 안전가드 대상에서 제외됨
+
+상태: 의도적 미해결(우선순위 낮음)
+
+내용:
+`closet_item_detail_screen.dart:27`/`composition_detail_screen.dart:35`/`style_log_viewer_screen.dart:55`가
+자기 자신의 id(itemId/compositionId/styleLogId)를 `orElse` 없는 `firstWhere`로 조회한다.
+그 화면이 스택에 남아있는 채로 대상이 다른 경로로 purge되면 크래시하지만, 이 앱이 단순
+`GoRoute` push 스택이라(딥링크/탭 상태 유지 없음) 실질 도달 불가능해 가드를 안 함
+(`docs/superpowers/specs/2026-07-21-multi-select-and-trash-design.md` §3.7). Group B
+Task 11(더보기→삭제) 추가로 이 화면들이 스스로를 삭제하는 경로가 생겼지만, 삭제 즉시
+`context.pop()`하므로 build가 다시 안 돌아 이 조회 시점에 영향 없음 — 여전히 안전.
+
+조치 방향(착수 조건): 딥링크나 `StatefulShellRoute` 같은 네비게이션 구조 변경이 생기면
+재검토.
 
 상태: 미해결 (우회책 있음, 근본 원인 미조사)
 

@@ -1,5 +1,27 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Group B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기) 구현 완료 — `GalleryMainScreen<T>` 제네릭 셸 아키텍처 채택 (Data/Architecture + UI/Screen, Decision)
+
+결정:
+- `docs/superpowers/specs/2026-07-21-multi-select-and-trash-design.md`를 Task 1~11(Task 12는 Group C에서 이미 만족돼 스킵, Task 13은 이 항목 자체)로 구현 완료.
+- Main형 4개 화면(옷장/코디/스타일일지/휴지통)의 공용 로직(다중선택 모드 토글, 선택 id 집합, FAB 노출)을 `lib/widgets/gallery_main_screen.dart`의 `GalleryMainScreen<T>` 제네릭 셸 하나로 통합. 분류(그룹형 드릴다운) 기능은 `ClassificationConfig<T>?`로 옵트인 — 옷장/코디는 제공, 스타일일지는 `null`(플랫+필터), 휴지통은 `GalleryMainScreen<T>` 자체를 안 쓰고 `AppMainScaffold` 직접 배선(2버튼 헤더+필터칩 구조가 달라서).
+- 다중선택 상태는 전역 provider가 아니라 `GalleryMainScreen`의 로컬 `State` — 화면을 벗어나면 자동 초기화.
+- 3개 모델(`ClothingItem`/`Composition`/`StyleLog`) 전체에 `deletedAt`(nullable) 필드 + `copyWith` sentinel 패턴 확장, `TrashEntry.remainingDays`를 `daysUntilPurge`로 명명 변경.
+- 휴지통은 별도 mock provider(`mockTrashEntries`)를 없애고 3-domain 파생 집계(`trashEntriesProvider`)로 전환 — 삭제/복원/영구삭제가 각 도메인 provider(`softDeleteMany`/`restoreMany`/`purgeMany`)에서 바로 반영됨.
+- 영구삭제는 실제 데이터 제거 + 안전가드 3곳(코디 커버이미지 폴백/아트보드 렌더링 skip/스타일일지 연결끊김 처리) — 캐스케이드 배지 UX는 "Editor Draft 구현" 후속 이관 유지.
+- Detail 3화면(옷/코디/스타일일지 상세)의 "더보기" 메뉴에 실제 [삭제] 연결 — 옷은 코디 사용중이면 확인다이얼로그, 코디/스타일일지는 즉시삭제(코디 자체를 참조하는 다른 엔티티 개념이 없어서, `TechnicalDebt.md`의 "사용 중 경고 없음" 항목 참고).
+- 소프트삭제된 항목이 다른 도메인의 크로스 레퍼런스(옷↔코디, 코디↔스타일일지)에 여전히 정상처럼 보이고 탭되는 문제를 발견 즉시 수정하는 정책을 이 라운드에서 확립: **목록/슬롯에서 제외하지 않고, `StatusBadge('삭제됨')` 오버레이 + 탭 차단.** 실제 3개 지점(코디 상세의 "사용된 옷", 스타일일지 열람의 "착용 옷"/"연결된 코디")에 전부 적용 완료.
+
+사유:
+Group B 스펙(review 2회 통과)과 구현계획(review 1회+홀리스틱 Audit 1회 통과, 13 Task)을 그대로 따라 진행. 4개 Main형 화면이 다중선택/휴지통 로직을 각자 중복 구현하지 않고 제네릭 셸로 통합하는 게 유지보수 비용을 줄인다는 판단은 계획 확정 시점에 이미 내려짐(이 Decision은 그 계획이 실제로 끝까지 구현됐음을 기록). 소프트삭제 크로스 레퍼런스 배지 정책은 사용자가 2026-07-29 세션 중 명시적으로 확정(제외 옵션과 비교해 "삭제됐다는 사실 자체를 숨기지 않는" 쪽을 선택).
+
+Impact:
+- `lib/widgets/gallery_main_screen.dart`(신규), `lib/screens/{closet,composition,style_log,trash}_main_screen.dart`(전면 재작성), `lib/screens/app_detail_scaffold.dart`+Detail 3화면(더보기 메뉴 실배선), `lib/providers/{closet,composition,style_log}_providers.dart`(`softDeleteMany`/`restoreMany`/`purgeMany`+`trashEntriesProvider`), `lib/models/*.dart`(`deletedAt` sentinel), `lib/widgets/glass_toast.dart`(신규), `lib/widgets/status_badge.dart` 재사용(삭제 배지).
+- 관련 커밋(대표): `72366f2`/`540ee83`(Task1) `d2c3e3e`(Task2) `14c0ec0`+`029641e`(Task3) `1e1ae17`(Task4) `4487d29`(Task5) `a890c61`(Task6) `7763214`(Task7) `0c5360d`(Task8) `c0e173e`(Task9) `03b7c64`(Task10) `6a0125c`(Task11) — 상세 경위는 `docs/work/BACKLOG.md` git 이력 및 각 커밋 메시지 참고, 이 항목은 요약만 유지.
+- **밀린 Visual Review(Typography Pass 3 이후 누적된 신규 화면/컴포넌트 대상, `Workflow_Design.md` §2.1)는 이 시점에도 아직 트리거 안 됨** — 2026-07-21에는 "Group B 완료 시점에 트리거"라고 사용자 확정했었지만, 실제 트리거 방식(PM 셀프 판정 vs 사용자 직접 확인)은 아직 미정(`docs/work/Questions.md` 참고, 2026-07-29 세션이 사용자 부재로 보류함). Design Tokens는 계속 provisional 상태 유지.
+
+---
+
 [Decision] `GlassToast`/`UndoableActionToast` 2종 공존 확정 — 화면군별 시각 변형, 중복 아님 (UI/Screen, Decision)
 
 결정:
