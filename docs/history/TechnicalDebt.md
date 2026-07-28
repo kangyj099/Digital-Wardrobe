@@ -126,9 +126,9 @@ Group B Task 10(휴지통 실행 배선) Review(2026-07-28)가 발견 — `lib/s
 내용:
 Group B Task 7 완료 직후 Audit(2026-07-28)이 `composition_style_log_main_screen_test.dart`의 "포멀 코디"(comp02) 스테일 assertion을 지적한 김에, 같은 패턴(`tapCompositionById(tester, 'comp02')` — 코디 메인 화면에 렌더링된 `CompositionGalleryTile`을 predicate로 찾아 탭)이 다른 파일에도 있는지 PM이 전체 grep으로 확인 → 4개 파일에서 comp02를 직접 탭하는 테스트가 실제로 존재함을 확인. `composition_detail_data_binding_test.dart`를 실제로 실행해 최소 1건 실패를 직접 재현·확인함(`Expected: exactly one matching candidate, Actual: Found 0 widgets` — "코디 comp02 타일을 코디 메인에서 찾을 수 없다"):
 - `integration_test/composition_detail_data_binding_test.dart` — comp02 상세 크로스레퍼런스 테스트 1건(확인된 실패)
-- `integration_test/detail_cross_reference_visuals_test.dart` — comp02 상세 이미지 렌더링 테스트 1건(미실행, 같은 헬퍼/같은 원인이라 실패 추정)
+- `integration_test/detail_cross_reference_visuals_test.dart` — comp02 상세 이미지 렌더링 테스트 1건(확인된 실패, P1 크래시 수정 Tester가 2026-07-28 재실행해 재확인)
 - `integration_test/detail_thumbnail_square_unification_test.dart` — comp02 상세 스타일일지 타일 정사각 검증 1건(미실행, 동일 추정)
-- `integration_test/style_log_composition_binding_test.dart` — 코디 선택 모달에서 comp02 타일 탭 테스트 1건(미실행, 동일 추정 — 단 이 화면은 `selectionMode:true` 피커 모달이라 일반 코디 메인과 필터 로직이 같은지 별도 확인 필요)
+- `integration_test/style_log_composition_binding_test.dart` — 코디 선택 모달에서 comp02 타일 탭 테스트 1건(확인된 실패, P1 크래시 수정 Tester가 2026-07-28 재실행해 재확인 — 이 화면은 `selectionMode:true` 피커 모달이라 일반 코디 메인과 필터 로직이 같은지는 여전히 별도 확인 필요)
 
 `comp02`는 Task 3(휴지통 집계 재작성, 2026-07-24)에서 소프트삭제됐고 `comp03`이 그 역할(season:null/weather:rain 데모)을 이어받았다 — 즉 이 깨짐은 **Task 7이 만든 게 아니라 Task 3 시점부터 존재했을 가능성이 높은 사전 부채**이며, Task 3 당시 Tester가 5개 특정 런타임 시나리오만 검증해 이 파일들을 못 잡았던 것으로 추정된다. Task 7 스코프(옷장 메인 마이그레이션)와 무관해 이번 태스크에서 처리하지 않음.
 
