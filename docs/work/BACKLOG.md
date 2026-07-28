@@ -18,25 +18,19 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**헤더 카테고리 드롭다운/분류 캡슐 UI 폴리시 + 재선택 동작 정교화 완료 (2026-07-20).** `CategoryToggleDropdown`/`ClassificationDrilldownCapsule`을 `DropdownButton`→`PopupMenuButton`으로 통일 전환(색상/모양/오프셋 일치, 메뉴가 토글 버튼 바로 아래·화면 좌측 여백만큼만 떨어져 열림, 체크아이콘 유무와 무관한 텍스트 중앙정렬), 설정 구분선 연한 톤 적용. 헤더에서 현재 카테고리를 재선택할 때의 동작을 `GoRouter.refresh()` 방식에서 "그 카테고리의 메인 화면에 있으면 제자리에서 분류 상태만 초기화(스택 유지), 메인이 아닌 화면(Detail 등)이면 메인으로 이동+스택 리셋"하는 2-케이스 방식으로 교체(`onReselectCurrentCategory` 콜백, `AppDetailScaffold`는 콜백을 안 넘겨 Detail 화면이 자동으로 "비메인" 취급됨). 전 유닛 테스트(66)와 영향 통합테스트(옷장/코디·스타일일지 메인, 분류 드릴다운, 옷장 셸 회귀 — 총 65개) 전부 통과, 최종 커밋 `aafe91f`.
+**버그 수정 2건 완료(2026-07-28)**: (1) `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로채던 문제 — `Center(child: IntrinsicWidth(child: Material(...)))`로 수정, Worker→Review→Tester 통과, 커밋 `28cca3e`+`e175ffc`. (2) (P1) `FlutterError: setState() ... called during build` 크래시 — provider-to-provider watch(`styleLogsLinkedToItemProvider`가 `compositionsContainingItemProvider`를 watch하던 구조)가 build 중 ancestor `setState()` 크래시를 유발하는 게 근본원인이라 확인, `compositionsProvider` 직접 필터 인라인으로 제거. 사용자의 실제 5단계 재연 시나리오 포함 신규 회귀테스트 3개 전부 PASS(Worker→Review 2라운드→Tester 통과), 커밋 `90e44a1`+`52303f6`. Tester가 부수적으로 확인한 comp02 소프트삭제 drift 실패 3건은 기존에 이미 기록된 별개 TechDebt(아래 참고).
 
 ---
 
 # Current
 
-**버그 수정 완료(2026-07-28) — `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로챔**: 사용자가 실사용 중 발견(휴지통에서 항목 복원 후 뒤로가기를 눌렀는데 반응이 없어 "멈춘 것처럼" 보임). 원인: `glass_toast.dart`의 `Positioned(left,right,bottom,...)`가 `Material`을 화면 전체 너비로 강제 확장시켜, 실제 안 보이는 영역도 히트테스트를 가로채 토스트가 떠 있는 동안(4초) 그 아래 있는 버튼(예: `FrostedBackButton`)의 터치를 막고 있었음. `Center(child: IntrinsicWidth(child: Material(...)))`로 수정(`Center` 단독으론 `GlassPill` 내부 `Container`의 `Align`이 유한한 max 폭을 그대로 채워버려 불충분 — `IntrinsicWidth`로 타이트한 natural-width 제약을 강제해야 해결됨). `git stash` 전/후 비교로 실제 재현·해소 확인. Worker→Review(P3 1건, 매우 긴 메시지에 대한 미래 취약점 — 현재 호출부 전부 안전, 논블로킹)→Tester(PASS, 액션 버튼 있는/없는 토스트 둘 다, 다른 화면에서도 확인) 사이클 통과. 커밋 `28cca3e`(본체)+`e175ffc`(TechDebt 기록).
+**Group B Task 11(Detail 3화면 "더보기" 메뉴 — 실제 [삭제] 연결) 착수 예정** — 계획 문서 `docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 3509행~ 참고. Task 12(설정→휴지통 진입 로우)는 이미 완료돼 스킵, Task 13(문서 갱신 마무리)만 Task 11 이후 남음 — 13개 Task 중 11개 완료, 2개만 남은 상태.
 
-**진행 중(2026-07-28, 세션 중단 — 사용자 자리비움) — (P1) `FlutterError: setState() ... called during build` 버그 수정, Tester 결과 대기 중**:
-- 근본원인 확정+수정 2라운드 완료: 1차 `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`를 `.autoDispose.family`로 전환했으나, Review가 "이 앱은 전부 `context.push`(pop 없이 계속 쌓임)라 같은 아이템 상세를 pop 안 한 채 중복 push하면 리스너가 0으로 안 떨어져 autoDispose가 못 막는 경로가 있다"고 지적(P1) → Worker가 실제 재현 확인 후 2차 수정: `styleLogsLinkedToItemProvider`가 `compositionsContainingItemProvider`를 provider-to-provider로 watch하던 구조를 없애고 필터 로직을 `compositionsProvider`에 직접 인라인(provider-to-provider watch만 build 중 ancestor `setState()` 크래시 경로를 탄다는 걸 Riverpod 소스로 확인). Review 2차 PASS(P0/P1 없음, P2/P3 논블로킹, TechnicalDebt.md에 기록 완료).
-- 수정 파일: `lib/providers/composition_providers.dart`, `lib/providers/style_log_providers.dart`. 신규 회귀테스트 2개: `integration_test/closet_item_detail_revisit_setstate_during_build_regression_test.dart`, `integration_test/closet_item_detail_duplicate_push_setstate_during_build_regression_test.dart`.
-- 사용자가 직접 재연한 실제 스텝(옷 2개+ 코디에 등록 → 삭제 → 그 옷이 쓰인 코디 하나 삭제 → 안 삭제된 코디 상세 진입 → 옷/코디/스타일일지 화면 무작위로 pop 없이 계속 진입 → 뒤로가기 연타)으로 실제 크래시 재현·해소 확인됨.
-- **Tester를 위 실제 재연 스텝 기반 검증으로 돌리던 중 사용자 요청으로 일시정지(작업 중단, 결과 없음, 2026-07-28).** 다음 세션 시작 시 Tester부터 다시 스폰해서 이어갈 것(Review까지는 통과 완료, Tester 결과만 없는 상태 — PASS면 커밋, FAIL이면 Worker로 돌아가 Review→Tester 사이클 재시작, CLAUDE.md 체크포인트 4). **아직 커밋 안 됨.**
-- **Tester가 중단 직전 실제 탭 제스처 기반 통합테스트를 이미 작성 완료해둠**: `integration_test/closet_item_detail_manual_navigation_crash_regression_test.dart`(사용자의 실제 5단계 재연 스텝을 `tester.tap`으로 그대로 재현 — `GoRouter.push` 직접 호출이 아님). 코드 자체는 완성돼 보이나 **실행해서 통과/실패를 확인하기 전에 중단됨** — 다음 세션에서 Tester 재개 시 이 파일부터 실행해 결과 확인할 것 (아직 untracked, git에 없음).
-- 조사 중 추가 발견 3건, `TechnicalDebt.md`에 이미 기록: (a) 버그2(아래)가 `style_log_viewer_screen.dart:58`에도 같은 패턴으로 존재, (b) `composition_main_screen.dart` 코디 삭제 확인창에 "사용 중" 경고 없음, (c) provider-to-provider watch가 이 크래시 클래스를 유발하는 일반 패턴이라 구조적 가드 없음(컨벤션 문서화 권장).
+**미착수 — (P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`와 `style_log_viewer_screen.dart:58`가 필터 안 된 원본 `closetItemsProvider`를 씀. 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요. 위 P1 크래시는 이제 해소됐으니 다음에 착수 가능.
 
-**미착수 — (P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`가 필터 안 된 원본 `closetItemsProvider`를 씀(위에서 발견된 두 번째 지점 `style_log_viewer_screen.dart:58` 포함). 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요 — 위 P1 버그가 먼저 해소되면 이어서 진행.
+**미확인 — `GlassToast` 히트박스 수정이 사용자가 원래 보고한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 완전히 같은 것인지 사용자 직접 재검증 예정.**
 
-또한 **아까 수정한 `GlassToast` 히트박스 버그가 사용자가 원래 보고한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 완전히 같은 것인지는 사용자가 직접 재검증 예정, 아직 미확인.**
+**TechDebt 참고 — comp02 소프트삭제로 깨진 통합테스트**: `composition_detail_data_binding_test.dart`/`detail_cross_reference_visuals_test.dart`/`style_log_composition_binding_test.dart`(확인된 실패, 이번 세션 Tester가 재확인)+`detail_thumbnail_square_unification_test.dart`(미확인 추정) — `TechnicalDebt.md` "[TechDebt] comp02 소프트삭제로 tapCompositionById 기반 통합테스트..." 항목 참고. Group B Task 8/9(코디·스타일일지 메인 마이그레이션)에서 이미 픽업 권장했었는데 아직 안 됨 — Task 11 착수 전에 픽업할지 판단 필요.
 
 ---
 
