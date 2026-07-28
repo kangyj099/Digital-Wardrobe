@@ -24,6 +24,10 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current
 
+**버그 수정 완료(2026-07-28) — `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로챔**: 사용자가 실사용 중 발견(휴지통에서 항목 복원 후 뒤로가기를 눌렀는데 반응이 없어 "멈춘 것처럼" 보임). 원인: `glass_toast.dart`의 `Positioned(left,right,bottom,...)`가 `Material`을 화면 전체 너비로 강제 확장시켜, 실제 안 보이는 영역도 히트테스트를 가로채 토스트가 떠 있는 동안(4초) 그 아래 있는 버튼(예: `FrostedBackButton`)의 터치를 막고 있었음. `Center(child: IntrinsicWidth(child: Material(...)))`로 수정(`Center` 단독으론 `GlassPill` 내부 `Container`의 `Align`이 유한한 max 폭을 그대로 채워버려 불충분 — `IntrinsicWidth`로 타이트한 natural-width 제약을 강제해야 해결됨). `git stash` 전/후 비교로 실제 재현·해소 확인. Worker→Review(P3 1건, 매우 긴 메시지에 대한 미래 취약점 — 현재 호출부 전부 안전, 논블로킹)→Tester(PASS, 액션 버튼 있는/없는 토스트 둘 다, 다른 화면에서도 확인) 사이클 통과. 커밋 `28cca3e`(본체)+`e175ffc`(TechDebt 기록). **사용자가 직접 재현 테스트 예정** — 사용자가 보고한 정확한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 이 수정으로 찾은 증상(탭이 아예 다른 곳에 히트됨)이 완전히 같은 것인지는 아직 미확인, 사용자 재검증 대기 중.
+
+---
+
 **병렬 작업 완료(2026-07-23) — 하네스 파이프라인 보완 + 문서 구조 개편**: `../Digital-Wardrobe-pipeline-docs` worktree(`feature/pipeline-docs-restructure`, `feature/flutter-hifi-screens`에서 분기)에서 아래 3건을 독립적으로 완료, `dev`로 PR 대기 중 — 이 Current 항목(Group B 등)과는 무관한 별도 스레드라 그대로 계속 진행하면 됨.
 1. Task 완료 시 "세션 내 후속 작업 없음" 판단되면 BACKLOG.md만으로 새 세션이 이어받을 수 있는지 시뮬레이션 후 문제없으면 `/clear` 권유 — `Workflow_Project.md` §3 신설, CLAUDE.md 체크포인트 7번.
 2. 설계/계획(Decision 단계) 산출물은 크기 무관 확정 전 Audit 필수 — `Workflow_Project.md` §5 "Decision-Stage (Design & Plan) Pipeline" 신설 + §12.1 표 갱신, `.claude/agents/audit.md` 트리거 추가. 이 플랜 자체가 이 원칙의 첫 적용 사례(Review 1회+Audit 1회 통과 후 확정).
