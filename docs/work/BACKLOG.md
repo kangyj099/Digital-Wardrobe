@@ -26,10 +26,14 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 **버그 수정 완료(2026-07-28) — `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로챔**: 사용자가 실사용 중 발견(휴지통에서 항목 복원 후 뒤로가기를 눌렀는데 반응이 없어 "멈춘 것처럼" 보임). 원인: `glass_toast.dart`의 `Positioned(left,right,bottom,...)`가 `Material`을 화면 전체 너비로 강제 확장시켜, 실제 안 보이는 영역도 히트테스트를 가로채 토스트가 떠 있는 동안(4초) 그 아래 있는 버튼(예: `FrostedBackButton`)의 터치를 막고 있었음. `Center(child: IntrinsicWidth(child: Material(...)))`로 수정(`Center` 단독으론 `GlassPill` 내부 `Container`의 `Align`이 유한한 max 폭을 그대로 채워버려 불충분 — `IntrinsicWidth`로 타이트한 natural-width 제약을 강제해야 해결됨). `git stash` 전/후 비교로 실제 재현·해소 확인. Worker→Review(P3 1건, 매우 긴 메시지에 대한 미래 취약점 — 현재 호출부 전부 안전, 논블로킹)→Tester(PASS, 액션 버튼 있는/없는 토스트 둘 다, 다른 화면에서도 확인) 사이클 통과. 커밋 `28cca3e`(본체)+`e175ffc`(TechDebt 기록).
 
-**다음 세션 시작 시 먼저 확인할 것 — 사용자 실사용 중 신규 발견 버그 2건(둘 다 미착수, `TechnicalDebt.md` 최상단 2개 항목 참고)**:
-1. **(P1) `FlutterError: setState() ... called during build`** — 옷 삭제 후 코디/스타일일지 화면을 오가면 재현됨(VS Code 디버그 콘솔에서 실제 스택트레이스 확보, `ClosetItemDetailScreen.build`에서 `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider` 체인 재계산 중 발생). 원인 가설은 있으나 자동 재현 스크립트는 아직 없음 — `systematic-debugging` 스킬로 Phase 1(재현)부터 시작할 것.
-2. **(P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`가 필터 안 된 원본 `closetItemsProvider`를 씀. 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요.
-위 두 버그는 재현 경로가 겹칠 가능성이 높음(2번 경로로 진입한 게 1번 크래시의 계기였을 수 있음) — 함께 조사 권장.
+**진행 중(2026-07-28, 세션 중단 — 사용자 자리비움) — (P1) `FlutterError: setState() ... called during build` 버그 수정, Tester 결과 대기 중**:
+- 근본원인 확정+수정 2라운드 완료: 1차 `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`를 `.autoDispose.family`로 전환했으나, Review가 "이 앱은 전부 `context.push`(pop 없이 계속 쌓임)라 같은 아이템 상세를 pop 안 한 채 중복 push하면 리스너가 0으로 안 떨어져 autoDispose가 못 막는 경로가 있다"고 지적(P1) → Worker가 실제 재현 확인 후 2차 수정: `styleLogsLinkedToItemProvider`가 `compositionsContainingItemProvider`를 provider-to-provider로 watch하던 구조를 없애고 필터 로직을 `compositionsProvider`에 직접 인라인(provider-to-provider watch만 build 중 ancestor `setState()` 크래시 경로를 탄다는 걸 Riverpod 소스로 확인). Review 2차 PASS(P0/P1 없음, P2/P3 논블로킹, TechnicalDebt.md에 기록 완료).
+- 수정 파일: `lib/providers/composition_providers.dart`, `lib/providers/style_log_providers.dart`. 신규 회귀테스트 2개: `integration_test/closet_item_detail_revisit_setstate_during_build_regression_test.dart`, `integration_test/closet_item_detail_duplicate_push_setstate_during_build_regression_test.dart`.
+- 사용자가 직접 재연한 실제 스텝(옷 2개+ 코디에 등록 → 삭제 → 그 옷이 쓰인 코디 하나 삭제 → 안 삭제된 코디 상세 진입 → 옷/코디/스타일일지 화면 무작위로 pop 없이 계속 진입 → 뒤로가기 연타)으로 실제 크래시 재현·해소 확인됨.
+- **Tester가 백그라운드에서 위 실제 재연 스텝 기반 검증 진행 중 — 결과 미확인 상태로 세션 중단.** 다음 세션 시작 시 이 Tester 결과부터 확인할 것(PASS면 커밋, FAIL이면 Worker로 돌아가 Review→Tester 사이클 재시작 — CLAUDE.md 체크포인트 4). **아직 커밋 안 됨.**
+- 조사 중 추가 발견 3건, `TechnicalDebt.md`에 이미 기록: (a) 버그2(아래)가 `style_log_viewer_screen.dart:58`에도 같은 패턴으로 존재, (b) `composition_main_screen.dart` 코디 삭제 확인창에 "사용 중" 경고 없음, (c) provider-to-provider watch가 이 크래시 클래스를 유발하는 일반 패턴이라 구조적 가드 없음(컨벤션 문서화 권장).
+
+**미착수 — (P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`가 필터 안 된 원본 `closetItemsProvider`를 씀(위에서 발견된 두 번째 지점 `style_log_viewer_screen.dart:58` 포함). 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요 — 위 P1 버그가 먼저 해소되면 이어서 진행.
 
 또한 **아까 수정한 `GlassToast` 히트박스 버그가 사용자가 원래 보고한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 완전히 같은 것인지는 사용자가 직접 재검증 예정, 아직 미확인.**
 

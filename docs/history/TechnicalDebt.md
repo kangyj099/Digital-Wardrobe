@@ -51,7 +51,33 @@ final usedItems = <ClothingItem>[
 ```
 이 화면 자체가 삭제/휴지통 개념(Group B)이 생기기 전에 만들어져서 `isDeleted` 여부를 애초에 고려하지 않음 — 오늘 밤(Group B) 작업이 만든 회귀가 아니라, 소프트삭제 기능이 이 화면엔 아직 반영 안 된 사전 존재 갭. 크래시는 아니고(단, 위 항목의 크래시와 경로가 겹칠 가능성 있음) "삭제된 데이터가 계속 정상처럼 보이고 눌린다"는 데이터 정합성/UX 버그.
 
-조치 방향(착수 조건, 다음 세션): `composition_detail_screen.dart`의 "사용된 옷" 목록에서 삭제된 항목을 어떻게 표시할지 결정 필요(옵션: (a) 목록에서 아예 제외, (b) "삭제됨" 배지 표시 후 탭 막기, (c) 탭은 허용하되 상세 화면에서 "휴지통에 있음" 안내) — 이건 코드 버그 수정이 아니라 UX 스펙 결정이 필요한 사안이라 사용자 확인 먼저 필요. 위 크래시 버그와 같은 파일/경로를 만지게 될 가능성이 높으니 함께 조사 권장.
+**[범위 확장, 2026-07-28, 위 크래시 버그 조사 중 Worker가 발견]** 같은 패턴의 두 번째 발생 지점: `lib/screens/style_log_viewer_screen.dart:58`("착용 옷" 섹션, 130-144행)도 필터 안 된 원본 `closetItemsProvider`를 그대로 써서 `imagePath` 기준으로 매칭한다(id 매칭조차 아님). 삭제된 옷이 있는 스타일일지를 열람하면 여기서도 삭제된 항목이 정상처럼 나타나고 탭돼 `ClosetItemDetailScreen`으로 진입 가능 — mock 데이터에 이미 `c07`/`c08`이 삭제 상태로 시딩돼 있어 수동 삭제 없이도 재현 가능한 경로.
+
+조치 방향(착수 조건, 다음 세션): `composition_detail_screen.dart`와 `style_log_viewer_screen.dart` 두 곳 모두에서 "사용된 옷"/"착용 옷" 목록의 삭제된 항목을 어떻게 표시할지 결정 필요(옵션: (a) 목록에서 아예 제외, (b) "삭제됨" 배지 표시 후 탭 막기, (c) 탭은 허용하되 상세 화면에서 "휴지통에 있음" 안내) — 이건 코드 버그 수정이 아니라 UX 스펙 결정이 필요한 사안이라 사용자 확인 먼저 필요. 두 곳을 함께 조사·수정 권장(같은 원인, 같은 방향 결정으로 해결 가능).
+
+---
+
+[TechDebt] `composition_main_screen.dart`의 코디 삭제 확인창에 "사용 중" 경고 없음 (P2, 미착수)
+
+상태: 미해결
+
+내용:
+위 크래시 버그 조사 과정(2026-07-28)에서 Worker가 발견: `closet_main_screen.dart`의 옷 삭제는 그 옷이 쓰인 코디가 있으면 삭제 전 확인 팝업에 경고를 표시하는데, `composition_main_screen.dart`의 코디 삭제는 그런 "사용 중"류 경고 없이 바로 삭제 확인만 뜬다. 코디 자체를 참조하는 다른 엔티티가 없어서(스타일일지가 코디를 참조하긴 하지만 그 경고가 구현 안 돼 있을 가능성) 비대칭.
+
+조치 방향(착수 조건): 다음에 `composition_main_screen.dart`의 삭제 흐름을 손댈 때, 그 코디를 참조하는 스타일일지가 있는지 확인해 경고를 추가할지 여부 결정. 급하지 않음.
+
+---
+
+[TechDebt] Riverpod provider-to-provider `ref.watch`가 build 중 ancestor `setState()` 크래시를 유발할 수 있는 일반 패턴 (P2, 미착수)
+
+상태: 해결 없음(회피 사례만 존재) — 구조적 가드 없음
+
+내용:
+아래(바로 위) `setState() ... called during build` 크래시 수정(2026-07-28) 과정에서 Review가 소스 레벨로 확인: Riverpod에서 **provider가 다른 provider를 `ref.watch`하는 경우**(provider-to-provider watch)는 의존성이 변경되면 `Ref._invalidateSelf()` → `ProviderElement.invalidateSelf()` → `scheduler.scheduleProviderRefresh()` 경로를 타고, 그 provider에 리스너가 있으면 최종적으로 `_UncontrolledProviderScopeState.scheduleRefresh()`가 **루트 스코프 위젯에 동기적으로 `setState()`**를 건다(`flutter_riverpod` `provider_scope.dart:318`). 이게 마침 다른 위젯의 빌드 사이클 도중(`BuildScope._flushDirtyElements`) 일어나면 크래시한다. 반면 **위젯이 직접 `ref.watch`하는 경우**(`ConsumerStatefulElement.watch`)는 자기 자신에게만 `markNeedsBuild()`를 걸어서 안전하다.
+
+이번엔 `styleLogsLinkedToItemProvider`가 `compositionsContainingItemProvider`를 provider-to-provider watch하던 것이 원인이라 그 관계를 없애고 인라인하는 것으로 해결했지만, **이 패턴 자체를 막는 구조적 장치는 없음** — 나중에 새 provider가 다른 provider를 watch하는 방식으로 작성되면 같은 클래스의 버그가 재발할 수 있음.
+
+조치 방향(착수 조건): 새 provider 작성 시 "다른 non-trivial provider를 watch하는 provider"를 만들 때 이 위험을 인지하도록 `engineering-principles` 또는 `flutter-implementation-conventions` 스킬에 일반 원칙으로 기록하는 것을 고려. 급하지 않음(지금 당장 코드 변경 불필요, 컨벤션 문서화만 해당).
 
 ---
 
