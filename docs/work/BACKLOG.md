@@ -20,13 +20,11 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 **버그 수정 3건 + Group B Task 11 완료(2026-07-28~29, 세션 중 사용자 자리비움 — PM 자율 진행)**: (1) `GlassToast` 투명 히트박스, 커밋 `28cca3e`+`e175ffc`. (2) (P1) `setState() during build` 크래시, 커밋 `90e44a1`+`52303f6`. (3) (P2) 삭제된 옷이 코디/스타일일지 상세에서 정상처럼 탭되던 문제 — `StatusBadge('삭제됨')` 오버레이+탭차단, 커밋 `636f58e`+`ed85a73`. (4) **Group B Task 11(Detail 3화면 "더보기"→실제 [삭제] 연결) 완료** — `AppDetailScaffold`에 `onDelete` 배선, 옷은 코디 사용중이면 확인다이얼로그, 코디/스타일일지는 즉시삭제, 전부 `softDeleteMany`+`pop`+`GlassToast`로 기존 휴지통 파이프라인(Task 3/10)에 연결. Worker→Review 2라운드(P1: `PopupMenuButton<void>`+`value:null`이면 Flutter가 `onSelected`를 안 부르는 버그 발견→`<String>`으로 수정 / P2: 팝업 메뉴가 `CategoryToggleDropdown`과 스타일 안 맞음→해소)→Tester(44개 통합테스트 케이스 전부 PASS, 3도메인+확인다이얼로그+취소흐름+휴지통 연결+비정형 흐름) 통과, 커밋 `6a0125c`. 4건 전부 `TechnicalDebt.md` 반영 완료. dev 동기화 확인(변경 없음).
 
-**Audit(2026-07-29, Task 11 직후) 완료** — P1 2건 발견: (a) 이 BACKLOG 갱신 자체(이 커밋으로 해소), (b) 스타일일지 열람에서 삭제된 코디가 여전히 정상처럼 보이고 탭됨(아래 Current 참고, 다음 순번). P1 1건은 정보성(Task 13 계획 문서 stale — 아래 Current 참고). P2 1건은 `TechnicalDebt.md`에 스코프 확장 기록.
+**Audit(2026-07-29, Task 11 직후) 완료 + P1 수정 완료** — P1 2건 발견: (a) BACKLOG 갱신 자체(그 즉시 커밋으로 해소), (b) 스타일일지 열람에서 삭제된 코디가 여전히 정상처럼 보이고 탭됨. (b)도 Worker→Review(findings 없음, 재검증 위주)→Tester(신규 통합테스트 3/3 포함 재검증) 사이클 통과해 완료 — `CompositionPreviewCard.onTap`을 nullable화 + 코디 슬롯에 `StatusBadge('삭제됨')` 오버레이+탭차단(어제 확립한 정책 재사용, 제외 아님). 커밋 `a98d14b`. Task 크기 S/M이라 Audit 없이 완료 처리. P1 1건(Task 13 계획 문서 stale)은 정보성 — 아래 Current 참고. P2 1건은 `TechnicalDebt.md`에 스코프 확장 기록 완료.
 
 ---
 
 # Current
-
-**Audit P1 — (다음 순번) 스타일일지 열람에서 소프트삭제된 코디가 여전히 정상처럼 보이고 탭됨**: `style_log_viewer_screen.dart:54-59`의 `linkedComposition` 조회가 id만 매칭하고 `isDeleted`를 안 본다 — 어제 고친 "삭제된 옷이 코디/스타일일지 상세에서 정상처럼 탭됨" 버그(위 Last Completed 참고)와 정확히 같은 버그 클래스의 반대 방향(코디가 스타일일지에서 삭제 표시 없이 보임). 그 수정이 이미 확립한 패턴(`StatusBadge('삭제됨')`+탭차단)을 그대로 재사용해서 고치면 됨. 회귀테스트는 `deleted_item_badge_tap_block_regression_test.dart`에 "코디 삭제 후 그 코디를 참조하는 스타일일지 열람" 케이스 추가.
 
 **Group B Task 13(문서 갱신 마무리)만 남음** — 계획 문서(`docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 3821행~)의 Step 2/3 지시문이 2026-07-21 작성 당시 가정 기준이라 지금 상태와 안 맞음(Audit 확인: BACKLOG "Last Completed" 통째 교체 지시는 그 사이 쌓인 실제 기록을 날려버림, find-replace 대상 문자열은 이미 존재 안 함, Visual Review를 "확정됨"으로 서술하지만 실제로는 아직 트리거 시점 미정) — **계획 문서를 문자 그대로 실행하지 말고, 지금 실제 BACKLOG.md/Decision.md 상태에서 다시 도출할 것.** 13개 Task 중 12개 완료(Task 12는 이미 다른 경로로 만족돼 스킵).
 
