@@ -5,6 +5,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
+import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
@@ -191,6 +192,74 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
       expect(find.text('그래픽 맨투맨'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '스타일일지 열람(log01) — 연결된 코디(comp01)가 삭제(휴지통 이동)되면 "삭제됨" 배지가 실제로 '
+    '보이고, 실제 탭으로도 코디 상세로 넘어가지 않는다(2026-07-29 P1: 기존엔 삭제 여부와 무관하게 '
+    '정상 카드처럼 탭되어 코디 상세로 진입했음)',
+    (tester) async {
+      await pumpApp(tester);
+      await goToCategory(tester, '코디');
+
+      // comp01을 실제 더보기→삭제 플로우로 소프트삭제한다(코디는 확인 팝업 없이 바로 삭제).
+      await tester.tap(find.byKey(const ValueKey('comp01')));
+      await tester.pumpAndSettle();
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('더보기 메뉴'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('삭제'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+
+      // log01은 comp01에 연결돼 있다 — 스타일일지 탭으로 이동해 log01을 직접 열람한다.
+      await goToCategory(tester, '스타일일지');
+      await tester.tap(find.byKey(const ValueKey('log01')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+
+      // 코디 슬롯은 대표이미지 다음 페이지(2번) — 기본 PageView(viewportFraction 1.0)는
+      // 인접 페이지를 미리 빌드해두지 않으므로, 실제로 보려면 컨트롤러로 명시적으로 넘겨야
+      // 한다(다른 Detail PageView 테스트들과 동일 관례).
+      tester.widget<PageView>(find.byType(PageView)).controller!.jumpToPage(1);
+      await tester.pumpAndSettle();
+
+      // 목록/슬롯에서 제외되지 않고("코디 연결하기" 자리로 폴백하지 않고) 그대로 보이며,
+      // "삭제됨" 배지가 실제로 그려진다. log01의 "착용 옷"(c07, mock 데이터상 이미 삭제됨)에도
+      // 별개의 "삭제됨" 배지가 있으므로, 화면 전체가 아니라 PageView(코디 슬롯) 범위로 좁혀
+      // 확인한다.
+      expect(find.text('코디 연결하기'), findsNothing);
+      expect(find.text('데일리 룩'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(PageView),
+          matching: find.widgetWithText(StatusBadge, '삭제됨'),
+        ),
+        findsOneWidget,
+      );
+
+      // 실제로 탭해도 코디 상세로 넘어가지 않는다.
+      final cardText = find.text('데일리 룩');
+      await tester.tap(cardText, warnIfMissed: false);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+      expect(find.byType(CompositionDetailScreen), findsNothing);
+      await tester.pumpAndSettle();
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+
+      // [비정형 흐름] settle 없이 빠르게 두 번 연속 탭해도 크래시 없이 여전히 이동하지 않는다.
+      await tester.tap(cardText, warnIfMissed: false);
+      await tester.pump();
+      await tester.tap(cardText, warnIfMissed: false);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
     },
   );
 }

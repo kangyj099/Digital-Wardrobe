@@ -19,7 +19,9 @@ import 'app_detail_scaffold.dart';
 /// `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정" 참고),
 /// 그 아래 날짜/장소, 그 아래 "착용 옷"(추가 사진) 순으로 배치한다. 코디 슬롯은 연결된
 /// 코디가 있으면 `CompositionPreviewCard`(탭 → 코디 상세), 없으면 `_CompositionAddSlide`
-/// (탭 → 코디 선택 모달을 열어 기존 코디를 골라 연결)를 보여준다.
+/// (탭 → 코디 선택 모달을 열어 기존 코디를 골라 연결)를 보여준다. 연결된 코디가 삭제(휴지통
+/// 이동)됐으면 `StatusBadge('삭제됨')`를 오버레이하고 탭을 막는다("착용 옷" 섹션과 동일한
+/// 소프트삭제 가드 패턴 — 삭제된 코디가 있었다는 사실 자체를 숨기지 않는다).
 class StyleLogViewerScreen extends ConsumerStatefulWidget {
   const StyleLogViewerScreen({super.key, required this.styleLogId});
 
@@ -87,11 +89,25 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
                         ? Container(color: semantic.gray200)
                         : Image.asset(log.coverImagePath, fit: BoxFit.cover),
                     linkedComposition != null
-                        ? CompositionPreviewCard(
-                            composition: linkedComposition,
-                            onTap: () => context.push(
-                              AppRoute.compositionDetail.replaceFirst(':id', linkedComposition.id),
-                            ),
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CompositionPreviewCard(
+                                composition: linkedComposition,
+                                onTap: linkedComposition.isDeleted
+                                    ? null
+                                    : () => context.push(
+                                        AppRoute.compositionDetail
+                                            .replaceFirst(':id', linkedComposition.id),
+                                      ),
+                              ),
+                              if (linkedComposition.isDeleted)
+                                const Positioned(
+                                  top: AppSpacing.xxs,
+                                  left: AppSpacing.xxs,
+                                  child: StatusBadge(label: '삭제됨'),
+                                ),
+                            ],
                           )
                         : _CompositionAddSlide(
                             onTap: () => _bindComposition(context, ref, widget.styleLogId),

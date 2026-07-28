@@ -11,6 +11,7 @@ import 'package:digittal_wardrobe/providers/style_log_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/theme/app_theme.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
 
 class _FixedCompositionsNotifier extends CompositionsNotifier {
@@ -124,6 +125,70 @@ void main() {
     expect(find.text('코디 연결하기'), findsNothing);
     expect(find.text('연결된 코디'), findsOneWidget);
   });
+
+  testWidgets(
+    '연결된 코디가 삭제(휴지통 이동)됐으면 "삭제됨" 배지가 보이고 탭이 막힌다(2026-07-29 P1: '
+    '기존엔 삭제 여부와 무관하게 정상 카드처럼 탭되어 코디 상세로 진입했음)',
+    (tester) async {
+      final deletedComposition = Composition(
+        id: 'deleted-comp',
+        name: '삭제된 코디',
+        items: const [],
+        createdAt: DateTime(2025, 1, 1),
+        isDeleted: true,
+      );
+      final log = StyleLog(
+        id: 'test-log',
+        coverImagePath: '',
+        wornDate: DateTime(2026, 3, 1),
+        linkedCompositionId: 'deleted-comp',
+      );
+      final router = GoRouter(
+        initialLocation: '/style-log/test-log',
+        routes: [
+          GoRoute(
+            path: '/style-log/:id',
+            builder: (context, state) =>
+                StyleLogViewerScreen(styleLogId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/composition/:id',
+            builder: (context, state) => const Scaffold(body: Text('코디 상세')),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            compositionsProvider
+                .overrideWith((ref) => _FixedCompositionsNotifier([deletedComposition])),
+            styleLogsProvider.overrideWith((ref) => _FixedStyleLogsNotifier([log])),
+          ],
+          child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      tester.widget<PageView>(find.byType(PageView)).controller!.jumpToPage(1);
+      await tester.pumpAndSettle();
+
+      // 목록/슬롯에서 제외되지 않고("코디 연결하기" 자리로 폴백하지 않고) 그대로 보인다.
+      expect(find.text('코디 연결하기'), findsNothing);
+      expect(find.text('삭제된 코디'), findsOneWidget);
+      expect(find.widgetWithText(StatusBadge, '삭제됨'), findsOneWidget);
+
+      final cardTap = tester
+          .widget<GestureDetector>(
+            find.descendant(
+              of: find.byType(CompositionPreviewCard),
+              matching: find.byType(GestureDetector),
+            ),
+          )
+          .onTap;
+      expect(cardTap, isNull);
+    },
+  );
 
   testWidgets('삭제된 옷은 "착용 옷" 목록에서 배지와 함께 그대로 보이고 탭이 막힌다, 정상 옷은 기존대로 탭된다',
       (tester) async {
