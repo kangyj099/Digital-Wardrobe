@@ -84,6 +84,51 @@ Group B Task 5(다중선택 시각 지원) 완료 후 Audit(2026-07-28)이 발�
 
 ---
 
+[TechDebt] `InteractiveArtboard` 배경색 버튼/스와치 이너글로우가 밝은 색에서 흰 띠로 보임 (P3)
+
+상태: 미해결 (기능엔 영향 없음, 사용자 확인 후 낮은 우선순위로 보류)
+
+내용:
+`_swatchCircle()`(`interactive_artboard.dart`)의 이너글로우는 `RadialGradient(colors: [Colors.transparent, Colors.white38], stops: [0.7, 1.0])`를 원 색 위에 겹쳐 그린다. 어두운 스와치(검정/진회색)에서는 의도한 대로 은은한 하이라이트로 보이지만, 밝은 스와치(흰색/연회색)에서는 거의 같은 톤의 흰색이 겹쳐지며 매끄럽게 섞이지 않고 눈에 띄는 흰 띠로 도드라져 보인다(사용자 확인, 2026-07-27). 탭 판정/히트테스트 등 기능에는 영향 없다.
+
+조치 방향(착수 조건): 다음에 이 위젯의 시각 효과를 다시 손댈 때, 그라디언트 색을 스와치 자체 색 대비로 계산(예: 밝은 배경엔 어두운 톤 하이라이트, 어두운 배경엔 밝은 톤 하이라이트를 `ThemeData.estimateBrightnessForColor` 등으로 판별해 분기)하거나 blend mode를 조정해 모든 스와치 색에서 자연스럽게 보이도록 재조정.
+
+---
+
+[TechDebt] `InteractiveArtboard` Round 2 Audit(2026-07-19) 발견 P2/P3 2건 — 배경색 버튼 비주얼 스타일 불일치, 핸들-버튼 코너 충돌 가능성
+
+상태: 미해결 (낮은 우선순위로 기록만, `composition_editor_screen.dart` 연결 시점에 재검토)
+
+내용:
+1. (P2) `_backgroundColorButton()`/`_backgroundSwatch()`(`interactive_artboard.dart`)가 이 프로젝트의 기존 "플로팅 컨트롤" 관례(`GlassPill`/`GlassCircleButton` — 프로스티드글래스 블러+흰 테두리+그림자+`kMinInteractiveDimension`(48px))를 안 따르고, 단색 `Container`+`colorScheme.outline` 테두리+44px(핸들과 동일 상수)로 따로 구현됨. 위 항목("터치타겟 상수 이원화")과 같은 종류의 드리프트가 한 번 더 늘어난 것 — 화면에 실제로 안 붙어있는 지금은 안 급하지만, 연결 시점에 `GlassCircleButton` 스타일로 재스킨 검토.
+2. (P3, 미확인) 배경색 버튼이 캔버스 우하단 고정 위치(margin 16+지름 44)를 차지하는데, 그 근처에 선택된 아이템을 확대해서 두면 크기조절 핸들과 같은 화면 영역에서 충돌해 핸들이 안 눌릴 가능성이 있음(아직 테스트로 확인 안 됨, Stack에서 배경버튼이 핸들보다 나중 자식이라 이길 것으로 추정). 다음에 이 영역 만질 때 우하단 코너에 아이템을 확대 배치하는 통합테스트로 확인 검토.
+
+---
+
+[TechDebt] `InteractiveArtboard` 관련 Audit(2026-07-19) 발견 P3 2건 — 터치타겟 상수 이원화, zIndex 동률 정렬 불안정성
+
+상태: 미해결 (낮은 우선순위로 기록만)
+
+내용:
+8개 태스크 빌드 완료 후 Audit이 발견:
+1. `_handleVisualDiameter = 44.0`(`interactive_artboard.dart`)가 접근성 최소 터치영역 44px를 독자적으로 상수화했는데, 기존 `GlassPill`/`GlassCircleButton`은 같은 개념을 Flutter의 `kMinInteractiveDimension`(48.0)으로 이미 표준화해 쓰고 있다. 두 값 다 각자 근거는 있지만(44=WCAG 최소, 48=Material 상수+`AppMainScaffold` 헤더 간격 계산과 결합) 서로 참조가 없어 "이 프로젝트엔 캐노니컬 최소 터치크기가 2개"라는 사실이 코드만 봐선 안 드러남.
+2. `build()`의 `sortedItems`와 `_handleTapUp`의 `matches..sort(...)`가 Dart 기본 `List.sort`(안정 정렬 미보장)를 쓴다. `ArtboardItem.zIndex` 기본값이 0이라, 아직 서로 다른 zIndex를 부여받지 않은 아이템들(예: 막 추가된 직후) 사이에 동률이 생기면 리빌드마다 페인트/히트우선순위 순서가 조용히 뒤바뀔 수 있다.
+
+조치 방향(착수 조건): 1번은 `composition_editor_screen.dart` 연결 라운드에서 아트보드 핸들이 GlassPill/GlassCircleButton 크롬과 시각적으로 인접하게 배치될 때 재검토(지금은 코드 변경 불필요). 2번은 다음에 이 파일을 손댈 때 `(zIndex, id)` 같은 타이브레이커를 추가해 동률 정렬을 결정적으로 만들 것.
+
+---
+
+[TechDebt] `InteractiveArtboard`(`lib/widgets/interactive_artboard/interactive_artboard.dart`)의 드래그 핸들러에 `onPanCancel` 부재 (P3)
+
+상태: 미해결 (낮은 우선순위로 기록만)
+
+내용:
+`docs/superpowers/plans/2026-07-19-composition-artboard-widget.md` Task 5 Review(2026-07-19)가 지적: `_bodyDragStart`/`_bodyDragUpdate`/`_bodyDragEnd`(및 Task 6의 `_resizeDrag*`/`_rotateDrag*`)가 `onPanStart`/`onPanUpdate`/`onPanEnd`만 연결하고 `onPanCancel`은 없다. 제스처가 비정상 종료(인식기가 arena에서 짐, 포인터 다운 중 위젯 서브트리 리빌드 등)되면 `_draggingItemId`/`_dragDelta`(또는 `_resizingItemId`/`_liveScale`, `_rotatingItemId`/`_liveRotation`) 상태가 리셋되지 않아, 다음 정상 드래그 사이클 전까지 아이템이 커밋된 모델 위치와 시각적으로 어긋난 채 남을 수 있다. 현재 제스처 아키텍처(Tap/Pan 인식기 공존, 타 위젯과의 arena 경합 없음)에서는 발생 확률이 낮지만, Task 7이 드래그 중 `Overlay.insert`를 수행해 서브트리를 건드리므로 이 종류의 트리거 확률이 상대적으로 커진다.
+
+조치 방향(착수 조건): 다음에 이 파일의 드래그 핸들러들을 손댈 때, 각 `GestureDetector`에 `onPanCancel`을 추가해 대응하는 상태(드래그/리사이즈/회전 각각)를 리셋하고 필요시 `_hideDeleteZoneOverlay()`도 호출하도록 정리. 지금은 P3(막지 않음)로 기록만.
+
+---
+
 [TechDebt] `composition_preview_carousel.dart`/`composition_detail_screen.dart`에 `AppSpacing` 미등재 매직넘버 — 로컬 named const로 유지 중
 
 상태: 미해결
