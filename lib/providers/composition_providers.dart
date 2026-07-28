@@ -223,7 +223,22 @@ final compositionDensityProvider = StateProvider<int>((ref) => AppDensity.mid);
 
 /// [itemId]를 포함하는(삭제되지 않은) Composition 목록 — 옷 상세 화면의
 /// "연결된 코디" 크로스 레퍼런스 근거.
-final compositionsContainingItemProvider = Provider.family<List<Composition>, String>((ref, itemId) {
+///
+/// `autoDispose`인 이유(2026-07-28, 버그 수정): 일반 `Provider.family`였을 때, 이 화면을
+/// 벗어나도 이 provider 인스턴스가 컨테이너에 영구히 남아 `compositionsProvider`
+/// 구독을 계속 들고 있었다 — 그 상태에서 나중에 `compositionsProvider`가 변경되면(코디
+/// 삭제/복원 등) 이 인스턴스가 "dirty"로 표시되지만 즉시 재계산되진 않고, **그 다음
+/// 같은 itemId로 옷 상세를 다시 열어 위젯이 이 provider를 처음(재)구독하는 순간**
+/// `ProviderElement.flush()`가 동기적으로 재계산을 강제하면서, 이미 살아있던
+/// `styleLogsLinkedToItemProvider(itemId)` 쪽 구독의 `invalidateSelf()` →
+/// `scheduleProviderRefresh()`가 하필 그 위젯의 첫 build(`BuildScope._flushDirtyElements`
+/// 도중)에 걸려 `setState() called during build`로 크래시했다(`docs/history/TechnicalDebt.md`
+/// 최상단 버그 항목, 실제 스택트레이스로 확인됨). `autoDispose`면 화면을 벗어나 마지막
+/// 리스너가 사라지는 즉시 이 인스턴스가 폐기되어(내부 `compositionsProvider` 구독도 함께
+/// 해제) 다음 재방문이 항상 완전히 새 인스턴스로 시작하므로, 이 "이미 dirty한 채로 남아있는
+/// 구독"이 애초에 존재할 수 없다.
+final compositionsContainingItemProvider =
+    Provider.autoDispose.family<List<Composition>, String>((ref, itemId) {
   return ref
       .watch(compositionsProvider)
       .where((c) => !c.isDeleted && c.items.any((p) => p.clothingItemId == itemId))
