@@ -24,7 +24,14 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current
 
-**버그 수정 완료(2026-07-28) — `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로챔**: 사용자가 실사용 중 발견(휴지통에서 항목 복원 후 뒤로가기를 눌렀는데 반응이 없어 "멈춘 것처럼" 보임). 원인: `glass_toast.dart`의 `Positioned(left,right,bottom,...)`가 `Material`을 화면 전체 너비로 강제 확장시켜, 실제 안 보이는 영역도 히트테스트를 가로채 토스트가 떠 있는 동안(4초) 그 아래 있는 버튼(예: `FrostedBackButton`)의 터치를 막고 있었음. `Center(child: IntrinsicWidth(child: Material(...)))`로 수정(`Center` 단독으론 `GlassPill` 내부 `Container`의 `Align`이 유한한 max 폭을 그대로 채워버려 불충분 — `IntrinsicWidth`로 타이트한 natural-width 제약을 강제해야 해결됨). `git stash` 전/후 비교로 실제 재현·해소 확인. Worker→Review(P3 1건, 매우 긴 메시지에 대한 미래 취약점 — 현재 호출부 전부 안전, 논블로킹)→Tester(PASS, 액션 버튼 있는/없는 토스트 둘 다, 다른 화면에서도 확인) 사이클 통과. 커밋 `28cca3e`(본체)+`e175ffc`(TechDebt 기록). **사용자가 직접 재현 테스트 예정** — 사용자가 보고한 정확한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 이 수정으로 찾은 증상(탭이 아예 다른 곳에 히트됨)이 완전히 같은 것인지는 아직 미확인, 사용자 재검증 대기 중.
+**버그 수정 완료(2026-07-28) — `GlassToast` 투명 히트박스가 뒷 화면 터치를 가로챔**: 사용자가 실사용 중 발견(휴지통에서 항목 복원 후 뒤로가기를 눌렀는데 반응이 없어 "멈춘 것처럼" 보임). 원인: `glass_toast.dart`의 `Positioned(left,right,bottom,...)`가 `Material`을 화면 전체 너비로 강제 확장시켜, 실제 안 보이는 영역도 히트테스트를 가로채 토스트가 떠 있는 동안(4초) 그 아래 있는 버튼(예: `FrostedBackButton`)의 터치를 막고 있었음. `Center(child: IntrinsicWidth(child: Material(...)))`로 수정(`Center` 단독으론 `GlassPill` 내부 `Container`의 `Align`이 유한한 max 폭을 그대로 채워버려 불충분 — `IntrinsicWidth`로 타이트한 natural-width 제약을 강제해야 해결됨). `git stash` 전/후 비교로 실제 재현·해소 확인. Worker→Review(P3 1건, 매우 긴 메시지에 대한 미래 취약점 — 현재 호출부 전부 안전, 논블로킹)→Tester(PASS, 액션 버튼 있는/없는 토스트 둘 다, 다른 화면에서도 확인) 사이클 통과. 커밋 `28cca3e`(본체)+`e175ffc`(TechDebt 기록).
+
+**다음 세션 시작 시 먼저 확인할 것 — 사용자 실사용 중 신규 발견 버그 2건(둘 다 미착수, `TechnicalDebt.md` 최상단 2개 항목 참고)**:
+1. **(P1) `FlutterError: setState() ... called during build`** — 옷 삭제 후 코디/스타일일지 화면을 오가면 재현됨(VS Code 디버그 콘솔에서 실제 스택트레이스 확보, `ClosetItemDetailScreen.build`에서 `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider` 체인 재계산 중 발생). 원인 가설은 있으나 자동 재현 스크립트는 아직 없음 — `systematic-debugging` 스킬로 Phase 1(재현)부터 시작할 것.
+2. **(P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`가 필터 안 된 원본 `closetItemsProvider`를 씀. 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요.
+위 두 버그는 재현 경로가 겹칠 가능성이 높음(2번 경로로 진입한 게 1번 크래시의 계기였을 수 있음) — 함께 조사 권장.
+
+또한 **아까 수정한 `GlassToast` 히트박스 버그가 사용자가 원래 보고한 증상(버튼 눌림 애니메이션은 보였다가 멈춤)과 완전히 같은 것인지는 사용자가 직접 재검증 예정, 아직 미확인.**
 
 ---
 

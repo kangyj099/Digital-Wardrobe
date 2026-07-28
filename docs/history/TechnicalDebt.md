@@ -1,5 +1,60 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Bug] 옷 삭제 후 코디/스타일일지 화면을 오가면 `FlutterError: setState() ... called during build` 발생 — 재현됨, 원인 가설 있음, 미착수 (P1)
+
+상태: 미해결 (사용자 실사용 중 재현, 다음 세션에서 이어서 조사)
+
+내용:
+사용자가 2026-07-28 실사용 중 발견 — 옷장에서 옷 하나를 삭제(휴지통 이동)한 뒤 코디/스타일일지 화면을 왔다갔다 타고 들어가다가 앱이 멈춤. VS Code 디버그 콘솔에서 실제 캐치된 예외를 확인함(Call Stack 캡처, 아래 요약):
+
+```
+FlutterError: "setState() or markNeedsBuild() called during build.
+This UncontrolledProviderScope widget cannot be marked as needing to build..."
+#8  ProviderElement.invalidateSelf
+#9  Ref._invalidateSelf
+#10 Ref.watch.<anonymous closure> (ref.dart:728)
+...
+#18 ProviderContainer.listen
+#19 ConsumerStatefulElement.watch.<anonymous closure>
+#21 ConsumerStatefulElement.watch
+#22 ClosetItemDetailScreen.build (lib/screens/closet_item_detail_screen.dart:27:36)
+...
+#29 ComponentElement._firstBuild
+```
+(참고: 같은 화면에 "type 'Sentinel' is not a subtype of type 'ObjRef'"도 함께 표시됐으나 이건 VS Code 디버거 자체의 변수 표시 오류로 판단 — 위 `FlutterError`가 실제 원인.)
+
+**원인 가설(미검증)**: `ClosetItemDetailScreen.build()`(`lib/screens/closet_item_detail_screen.dart:27`)가 `ref.watch(compositionsContainingItemProvider(itemId))`를 처음(`_firstBuild`) 평가하는 시점에, 그 provider가 의존하는 `compositionsProvider`(또는 상위 체인)가 마침 "dirty"(막 상태변경돼 재계산 대기 중) 상태였던 것으로 추정. 새 family provider를 등록하면서 그 dirty한 상위를 동기적으로 flush하려다, 그 결과로 또 다른 provider가 `_invalidateSelf()`를 호출해야 하는 상황이 발생 — 이게 `BuildScope._flushDirtyElements`(즉 Flutter의 빌드 사이클) 도중 일어나 "빌드 중 setState 금지" 규칙 위반으로 크래시함. 즉 **어떤 provider 상태 변경(삭제 등) 직후 곧바로 이 화면을 새로 빌드하면, provider 의존성 그래프가 같은 프레임 안에서 재계산되려다 충돌**하는 구조적(타이밍) 문제로 추정.
+
+**아래 항목("삭제된 옷이 코디 상세에서 정상 데이터처럼 탭됨")과 연결됐을 가능성**: 사용자의 실제 재현 경로가 옷 삭제 → 코디 상세에서 그 삭제된 옷을 탭해 `ClosetItemDetailScreen`으로 들어간 것과 겹칠 가능성이 있음 — 그 경로 자체가 이 provider 조합을 새로 등록하는 계기였을 수 있음. 다만 확인된 사실은 아니고, 위 스택 자체는 삭제된 아이템인지 여부와 무관하게 재현 가능한 매커니즘으로 보임(`compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider` 자체는 itemId가 삭제됐는지 안 따짐).
+
+조치 방향(착수 조건, 다음 세션):
+1. `systematic-debugging` 스킬 Phase 1(재현) 부터 — 옷 하나 삭제 → 코디 상세(그 옷이 쓰인 코디) 진입 → 다시 나갔다가 스타일일지 진입 → 다시 코디 상세 재진입 등, 정확히 어떤 화면 전환 순서가 이 크래시를 안정적으로 재현하는지 통합테스트로 먼저 확정할 것(현재는 사용자 수동 재현 1회뿐, 자동 재현 스크립트 없음).
+2. 재현되면 `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`/`compositionsProvider`/`closetItemsProvider` 중 어느 것이 "빌드 도중 dirty" 상태였는지 실제로 추적(디버그 프린트 또는 Riverpod observer로 provider 재계산 타이밍 로깅) — 위 원인 가설이 맞는지부터 검증.
+3. 표준적인 Riverpod 해결 패턴 후보: 문제되는 watch를 `WidgetsBinding.instance.addPostFrameCallback`으로 지연하거나, 해당 provider를 `autoDispose`로 바꿔 stale 상태가 안 남게 하거나, 화면 진입 시점의 provider 초기화 순서를 조정. 근본 원인 확인 전에는 어느 게 맞는 수정인지 단정하지 말 것(systematic-debugging 원칙 — 근본 원인 먼저).
+
+---
+
+[Bug] 옷 삭제 후 코디 상세의 "사용된 옷" 목록에 삭제된 옷이 정상 데이터처럼 계속 나타나고 탭 가능 (P2)
+
+상태: 미해결 (원인 확인됨, 미착수)
+
+내용:
+사용자가 2026-07-28 실사용 중 발견 — 옷을 삭제(휴지통 이동)해도 그 옷이 쓰인 코디의 상세 화면(`composition_detail_screen.dart`) "사용된 옷" 목록엔 계속 정상 데이터처럼 나타나고, 탭하면 `closetItemDetail`로 정상 이동한다(마치 삭제 안 된 것처럼).
+
+원인 확인됨: `lib/screens/composition_detail_screen.dart:34`가 `filteredClosetItemsProvider`(삭제 제외)가 아니라 **필터 안 된 원본 `closetItemsProvider`**를 쓴다:
+```dart
+final closetItems = ref.watch(closetItemsProvider);  // 34행
+final usedItems = <ClothingItem>[
+  for (final placement in composition.items)
+    ...closetItems.where((item) => item.id == placement.clothingItemId),
+];
+```
+이 화면 자체가 삭제/휴지통 개념(Group B)이 생기기 전에 만들어져서 `isDeleted` 여부를 애초에 고려하지 않음 — 오늘 밤(Group B) 작업이 만든 회귀가 아니라, 소프트삭제 기능이 이 화면엔 아직 반영 안 된 사전 존재 갭. 크래시는 아니고(단, 위 항목의 크래시와 경로가 겹칠 가능성 있음) "삭제된 데이터가 계속 정상처럼 보이고 눌린다"는 데이터 정합성/UX 버그.
+
+조치 방향(착수 조건, 다음 세션): `composition_detail_screen.dart`의 "사용된 옷" 목록에서 삭제된 항목을 어떻게 표시할지 결정 필요(옵션: (a) 목록에서 아예 제외, (b) "삭제됨" 배지 표시 후 탭 막기, (c) 탭은 허용하되 상세 화면에서 "휴지통에 있음" 안내) — 이건 코드 버그 수정이 아니라 UX 스펙 결정이 필요한 사안이라 사용자 확인 먼저 필요. 위 크래시 버그와 같은 파일/경로를 만지게 될 가능성이 높으니 함께 조사 권장.
+
+---
+
 [TechDebt] `GlassToast`의 `IntrinsicWidth`가 매우 긴 메시지에 대한 최대폭 제한이 없음 (P3)
 
 상태: 미해결 (현재 호출부는 전부 안전, 실사용 문제 없음)
