@@ -7,6 +7,7 @@ import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/providers/trash_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
+import 'package:digittal_wardrobe/widgets/frosted_back_button.dart';
 import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 
 /// Task 10(휴지통 실행) 검증. `appRouterProvider`가 노출하는 `GoRouter` 인스턴스는
@@ -95,4 +96,42 @@ void main() {
 
     expect(container.read(trashEntriesProvider), isEmpty);
   });
+
+  testWidgets(
+    '다중선택 [복원] 직후(액션 버튼 없는 GlassToast가 떠 있는 4초 타이머 동안) 즉시 '
+    '뒤로가기 버튼을 눌러도 실제로 이전 화면으로 돌아간다(회귀: GlassToast의 풀폭 투명 '
+    '히트박스가 겹쳐서 뒤로가기 탭을 삼키던 버그)',
+    (tester) async {
+      final container = await pumpApp(tester);
+      container.read(closetItemsProvider.notifier).softDeleteMany({'c01', 'c02'});
+      container.read(appRouterProvider).push(AppRoute.trashMain);
+      await tester.pumpAndSettle();
+
+      final tiles = find.byType(TrashGalleryTile);
+      await tester.longPress(tiles.first); // 다중선택 진입 + 첫 타일 자동 선택
+      await tester.pumpAndSettle();
+      await tester.tap(tiles.at(1));
+      await tester.pumpAndSettle();
+
+      // [복원]을 누르면 확인 다이얼로그 없이 즉시 복원 + 다중선택 모드 종료(뒤로가기 버튼
+      // 재노출) + 액션 버튼 없는 GlassToast 표시가 한 프레임에 일어난다. `pumpAndSettle`
+      // 대신 `pump()` 한 번만 써서, toast의 4초 자동소멸 타이머를 절대 기다리지 않고
+      // toast가 떠 있는 채로 바로 다음 탭을 진행한다.
+      await tester.tap(find.text('복원'));
+      await tester.pump();
+
+      expect(find.byType(FrostedBackButton), findsOneWidget, reason: '다중선택 모드 종료로 뒤로가기 버튼이 다시 보여야 한다');
+
+      // toast가 여전히 떠 있는 채로(4초 타이머 대기 없이) 뒤로가기를 누른다 — 버그가
+      // 있었다면 toast의 풀폭 투명 히트박스가 이 탭을 가로채 아무 일도 일어나지 않았다.
+      await tester.tap(find.byType(FrostedBackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TrashMainScreen), findsNothing, reason: '뒤로가기가 실제로 동작해 휴지통 화면을 벗어나야 한다');
+
+      final closetItems = container.read(closetItemsProvider);
+      expect(closetItems.firstWhere((i) => i.id == 'c01').isDeleted, isFalse);
+      expect(closetItems.firstWhere((i) => i.id == 'c02').isDeleted, isFalse);
+    },
+  );
 }
