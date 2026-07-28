@@ -31,6 +31,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 - 수정 파일: `lib/providers/composition_providers.dart`, `lib/providers/style_log_providers.dart`. 신규 회귀테스트 2개: `integration_test/closet_item_detail_revisit_setstate_during_build_regression_test.dart`, `integration_test/closet_item_detail_duplicate_push_setstate_during_build_regression_test.dart`.
 - 사용자가 직접 재연한 실제 스텝(옷 2개+ 코디에 등록 → 삭제 → 그 옷이 쓰인 코디 하나 삭제 → 안 삭제된 코디 상세 진입 → 옷/코디/스타일일지 화면 무작위로 pop 없이 계속 진입 → 뒤로가기 연타)으로 실제 크래시 재현·해소 확인됨.
 - **Tester를 위 실제 재연 스텝 기반 검증으로 돌리던 중 사용자 요청으로 일시정지(작업 중단, 결과 없음, 2026-07-28).** 다음 세션 시작 시 Tester부터 다시 스폰해서 이어갈 것(Review까지는 통과 완료, Tester 결과만 없는 상태 — PASS면 커밋, FAIL이면 Worker로 돌아가 Review→Tester 사이클 재시작, CLAUDE.md 체크포인트 4). **아직 커밋 안 됨.**
+- **Tester가 중단 직전 실제 탭 제스처 기반 통합테스트를 이미 작성 완료해둠**: `integration_test/closet_item_detail_manual_navigation_crash_regression_test.dart`(사용자의 실제 5단계 재연 스텝을 `tester.tap`으로 그대로 재현 — `GoRouter.push` 직접 호출이 아님). 코드 자체는 완성돼 보이나 **실행해서 통과/실패를 확인하기 전에 중단됨** — 다음 세션에서 Tester 재개 시 이 파일부터 실행해 결과 확인할 것 (아직 untracked, git에 없음).
 - 조사 중 추가 발견 3건, `TechnicalDebt.md`에 이미 기록: (a) 버그2(아래)가 `style_log_viewer_screen.dart:58`에도 같은 패턴으로 존재, (b) `composition_main_screen.dart` 코디 삭제 확인창에 "사용 중" 경고 없음, (c) provider-to-provider watch가 이 크래시 클래스를 유발하는 일반 패턴이라 구조적 가드 없음(컨벤션 문서화 권장).
 
 **미착수 — (P2) 삭제된 옷이 코디 상세 "사용된 옷" 목록에 정상 데이터처럼 계속 나타나고 탭됨** — `composition_detail_screen.dart:34`가 필터 안 된 원본 `closetItemsProvider`를 씀(위에서 발견된 두 번째 지점 `style_log_viewer_screen.dart:58` 포함). 원인은 확인됐으나 수정 방향(목록에서 제외/배지 표시/탭 허용+안내)은 사용자 확인 필요 — 위 P1 버그가 먼저 해소되면 이어서 진행.
