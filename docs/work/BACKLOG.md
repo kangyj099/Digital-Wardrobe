@@ -111,6 +111,8 @@ Flutter 프론트엔드 Hi-Fi 화면 10개 스프린트 (마감 2026-07-24) — 
 
 # Known Issues
 
+(2026-07-29 발견, Task 11 Review) **Windows에서 `flutter test -d windows`에 통합테스트 파일 2개 이상을 한 번에 넘기면 두 번째부터 "Error waiting for a debug connection: The log reader stopped unexpectedly, or never started."로 실패.** 아래(2026-07-13) 항목의 `LINK : fatal error LNK1168`(빌드 전 파일 잠금)과는 다른 지점 — 이건 빌드는 성공(exe 생성 확인됨)하고 그 다음 실행 단계에서 디버그 커넥션을 못 잡는 것. 개별 파일로 하나씩 실행하면 둘 다 100% 통과 확인됨. **예방**: `flutter test integration_test/a_test.dart integration_test/b_test.dart -d windows`처럼 여러 파일을 한 명령에 묶지 말고, 파일당 한 번씩 개별 실행할 것(아래 파일잠금 예방 조치와 별개로 항상 지킬 것).
+
 (2026-07-13 발견) **Windows에서 `flutter test integration_test/<file> -d windows` 연속 실행 시 파일 잠금으로 빌드 실패.** 이전 실행의 `digittal_wardrobe.exe` 프로세스가 종료되지 않고 남아있으면(`tasklist`로 확인 가능) 다음 빌드가 그 exe를 "쓰기용으로 열 수 없다"(`LINK : fatal error LNK1168`)며 실패한다. **예방**: 통합테스트 파일을 여러 개 순차 실행할 때마다 사이사이 `taskkill //F //IM digittal_wardrobe.exe`(PowerShell/Git Bash 기준, 이미 실행 중인 게 없으면 에러 무시하고 넘어가도 됨)로 강제 종료할 것. Windows가 이 프로젝트에서 `integration_test`를 돌릴 수 있는 사실상 유일한 non-web 디바이스라(Chrome/Edge는 "Web devices are not supported for integration tests yet") 이 문제를 피할 방법이 없음 — 항상 위 예방 조치를 습관화할 것.
 
 (2026-07-13 발견) **`windows/runner/*.cpp`(네이티브 Windows 러너 보일러플레이트)에 non-ASCII(한글 등) 주석을 넣으면 MSVC 빌드가 깨짐.** 이 파일들이 BOM 없는 UTF-8이라 MSVC가 시스템 코드페이지로 해석을 시도하며 non-ASCII 문자에 C4819 경고를 내고, `windows/CMakeLists.txt`의 `/W4 /WX`가 이를 에러로 승격시켜 빌드 자체가 실패한다(실측: `main.cpp`에 넣은 한글 주석 하나가 원인, 커밋 `fab826a`에서 영어로 교체해 해결). `lib/`(Dart)는 이 프로젝트 관례대로 한글 주석을 계속 써도 무방 — 이 문제는 `windows/` 네이티브 C++ 파일에만 해당. **예방**: `windows/runner/` 아래 파일을 건드릴 땐 주석을 영어로 쓸 것.
