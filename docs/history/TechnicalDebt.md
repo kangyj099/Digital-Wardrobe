@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `GlassToast`의 `IntrinsicWidth`가 매우 긴 메시지에 대한 최대폭 제한이 없음 (P3)
+
+상태: 미해결 (현재 호출부는 전부 안전, 실사용 문제 없음)
+
+내용:
+GlassToast 히트박스 버그 수정(2026-07-28, 사용자 실사용 중 발견 — 토스트가 떠 있는 동안 뒤로가기 버튼이 안 눌리는 문제) 과정에서 `Center(child: IntrinsicWidth(child: Material(...)))`로 교체하며 Review가 발견: `IntrinsicWidth`는 자식의 natural width를 계산해 그 값으로 타이트하게 고정하는데, 이 계산값을 `Positioned(left/right)`가 제공하는 가용 폭으로 미리 clamp하지 않는다. 만약 매우 긴 메시지가 들어오면 `Flexible`+`Text(overflow: ellipsis)`의 ellipsis가 애초에 발동할 기회 없이(자기 자연폭 그대로 받아버려서) 필이 화면 밖으로 밀려날 수 있다. 현재 `GlassToast.show`를 호출하는 모든 곳(`'${ids.length}개 항목이 휴지통으로 이동됨'`, `'${ids.length}개 항목이 복원됨'`, `'휴지통으로 이동됨'`)은 전부 짧은 메시지라 실제로는 문제없음.
+
+조치 방향(착수 조건): 다음에 `GlassToast.show`에 긴 메시지를 넘기는 호출부가 생기면, `glass_toast.dart`에 `ConstrainedBox(maxWidth: ...)`를 `IntrinsicWidth` 바깥에 추가해 화면 폭 근처로 clamp. 급하지 않음.
+
+---
+
 [TechDebt] 휴지통 메인의 다중선택 "닫기" 컨트롤이 다른 3개 화면(옷장/코디/스타일일지)과 다른 위젯 사용 (P2)
 
 상태: 미해결
