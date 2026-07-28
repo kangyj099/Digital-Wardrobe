@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] 휴지통 메인의 다중선택 "닫기" 컨트롤이 다른 3개 화면(옷장/코디/스타일일지)과 다른 위젯 사용 (P2)
+
+상태: 미해결
+
+내용:
+Group B Task 10 완료 직후 Audit(2026-07-28)이 발견: `GalleryMainScreen<T>`(옷장/코디/스타일일지가 공유, Task 7~9)는 다중선택 종료를 `FrostedCloseButton`(아이콘 전용 X)으로 통일하는데, `TrashMainScreen`은 `GalleryMainScreen`을 안 쓰고 로컬로 다중선택을 구현하면서 같은 역할을 `GlassPill(child: TextButton(..., child: Text('닫기')))`(텍스트 필)로 만들었다 — "N개 선택" 표시 pill은 통일돼 있으나 취소 버튼만 시각적으로 어긋남.
+
+조치 방향(착수 조건): 다음에 `trash_main_screen.dart`를 손댈 때 `FrostedCloseButton`으로 교체해 3개 화면과 통일. 순수 시각 일관성 문제, 로직 변경 없음 — 급하지 않음.
+
+---
+
 [TechDebt] 휴지통 정보팝업이 `05_삭제 & 휴지통.md` 스펙과 3가지 지점에서 어긋남 — 계획 문서 자체의 갭, Decision-stage Audit 누락 추정 (P2)
 
 상태: 미해결
