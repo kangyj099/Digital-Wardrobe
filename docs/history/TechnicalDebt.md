@@ -72,14 +72,16 @@ final usedItems = <ClothingItem>[
 
 ---
 
-[TechDebt] `composition_main_screen.dart`의 코디 삭제 확인창에 "사용 중" 경고 없음 (P2, 미착수)
+[TechDebt] 코디 삭제 확인창에 "사용 중" 경고 없음 — `composition_main_screen.dart` + `composition_detail_screen.dart` 두 진입점 다 (P2, 미착수)
 
 상태: 미해결
 
 내용:
 위 크래시 버그 조사 과정(2026-07-28)에서 Worker가 발견: `closet_main_screen.dart`의 옷 삭제는 그 옷이 쓰인 코디가 있으면 삭제 전 확인 팝업에 경고를 표시하는데, `composition_main_screen.dart`의 코디 삭제는 그런 "사용 중"류 경고 없이 바로 삭제 확인만 뜬다. 코디 자체를 참조하는 다른 엔티티가 없어서(스타일일지가 코디를 참조하긴 하지만 그 경고가 구현 안 돼 있을 가능성) 비대칭.
 
-조치 방향(착수 조건): 다음에 `composition_main_screen.dart`의 삭제 흐름을 손댈 때, 그 코디를 참조하는 스타일일지가 있는지 확인해 경고를 추가할지 여부 결정. 급하지 않음.
+**[범위 확장, 2026-07-29, Group B Task 11 Audit 발견]** Task 11이 추가한 두 번째 삭제 진입점 `composition_detail_screen.dart`(더보기→삭제)도 같은 이유로 확인 없이 바로 삭제된다(기존 앱 전역 관례와 일치하는 것이라 Task 11이 새로 만든 비대칭은 아님) — 착수 시 이 파일도 함께 고쳐야 두 진입점이 어긋나지 않음.
+
+조치 방향(착수 조건): 다음에 코디 삭제 흐름(`composition_main_screen.dart`/`composition_detail_screen.dart` 둘 다)을 손댈 때, 그 코디를 참조하는 스타일일지가 있는지 확인해 경고를 추가할지 여부 결정. 급하지 않음.
 
 ---
 
