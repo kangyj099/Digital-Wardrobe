@@ -1,8 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] `AppMainScaffold` 헤더 오버레이 때문에 widget test 기본 서페이스에서 하위 콘텐츠 `tester.tap()`이 의도한 위젯을 못 맞춤 (P3)
+
+상태: 미해결 (우회책 있음, 근본 원인 미조사)
+
+내용:
+"삭제된 옷 배지+탭차단"(2026-07-29) Worker 태스크 중 발견 — `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 "사용된 옷"/"착용 옷" 가로 리스트 아이템을 `tester.tap(find.byKey(...))`로 물리 탭 시뮬레이션하면, 위젯 테스트 기본 서페이스(800x600)는 물론 모바일급 서페이스(390x844)로 바꿔도 동일하게 "hitTest가 지정한 위젯에 안 맞음" 경고가 뜨고 실제로 `onTap`이 호출되지 않는다. 재현 조건은 이 두 화면의 코드 변경과 무관함 — 삭제 로직 없이 단일 정상 아이템만 있는 최소 재현에서도, `Stack`/배지 오버레이를 전혀 안 쓴 원래(수정 전) 코드와 동일한 `onTap` 클로저에서도 동일하게 재현됨(격리된 `AppDetailScaffold`+`GoRouter`+평범한 `GestureDetector`만으로 구성한 최소 위젯으로는 재현 안 됨 — `CompositionDetailScreen`류의 "실제 화면" 조합에서만 재현).
+
+`tester.hitTestOnBinding()`으로 직접 hit-test 경로를 덤프해 확인한 바, 대상 `RenderSemanticsGestureHandler`가 hit-test 경로 어디에도 없음 — `AppMainScaffold`가 `Stack` 안에 `Positioned.fill(body)`와 `CategoryToggleDropdown`(Row1, `PopupMenuButton` 기반) 등 여러 `Positioned` 자식을 겹쳐 쌓는 구조(`lib/widgets/app_main_scaffold.dart`)라, `Stack.hitTestChildren`이 페인트 순서상 나중(위)인 헤더 계열 자식을 body보다 먼저 hit-test하면서 어느 시점에 앞선(topmost) 자식이 hit을 가로채는 것으로 추정(정확한 지목 위젯은 미확정 — `RenderConstrainedBox`→`RenderFlex`→`RenderPadding` 조합만 확인, `CategoryToggleDropdown` 후보이나 미검증). 실제 앱/`integration_test`(디바이스 바인딩)에선 이 문제가 안 보임 — `composition_detail_addtile_square_test.dart` 등 기존 `integration_test`가 이미 동일 계열 화면에서 `tester.tap()`으로 정상 동작 중.
+
+우회책(이번 Worker가 실제 적용): 물리 탭 대신 `tester.widget<GestureDetector>(finder).onTap`으로 콜백 자체를 꺼내 null 여부를 검증하고, non-null이면 직접 호출(`activeTileTap!()`)해 이후 `pumpAndSettle()`로 네비게이션 결과만 검증 — hit-test를 우회하고 "조건부 onTap 배선"이라는 실제 검증 대상에는 오히려 더 정확히 집중된다. `test/screens/composition_detail_screen_test.dart`/`test/screens/style_log_viewer_screen_test.dart`의 "삭제된 옷" 테스트 참고.
+
+조치 방향(착수 조건): 다음에 이 계열 화면(Detail 3종 등 `AppMainScaffold` 기반)에서 위젯 테스트로 물리 탭 검증이 필요해지면, 먼저 `tester.hitTestOnBinding()`으로 실제 가로채는 위젯을 특정할 것. 특정되면 `CategoryToggleDropdown`(또는 지목된 위젯)의 hit-test 영역이 시각적 경계를 넘어서는지(`RenderBox.size`가 실제 렌더 크기와 다른지) 확인 후 수정. 급하지 않음 — `onTap` 직접 호출 우회책으로 테스트 커버리지 자체엔 지장 없음, 실제 사용자 탭(디바이스 실행)은 영향받지 않는 것으로 보임(순수 widget-test 환경 이슈로 추정).
+
+---
+
 [Bug] 옷 삭제 후 코디/스타일일지 화면을 오가면 `FlutterError: setState() ... called during build` 발생 — 재현됨, 원인 가설 있음, 미착수 (P1)
 
-상태: 미해결 (사용자 실사용 중 재현, 다음 세션에서 이어서 조사)
+상태: **해결(2026-07-28)** — 근본원인은 최초 가설과 달리 provider-to-provider watch(아래 항목 참고). `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`를 `.autoDispose.family`로 전환 + `styleLogsLinkedToItemProvider`의 `compositionsContainingItemProvider` watch를 `compositionsProvider` 직접 필터로 인라인. 사용자의 실제 5단계 재연 시나리오 포함 신규 회귀테스트 3개(`integration_test/closet_item_detail_*_regression_test.dart`) 전부 PASS로 확인. 커밋 `90e44a1`.
 
 내용:
 사용자가 2026-07-28 실사용 중 발견 — 옷장에서 옷 하나를 삭제(휴지통 이동)한 뒤 코디/스타일일지 화면을 왔다갔다 타고 들어가다가 앱이 멈춤. VS Code 디버그 콘솔에서 실제 캐치된 예외를 확인함(Call Stack 캡처, 아래 요약):
@@ -36,7 +51,7 @@ This UncontrolledProviderScope widget cannot be marked as needing to build..."
 
 [Bug] 옷 삭제 후 코디 상세의 "사용된 옷" 목록에 삭제된 옷이 정상 데이터처럼 계속 나타나고 탭 가능 (P2)
 
-상태: 미해결 (원인 확인됨, 미착수)
+상태: **해결(2026-07-29)** — 사용자 확정 방향: 목록에서 제외하지 않고 `StatusBadge(label: '삭제됨')` 오버레이 + 탭 차단(`selectable_gallery_tile.dart`의 "미완성" 배지와 동일 패턴). `composition_detail_screen.dart`/`style_log_viewer_screen.dart` 두 곳 다 수정, `Stack(fit: StackFit.expand, children: [Positioned.fill(...), if (isDeleted) Positioned(...)])`로 이미지 크기 유지. Worker→Review 2라운드(1차 P1: Stack 기본 fit이 loose라 이미지가 박스를 못 채우는 회귀 발견→해소)→Tester(실기기 물리 탭 제스처로 배지/탭차단/정상탭 회귀 전부 확인) 사이클 통과. 신규 통합테스트 `integration_test/deleted_item_badge_tap_block_regression_test.dart`.
 
 내용:
 사용자가 2026-07-28 실사용 중 발견 — 옷을 삭제(휴지통 이동)해도 그 옷이 쓰인 코디의 상세 화면(`composition_detail_screen.dart`) "사용된 옷" 목록엔 계속 정상 데이터처럼 나타나고, 탭하면 `closetItemDetail`로 정상 이동한다(마치 삭제 안 된 것처럼).
