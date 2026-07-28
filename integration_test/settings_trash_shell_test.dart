@@ -276,19 +276,24 @@ void main() {
     );
 
     testWidgets(
-      '"선택"과 "비우기"는 물리적으로 독립된 GlassPill 2개이며(Header/HUD Pinned Rule), 각각 '
-      '독립적으로 탭 가능하다 — "선택"(no-op 스텁)을 먼저 탭해도 "비우기"의 확인 다이얼로그 '
-      '동작에 영향을 주지 않는다',
+      '[갱신, Task 10] "선택"과 "비우기"는 물리적으로 독립된 GlassPill이며(Header/HUD Pinned '
+      'Rule), 각각 독립적으로 탭 가능하다 — "선택"(다중선택 모드 진입)을 먼저 탭해 들어갔다가 '
+      '"닫기"로 빠져나와도 "비우기"의 확인 다이얼로그 동작에 영향을 주지 않는다. 헤더 액션 '
+      '2개("선택"/"비우기") + Row2 카테고리 필터칩 4개(전체/옷장/코디/스타일일지)가 모두 독립된 '
+      'GlassPill이라 총 6개다(Task 10에서 카테고리 필터칩이 새로 추가됨)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
-        expect(find.byType(GlassPill), findsNWidgets(2));
+        expect(find.byType(GlassPill), findsNWidgets(6));
 
         await tester.tap(find.text('선택'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.byType(TrashGalleryTile), findsNWidgets(3));
+
+        await tester.tap(find.text('닫기'));
+        await tester.pumpAndSettle();
 
         await tester.tap(find.text('비우기'));
         await tester.pumpAndSettle();
@@ -297,8 +302,8 @@ void main() {
     );
 
     testWidgets(
-      '[갱신, Task 7 재검증] "비우기" 탭 시 강한 확인 다이얼로그가 뜨고, 확인을 눌러도 실제 '
-      '삭제 없이 그리드 3개 항목이 그대로 남는다(no-op)',
+      '[갱신, Task 10] "비우기" 탭 시 강한 확인 다이얼로그가 뜨고, 확인을 누르면 실제로 전체 '
+      '삭제되어 그리드가 빈다(Task 10 이전엔 no-op 스텁이었으나 이제 실제 실행됨)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
@@ -306,13 +311,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(AlertDialog), findsOneWidget);
-        expect(find.text('정말 비우시겠습니까? 휴지통의 모든 항목이 영구 삭제됩니다.'), findsOneWidget);
+        expect(find.text('전체 3개 항목을 영구 삭제하시겠어요? 되돌릴 수 없어요'), findsOneWidget);
 
         await tester.tap(find.text('비우기').last); // 다이얼로그 내부 확인 버튼
         await tester.pumpAndSettle();
 
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
+        expect(find.byType(TrashGalleryTile), findsNothing);
       },
     );
 
@@ -329,8 +334,9 @@ void main() {
     });
 
     testWidgets(
-      '그리드 타일 탭 시 상세 페이지 전환이 아니라 정보 바텀시트가 뜨고, 복원/영구삭제 버튼을 '
-      '눌러도 항목이 그리드에서 사라지지 않으며 어떤 상세 화면으로도 전환되지 않는다(no-op)',
+      '[갱신, Task 10] 그리드 타일 탭 시 상세 페이지 전환이 아니라 이미지+제작일이 포함된 정보 '
+      '바텀시트가 뜨고, [복원]을 누르면 실제로 복원되어 시트가 닫히고 그리드에서 사라지며 '
+      '어떤 상세 화면으로도 전환되지 않는다(Task 10 이전엔 no-op 스텁이었으나 이제 실제 실행됨)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
@@ -339,26 +345,18 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('옷장 · 영구 삭제까지 12일'), findsOneWidget);
+        expect(find.byType(Image), findsWidgets);
         expect(find.text('복원'), findsOneWidget);
         expect(find.text('영구 삭제'), findsOneWidget);
 
         await tester.tap(find.text('복원'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        // no-op이라 시트가 닫히지 않고 그대로 열려 있어야 한다.
-        expect(find.text('영구 삭제'), findsOneWidget);
 
-        await tester.tap(find.text('영구 삭제'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-
-        // 바텀시트를 닫고(모달 라우트 pop) 그리드가 3개 그대로인지, 어떤 상세 화면으로도
-        // 전환되지 않았는지 확인한다. [갱신, Task 7 재검증] mock 삭제 항목이 실제로는
-        // c07/c08/comp02 3개뿐임.
-        Navigator.of(tester.element(find.text('복원'))).pop();
-        await tester.pumpAndSettle();
-
-        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
+        // 실제 복원이라 시트가 닫히고, 그리드에서도 사라져 3개→2개가 된다. [갱신, Task 7
+        // 재검증] mock 삭제 항목이 실제로는 c07/c08/comp02 3개뿐임.
+        expect(find.text('영구 삭제'), findsNothing);
+        expect(find.byType(TrashGalleryTile), findsNWidgets(2));
         expect(find.byType(ClosetItemDetailScreen), findsNothing);
         expect(find.byType(CompositionDetailScreen), findsNothing);
         expect(find.byType(StyleLogViewerScreen), findsNothing);
@@ -381,7 +379,10 @@ void main() {
 
         expect(topOpacity(tester), 0);
 
-        await tester.drag(find.byType(GridView), const Offset(0, -80));
+        // [갱신, Task 10] Row2(카테고리 필터칩)가 추가되며 Content Spacer/topHintThreshold가
+        // 64→120으로 늘어나(hasSecondaryRow: true), 기존 드래그량(80)으로는 더 이상 임계값을
+        // 넘지 못한다 — 임계값을 확실히 넘도록 드래그량을 늘린다.
+        await tester.drag(find.byType(GridView), const Offset(0, -160));
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
