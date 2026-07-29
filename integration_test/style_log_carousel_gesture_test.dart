@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,6 +120,34 @@ void main() {
         expect(dotFinder(semantic.gray200), findsOneWidget, reason: '드래그 후엔 dot 1이 비활성 상태여야 한다');
       },
     );
+
+    testWidgets(
+      '마우스 클릭+드래그(Windows 데스크톱 실사용 환경)로도 대표이미지 → 코디 슬롯 스와이프가 동작한다 '
+      '(2026-07-29 버그: `tester.drag`의 기본 pointer kind는 touch라 이 회귀를 못 잡았음 — '
+      'Flutter 기본 `MaterialScrollBehavior.dragDevices`는 마우스를 포함하지 않아, 마우스로는 '
+      'PageView가 전혀 반응하지 않았다. `lib/main.dart`의 `AppScrollBehavior`가 근본 수정)',
+      (tester) async {
+        await pumpApp(tester);
+        await goToCategory(tester, '스타일일지');
+        await tester.tap(find.byKey(const ValueKey('log01')));
+        await tester.pumpAndSettle();
+
+        await tester.drag(
+          find.byType(PageView),
+          const Offset(-400, 0),
+          kind: PointerDeviceKind.mouse,
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.widget<PageView>(find.byType(PageView)).controller!.page,
+          closeTo(1.0, 0.01),
+          reason: '마우스 드래그로도 페이지 2까지 완전히 스냅되어야 한다',
+        );
+        expect(find.byType(CompositionPreviewCard), findsOneWidget);
+      },
+    );
   });
 
   // ── 2) 코디 카드 탭 → 코디 상세 → 뒤로가기 후 캐러셀 페이지 상태 유지 ─────────
@@ -157,29 +186,50 @@ void main() {
     );
   });
 
-  // ── 3) "착용 옷" 두 번째 이미지(c07) 탭 ────────────────────────────────────
+  // ── 3) "착용 옷" 두 번째 이미지 탭 ────────────────────────────────────
 
-  group('"착용 옷" 스트립 — 두 번째 이미지(c07) 탭', () {
-    testWidgets('log01의 두 번째 착용 옷 이미지(c07, 리넨 반바지)를 탭하면 그 옷 상세로 정확히 이동한다',
-        (tester) async {
-      await pumpApp(tester);
-      await goToCategory(tester, '스타일일지');
-      await tester.tap(find.byKey(const ValueKey('log01')));
-      await tester.pumpAndSettle();
+  group('"착용 옷" 스트립 — 두 번째 이미지 탭', () {
+    testWidgets(
+      '착용 옷 스트립의 두 번째 이미지를 탭하면 그 옷 상세로 정확히 이동한다(원래 이 테스트는 log01의 '
+      'c07을 대상으로 삼았으나, 2026-07-29 세션 초반 커밋 636f58e에서 c07이 소프트삭제로 바뀌어 '
+      '탭이 막히는 게 정상 동작이 됨(그건 `deleted_item_badge_tap_block_regression_test.dart`가 '
+      '이미 커버) — 이 테스트의 원래 의도인 "정상(비삭제) 아이템 탭 → 이동" 검증을 유지하기 위해 '
+      'comp02 drift 수정 때와 동일하게 런타임으로 삭제되지 않은 아이템 2개짜리 로그를 주입한다)',
+      (tester) async {
+        final container = await pumpApp(tester);
+        final wornItemsLog = StyleLog(
+          id: 'test-worn-items-log',
+          coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
+          wornDate: DateTime(2026, 4, 1),
+          additionalImagePaths: const [
+            'assets/images/mock/IMG_4260_preview_rev_1.png', // c02 데님 팬츠 — 첫 번째, 비삭제
+            'assets/images/mock/IMG_4261_preview_rev_1.png', // c03 그래픽 와이드팬츠 — 두 번째, 비삭제
+          ],
+        );
+        container.read(styleLogsProvider.notifier).state = [
+          ...container.read(styleLogsProvider),
+          wornItemsLog,
+        ];
 
-      await tester.tap(find.byWidgetPredicate(
-        (w) =>
-            w is Image &&
-            w.image is AssetImage &&
-            (w.image as AssetImage).assetName == 'assets/images/mock/IMG_4275.PNG',
-      ));
-      await tester.pumpAndSettle();
+        final navContext = tester.element(find.byType(ClosetMainScreen));
+        GoRouter.of(navContext)
+            .push(AppRoute.styleLogViewer.replaceFirst(':id', 'test-worn-items-log'));
+        await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
-      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
-      expect(find.text('리넨 반바지'), findsOneWidget);
-      expect(find.byType(StyleLogViewerScreen), findsNothing);
-    });
+        await tester.tap(find.byWidgetPredicate(
+          (w) =>
+              w is Image &&
+              w.image is AssetImage &&
+              (w.image as AssetImage).assetName == 'assets/images/mock/IMG_4261_preview_rev_1.png',
+        ));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+        expect(find.text('그래픽 와이드팬츠'), findsOneWidget);
+        expect(find.byType(StyleLogViewerScreen), findsNothing);
+      },
+    );
   });
 
   // ── 4) 미연결 스타일일지 — 실제 드래그로 "+" 플레이스홀더 도달 → 바인딩 E2E ────
