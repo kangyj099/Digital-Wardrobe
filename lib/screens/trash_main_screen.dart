@@ -33,7 +33,9 @@ class TrashMainScreen extends ConsumerStatefulWidget {
 class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
   bool _multiSelectMode = false;
   final Set<String> _selectedIds = {};
-  AppCategory? _filter;
+  // 빈 집합 = "전체"(필터 없음). 항목 자체를 여러 개 골라 삭제/복원하는 `_multiSelectMode`와는
+  // 별개 개념 — 이건 카테고리 필터칩을 여러 개 동시 선택하는 기능이다.
+  final Set<AppCategory> _filters = {};
 
   void _exitMultiSelect() => setState(() {
         _multiSelectMode = false;
@@ -179,7 +181,9 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
   @override
   Widget build(BuildContext context) {
     final allEntries = ref.watch(trashEntriesProvider);
-    final entries = _filter == null ? allEntries : allEntries.where((e) => e.category == _filter).toList();
+    final entries = _filters.isEmpty
+        ? allEntries
+        : allEntries.where((e) => _filters.contains(e.category)).toList();
     final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
 
     return AppMainScaffold(
@@ -211,21 +215,59 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
               ),
             ],
       secondaryControlsLeft: [
-        for (final option in [null, AppCategory.closet, AppCategory.composition, AppCategory.styleLog])
-          GlassPill(
-            child: TextButton(
-              // 선택된 필터만 배경을 구분(`category_toggle_dropdown.dart`가 이미 쓰는
-              // `primaryLight` 하이라이트 패턴 재사용) — 홀리스틱 Audit이 선택 상태 표시가
-              // 없었다고 지적(P3).
-              style: TextButton.styleFrom(
-                backgroundColor: _filter == option
-                    ? Theme.of(context).extension<AppSemanticColors>()!.primaryLight
-                    : null,
-              ),
-              onPressed: () => setState(() => _filter = option),
-              child: Text(option?.label ?? '전체'),
+        // `AppMainScaffold`가 이 슬롯의 Positioned에 top/left만 지정하고 right는 지정하지
+        // 않아(Row 2 우측 슬롯은 secondaryControlsRight 몫), child에 가로 폭 제약이 오지
+        // 않는다 — 칩 4개(다중선택으로 늘어난 폭)가 화면 밖까지 넘치는 원인이었다.
+        // ConstrainedBox로 "화면 폭 - 좌우 여백"만큼 상한을 주고, 그 안에서
+        // SingleChildScrollView(가로)로 넘치는 만큼만 스크롤하게 한다 — 기존 GlassPill
+        // 칩 UI/선택 하이라이트 패턴은 그대로 유지.
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - AppSpacing.md * 2),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GlassPill(
+                  child: TextButton(
+                    // "전체" 칩은 다른 칩과 달리 다중선택이 아니라 필터 초기화(빈 Set) 전용
+                    // 특수 케이스 — 선택 시 개별 카테고리 선택을 모두 해제한다.
+                    style: TextButton.styleFrom(
+                      backgroundColor: _filters.isEmpty
+                          ? Theme.of(context).extension<AppSemanticColors>()!.primaryLight
+                          : null,
+                    ),
+                    onPressed: () => setState(() => _filters.clear()),
+                    child: const Text('전체'),
+                  ),
+                ),
+                for (final category in [AppCategory.closet, AppCategory.composition, AppCategory.styleLog]) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  GlassPill(
+                    child: TextButton(
+                      // 각 카테고리 칩은 서로 독립적으로 토글(다중선택) — 선택된 칩만 배경을
+                      // 구분(`category_toggle_dropdown.dart`가 이미 쓰는 `primaryLight`
+                      // 하이라이트 패턴 재사용).
+                      style: TextButton.styleFrom(
+                        backgroundColor: _filters.contains(category)
+                            ? Theme.of(context).extension<AppSemanticColors>()!.primaryLight
+                            : null,
+                      ),
+                      onPressed: () => setState(() {
+                        if (_filters.contains(category)) {
+                          _filters.remove(category);
+                        } else {
+                          _filters.add(category);
+                        }
+                      }),
+                      child: Text(category.label),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
+        ),
       ],
       bottomFloatingActions: _multiSelectMode
           ? [

@@ -22,8 +22,8 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<ProviderContainer> pumpApp(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1400, 4600);
+  Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = const Size(1400, 4600)}) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -44,8 +44,9 @@ void main() {
   }
 
   testWidgets(
-    '카테고리 필터칩 4개(전체/옷장/코디/스타일일지)를 각각 탭하면 그리드가 해당 도메인으로만 '
-    '실제로 좁혀지고, 활성 칩만 배경색이 primaryLight로 바뀐다',
+    '카테고리 필터칩은 다중선택이다 — 여러 칩을 동시에 켜면 선택된 카테고리들의 합집합만 '
+    '보이고, 각 칩은 독립적으로 토글되며(다른 칩에 영향 없음), "전체"를 탭하면 개별 선택이 '
+    '전부 해제된다',
     (tester) async {
       final container = await pumpApp(tester);
       // mock_data 기본 삭제 항목: c07/c08(옷장), comp02(코디) — 3개 도메인을 다 검증하기 위해
@@ -57,7 +58,7 @@ void main() {
       final semantic = Theme.of(tester.element(find.byType(TrashMainScreen))).extension<AppSemanticColors>()!;
 
       expect(find.byType(TrashGalleryTile), findsNWidgets(4));
-      expect(chipBackground(tester, '전체'), semantic.primaryLight, reason: '기본 필터는 전체가 활성 상태여야 한다');
+      expect(chipBackground(tester, '전체'), semantic.primaryLight, reason: '기본 필터는 전체가 활성 상태여야 한다(빈 Set)');
 
       await tester.tap(find.text('옷장'));
       await tester.pumpAndSettle();
@@ -65,19 +66,31 @@ void main() {
       expect(chipBackground(tester, '옷장'), semantic.primaryLight);
       expect(chipBackground(tester, '전체'), isNot(semantic.primaryLight));
 
+      // 다중선택: "코디"를 추가로 켜면 "옷장"은 그대로 유지된 채 합집합(옷장+코디)이 보여야 한다.
       await tester.tap(find.text('코디'));
       await tester.pumpAndSettle();
+      expect(find.byType(TrashGalleryTile), findsNWidgets(3), reason: '옷장(2)+코디(1) 합집합 3개가 보여야 한다');
+      expect(chipBackground(tester, '옷장'), semantic.primaryLight, reason: '코디를 추가로 켜도 옷장 선택은 유지되어야 한다');
+      expect(chipBackground(tester, '코디'), semantic.primaryLight);
+
+      // "옷장"을 다시 탭해 해제하면 "코디"에는 영향 없이 옷장만 빠져야 한다(독립 토글).
+      await tester.tap(find.text('옷장'));
+      await tester.pumpAndSettle();
       expect(find.byType(TrashGalleryTile), findsNWidgets(1), reason: '코디 항목(comp02) 1개만 남아야 한다');
+      expect(chipBackground(tester, '옷장'), isNot(semantic.primaryLight));
       expect(chipBackground(tester, '코디'), semantic.primaryLight);
 
       await tester.tap(find.text('스타일일지'));
       await tester.pumpAndSettle();
-      expect(find.byType(TrashGalleryTile), findsNWidgets(1), reason: '스타일일지 항목(log01) 1개만 남아야 한다');
+      expect(find.byType(TrashGalleryTile), findsNWidgets(2), reason: '코디(comp02)+스타일일지(log01) 합집합 2개가 보여야 한다');
       expect(chipBackground(tester, '스타일일지'), semantic.primaryLight);
 
       await tester.tap(find.text('전체'));
       await tester.pumpAndSettle();
-      expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+      expect(find.byType(TrashGalleryTile), findsNWidgets(4), reason: '"전체"는 개별 선택을 모두 해제해야 한다');
+      expect(chipBackground(tester, '전체'), semantic.primaryLight);
+      expect(chipBackground(tester, '코디'), isNot(semantic.primaryLight));
+      expect(chipBackground(tester, '스타일일지'), isNot(semantic.primaryLight));
     },
   );
 
@@ -254,6 +267,67 @@ void main() {
       expect(find.byType(TrashGalleryTile), findsNWidgets(3), reason: '비활성 버튼 탭은 아무 항목도 지우거나 복원하지 않아야 한다');
       final closetItems = container.read(closetItemsProvider);
       expect(closetItems.firstWhere((i) => i.id == 'c07').isDeleted, isTrue);
+    },
+  );
+
+  testWidgets(
+    '좁은 화면(폭 300)에서 필터칩 4개(전체/옷장/코디/스타일일지)가 화면 밖으로 넘치지 않고 '
+    '가로 스크롤 컨테이너 폭 안에 담기며, 실제로 좌우 드래그하면 스크롤되어 뒤에 가려졌던 '
+    '칩까지 눌러 필터를 바꿀 수 있다',
+    (tester) async {
+      final container = await pumpApp(tester, size: const Size(300, 800));
+      container.read(appRouterProvider).push(AppRoute.trashMain);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final scrollViewFinder = find.byType(SingleChildScrollView);
+      expect(scrollViewFinder, findsOneWidget, reason: '필터칩 Row를 감싸는 가로 스크롤 컨테이너가 정확히 1개 있어야 한다');
+
+      final viewportWidth = tester.getSize(scrollViewFinder).width;
+      const screenWidth = 300.0;
+      expect(
+        viewportWidth,
+        lessThanOrEqualTo(screenWidth),
+        reason: '스크롤 컨테이너 자체는 화면 폭을 넘지 않도록 ConstrainedBox로 제약되어야 한다',
+      );
+
+      final chipsRowFinder = find.descendant(of: scrollViewFinder, matching: find.byType(Row)).first;
+      final chipsRowWidth = tester.getSize(chipsRowFinder).width;
+      expect(
+        chipsRowWidth,
+        greaterThan(viewportWidth),
+        reason: '이 뷰포트에서는 칩 4개의 실제 내용 폭이 뷰포트보다 넓어야(=진짜로 넘치는 상황) 이 테스트가 의미가 있다',
+      );
+
+      final scrollable = tester.state<ScrollableState>(
+        find.descendant(of: scrollViewFinder, matching: find.byType(Scrollable)).first,
+      );
+      expect(scrollable.position.pixels, 0, reason: '초기 상태는 스크롤 안 된 맨 앞이어야 한다');
+
+      await tester.drag(scrollViewFinder, const Offset(-500, 0));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(scrollable.position.pixels, greaterThan(0), reason: '가로 드래그로 실제 스크롤이 이동해야 한다');
+
+      // 끝까지 스크롤된 상태에서 마지막 칩("스타일일지")이 실제로 탭 가능해야 한다(넘쳐서
+      // 가려졌던 칩도 스크롤 후엔 눌러서 필터를 바꿀 수 있어야 함).
+      await tester.tap(find.text('스타일일지'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final semantic = Theme.of(tester.element(find.byType(TrashMainScreen))).extension<AppSemanticColors>()!;
+      final styleLogChip = tester.widget<TextButton>(
+        find.ancestor(of: find.text('스타일일지'), matching: find.byType(TextButton)).first,
+      );
+      expect(
+        styleLogChip.style?.backgroundColor?.resolve(<WidgetState>{}),
+        semantic.primaryLight,
+        reason: '스크롤 후 탭한 "스타일일지" 칩이 실제로 선택 상태(하이라이트)가 되어야 한다',
+      );
+      final compositions = container.read(compositionsProvider);
+      expect(find.byType(TrashGalleryTile), findsNothing, reason: 'comp02(코디)만 삭제되어 있어 스타일일지 필터엔 항목이 없어야 한다');
+      expect(compositions.firstWhere((c) => c.id == 'comp02').isDeleted, isTrue, reason: '필터 조작이 실제 데이터를 건드리지는 않아야 한다');
     },
   );
 }
