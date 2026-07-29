@@ -152,7 +152,7 @@ Group B Task 10(휴지통 실행 배선) Review(2026-07-28)가 발견 — `lib/s
 
 [TechDebt] `comp02` 소프트삭제로 `tapCompositionById` 기반 통합테스트 4개가 깨져 있음 — Task 7 스코프 밖, 별도 정리 필요 (P1)
 
-상태: 미해결 (실측 확인됨, 아직 미착수)
+상태: **해결(2026-07-29)** — 4개 파일 전부 comp02→comp03(+ 필요한 곳은 `style_log_gallery_column_count_test.dart`와 동일한 런타임 주입 패턴)으로 교체, 각 테스트의 원래 검증 의도(리터럴 comp02 ID가 아니라 "두 번째 코디"/"이미 연결된 스타일일지" 등 속성)를 보존함을 Review가 변경 전 코드와 대조해 확인. `style_log_composition_binding_test.dart`의 피커 모달도 `filteredCompositionsProvider`(isDeleted 필터 포함)를 그대로 쓴다는 것을 소스로 재확인 — comp02가 애초에 그 경로에서도 도달 불가능이었음. Worker→Review(findings 없음, 4개 파일 개별 실행 재확인) 사이클 통과, 프로덕션 코드 변경 없어 Tester 생략(Review가 실기기 바이너리로 직접 재검증). 커밋 `199e112`.
 
 내용:
 Group B Task 7 완료 직후 Audit(2026-07-28)이 `composition_style_log_main_screen_test.dart`의 "포멀 코디"(comp02) 스테일 assertion을 지적한 김에, 같은 패턴(`tapCompositionById(tester, 'comp02')` — 코디 메인 화면에 렌더링된 `CompositionGalleryTile`을 predicate로 찾아 탭)이 다른 파일에도 있는지 PM이 전체 grep으로 확인 → 4개 파일에서 comp02를 직접 탭하는 테스트가 실제로 존재함을 확인. `composition_detail_data_binding_test.dart`를 실제로 실행해 최소 1건 실패를 직접 재현·확인함(`Expected: exactly one matching candidate, Actual: Found 0 widgets` — "코디 comp02 타일을 코디 메인에서 찾을 수 없다"):

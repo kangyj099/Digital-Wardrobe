@@ -18,17 +18,13 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**버그 수정 3건 + Group B Task 11 완료(2026-07-28~29, 세션 중 사용자 자리비움 — PM 자율 진행)**: (1) `GlassToast` 투명 히트박스, 커밋 `28cca3e`+`e175ffc`. (2) (P1) `setState() during build` 크래시, 커밋 `90e44a1`+`52303f6`. (3) (P2) 삭제된 옷이 코디/스타일일지 상세에서 정상처럼 탭되던 문제 — `StatusBadge('삭제됨')` 오버레이+탭차단, 커밋 `636f58e`+`ed85a73`. (4) **Group B Task 11(Detail 3화면 "더보기"→실제 [삭제] 연결) 완료** — `AppDetailScaffold`에 `onDelete` 배선, 옷은 코디 사용중이면 확인다이얼로그, 코디/스타일일지는 즉시삭제, 전부 `softDeleteMany`+`pop`+`GlassToast`로 기존 휴지통 파이프라인(Task 3/10)에 연결. Worker→Review 2라운드(P1: `PopupMenuButton<void>`+`value:null`이면 Flutter가 `onSelected`를 안 부르는 버그 발견→`<String>`으로 수정 / P2: 팝업 메뉴가 `CategoryToggleDropdown`과 스타일 안 맞음→해소)→Tester(44개 통합테스트 케이스 전부 PASS, 3도메인+확인다이얼로그+취소흐름+휴지통 연결+비정형 흐름) 통과, 커밋 `6a0125c`. 4건 전부 `TechnicalDebt.md` 반영 완료. dev 동기화 확인(변경 없음).
-
-**Audit(2026-07-29, Task 11 직후) 완료 + P1 수정 완료** — P1 2건 발견: (a) BACKLOG 갱신 자체(그 즉시 커밋으로 해소), (b) 스타일일지 열람에서 삭제된 코디가 여전히 정상처럼 보이고 탭됨. (b)도 Worker→Review(findings 없음, 재검증 위주)→Tester(신규 통합테스트 3/3 포함 재검증) 사이클 통과해 완료 — `CompositionPreviewCard.onTap`을 nullable화 + 코디 슬롯에 `StatusBadge('삭제됨')` 오버레이+탭차단(어제 확립한 정책 재사용, 제외 아님). 커밋 `a98d14b`. Task 크기 S/M이라 Audit 없이 완료 처리. P1 1건(Task 13 계획 문서 stale)은 정보성 — 아래 Current 참고. P2 1건은 `TechnicalDebt.md`에 스코프 확장 기록 완료.
+**세션 요약(2026-07-28~29, 대부분 사용자 자리비움 중 PM 자율 진행)**: 버그 수정 4건(`GlassToast` 히트박스 `28cca3e`, P1 `setState() during build` 크래시 `90e44a1`, 삭제된 옷/코디가 코디·스타일일지 상세에서 정상처럼 탭되던 문제 2방향 `636f58e`+`a98d14b`) + **Group B(다중선택+휴지통) Task 11~13 완료로 13개 Task 전체 종료**(Task 11 `6a0125c`, Task 13 문서정리 `761f48c`/`58b4897`) + Task 11 직후 홀리스틱 Audit(P1 2건 즉시 해소) + 오래 방치됐던 comp02 mock drift TechDebt 정리(통합테스트 4개, `199e112`). 상세 경위는 git log + `Decision.md`/`TechnicalDebt.md`가 1차 소스.
 
 ---
 
 # Current
 
-**Group B Task 13(문서 갱신 마무리) 완료(2026-07-29)** — 이 BACKLOG 압축 갱신 자체가 Task 13. 계획 문서(`docs/superpowers/plans/2026-07-21-multi-select-and-trash.md`)의 Step 2/3 지시문이 2026-07-21 작성 당시 가정 기준이라 Audit이 stale로 지적한 대로, 문자 그대로 따르지 않고 지금 실제 상태에서 다시 도출해 반영함 — `Decision.md` 최상단 "Group B 구현 완료" 항목(Task 1~11 요약+커밋 목록), `TechnicalDebt.md`에 self-id `firstWhere` 항목 신설. **이로써 그룹 B(다중선택+휴지통) 13개 Task 전부 종료, `2026-07-21-multi-select-and-trash.md` 계획 완결.**
-
-**Step⑦ 나머지 스코프 진행 상황 — 그룹 A/B/C 완료, 그룹 D 미착수**: 그룹 A(그룹형 드릴다운, 2026-07-19)/그룹 B(다중선택+휴지통, 위 참고)/그룹 C(설정 나머지 — 다크모드 실동작 포함, 2026-07-28) 전부 완료. 상세 경위는 `Decision.md`/git log(태그: Task 이름으로 검색)가 1차 소스, 이 파일은 더 이상 Task별 세부 내역을 보존하지 않음.
+**Step⑦ 나머지 스코프 진행 상황 — 그룹 A/B/C 완료, 그룹 D 미착수**: 그룹 A(그룹형 드릴다운, 2026-07-19)/그룹 B(다중선택+휴지통, 13 Task 전부 완료)/그룹 C(설정 나머지 — 다크모드 실동작 포함, 2026-07-28) 전부 완료. 상세 경위는 `Decision.md`/git log(태그: Task 이름으로 검색)가 1차 소스, 이 파일은 더 이상 Task별 세부 내역을 보존하지 않음.
 - **그룹 D(에디터급 이월 항목 — 겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩)**: 아직 스펙 착수 전. "Editor Draft 구현"과 인프라 상당 부분 겹칠 가능성 높음 — 아트보드 렌더링은 그룹 B의 코디 삭제 캐스케이드용 스냅샷 아키텍처와도 연결됨. 착수 전 `../Digital-Wardrobe-composition-artboard` worktree(`feature/composition-artboard-widget`, 코디 아트보드 `InteractiveArtboard` 병렬 작업)가 `composition_editor_screen.dart`를 실제로 배선하는 단계에 들어갔는지 `git log origin/dev..feature/composition-artboard-widget --stat`로 재확인할 것(그 전까진 `lib/widgets/interactive_artboard/`에만 격리돼 파일 겹침 없음, 2026-07-21 확인).
 - **"Editor Draft 구현"(별도 후속 작업, Step⑦ 전체 완료 후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위. 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리, Editor 3화면 `EditorHeader`+`skeletonRegion` 보일러플레이트 중복(P3) 추출도 함께 검토. 착수 시 아이템 개수 상한 15개(`Decision.md` 확정)도 실제 코드에 반영.
 
@@ -39,8 +35,6 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 - (P1) `CompositionGalleryTile`(코디 메인 그리드) 이미지가 아직 텍스트 전용 — `coverImagePath` 필드는 이미 있어 착수 비용 낮음.
 - (P3) Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지, 아직 미제작. 계약(Overlay, 레이아웃 비침습)은 `2026-07-13-scroll-container-and-header-hud-architecture.md` §3/§6 참고.
 - (P3) `flutter analyze` 미등재 lint 경고 다수(`typography_pass3_test.dart` 항목에 누적 기록 중, `TechnicalDebt.md` 참고) — 급하지 않음, 해당 파일 손댈 때 정리.
-
-**TechDebt 참고 — comp02 소프트삭제로 깨진 통합테스트**: `composition_detail_data_binding_test.dart`/`detail_cross_reference_visuals_test.dart`/`style_log_composition_binding_test.dart`(확인된 실패)+`detail_thumbnail_square_unification_test.dart`(미확인 추정) — `TechnicalDebt.md` 참고. 여전히 픽업 안 됨.
 
 **TechDebt — `AppMainScaffold` 헤더 오버레이 때문에 widget test hit-test가 어긋남(P3)** / **코디 삭제(`composition_main_screen.dart`+`composition_detail_screen.dart` 두 진입점 다)에 "사용 중" 경고 없음(P2)** — 둘 다 `TechnicalDebt.md` 참고, 급하지 않음.
 
