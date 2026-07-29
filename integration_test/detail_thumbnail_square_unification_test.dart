@@ -161,19 +161,36 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('CompositionDetailScreen(comp02)의 StyleLogGalleryTile도 동일하게 정사각(비율 ≈ 1)으로 렌더링된다',
-        (tester) async {
-      await pumpApp(tester);
-      await goToCategory(tester, '코디');
-      await tapCompositionById(tester, 'comp02');
+    testWidgets(
+      // [갱신, Task 7 이후 comp02 소프트삭제] 원래 comp02(log02 직접 연결)로 검증했으나 comp02가
+      // 코디 메인에서 더 이상 보이지 않는다 — comp03에 런타임 주입 스타일일지 1장으로 "다른 코디도
+      // 동일하게 정사각인가"라는 동일 의도를 재현한다.
+      'CompositionDetailScreen(comp03, 런타임 주입 스타일일지)의 StyleLogGalleryTile도 동일하게 '
+      '정사각(비율 ≈ 1)으로 렌더링된다',
+      (tester) async {
+        final container = await pumpApp(tester);
+        await goToCategory(tester, '코디');
+        await tapCompositionById(tester, 'comp03');
 
-      final tileFinder = find.byType(StyleLogGalleryTile);
-      expect(tileFinder, findsOneWidget);
-      final size = tester.getSize(tileFinder);
+        container.read(styleLogsProvider.notifier).state = [
+          ...container.read(styleLogsProvider),
+          StyleLog(
+            id: 'test-comp03-log-square-unif',
+            coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
+            wornDate: DateTime(2026, 1, 10),
+            linkedCompositionId: 'comp03',
+          ),
+        ];
+        await tester.pumpAndSettle();
 
-      expect(size.width / size.height, closeTo(1, 0.05));
-      expect(tester.takeException(), isNull);
-    });
+        final tileFinder = find.byType(StyleLogGalleryTile);
+        expect(tileFinder, findsOneWidget);
+        final size = tester.getSize(tileFinder);
+
+        expect(size.width / size.height, closeTo(1, 0.05));
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   // ── 4) 회귀 스윕 — 양쪽 Detail 화면, 예외/오버플로/잔여 빈 공간 없음 ──────────

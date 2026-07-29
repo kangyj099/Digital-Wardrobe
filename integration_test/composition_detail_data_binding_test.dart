@@ -6,7 +6,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/composition.dart';
+import 'package:digittal_wardrobe/models/style_log.dart';
 import 'package:digittal_wardrobe/providers/composition_providers.dart';
+import 'package:digittal_wardrobe/providers/style_log_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
@@ -24,10 +26,13 @@ import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 /// 스위트가 다루지 않는 것만 확인한다:
 /// 1) comp01(데일리 룩)의 "사용된 옷" 가로 목록에 실제 4개 아이템(c01/c11/c07/c03) 이름이
 ///    전부 보이고, 이미지 렌더링이 예외 없이 되며, 항목 탭 시 실제 옷 상세로 이동하는가.
-/// 2) comp02(포멀 코디, mock 기준 이미 log02에 연결됨)도 사용된 옷 2개(c04/c05)가 보이고,
-///    크로스 레퍼런스에는 이미 연결된 log02(2026-01-10) 타일만 보이며 "+ 스타일일지
-///    연결하기" 바인딩 타일은 나타나지 않는가(연결된 로그가 있으면 바인딩 UI 대신
-///    로그 타일 목록을 보여준다는 분기 검증).
+/// 2) comp03(레인 코디, c04/c05 재사용 — comp02와 동일 아이템 구성)에 스타일일지를 런타임
+///    주입해 "이미 연결됨" 상태를 재현했을 때도 사용된 옷 2개(c04/c05)가 보이고, 크로스
+///    레퍼런스에는 그 연결된 로그 타일만 보이며 "+ 스타일일지 연결하기" 바인딩 타일은
+///    나타나지 않는가(연결된 로그가 있으면 바인딩 UI 대신 로그 타일 목록을 보여준다는 분기
+///    검증). [갱신, Task 7 이후 comp02 소프트삭제] 원래 이 시나리오는 comp02(log02 직접
+///    연결)로 검증했으나 comp02가 코디 메인에서 더 이상 보이지 않아, comp03 + 런타임 주입
+///    스타일일지 조합으로 대체(`style_log_gallery_column_count_test.dart`가 이미 쓴 기법).
 /// 3) 스타일일지가 전혀 연결되지 않은 코디는 "+" 바인딩 타일이 렌더링되는가(Task 6,
 ///    `StyleLogCrossReferenceGallery`).
 void main() {
@@ -131,28 +136,42 @@ void main() {
     });
   });
 
-  group('코디 상세 — 사용된 옷 목록 + 크로스 레퍼런스(comp02, 이미 log02에 연결됨)', () {
+  group('코디 상세 — 사용된 옷 목록 + 크로스 레퍼런스(comp03, 런타임 주입 스타일일지로 "이미 연결됨" 재현)', () {
     testWidgets(
-      'comp02(포멀 코디) 상세 — 사용된 옷 2개(c04/c05)가 보이고, 크로스 레퍼런스에는 이미 '
-      '연결된 log02(2026-01-10) 타일만 보이며 "+" 바인딩 타일은 나타나지 않는다',
+      'comp03(레인 코디, c04/c05 재사용) 상세 — 런타임 주입 스타일일지 1장으로 사용된 옷 2개'
+      '(c04/c05)가 보이고, 크로스 레퍼런스에는 그 연결된 로그 타일만 보이며 "+" 바인딩 타일은 '
+      '나타나지 않는다',
       (tester) async {
-        await pumpApp(tester);
+        final container = await pumpApp(tester);
         await goToCategory(tester, '코디');
-        await tapCompositionById(tester, 'comp02');
+        await tapCompositionById(tester, 'comp03');
 
         expect(tester.takeException(), isNull);
         expect(find.byType(CompositionDetailScreen), findsOneWidget);
-        expect(find.text('포멀 코디'), findsOneWidget);
+        expect(find.text('레인 코디'), findsOneWidget);
 
         expect(find.text('트렌치코트'), findsOneWidget); // c04
         expect(find.text('스트라이프 블라우스'), findsOneWidget); // c05
         expect(find.byType(Image), findsWidgets);
         expect(tester.takeException(), isNull);
 
+        // 원래 log02가 comp02에 직접 연결돼 있었으니, 그 "이미 연결됨" 상태를 comp03에
+        // 런타임 주입으로 재현한다(`style_log_gallery_column_count_test.dart` 기법 재사용).
+        container.read(styleLogsProvider.notifier).state = [
+          ...container.read(styleLogsProvider),
+          StyleLog(
+            id: 'test-comp03-log-binding',
+            coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
+            wornDate: DateTime(2026, 1, 10),
+            linkedCompositionId: 'comp03',
+          ),
+        ];
+        await tester.pumpAndSettle();
+
         expect(find.byType(StyleLogCrossReferenceGallery), findsOneWidget);
         final logTile = find.byType(StyleLogGalleryTile);
         expect(logTile, findsOneWidget);
-        expect(find.textContaining('2026-01-10'), findsOneWidget); // log02.wornDate
+        expect(find.textContaining('2026-01-10'), findsOneWidget);
         expect(find.text('스타일일지 연결하기'), findsNothing);
         expect(find.byIcon(Icons.add), findsNothing);
 
