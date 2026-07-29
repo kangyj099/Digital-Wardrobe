@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'glass_pill.dart';
 
@@ -59,13 +60,25 @@ class GlassToast {
                       ),
                     ),
                     if (actionLabel != null)
-                      TextButton(
-                        onPressed: () {
-                          autoRemoveTimer?.cancel();
-                          onAction?.call();
-                          entry.remove();
-                        },
-                        child: Text(actionLabel),
+                      Padding(
+                        padding: const EdgeInsets.only(left: AppSpacing.xs),
+                        child: TextButton(
+                          // 메시지 영역과 구분되도록 옅은 배경을 준다 — `trash_main_screen.dart`의
+                          // 필터 선택 상태 하이라이트와 같은 `primaryLight` pill 패턴 재사용
+                          // (Visual Review 피드백: 실행취소 버튼이 탭 가능한 요소로 안 보임).
+                          // `primary500`(기본 TextButton 전경색) on `primaryLight` 대비비
+                          // ~6.3:1로 WCAG AA(4.5:1) 충족.
+                          style: TextButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).extension<AppSemanticColors>()!.primaryLight,
+                          ),
+                          onPressed: () {
+                            autoRemoveTimer?.cancel();
+                            onAction?.call();
+                            entry.remove();
+                          },
+                          child: Text(actionLabel),
+                        ),
                       ),
                   ],
                 ),

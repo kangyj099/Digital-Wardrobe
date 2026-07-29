@@ -1,13 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:digittal_wardrobe/theme/app_colors.dart';
+import 'package:digittal_wardrobe/theme/app_theme.dart';
 import 'package:digittal_wardrobe/widgets/glass_pill.dart';
 import 'package:digittal_wardrobe/widgets/glass_toast.dart';
 
 void main() {
+  testWidgets(
+    '실행취소 버튼에 메시지 영역과 구분되는 배경색(primaryLight)이 적용되어 탭 가능한 요소로 '
+    '시각적으로 구분된다(Visual Review 피드백: 버튼 가시성 부족)',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => GlassToast.show(
+                context,
+                message: '휴지통으로 이동됨',
+                actionLabel: '실행취소',
+                onAction: () {},
+              ),
+              child: const Text('트리거'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('트리거'));
+      await tester.pump();
+
+      final context = tester.element(find.text('실행취소'));
+      final expectedBackground =
+          Theme.of(context).extension<AppSemanticColors>()!.primaryLight;
+
+      final button = tester.widget<TextButton>(find.widgetWithText(TextButton, '실행취소'));
+      final resolvedBackground =
+          button.style?.backgroundColor?.resolve(<WidgetState>{});
+
+      expect(
+        resolvedBackground,
+        expectedBackground,
+        reason: '메시지 영역과 대비되는 배경 pill이 있어야 실행취소가 탭 가능한 버튼으로 인지된다',
+      );
+
+      // 액션을 탭하지 않아 auto-remove 타이머가 아직 대기 중인 채로 테스트가 끝나면
+      // "pending timer" 불변조건 검사에 걸린다 — 타이머가 실제로 발화하도록 흘려보낸다.
+      await tester.pump(const Duration(seconds: 5));
+    },
+  );
+
   testWidgets('메시지와 액션 라벨이 렌더링되고 액션 탭 시 콜백이 호출된다', (tester) async {
     var actionTapped = false;
     await tester.pumpWidget(
       MaterialApp(
+        theme: AppTheme.light,
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () => GlassToast.show(
@@ -42,6 +88,7 @@ void main() {
       var underneathTapped = false;
       await tester.pumpWidget(
         MaterialApp(
+          theme: AppTheme.light,
           home: Scaffold(
             body: Stack(
               children: [
