@@ -83,4 +83,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1개 선택'), findsNothing);
   });
+
+  testWidgets('다중선택 모드 중에는 미완성 배지 항목(c06)을 탭해도 정상적으로 선택 토글된다', (tester) async {
+    // 회귀 재발 방지: SelectableGalleryTile.onTap이 multiSelectMode를 무시하고
+    // isIncomplete만으로 onIncompleteTap(이 화면에선 null)에 라우팅되던 버그가 있었음
+    // (그래서 위 다른 테스트들이 c06 대신 c09를 써야 했던 우회 코멘트가 남아 있다).
+    // c02(정상 항목) 롱프레스로 모드 진입 → c06(미완성) 탭 시 선택 개수가 늘어나야 한다.
+    await pumpApp(tester);
+    await tester.longPress(find.byKey(const ValueKey('c02')));
+    await tester.pumpAndSettle();
+    expect(find.text('1개 선택'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('c06')));
+    await tester.pumpAndSettle();
+    expect(find.text('2개 선택'), findsOneWidget);
+
+    // 같은 항목을 다시 탭하면 선택 해제된다(토글 왕복 확인).
+    await tester.tap(find.byKey(const ValueKey('c06')));
+    await tester.pumpAndSettle();
+    expect(find.text('1개 선택'), findsOneWidget);
+  });
+
+  testWidgets('다중선택 모드가 아닐 때 미완성 배지 항목(c06)을 탭해도 아무 반응이 없다(회귀 없음)', (tester) async {
+    // 옷장 메인은 selectionMode(피커 모달)가 아니므로 onIncompleteTap이 null로 배선된다
+    // (closet_main_screen.dart) — 일반 브라우징 중 미완성 항목 탭은 여전히 무반응이어야 한다.
+    await pumpApp(tester);
+    await tester.tap(find.byKey(const ValueKey('c06')));
+    await tester.pumpAndSettle();
+    // 다중선택 모드로 진입하지도, 상세 화면으로 이동하지도 않아야 한다.
+    expect(find.text('1개 선택'), findsNothing);
+    expect(find.byType(SelectableGalleryTile), findsWidgets);
+  });
 }

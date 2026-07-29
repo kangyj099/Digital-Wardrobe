@@ -46,7 +46,7 @@ class SelectableGalleryTile extends StatelessWidget {
           '${selected ? ", 선택됨" : ""}',
       excludeSemantics: true,
       child: GestureDetector(
-        onTap: item.isIncomplete ? onIncompleteTap : onTap,
+        onTap: (item.isIncomplete && !multiSelectMode) ? onIncompleteTap : onTap,
         onLongPress: onLongPress,
         child: Container(
           decoration: BoxDecoration(
