@@ -49,6 +49,50 @@ void main() {
     },
   );
 
+  testWidgets(
+    '다크 테마에서도 실행취소 버튼의 배경(primaryLight)이 기본 전경색(colorScheme.primary)과 '
+    '같은 값으로 겹치지 않는다(Audit 2026-07-29: 다크 팔레트에서 둘이 동일값이라 텍스트가 '
+    '배경에 완전히 묻혔던 회귀)',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.dark,
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => GlassToast.show(
+                context,
+                message: '휴지통으로 이동됨',
+                actionLabel: '실행취소',
+                onAction: () {},
+              ),
+              child: const Text('트리거'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('트리거'));
+      await tester.pump();
+
+      final context = tester.element(find.text('실행취소'));
+      final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+      final defaultForeground = Theme.of(context).colorScheme.primary;
+
+      final button = tester.widget<TextButton>(find.widgetWithText(TextButton, '실행취소'));
+      final resolvedBackground = button.style?.backgroundColor?.resolve(<WidgetState>{});
+
+      expect(resolvedBackground, semantic.primaryLight, reason: '다크 테마에서도 배경은 primaryLight여야 한다');
+      expect(
+        resolvedBackground,
+        isNot(defaultForeground),
+        reason:
+            'TextButton 기본 전경색(colorScheme.primary)과 배경색이 같으면 텍스트가 배경에 '
+            '완전히 묻힌다 — 다크 팔레트에서 이 둘이 우연히 같은 값이 되지 않아야 한다',
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+    },
+  );
+
   testWidgets('메시지와 액션 라벨이 렌더링되고 액션 탭 시 콜백이 호출된다', (tester) async {
     var actionTapped = false;
     await tester.pumpWidget(

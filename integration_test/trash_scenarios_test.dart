@@ -6,6 +6,7 @@ import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/providers/closet_providers.dart';
 import 'package:digittal_wardrobe/providers/composition_providers.dart';
 import 'package:digittal_wardrobe/providers/style_log_providers.dart';
+import 'package:digittal_wardrobe/providers/theme_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
 import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
@@ -22,13 +23,18 @@ import 'package:digittal_wardrobe/widgets/trash_gallery_tile.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<ProviderContainer> pumpApp(WidgetTester tester, {Size size = const Size(1400, 4600)}) async {
+  Future<ProviderContainer> pumpApp(
+    WidgetTester tester, {
+    Size size = const Size(1400, 4600),
+    bool darkTheme = false,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final container = ProviderContainer();
     addTearDown(container.dispose);
+    if (darkTheme) container.read(themeModeProvider.notifier).set(true);
     await tester.pumpWidget(
       UncontrolledProviderScope(container: container, child: const DigitalWardrobeApp()),
     );
@@ -91,6 +97,30 @@ void main() {
       expect(chipBackground(tester, '전체'), semantic.primaryLight);
       expect(chipBackground(tester, '코디'), isNot(semantic.primaryLight));
       expect(chipBackground(tester, '스타일일지'), isNot(semantic.primaryLight));
+    },
+  );
+
+  testWidgets(
+    '다크 테마에서도 필터칩의 선택 배경(primaryLight)이 기본 전경색(colorScheme.primary)과 '
+    '같은 값으로 겹치지 않는다(Audit 2026-07-29: 다크 팔레트에서 둘이 동일값이라 칩 텍스트가 '
+    '배경에 완전히 묻혔던 회귀)',
+    (tester) async {
+      final container = await pumpApp(tester, darkTheme: true);
+      container.read(appRouterProvider).push(AppRoute.trashMain);
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(TrashMainScreen));
+      final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+      final defaultForeground = Theme.of(context).colorScheme.primary;
+
+      expect(chipBackground(tester, '전체'), semantic.primaryLight, reason: '기본 필터는 전체가 활성 상태여야 한다(빈 Set)');
+      expect(
+        semantic.primaryLight,
+        isNot(defaultForeground),
+        reason:
+            'TextButton 기본 전경색(colorScheme.primary)과 배경색이 같으면 칩 텍스트가 배경에 '
+            '완전히 묻힌다 — 다크 팔레트에서 이 둘이 우연히 같은 값이 되지 않아야 한다',
+      );
     },
   );
 

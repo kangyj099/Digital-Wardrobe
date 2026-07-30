@@ -159,7 +159,25 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
     success: Color(0xFF93B5CC),
     background: Color(0xFF1D262D),
     onBackground: Color(0xFFEDE9E1),
-    primaryLight: Color(0xFF93B5CC),
+    // Audit(2026-07-29): `TextButton.styleFrom(backgroundColor: primaryLight)`로 선택/강조
+    // 상태를 표시하는 곳(`glass_toast.dart` 실행취소 버튼, `trash_main_screen.dart` 필터칩)이
+    // `TextButton`의 기본 전경색(`colorScheme.primary`)을 그대로 쓰는데, 다크 팔레트에서
+    // `primaryLight`가 `AppColors.dark.primary`(0xFF93B5CC)와 완전히 같은 값이라 텍스트가
+    // 배경에 완전히 묻혔다(대비비 1:1). `gray800`(=이 다크 팔레트의 `surface`와 동일값,
+    // 0xFF2C3841) 재사용도 검토했으나, `category_toggle_dropdown.dart`/
+    // `classification_drilldown_capsule.dart`의 팝업 메뉴 배경(`colorScheme.surface`
+    // alpha 0.96 ≈ gray800)과 사실상 같은 색이 되어 그 두 곳의 "선택됨" 하이라이트가
+    // 메뉴 배경에 파묻히므로 기각. 대신 `primary`와 같은 색상 계열(H≈204.2°, S≈35.8%,
+    // HSL 기준 `dart:ui`가 아닌 표준 HSL 공식으로 계산)을 유지한 채 명도만 낮춘 새 값을
+    // 도출했다: H=204.21°, S=35.85%(둘 다 primary와 동일), L=23% → 0xFF263F50.
+    // WCAG 상대휘도 기준 `primary`(0.436) 대비 배경 상대휘도(0.0455) 대비비 ≈5.09:1로
+    // AA(4.5:1, 일반 텍스트) 대비 약 13% 여유. 동시에 대비 상한(배경 상대휘도가 0.058을
+    // 넘으면 대비비가 4.5 밑으로 떨어짐)에 최대한 붙지 않도록 여유를 뒀고, `gray800`
+    // (상대휘도 0.0375)보다는 살짝 밝고 더 파랗게 채도를 유지해 그 두 팝업 메뉴에서도
+    // 선택 하이라이트가 배경과 육안으로 구분된다(단, 배경 상대휘도 제약상 gray800과의
+    // 휘도 대비는 ~1.09:1로 크지 않음 — 색상(hue) 차이로 구분되는 정도이며, 이 이상
+    // 밝게 하면 `primary` 텍스트 대비 AA를 잃는다는 근본적 trade-off가 있음).
+    primaryLight: Color(0xFF263F50),
     accent: Color(0xFF8FA890),
   );
 
