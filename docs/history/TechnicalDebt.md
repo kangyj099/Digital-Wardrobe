@@ -411,10 +411,12 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 
 [TechDebt] `StyleLog` 모델에 정렬/필터 기준 필드(날씨/옷 종류/계절) 자체가 없어 스타일일지 메인 다중 필터 UI를 구현할 수 없음
 
-상태: 미해결
+상태: **데이터 기반 해소(2026-07-29), 필터 UI 자체는 여전히 미착수** — 사용자가 실제 앱을 구동하며 재발견(2026-07-29 Visual Review), 아래 조치 방향대로 모델 확장 완료.
 
 내용:
 `03_스타일 일지.md` UX명세서는 스타일일지 메인의 정렬/필터로 "날짜, 옷 종류, 날씨, 계절 기준 지원(역순 보기 옵션 포함)"을 요구하지만, `StyleLog`(`lib/models/style_log.dart`) 모델에 `season`/`weather`/착용 옷 종류에 대응하는 필드가 전혀 없다(날짜만 `wornDate`로 존재). Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 `style_log_main_screen.dart`를 `AppMainScaffold`로 마이그레이션하며 Review가 이 사실을 지적 — 이전 Step①(전체 화면 Skeleton) 단계엔 "헤더 (스타일 일지 ▾ + 필터 칩)"이라는 placeholder 주석이라도 있었으나, 이번 마이그레이션에서 비기능 정렬 아이콘 하나만 남기고 그 흔적이 사라졌다. 실제 필터 구현은 `StyleLog` 모델 확장(Data/Architecture 레이어 결정) 없이는 불가능 — 모델 필드 추가가 선행돼야 함.
+
+**해소(2026-07-29)**: `season: Season?`/`weather: Weather?`를 `Composition`과 동일 패턴으로 직접 추가. "옷 종류" 기준은 사용자 지시대로 별도 필드를 두지 않고 "착용 옷"에서 파생하는 구조로 설계 — 이를 위해 취약했던 `additionalImagePaths`(이미지 경로 문자열 매칭) 참조를 `wornItemIds`(실제 `ClothingItem.id` 리스트)로 교체(부수적으로 기존 취약한 매칭 패턴 자체도 해소). Worker→Review(findings 없음)→Tester(실기기 검증, purge된 아이템 참조 방어 시나리오 포함) 통과, 커밋 `1b2037f`. **아직 남은 것**: 스타일일지 메인 화면의 실제 정렬/필터 UI(캡슐/드롭다운 등 시각 디자인)는 사용자가 별도로 지시할 예정 — 이 항목은 그 UI 작업이 실제로 붙을 때까지 완전히 닫히지 않음.
 
 ---
 

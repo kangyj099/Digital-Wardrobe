@@ -29,7 +29,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Current
 
-**미착수 — 스타일일지 메인 필터/정렬 UI 전체 구현(사용자 발견 버그2, 확인 필요)**: 스펙(`03_스타일 일지.md` 7-10행)이 "정렬/필터: 날짜/옷종류/날씨/계절 4기준+역순"을 요구하는데 현재 `style_log_main_screen.dart`는 이 UI가 통째로 없음(Task 9가 `classification: null`로 넘겨서 그룹/정렬 캡슐 자체가 안 그려짐). 사용자가 "지금 바로 전체 구현" 확정했으나, 착수 중 `StyleLog` 모델에 계절/날씨/옷종류 필드 자체가 없다는 걸 발견 — 데이터 소스를 (A) 연결된 코디에서 파생 (B) 착용 옷 이미지경로 매칭으로 역추적 (C) `StyleLog`에 필드 직접 추가 중 뭘로 할지 사용자 확인 요청 중, 답변 대기.
+**진행 중 — 스타일일지 메인 필터/정렬 UI(사용자 발견 버그2)**: 스펙(`03_스타일 일지.md` 7-10행)이 "정렬/필터: 날짜/옷종류/날씨/계절 4기준+역순"을 요구하는데 `style_log_main_screen.dart`엔 이 UI가 아직 없음(Task 9가 `classification: null`로 넘겨서 그룹/정렬 캡슐 자체가 안 그려짐). **데이터 기반 선행 작업 완료(2026-07-29, 커밋 `1b2037f`)** — `StyleLog`에 `season`/`weather` 직접 추가, "옷 종류"는 사용자 지시대로 필드 중복 없이 "착용 옷" 참조에서 파생하도록 `additionalImagePaths`(취약한 이미지경로 매칭)를 `wornItemIds`(실제 ID 참조)로 교체. **다음**: 실제 필터/정렬 UI(캡슐/드롭다운 등 시각 디자인)는 사용자가 별도로 지시할 예정 — 그 지시 받으면 착수.
 
 **Step⑦ 나머지 스코프 진행 상황 — 그룹 A/B/C 완료, 그룹 D 미착수**: 그룹 A(그룹형 드릴다운, 2026-07-19)/그룹 B(다중선택+휴지통, 13 Task 전부 완료)/그룹 C(설정 나머지 — 다크모드 실동작 포함, 2026-07-28) 전부 완료. 상세 경위는 `Decision.md`/git log(태그: Task 이름으로 검색)가 1차 소스, 이 파일은 더 이상 Task별 세부 내역을 보존하지 않음.
 - **그룹 D(에디터급 이월 항목 — 겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩)**: 아직 스펙 착수 전. "Editor Draft 구현"과 인프라 상당 부분 겹칠 가능성 높음 — 아트보드 렌더링은 그룹 B의 코디 삭제 캐스케이드용 스냅샷 아키텍처와도 연결됨. 착수 전 `../Digital-Wardrobe-composition-artboard` worktree(`feature/composition-artboard-widget`, 코디 아트보드 `InteractiveArtboard` 병렬 작업)가 `composition_editor_screen.dart`를 실제로 배선하는 단계에 들어갔는지 `git log origin/dev..feature/composition-artboard-widget --stat`로 재확인할 것(그 전까진 `lib/widgets/interactive_artboard/`에만 격리돼 파일 겹침 없음, 2026-07-21 확인).
