@@ -201,9 +201,9 @@ void main() {
           id: 'test-worn-items-log',
           coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
           wornDate: DateTime(2026, 4, 1),
-          additionalImagePaths: const [
-            'assets/images/mock/IMG_4260_preview_rev_1.png', // c02 데님 팬츠 — 첫 번째, 비삭제
-            'assets/images/mock/IMG_4261_preview_rev_1.png', // c03 그래픽 와이드팬츠 — 두 번째, 비삭제
+          wornItemIds: const [
+            'c02', // 데님 팬츠 — 첫 번째, 비삭제
+            'c03', // 그래픽 와이드팬츠 — 두 번째, 비삭제
           ],
         );
         container.read(styleLogsProvider.notifier).state = [

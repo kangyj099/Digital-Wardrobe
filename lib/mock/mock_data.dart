@@ -69,7 +69,12 @@ final List<StyleLog> mockStyleLogs = [
     coverImagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png',
     wornDate: DateTime(2026, 1, 5),
     linkedCompositionId: 'comp01',
-    additionalImagePaths: const ['assets/images/mock/IMG_4262_preview_rev_1.png', 'assets/images/mock/IMG_4275.PNG'],
+    // c11(그래픽 맨투맨)/c07(리넨 반바지) — 각각 이전 additionalImagePaths 경로와
+    // imagePath가 정확히 일치하던 옷의 ID로 그대로 치환(데이터 동일성 유지).
+    wornItemIds: const ['c11', 'c07'],
+    // 연결된 comp01과 동일한 season/weather로 맞춰 일관성 유지.
+    season: Season.springFall,
+    weather: Weather.clear,
     location: '집',
   ),
   StyleLog(
@@ -77,6 +82,9 @@ final List<StyleLog> mockStyleLogs = [
     coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
     wornDate: DateTime(2026, 1, 10),
     linkedCompositionId: 'comp02',
+    // log01과 다른 season/weather 조합 — 필터 기능 테스트용 다양성 확보.
+    season: Season.winter,
+    weather: Weather.snow,
     location: '회사',
   ),
 ];

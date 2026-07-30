@@ -211,7 +211,7 @@ void main() {
       id: 'test-log',
       coverImagePath: '',
       wornDate: DateTime(2026, 3, 1),
-      additionalImagePaths: const [activePath, deletedPath],
+      wornItemIds: const ['active-item', 'deleted-item'],
     );
     final router = GoRouter(
       initialLocation: '/style-log/test-log',

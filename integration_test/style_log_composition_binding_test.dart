@@ -103,9 +103,9 @@ void main() {
         expect(hasAssetImage('assets/images/mock/IMG_4259_preview_rev_1.png'), isTrue,
             reason: '커버 이미지(log01.coverImagePath)');
         expect(hasAssetImage('assets/images/mock/IMG_4262_preview_rev_1.png'), isTrue,
-            reason: '추가 사진 1장(log01.additionalImagePaths[0])');
+            reason: '추가 사진 1장(log01.wornItemIds[0] == c11.imagePath)');
         expect(hasAssetImage('assets/images/mock/IMG_4275.PNG'), isTrue,
-            reason: '추가 사진 2장(log01.additionalImagePaths[1])');
+            reason: '추가 사진 2장(log01.wornItemIds[1] == c07.imagePath)');
         expect(tester.takeException(), isNull);
 
         // "착용 옷" 섹션 라벨과 그 가로 스트립(ListView)이 실제로 존재한다(Task 8에서
@@ -122,9 +122,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
 
-        // "착용 옷" 첫 이미지(log01.additionalImagePaths[0] == c11.imagePath)를 탭하면
-        // 실제로 c11(그래픽 맨투맨) 상세로 이동한다(역방향 매칭 — mock_data.dart 데이터
-        // 정합성으로 확인됨).
+        // "착용 옷" 첫 이미지(log01.wornItemIds[0] == 'c11')를 탭하면 실제로 c11(그래픽
+        // 맨투맨) 상세로 이동한다.
         await tester.tap(find.byWidgetPredicate(
           (w) =>
               w is Image &&

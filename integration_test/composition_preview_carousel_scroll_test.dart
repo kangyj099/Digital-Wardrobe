@@ -218,7 +218,7 @@ void main() {
 
     await goToCategory(tester, '스타일일지');
     // mock은 wornDate 내림차순 정렬이라 log02(1/10)가 log01(1/5)보다 먼저 온다. log02는
-    // additionalImagePaths가 비어 "착용 옷" 행 자체가 없으므로, 그 섹션이 실제로 있는
+    // wornItemIds가 비어 "착용 옷" 행 자체가 없으므로, 그 섹션이 실제로 있는
     // log01 타일을 명시적으로 골라 탭한다.
     final log01Tile = find.byWidgetPredicate(
       (w) => w is StyleLogGalleryTile && w.styleLog.id == 'log01',
@@ -227,7 +227,7 @@ void main() {
     await tester.tap(log01Tile);
     await tester.pumpAndSettle();
 
-    expect(find.text('착용 옷'), findsOneWidget, reason: 'log01은 additionalImagePaths가 있어 이 섹션이 보여야 한다');
+    expect(find.text('착용 옷'), findsOneWidget, reason: 'log01은 wornItemIds가 있어 이 섹션이 보여야 한다');
     final wornRowFinder = find.byWidgetPredicate((w) => w is SizedBox && w.height == 96).first;
     final wornRowScrollable =
         find.descendant(of: wornRowFinder, matching: find.byType(Scrollable)).first;

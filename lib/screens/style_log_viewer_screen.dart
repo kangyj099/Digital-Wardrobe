@@ -138,7 +138,7 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
               '${log.location.isEmpty ? '' : '  ${log.location}'}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            if (log.additionalImagePaths.isNotEmpty) ...[
+            if (log.wornItemIds.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               Text('착용 옷', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: AppSpacing.xs),
@@ -146,14 +146,13 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
                 height: 96,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: log.additionalImagePaths.length,
+                  itemCount: log.wornItemIds.length,
                   separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.xs),
                   itemBuilder: (context, index) {
-                    final path = log.additionalImagePaths[index];
-                    // `imagePath`가 정확히 일치하는 옷을 역으로 찾아 탭 시 그 옷 상세로
-                    // 이동한다(mock_data.dart 기준 log01의 두 경로는 각각 c11/c07의
-                    // imagePath와 정확히 일치함이 이미 확인된 데이터 정합성).
-                    final match = closetItems.where((i) => i.imagePath == path);
+                    final wornItemId = log.wornItemIds[index];
+                    // ID로 직접 옷을 찾는다(예전 이미지 경로 문자열 일치 방식은 취약해
+                    // ID 참조로 교체 — `docs/history/Decision.md` 참고).
+                    final match = closetItems.where((i) => i.id == wornItemId);
                     final item = match.isEmpty ? null : match.first;
                     return GestureDetector(
                       onTap: (item == null || item.isDeleted)
@@ -169,7 +168,12 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
                             Positioned.fill(
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(AppRadius.sm),
-                                child: Image.asset(path, fit: BoxFit.cover),
+                                // 방어적 처리 — 정상 데이터라면 item은 항상 존재해야 하지만,
+                                // 못 찾으면(예: 데이터 정합성 깨짐) 회색 placeholder로 대체한다
+                                // (파일 상단 coverImagePath 빈 문자열 가드와 동일 패턴).
+                                child: item == null
+                                    ? Container(color: semantic.gray200)
+                                    : Image.asset(item.imagePath, fit: BoxFit.cover),
                               ),
                             ),
                             if (item != null && item.isDeleted)
