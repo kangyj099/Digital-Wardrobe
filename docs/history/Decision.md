@@ -1,5 +1,22 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 다크모드 `AppSemanticColors.primaryLight` 값 정정 — `colorScheme.primary`와의 충돌 해소 (UI/Screen, Decision)
+
+결정:
+- `lib/theme/app_colors.dart`의 `AppSemanticColors.dark.primaryLight`를 `0xFF93B5CC`(다크 `colorScheme.primary`와 완전히 동일했던 버그값) → `0xFF263F50`로 변경.
+- `gray800`(=다크 `colorScheme.surface`) 재사용안은 기각 — `category_toggle_dropdown.dart`/`classification_drilldown_capsule.dart`의 팝업 메뉴 배경이 이미 `surface` 기반이라, 그 값을 쓰면 이 두 위젯의 "선택됨" 하이라이트가 메뉴 배경에 파묻힘.
+- 대신 `primary`의 HSL(H≈204.2°, S≈35.8%)을 유지한 채 명도(L)만 23%로 낮춰 새 값 도출 — `TextButton` 기본 전경색(`colorScheme.primary`) 대비 5.09:1(AA), `onSurface` 텍스트 대비 9.08:1을 확보.
+
+사유:
+2026-07-29 Visual Review 세션에서 사용자가 발견한 "GlassToast 실행취소 버튼 가시성 부족"/"휴지통 필터칩" 수정 2건이 둘 다 `primaryLight`를 배경색으로 쓰는 `TextButton`이었는데, 다크모드에서 이 토큰이 `colorScheme.primary`(기본 텍스트색)와 완전히 같은 값이라 텍스트가 안 보였다 — 그 배치 완료 후 홀리스틱 Audit이 발견(P1). 라이트모드 값(`primary300`=0xFFC5D3C7)은 애초에 `primary500`(텍스트, 0xFF394550)과 별개 값이라 문제없었는데, 다크모드 값만 "기존 dark primary 재사용" 식으로 대충 채워져 있던 게 원인(이전 결정 기록 참고).
+
+Impact:
+- `lib/theme/app_colors.dart` — `primaryLight` 다크값만 변경, 나머지 팔레트 불변.
+- 영향받는 4개 소비처(`GlassToast`, `trash_main_screen.dart` 필터칩, `category_toggle_dropdown.dart`, `classification_drilldown_capsule.dart`) 전부 실기기 다크모드 구동으로 재확인 완료(Tester) — 원래 버그(GlassToast/필터칩) 해소, 부수 개선(드롭다운/캡슐의 onSurface-on-primaryLight 대비가 기존 1.78:1→9.08:1로 개선, 원래 별개의 미달 이슈였음).
+- 커밋 `0c16786`.
+
+---
+
 [Decision] Group B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기) 구현 완료 — `GalleryMainScreen<T>` 제네릭 셸 아키텍처 채택 (Data/Architecture + UI/Screen, Decision)
 
 결정:
