@@ -1,4 +1,4 @@
-> Version 3.0 — Defines the project workflow. Single consolidated document (former per-section subfiles under `workflow_project/` merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
+> Version 3.1 — Defines the project workflow. Single consolidated document (former per-section subfiles under `workflow_project/` merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
 > This workflow applies across the entire project, including planning, design, development, and release.
 
 # Project Workflow
@@ -257,7 +257,7 @@ Worker → Review → (Fail) Worker(fix) → Review          [반복: Review 통
                              → (Fail) Worker(fix) → Review   [처음 단계로 회귀, 전체 사이클 재수행]
 ```
 
-Review 실패 시엔 Worker가 고치고 Review로만 돌아간다(Tester는 아직 볼 필요 없는 코드니까). 하지만 **Tester가 실패하면 Worker가 수정한 뒤 처음 단계인 Review로 돌아가 Review→Tester 사이클을 처음부터 다시 밟는다** — 수정이 새 코드 결함을 만들지 않았는지, 그리고 실제로 동작이 고쳐졌는지 둘 다 다시 확인하기 위함. 이 재검증 루프는 Review와 Tester가 모두 통과할 때까지 반복된다.
+Review 실패 시엔 Worker가 고치고 Review로만 돌아간다(Tester는 아직 볼 필요 없는 코드니까). 하지만 **Tester가 실패하면 Worker가 수정한 뒤 처음 단계인 Review로 돌아가 Review→Tester 사이클을 처음부터 다시 밟는다** — 수정이 새 코드 결함을 만들지 않았는지, 그리고 실제로 동작이 고쳐졌는지 둘 다 다시 확인하기 위함. 이 재검증 루프는 Review와 Tester가 모두 통과할 때까지 반복된다. 반복 실행 비용은 아래 "재검증 루프의 에이전트 재사용" 원칙을 따른다.
 
 ---
 
@@ -282,6 +282,16 @@ PM → Worker → Review ×2 → (Fail) Worker(fix) → Review ×2
                        → (Pass) Tester → (Pass) Integrator (or Human) → Worker → Feature Audit → Complete
                                       → (Fail) Worker(fix) → Review ×2
 ```
+
+---
+
+## 재검증 루프의 에이전트 재사용 (M/L/XL 공통)
+
+"처음 단계로 회귀"는 검증을 다시 한다는 뜻이지, 매번 새 서브에이전트를 콜드 스폰한다는 뜻이 아니다.
+
+- 직전 라운드에 같은 Task를 담당했던 Review/Tester 인스턴스가 아직 유효하면(같은 세션 내, 컨텍스트 만료 전) `SendMessage`로 이어서 쓴다 — §12.1 Required Materials를 처음부터 다시 읽지 않고, 이미 로드된 컨텍스트 위에서 재확인한다. 새로 spawn해야 하는 경우(세션 재시작, 전문성 전환 등)의 판단 기준은 CLAUDE.md "에이전트 인스턴스 수명"을 그대로 따른다.
+- 재검증의 판정 대상은 원본 Task 전체가 아니라 **Worker의 fix로 바뀐 부분(diff) + 그 fix가 건드린 파일**로 좁힌다. fix가 원래 Task Manifest(§12.4) 밖의 파일까지 건드렸다면, 그 확장된 범위만 §12.3(Scope Escalation)에 따라 PM이 재평가해 추가한다.
+- 이 원칙은 "Review와 Tester가 모두 통과할 때까지 반복"하는 검증 강도를 낮추지 않는다 — 반복 실행의 **비용**(콜드 스폰마다 컨텍스트를 처음부터 재구성하는 비용)만 줄인다.
 
 ---
 
