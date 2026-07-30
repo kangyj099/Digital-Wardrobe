@@ -18,11 +18,18 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**세션 요약(2026-07-28~29, 대부분 사용자 자리비움 중 PM 자율 진행)**: 버그 수정 4건(`GlassToast` 히트박스 `28cca3e`, P1 `setState() during build` 크래시 `90e44a1`, 삭제된 옷/코디가 코디·스타일일지 상세에서 정상처럼 탭되던 문제 2방향 `636f58e`+`a98d14b`) + **Group B(다중선택+휴지통) Task 11~13 완료로 13개 Task 전체 종료**(Task 11 `6a0125c`, Task 13 문서정리 `761f48c`/`58b4897`) + Task 11 직후 홀리스틱 Audit(P1 2건 즉시 해소) + 오래 방치됐던 comp02 mock drift TechDebt 정리(통합테스트 4개, `199e112`). 상세 경위는 git log + `Decision.md`/`TechnicalDebt.md`가 1차 소스.
+**Group B 종료(자리비움 세션) 직후, 사용자 복귀해 앱을 직접 구동하며 Visual Review 진행(2026-07-29)** — 사용자가 실제 조작하며 버그 3건+시각수정 2건 발견, 전부 그 자리에서 Worker→Review→Tester 사이클(파일별 독립 병렬 진행)로 수정 완료:
+1. 옷장 다중선택 모드 중 "미완성" 배지 아이템 탭이 무시되던 버그(`selectable_gallery_tile.dart`) — 커밋 `e6c7cff`.
+2. 스타일일지 열람 이미지→코디 스와이프가 실제 마우스 드래그로 안 되던 버그 — Flutter 기본 `MaterialScrollBehavior`가 `dragDevices`에서 mouse를 제외하는 게 원인, 앱 전역 `AppScrollBehavior`로 해소(`lib/main.dart`) — 커밋 `3d8fa43`.
+3. `GlassToast` "실행취소" 버튼 가시성 부족 — `primaryLight` 배경 추가 — 커밋 `bd923af`.
+4/5. 휴지통 필터칩 가로 오버플로 해소(스크롤) + 단일선택→다중선택 전환 — 커밋 `8021b81`.
+전체 배치 Tester 통과 후(신규 크로스컷팅 회귀테스트 `9191aca`) **Task 크기 L로 판단해 Audit 실행** — P1 1건 발견: 이 배치가 쓴 `primaryLight` 토큰이 다크모드에서 `colorScheme.primary`와 완전히 같은 값이라 방금 고친 버튼 텍스트가 다크모드에선 여전히 안 보임. 즉시 수정(HSL 명도만 낮춰 새 값 도출, `gray800` 재사용은 다른 위젯 하이라이트가 묻혀서 기각) → Review→Tester(다크모드 실기기 구동, 4개 소비처 전부 확인) 통과 — 커밋 `0c16786`+`db4d75c`(Decision 기록). **병렬 세션 관련 참고**: Worker 4개를 동시에 같은(worktree 격리 안 된) 작업 디렉토리에 돌렸더니 일부가 각자 `git stash`로 A/B 비교하다 서로 부딪히는 레이스가 있었음(외부 세션 아님, 자기 자신들끼리) — PM이 combined 상태를 전체 재검증(`flutter analyze`+전체 `flutter test`+관련 통합테스트 6개 개별 재실행)해서 무결성 확인 후 진행함. **다음에 병렬 Worker를 여러 개 띄울 땐 git stash 등 working tree를 건드리는 작업을 하지 말라고 명시하거나, 정말 필요하면 순차 진행할 것.**
 
 ---
 
 # Current
+
+**미착수 — 스타일일지 메인 필터/정렬 UI 전체 구현(사용자 발견 버그2, 확인 필요)**: 스펙(`03_스타일 일지.md` 7-10행)이 "정렬/필터: 날짜/옷종류/날씨/계절 4기준+역순"을 요구하는데 현재 `style_log_main_screen.dart`는 이 UI가 통째로 없음(Task 9가 `classification: null`로 넘겨서 그룹/정렬 캡슐 자체가 안 그려짐). 사용자가 "지금 바로 전체 구현" 확정했으나, 착수 중 `StyleLog` 모델에 계절/날씨/옷종류 필드 자체가 없다는 걸 발견 — 데이터 소스를 (A) 연결된 코디에서 파생 (B) 착용 옷 이미지경로 매칭으로 역추적 (C) `StyleLog`에 필드 직접 추가 중 뭘로 할지 사용자 확인 요청 중, 답변 대기.
 
 **Step⑦ 나머지 스코프 진행 상황 — 그룹 A/B/C 완료, 그룹 D 미착수**: 그룹 A(그룹형 드릴다운, 2026-07-19)/그룹 B(다중선택+휴지통, 13 Task 전부 완료)/그룹 C(설정 나머지 — 다크모드 실동작 포함, 2026-07-28) 전부 완료. 상세 경위는 `Decision.md`/git log(태그: Task 이름으로 검색)가 1차 소스, 이 파일은 더 이상 Task별 세부 내역을 보존하지 않음.
 - **그룹 D(에디터급 이월 항목 — 겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩)**: 아직 스펙 착수 전. "Editor Draft 구현"과 인프라 상당 부분 겹칠 가능성 높음 — 아트보드 렌더링은 그룹 B의 코디 삭제 캐스케이드용 스냅샷 아키텍처와도 연결됨. 착수 전 `../Digital-Wardrobe-composition-artboard` worktree(`feature/composition-artboard-widget`, 코디 아트보드 `InteractiveArtboard` 병렬 작업)가 `composition_editor_screen.dart`를 실제로 배선하는 단계에 들어갔는지 `git log origin/dev..feature/composition-artboard-widget --stat`로 재확인할 것(그 전까진 `lib/widgets/interactive_artboard/`에만 격리돼 파일 겹침 없음, 2026-07-21 확인).
