@@ -1,5 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../theme/app_effects.dart';
+import 'glass_inset_highlight.dart';
 
 /// [GlassPill]과 동일한 프로스티드글래스 톤(블러/보더/그림자 값)을 원형 버튼에 맞춰
 /// 재구성한 공용 primitive — 밀도 토글, 뒤로가기, 정렬, 기능 미정 스텁 버튼 등 원형
@@ -39,21 +40,26 @@ class GlassCircleButton extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(
-                width: kMinInteractiveDimension,
-                height: kMinInteractiveDimension,
+        child: Stack(
+          children: [
+            BackdropFilter(
+              filter: AppGlassEffect.backdropFilter(),
+              child: Container(
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: kMinInteractiveDimension,
+                    height: kMinInteractiveDimension,
+                  ),
+                  onPressed: onTap,
+                  icon: Icon(icon),
+                  tooltip: tooltip,
+                ),
               ),
-              onPressed: onTap,
-              icon: Icon(icon),
-              tooltip: tooltip,
             ),
-          ),
+            const GlassInsetHighlight(),
+          ],
         ),
       ),
     );

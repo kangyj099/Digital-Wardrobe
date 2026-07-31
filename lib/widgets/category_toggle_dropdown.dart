@@ -88,7 +88,15 @@ class CategoryToggleDropdown extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(current.label),
+            // 목업(`옷장 메인 화면.txt` 34행, 헤더 16px/700) 대조 결과 이 트리거 텍스트가
+            // 스타일 미지정으로 Material 기본값(bodyMedium, 14/w500)을 상속하고 있었다 —
+            // titleMedium(16)에 `FontWeight.bold`(700)를 얹어 목업과 맞춘다. 공용
+            // `textTheme.titleMedium` 자체(600)는 다른 화면까지 바뀌므로 건드리지 않고,
+            // 이 헤더 트리거 텍스트에만 국한해 `.copyWith`로 좁게 적용.
+            Text(
+              current.label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
             const Icon(Icons.arrow_drop_down),
           ],
         ),

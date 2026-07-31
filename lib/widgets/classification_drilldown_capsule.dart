@@ -184,7 +184,15 @@ class _CapsuleSegment<T> extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(currentLabel),
+          // 목업(`옷장 메인 화면.txt` 34행, 캡슐류 13px/600~700) 대조 결과 이 트리거
+          // 텍스트가 스타일 미지정으로 Material 기본값(bodyMedium, 14/w500)을 상속하고
+          // 있었다 — labelSmall(13)에 `FontWeight.w600`(범위 하한, 캡슐이 헤더 드롭다운
+          // 트리거보다 덜 강조돼야 하는 보조 컨트롤이라는 판단)을 얹어 목업과 맞춘다.
+          // 공용 `textTheme.labelSmall` 자체(500)는 건드리지 않고 이 트리거에만 국한.
+          Text(
+            currentLabel,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
           const Icon(Icons.arrow_drop_down),
         ],
       ),
