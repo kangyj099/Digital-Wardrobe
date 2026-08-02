@@ -1,5 +1,26 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 전체 앱 Firestore 데이터 스키마 설계 확정 (Data/API/Architecture, Decision)
+
+결정:
+- `docs/reference/architecture/00_DataSchema.md` 신설 — User/ClothingItem/Composition/StyleLog 4개 도메인의 Firestore/Cloud Storage 스키마를 정식화. `00_MVP.md` §5의 낡은 초안 대신 현재 `lib/models/*.dart`를 필드 형태의 소스오브트루스로 삼음.
+- **최대 결정**: 사용자 스코프 서브컬렉션(`users/{uid}/clothingItems`, `.../compositions`, `.../styleLogs`) 채택 — flat 컬렉션+`userId` 필드 대신. 근거: Anonymous Auth가 설치 즉시 `uid`를 부여(부트스트래핑 공백 없음)/추후 계정 연결 시 `uid` 불변(마이그레이션 불필요)/보안 규칙이 구조적으로 더 안전(`userId` 필터 누락 위험 자체가 없음)/현재 교차유저 쿼리 필요 없음(향후 필요해지면 collection-group 쿼리로 커버 가능).
+- 소프트삭제/휴지통: 별도 Trash 컬렉션 없음 — 3개 서브컬렉션의 `isDeleted`/`deletedAt` 필드로 클라이언트 쿼리(`where isDeleted==true`) 파생, 기존 `trashEntriesProvider` 패턴과 동일.
+- `wearCount` 집계: 클라이언트 사이드 Firestore 트랜잭션 채택(Cloud Function 트리거 아님) — 1인 개발/개인용 우선 앱이라 배포 파이프라인 오버헤드가 정당화 안 됨.
+- `Composition.items`(≤15개 상한 기확정)는 embedded array 유지, 1MiB 문서 한도 문제 없음(15개×~200byte≈3KB).
+- `Composition.backgroundColor`(`ArtboardBackgroundColor` enum) 필드 추가 — Development Review가 최초 누락 발견(P1), 수정 후 재검증 통과.
+- Editor Draft(`editor_drafts`) 토폴로지: 2026-07-15 결정("`editor_drafts` 컬렉션, `{recordType, recordId}` 키")이 멀티테넌시를 고려하지 않았던 점을 재확인, `users/{uid}/editorDrafts/{recordType}_{recordId}`로 중첩하는 안을 제안(§1 토폴로지와 일관) — 최종 확정 아님, 문서 내 Open Question으로 유지.
+
+사유:
+사용자가 Firestore 실제 백엔드 전환에 앞서 전체 데이터 모델 설계를 요청(2026-08-02). Worker 초안 → Development Review(architecture, 1라운드: P1 backgroundColor 누락/P3 낡은 인용 → 수정 후 재검증 통과) → Audit(홀리스틱, Decision-stage 확정 전 크기무관 필수) 순서로 진행. Audit이 추가로 P1 2건(Editor Draft 토폴로지 미반영 — 이 세션에서 즉시 수정/ `Workflow_Project.md` §5·§12.1 정책 문서 자기모순 — 사용자 판단으로 백로그 최우선 등록, 지금 안 고침)과 P2(텍스트검색 아키텍처 미기술)/P3(Open Question #5 목록 불완전)를 발견. P2/P3는 일반 백로그.
+
+Impact:
+- 신규 파일: `docs/reference/architecture/00_DataSchema.md`. 커밋(`feature/db-schema-design` 브랜치): `87f7b4f`(초안) → `588c136`(Review fix) → `6ba82b1`(Audit fix).
+- 코드 변경 없음 — Decision 단계 문서만, 실제 Firestore 마이그레이션 구현은 별도 후속 Task.
+- 후속 백로그: `Workflow_Project.md` §5/§12.1 Audit-필수 문구 누락 수정(P1, 최우선), 텍스트검색 아키텍처 보강(P2), Open Question #5 목록 보완(P3) — 전부 `docs/work/BACKLOG.md` 참고.
+
+---
+
 [Decision] 프로스티드 글래스 블러/채도/하이라이트 값을 원본 목업 CSS 기준으로 정정 (UI/Screen, Decision)
 
 결정:
