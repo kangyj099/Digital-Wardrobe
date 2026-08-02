@@ -14,6 +14,7 @@ import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
 import '../widgets/glass_pill.dart';
 import '../widgets/glass_toast.dart';
+import '../widgets/selection_entry_button.dart';
 import '../widgets/trash_gallery_tile.dart';
 
 /// 휴지통 메인 — Task 10(실행): 복원/영구삭제/비우기를 실제로 실행하고, 다중선택+카테고리
@@ -201,12 +202,7 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
               ),
             ]
           : [
-              GlassPill(
-                child: TextButton(
-                  onPressed: () => setState(() => _multiSelectMode = true),
-                  child: const Text('선택', style: AppTypography.actionMinimal),
-                ),
-              ),
+              SelectionEntryButton(onTap: () => setState(() => _multiSelectMode = true)),
               GlassPill(
                 child: TextButton(
                   onPressed: () => _confirmEmptyTrash(context, allEntries),

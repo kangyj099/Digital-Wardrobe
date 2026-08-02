@@ -7,6 +7,7 @@ import 'classification_drilldown_capsule.dart';
 import 'frosted_close_button.dart';
 import 'glass_circle_button.dart';
 import 'glass_pill.dart';
+import 'selection_entry_button.dart';
 
 /// 그리드 렌더링을 도메인 wrapper에 위임하는 콜백 — `GalleryMainScreen`은 `T`의 런타임
 /// 타입을 분기하지 않는다(각 도메인이 자기 기존 그리드 어댑터를 그대로 인스턴스화).
@@ -164,12 +165,7 @@ class _GalleryMainScreenState<T> extends State<GalleryMainScreen<T>> {
               ]
             : [
                 ...widget.headerActions,
-                GlassPill(
-                  child: TextButton(
-                    onPressed: () => setState(() => _multiSelectMode = true),
-                    child: const Text('선택'),
-                  ),
-                ),
+                SelectionEntryButton(onTap: () => setState(() => _multiSelectMode = true)),
               ];
 
     return AppMainScaffold(
