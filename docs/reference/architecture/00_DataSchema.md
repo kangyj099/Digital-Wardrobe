@@ -55,7 +55,7 @@ Source of truth for shape: `lib/models/clothing_item.dart`.
 |---|---|---|---|
 | `name` | string | no | |
 | `category` | string | yes | enum-name string → `ClothingCategory` (`lib/models/enums.dart`) |
-| `color` | string | yes | free text, **not** a closed vocabulary (confirmed: `engineering-principles` skill's known-violations list names `category`/`season`/`material` but not `color`) |
+| `color` | string | yes | free text, **not** a closed vocabulary (confirmed: `lib/models/clothing_item.dart` types `color` as bare `String?`, while `category`/`season`/`material` are typed as their respective enums — `ClothingCategory?`/`Season?`/`ClothingMaterial?`) |
 | `season` | string | yes | → `Season` enum |
 | `material` | string | yes | → `ClothingMaterial` enum (~18 perception-based values; rationale in `docs/history/Decision.md`) |
 | `imagePath` | string | no | Cloud Storage path — background-removed image, see §8 |
@@ -83,6 +83,7 @@ Source of truth for shape: `lib/models/composition.dart`.
 | `season` | string | yes | → `Season` enum |
 | `weather` | string | yes | → `Weather` enum |
 | `coverImagePath` | string | yes | see §8 for value semantics |
+| `backgroundColor` | string | yes | enum-name string → `ArtboardBackgroundColor` (`lib/widgets/interactive_artboard/artboard_background_color.dart`; MVP-scoped: `docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md:36` specs the artboard's background-color swatch control, white/gray/black only). **Not yet in `lib/models/composition.dart`** — currently local/ephemeral widget state only, see Open Question #9 |
 | `isIncomplete` | boolean | no (default `false`) | |
 | `isDeleted` | boolean | no (default `false`) | |
 | `deletedAt` | Timestamp | yes | |
@@ -188,3 +189,4 @@ Open Question #7: if the eventual Draft feature needs draft-only fields that sho
 6. Composite indexes for combined filters (`isDeleted` + season/category/wearCount sort, etc., §6) are explicitly deferred to implementation time, not designed in this document.
 7. Editor Draft / `isIncomplete` persistence (§10): kept as today's field-only pattern with no dedicated Drafts collection. Whether a separate `drafts` subcollection becomes necessary is deferred until the "Editor Draft 구현" task actually starts.
 8. `Composition.coverImagePath` semantics (§8): currently assumed to always duplicate an existing composition-item's `ClothingItem.imagePath` Storage path (no independent upload), since the picker UI that would let a user upload a genuinely distinct cover image doesn't exist yet (`docs/history/Decision.md` notes the "field만 먼저" pattern — value-picking UI not built). Revisit if that Editor UI ships with real upload capability.
+9. `Composition.backgroundColor` (§4) — the artboard background-color swatch control is real, current MVP scope (`docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md:36`) and already implemented as a closed-vocabulary enum, `ArtboardBackgroundColor` (`lib/widgets/interactive_artboard/artboard_background_color.dart`), but it is currently local/ephemeral widget state only — `lib/models/composition.dart` has no persisted field for it yet. This document proposes the Firestore field now (string, nullable, mapping to that enum) in advance of the Dart model catching up, same pattern as Open Question #2's `originalImagePath`.
