@@ -191,7 +191,7 @@ class _CapsuleSegment<T> extends StatelessWidget {
           // 공용 `textTheme.labelSmall` 자체(500)는 건드리지 않고 이 트리거에만 국한.
           Text(
             currentLabel,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const Icon(Icons.arrow_drop_down),
         ],
