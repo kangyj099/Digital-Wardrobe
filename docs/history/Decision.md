@@ -940,3 +940,28 @@ Impact:
 - `integration_test/closet_item_detail_data_binding_test.dart` — `.dress` 참조 갱신
 - `2026-07-19-main-header-classification-and-settings-entry-design.md`의 "ClothingCategory 선언 순서가 이미 착용순서와 일치해 추가 매핑 불필요" 서술은 이 변경 이후에도 여전히 유효(개명+재정렬 이후 순서가 착용순서 그대로이므로) — 별도 스펙 수정 불필요.
 - 순수 rename+재정렬이라 런타임 동작 변화 없음 — Worker→Review만 진행(Tester 불필요, Task 1/5 선례와 동일 성격).
+
+---
+
+[Decision] 재검증 루프(Review/Tester 재시도)의 재검증 스코프를 diff 단위로 축소 (`Workflow_Project.md` §5, Version 3.0 → 3.1)
+
+배경:
+사용자가 "자동 작업 돌리면 1~2시간이면 토큰을 다 쓰는데 이 규모 프로젝트에서 보편적이냐"고 진단을 요청(2026-07-29). PM이 실측한 결과: `lib/`은 6,900줄(69파일)로 앱 코드 자체는 크지 않음. `test/`+`integration_test/`는 13,629줄로 앱 코드의 약 2배. `docs/`는 약 19,000줄. `.claude/policies`+`agents`+`skills`는 약 2,000줄. 전체 커밋 420개 중 192개(46%)가 docs/backlog/decision 전용 커밋. 결론: 프로젝트 규모나 Flutter 생태계 자체보다, 이 harness가 규정한 PM→Worker→Review→Tester→(Audit) 멀티에이전트 게이트 파이프라인 — 특히 "Tester 미통과 시 Review부터 전체 재수행"(§5 M/L/XL) 규칙이 재시도마다 원본 Task 전체를 처음부터 다시 판정하게 만드는 구조 — 이 최대 비용 요인으로 식별됨.
+
+결정:
+- §5 M/L/XL 파이프라인의 재검증 루프(Tester 미통과 → Worker fix → Review부터 재수행)에 새 하위 절 "재검증 루프의 재검증 범위"를 추가: 재검증 대상을 원본 Task 전체가 아니라 **Worker fix의 diff + 그 fix가 건드린 파일**로 좁힌다. fix가 원래 Task Manifest(§12.4) 밖의 파일까지 건드렸다면 그 확장분만 §12.3(Scope Escalation)으로 개별 승인. 검증 강도(Review·Tester 모두 통과할 때까지 반복)는 그대로 유지 — 낮추는 건 반복 실행 비용뿐.
+- 에이전트를 새로 spawn할지 이어 쓸지는 별도 규칙을 만들지 않고, 이미 있는 CLAUDE.md "에이전트 인스턴스 수명" 원칙을 그대로 가리킨다(같은 Task 재검증 라운드는 그 원칙의 "연속된 스텝, 같은 전문성" 케이스에 해당).
+- 문서 버전 3.0 → 3.1 (§1.6 챕터급 추가 기준 적용).
+
+수정 이력: 최초 초안(2026-07-29)은 "에이전트 재사용" 규칙 자체를 이 문서에 다시 서술했으나, 사용자가 CLAUDE.md:37 "에이전트 인스턴스 수명"과 내용이 겹친다고 지적(2026-07-30) — 검토 결과 그 부분은 순수 중복이었고(§1.5 Concise Writing 위반), 실제로 CLAUDE.md에 없던 새 규칙은 "재검증 스코프를 diff로 좁힌다"뿐이었음을 확인해 중복 서술을 제거하고 참조로 대체.
+
+사유:
+diff 스코프 축소는 품질 게이트(Review/Tester 반복 통과 요구)를 전혀 낮추지 않으면서, 이미 통과한 부분을 라운드마다 다시 판정하는 낭비만 제거한다. 함께 검토했으나 기각한 대안:
+- 문서화 의무(BACKLOG/Decision/TechnicalDebt 기록) 축소 — 커밋의 46%가 docs 전용인 건 실제 인시던트(세션 간 컨텍스트 유실, dev/정책 드리프트 — §3 "Skill-Internal Ledgers", §13.4 2026-07-10 사례)를 막기 위해 쌓인 규율이라, 되돌리면 그 실패를 재현할 위험이 큼.
+- 문서량(`docs/` 약 19,000줄) 자체를 줄이거나 삭제 — §12(Layer×Stage 스코프 라우팅)로 이미 태스크별 최소 자료만 선별 전달되고 있어(전체를 통째로 읽는 구조가 아님), 텍스트 총량을 줄여도 실제 토큰 절감 효과는 작다고 판단.
+- Audit 게이트(L/XL 완료 전, Decision-Stage 확정 전) 축소 — 이미 크기·단계 기준으로 좁게 게이트돼 있어(S/M 스킵, Decision-Stage는 항상 1회) 추가로 줄일 여지가 작다고 판단.
+
+Impact:
+- `.claude/policies/Workflow_Project.md` §5 수정, 버전 3.1로 상향.
+- 기존 M/L/XL 재검증 문구는 그대로 유지, 새 하위 절 하나만 추가 — CLAUDE.md에 이미 있는 에이전트 재사용 원칙은 참조만 하고 재서술하지 않음.
+- 앱 코드/런타임 동작 변화 없음 — Worker→Review만 진행(문서 전용 변경, Tester 불필요).
