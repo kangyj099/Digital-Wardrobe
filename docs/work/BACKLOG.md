@@ -18,12 +18,9 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Group B 종료(자리비움 세션) 직후, 사용자 복귀해 앱을 직접 구동하며 Visual Review 진행(2026-07-29)** — 사용자가 실제 조작하며 버그 3건+시각수정 2건 발견, 전부 그 자리에서 Worker→Review→Tester 사이클(파일별 독립 병렬 진행)로 수정 완료:
-1. 옷장 다중선택 모드 중 "미완성" 배지 아이템 탭이 무시되던 버그(`selectable_gallery_tile.dart`) — 커밋 `e6c7cff`.
-2. 스타일일지 열람 이미지→코디 스와이프가 실제 마우스 드래그로 안 되던 버그 — Flutter 기본 `MaterialScrollBehavior`가 `dragDevices`에서 mouse를 제외하는 게 원인, 앱 전역 `AppScrollBehavior`로 해소(`lib/main.dart`) — 커밋 `3d8fa43`.
-3. `GlassToast` "실행취소" 버튼 가시성 부족 — `primaryLight` 배경 추가 — 커밋 `bd923af`.
-4/5. 휴지통 필터칩 가로 오버플로 해소(스크롤) + 단일선택→다중선택 전환 — 커밋 `8021b81`.
-전체 배치 Tester 통과 후(신규 크로스컷팅 회귀테스트 `9191aca`) **Task 크기 L로 판단해 Audit 실행** — P1 1건 발견: 이 배치가 쓴 `primaryLight` 토큰이 다크모드에서 `colorScheme.primary`와 완전히 같은 값이라 방금 고친 버튼 텍스트가 다크모드에선 여전히 안 보임. 즉시 수정(HSL 명도만 낮춰 새 값 도출, `gray800` 재사용은 다른 위젯 하이라이트가 묻혀서 기각) → Review→Tester(다크모드 실기기 구동, 4개 소비처 전부 확인) 통과 — 커밋 `0c16786`+`db4d75c`(Decision 기록). **병렬 세션 관련 참고**: Worker 4개를 동시에 같은(worktree 격리 안 된) 작업 디렉토리에 돌렸더니 일부가 각자 `git stash`로 A/B 비교하다 서로 부딪히는 레이스가 있었음(외부 세션 아님, 자기 자신들끼리) — PM이 combined 상태를 전체 재검증(`flutter analyze`+전체 `flutter test`+관련 통합테스트 6개 개별 재실행)해서 무결성 확인 후 진행함. **다음에 병렬 Worker를 여러 개 띄울 땐 git stash 등 working tree를 건드리는 작업을 하지 말라고 명시하거나, 정말 필요하면 순차 진행할 것.**
+**라이브 Visual Review 배치(2026-07-29) 완료** — 사용자가 앱을 직접 구동하며 발견한 버그 3건+시각수정 2건 수정(옷장 다중선택 미완성 배지 탭 안 됨/마우스 드래그 스와이프 안 됨/GlassToast 가시성/휴지통 필터칩 오버플로+다중선택, 커밋 `e6c7cff`~`8021b81`) → Audit이 다크모드 `primaryLight`가 `colorScheme.primary`와 겹치는 P1 발견·즉시 해소(커밋 `0c16786`). 상세는 git log 참고.
+
+**목업 대조 기반 프로스티드 글래스 수정 + 후속 Audit(2026-07-30~08-01) 완료** — 사용자가 "글래스 효과가 유리 같지 않다"고 지적, 원본 목업(`참고자료/목업/옷장 메인/`)과 코드를 직접 대조해 원인 확정: 블러 8배 과함(sigma12→1.5)/`saturate(180%)` 누락/inset 하이라이트 누락/헤더 텍스트 굵기 미스매치. `AppGlassEffect`(블러+채도 합성 유틸) 신설해 3개 공용 글래스 프리미티브(`GlassPill`/`GlassCircleButton`/`AppDetailScaffold` 더보기버튼)에 적용, Worker→Review→Tester(97개 케이스) 통과 — 커밋 `f5b3b38`. **Task 크기 L로 Audit 실행** — P1 발견: Group B Task 7 셸 추출 때 "선택" 버튼의 `actionMinimal` 스타일이 누락돼 옷장/코디/스타일일지 메인 3화면에서 기본 크기로 렌더링되던 기존 버그(글래스 수정과 무관, `Decision.md`가 요구하는 "앱에서 가장 작은 텍스트" 위반) — 공용 `SelectionEntryButton` 위젯 추출로 해소, Worker→Review→Tester 통과 — 커밋 `7a7bed5`. 스타일일지 필터 UI 스펙도 이 사이에 정본 확정(`docs/reference/design/features/style_log/filter.md`, 오타 파일명 정정) — 커밋 `4bea03f`.
 
 ---
 

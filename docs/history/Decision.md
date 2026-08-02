@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 프로스티드 글래스 블러/채도/하이라이트 값을 원본 목업 CSS 기준으로 정정 (UI/Screen, Decision)
+
+결정:
+- `GlassPill`/`GlassCircleButton`/`AppDetailScaffold`(더보기 버튼) 3개 공용 글래스 프리미티브의 `BackdropFilter`를 `lib/theme/app_effects.dart`의 `AppGlassEffect.backdropFilter()`로 통일.
+- 블러: `sigmaX/Y: 12` → `AppGlassEffect.blurSigma = 1.5`. 근거: 목업 CSS `backdrop-filter: blur(3px)`, CSS blur-radius ≈ 2×Gaussian-sigma(브라우저 구현 통용 근사) → 3÷2=1.5. 기존 값은 역산하면 CSS `blur(24px)`에 해당 — 목업 대비 8배 과블러였음.
+- 채도: 기존엔 아예 없었음 → `AppGlassEffect.saturationBoost`(표준 SVG `feColorMatrix type="saturate"` 공식, s=1.8=180%)를 `ImageFilter.compose(outer: saturationBoost, inner: blur)`로 blur 다음에 적용(CSS 필터 리스트 `blur(3px) saturate(180%)`의 좌→우 적용 순서와 일치).
+- Inset 하이라이트: `GlassInsetHighlight`(1px, `rgba(255,255,255,0.16)`) 신규 — 목업 CSS `inset 0 1px 0 rgba(255,255,255,0.16)`을 `BoxDecoration`이 지원 안 해서 별도 `Positioned` 레이어로 흉내.
+- 부수 발견·수정: `category_toggle_dropdown.dart`/`classification_drilldown_capsule.dart`의 헤더 트리거 텍스트가 스타일 미지정으로 기본값(14/w500)을 상속 중이었음 — 목업(16px/700, 13px/600~700)에 맞춰 로컬 `.copyWith`로 좁게 수정(공용 `AppTypography.textTheme` 자체는 안 건드림).
+
+사유:
+사용자가 실제 앱을 구동해 Visual Review 하던 중 "프로스티드 글래스 효과가 전혀 유리 같지 않다"고 지적, 이전에도 여러 번 수정 요청했었다고 함 — PM이 원본 목업(`참고자료/목업/옷장 메인/옷장 메인.html`+스크린샷+`옷장 메인 화면.txt`)의 실제 CSS/스펙 값을 코드와 직접 대조해 정량적 원인을 확정. 배경색(`rgba(247,246,243,0.38)`)은 이미 정확히 일치했었고, 블러 강도·채도·인셋 하이라이트 3가지가 실제 원인이었음.
+
+Impact:
+- `lib/theme/app_effects.dart`(신규), `lib/widgets/glass_inset_highlight.dart`(신규), `glass_pill.dart`/`glass_circle_button.dart`/`app_detail_scaffold.dart`/`category_toggle_dropdown.dart`/`classification_drilldown_capsule.dart` 수정.
+- Worker→Review(findings 없음, saturate 행렬/`ImageFilter.compose` 타입 직접 검증)→Tester(97개 케이스, 다른 화면들까지 폭넓게 재확인) 통과, 커밋 `f5b3b38`.
+- 후속 홀리스틱 Audit이 무관한 기존 버그(Group B Task 7의 "선택" 버튼 스타일 누락, P1)를 추가 발견 — 별도 항목 없이 이번 세션에서 바로 수정, 커밋 `7a7bed5`. 상세는 `docs/work/BACKLOG.md` Last Completed 참고.
+
+---
+
 [Decision] 다크모드 `AppSemanticColors.primaryLight` 값 정정 — `colorScheme.primary`와의 충돌 해소 (UI/Screen, Decision)
 
 결정:
