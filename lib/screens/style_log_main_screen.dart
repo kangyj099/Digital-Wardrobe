@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/enums.dart';
+import '../models/style_log.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
-import '../widgets/app_main_scaffold.dart';
-import '../widgets/app_scroll_container.dart';
 import '../widgets/expandable_add_fab.dart';
-import '../widgets/glass_circle_button.dart';
+import '../widgets/gallery_main_screen.dart';
+import '../widgets/glass_toast.dart';
 import '../widgets/selection_aware_header_actions.dart';
 import '../widgets/style_log_gallery_grid.dart';
 
-/// Main-플랫+필터형 — 그룹 드릴다운 없음(기존 스펙대로 날짜 기준 최신순 고정). FAB는
-/// `closet_main_screen.dart`의 2-옵션 팝업 패턴을 그대로 이식.
+/// Main-플랫+필터형 — 그룹 드릴다운 없음(기존 스펙대로 날짜 기준 최신순 고정). `classification`을
+/// 아예 넘기지 않아 `GalleryMainScreen`의 기본값(null)을 그대로 쓴다 — 이 화면이
+/// `classification: null` 경로(캡슐/밀도 UI 없음)의 첫 실사용례.
 /// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 참고.
 ///
 /// [selectionMode]가 true면 이 화면이 "선택 모달(스타일일지 재호출)"로 동작한다 — 타일 탭 시
@@ -33,12 +34,13 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
   Widget build(BuildContext context) {
     final logs = ref.watch(filteredStyleLogsProvider);
 
-    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
-
-    return AppMainScaffold(
+    return GalleryMainScreen<StyleLog>(
       current: AppCategory.styleLog,
+      items: logs,
+      itemId: (log) => log.id,
       showBackButton: !widget.selectionMode,
       showCategoryToggle: !widget.selectionMode,
+      selectionMode: widget.selectionMode,
       headerActions: buildSelectionAwareHeaderActions(
         selectionMode: widget.selectionMode,
         onClose: () => context.pop(),
@@ -48,32 +50,46 @@ class _StyleLogMainScreenState extends ConsumerState<StyleLogMainScreen> {
       // 초기화할 중분류/소분류 상태 자체가 없어 콜백 본문은 비워둔다(그래도 "메인에 있다"는
       // 신호로서 non-null이어야 재선택 시 메인으로의 불필요한 재이동을 막는다).
       onReselectCurrentCategory: () {},
-      secondaryControlsRight: [
-        GlassCircleButton(icon: Icons.sort, tooltip: '정렬 기준', onTap: () {}),
-      ],
-      body: AppScrollContainer(
-        topHintThreshold: contentTopSpacing,
-        builder: (context, controller) => StyleLogGalleryGrid(
+      onItemTap: (log) {
+        if (widget.selectionMode) {
+          context.pop(log.id);
+        } else {
+          context.push(AppRoute.styleLogViewer.replaceFirst(':id', log.id));
+        }
+      },
+      onDeleteSelected: (ids) {
+        ref.read(styleLogsProvider.notifier).softDeleteMany(ids);
+        GlassToast.show(
+          context,
+          message: '${ids.length}개 항목이 휴지통으로 이동됨',
+          actionLabel: '실행취소',
+          onAction: () => ref.read(styleLogsProvider.notifier).restoreMany(ids),
+        );
+      },
+      gridBuilder: ({
+        required density,
+        required controller,
+        required topSpacing,
+        required multiSelectMode,
+        required selectedIds,
+        required onItemTap,
+        required onItemLongPress,
+      }) {
+        return StyleLogGalleryGrid(
           logs: logs,
           controller: controller,
-          topSpacing: contentTopSpacing,
-          onItemTap: (l) {
-            if (widget.selectionMode) {
-              context.pop(l.id);
-            } else {
-              context.push(AppRoute.styleLogViewer.replaceFirst(':id', l.id));
-            }
-          },
-        ),
-      ),
-      floatingActionButton: widget.selectionMode
+          topSpacing: topSpacing,
+          multiSelectMode: multiSelectMode,
+          selectedIds: selectedIds,
+          onItemTap: onItemTap,
+          onItemLongPress: onItemLongPress,
+        );
+      },
+      fab: widget.selectionMode
           ? null
           : ExpandableAddFab(
               options: [
-                ExpandableAddFabOption(
-                  label: '1카드 추가',
-                  onTap: () => context.push(AppRoute.styleLogAdd),
-                ),
+                ExpandableAddFabOption(label: '1카드 추가', onTap: () => context.push(AppRoute.styleLogAdd)),
                 ExpandableAddFabOption(
                   label: '여러카드에 분할 추가',
                   onTap: () => context.push(AppRoute.styleLogAdd),

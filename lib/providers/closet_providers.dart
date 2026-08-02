@@ -9,11 +9,25 @@ import 'classification_models.dart';
 class ClosetItemsNotifier extends StateNotifier<List<ClothingItem>> {
   ClosetItemsNotifier() : super(mockClothingItems);
 
-  void softDelete(String id) {
+  void softDelete(String id) => softDeleteMany({id});
+
+  void softDeleteMany(Set<String> ids) {
+    final now = DateTime.now();
     state = [
       for (final item in state)
-        if (item.id == id) item.copyWith(isDeleted: true) else item,
+        if (ids.contains(item.id)) item.copyWith(isDeleted: true, deletedAt: now) else item,
     ];
+  }
+
+  void restoreMany(Set<String> ids) {
+    state = [
+      for (final item in state)
+        if (ids.contains(item.id)) item.copyWith(isDeleted: false, deletedAt: null) else item,
+    ];
+  }
+
+  void purgeMany(Set<String> ids) {
+    state = [for (final item in state) if (!ids.contains(item.id)) item];
   }
 }
 

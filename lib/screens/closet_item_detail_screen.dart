@@ -8,6 +8,7 @@ import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/composition_preview_carousel.dart';
+import '../widgets/glass_toast.dart';
 import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
 
@@ -29,6 +30,7 @@ class ClosetItemDetailScreen extends ConsumerWidget {
 
     return AppDetailScaffold(
       category: AppCategory.closet,
+      onDelete: () => _confirmAndDelete(context, ref, itemId, linkedCompositions.length),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -67,5 +69,26 @@ class ClosetItemDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref, String itemId, int linkedCount) async {
+    if (linkedCount > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('사용 중인 코디가 있어요'),
+          content: Text('이 옷은 $linkedCount개의 코디에 사용되고 있어요. 삭제하면 휴지통으로 이동해요.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('휴지통으로 이동')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    if (!context.mounted) return;
+    ref.read(closetItemsProvider.notifier).softDeleteMany({itemId});
+    context.pop();
+    GlassToast.show(context, message: '휴지통으로 이동됨');
   }
 }

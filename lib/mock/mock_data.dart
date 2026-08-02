@@ -2,7 +2,6 @@ import '../models/clothing_item.dart';
 import '../models/composition.dart';
 import '../models/enums.dart';
 import '../models/style_log.dart';
-import '../models/trash_entry.dart';
 
 final List<ClothingItem> mockClothingItems = [
   ClothingItem(id: 'c01', name: '플로럴 원피스', category: ClothingCategory.onePiece, color: 'pink', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png', createdAt: DateTime(2024, 3, 12), location: '옷장 2단', wearCount: 3),
@@ -11,8 +10,8 @@ final List<ClothingItem> mockClothingItems = [
   ClothingItem(id: 'c04', name: '트렌치코트', category: ClothingCategory.outer, color: 'brown', season: Season.springFall, material: ClothingMaterial.leather, imagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png', createdAt: DateTime(2024, 9, 5), location: '옷장 1단', wearCount: 2),
   ClothingItem(id: 'c05', name: '스트라이프 블라우스', category: ClothingCategory.top, color: 'burgundy', season: Season.springFall, material: ClothingMaterial.silkSatin, imagePath: 'assets/images/mock/IMG_4267_preview_rev_1.png', createdAt: DateTime(2025, 2, 14), wearCount: 5),
   ClothingItem(id: 'c06', name: '코튼 반바지', category: ClothingCategory.bottom, color: 'sage', season: Season.summer, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4273.PNG', createdAt: DateTime(2026, 1, 8), isIncomplete: true),
-  ClothingItem(id: 'c07', name: '리넨 반바지', category: ClothingCategory.bottom, color: 'blue', season: Season.summer, material: ClothingMaterial.linen, imagePath: 'assets/images/mock/IMG_4275.PNG', createdAt: DateTime(2025, 7, 22), wearCount: 6),
-  ClothingItem(id: 'c08', name: '슬립 드레스', category: ClothingCategory.onePiece, color: 'black', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4276.PNG', createdAt: DateTime(2024, 12, 30), wearCount: 1),
+  ClothingItem(id: 'c07', name: '리넨 반바지', category: ClothingCategory.bottom, color: 'blue', season: Season.summer, material: ClothingMaterial.linen, imagePath: 'assets/images/mock/IMG_4275.PNG', createdAt: DateTime(2025, 7, 22), wearCount: 6, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 3))),
+  ClothingItem(id: 'c08', name: '슬립 드레스', category: ClothingCategory.onePiece, color: 'black', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4276.PNG', createdAt: DateTime(2024, 12, 30), wearCount: 1, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 20))),
   ClothingItem(id: 'c09', name: '레더 재킷', category: ClothingCategory.outer, color: 'black', season: Season.springFall, material: ClothingMaterial.leather, imagePath: 'assets/images/mock/IMG_4277.PNG', createdAt: DateTime(2023, 5, 17), location: '옷장 1단', wearCount: 7),
   ClothingItem(id: 'c10', name: '그래픽 반팔티', category: ClothingCategory.top, color: 'white', season: Season.summer, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4257_preview_rev_1.png', createdAt: DateTime(2025, 4, 3), wearCount: 12),
   ClothingItem(id: 'c11', name: '그래픽 맨투맨', category: ClothingCategory.top, color: 'pink', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4262_preview_rev_1.png', createdAt: DateTime(2024, 8, 19), wearCount: 8),
@@ -45,6 +44,22 @@ final List<Composition> mockCompositions = [
       CompositionItemPlacement(clothingItemId: 'c04', x: 40, y: 40, zIndex: 0),
       CompositionItemPlacement(clothingItemId: 'c05', x: 70, y: 140, zIndex: 1),
     ],
+    isDeleted: true,
+    deletedAt: DateTime.now().subtract(const Duration(days: 5)),
+  ),
+  // comp02가 isDeleted:true가 되며 잃어버린 "season 미지정 + weather:rain" 비삭제
+  // 데모 역할을 이어받는다(Review P1, Task 3 addendum). c04/c05는 comp02와 동일 재사용 —
+  // 별도 asset 없이 가장 저위험.
+  Composition(
+    id: 'comp03',
+    name: '레인 코디',
+    createdAt: DateTime(2026, 2, 2),
+    // season 미지정 — 코디 "계절" 분류의 미분류 카드 데모용.
+    weather: Weather.rain,
+    items: const [
+      CompositionItemPlacement(clothingItemId: 'c04', x: 40, y: 40, zIndex: 0),
+      CompositionItemPlacement(clothingItemId: 'c05', x: 70, y: 140, zIndex: 1),
+    ],
   ),
 ];
 
@@ -54,7 +69,12 @@ final List<StyleLog> mockStyleLogs = [
     coverImagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png',
     wornDate: DateTime(2026, 1, 5),
     linkedCompositionId: 'comp01',
-    additionalImagePaths: const ['assets/images/mock/IMG_4262_preview_rev_1.png', 'assets/images/mock/IMG_4275.PNG'],
+    // c11(그래픽 맨투맨)/c07(리넨 반바지) — 각각 이전 additionalImagePaths 경로와
+    // imagePath가 정확히 일치하던 옷의 ID로 그대로 치환(데이터 동일성 유지).
+    wornItemIds: const ['c11', 'c07'],
+    // 연결된 comp01과 동일한 season/weather로 맞춰 일관성 유지.
+    season: Season.springFall,
+    weather: Weather.clear,
     location: '집',
   ),
   StyleLog(
@@ -62,15 +82,9 @@ final List<StyleLog> mockStyleLogs = [
     coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
     wornDate: DateTime(2026, 1, 10),
     linkedCompositionId: 'comp02',
+    // log01과 다른 season/weather 조합 — 필터 기능 테스트용 다양성 확보.
+    season: Season.winter,
+    weather: Weather.snow,
     location: '회사',
   ),
-];
-
-// 휴지통 mock — 실제로는 위 세 리스트를 `isDeleted`로 필터링한 집계 뷰가 되어야 하지만
-// (Step⑦ 몫), 지금은 이 화면 전용 고정 목록만 채운다.
-final List<TrashEntry> mockTrashEntries = [
-  const TrashEntry(id: 't1', category: AppCategory.closet, imagePath: '', remainingDays: 12),
-  const TrashEntry(id: 't2', category: AppCategory.composition, imagePath: '', remainingDays: 5),
-  const TrashEntry(id: 't3', category: AppCategory.styleLog, imagePath: '', remainingDays: 27),
-  const TrashEntry(id: 't4', category: AppCategory.closet, imagePath: '', remainingDays: 1),
 ];

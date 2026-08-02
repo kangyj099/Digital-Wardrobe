@@ -62,7 +62,8 @@ void main() {
     (tester) async {
       final container = await pumpApp(tester);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      // [갱신, Task 7 재검증] 10개(c07/c08는 이미 소프트삭제되어 휴지통으로 이동됨).
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
 
       // 중분류를 "옷 종류"로 바꾸고 "하의"로 드릴인해서, 재선택으로 초기화될 상태를 만든다.
       await tester.tap(find.byType(PopupMenuButton<int>));
@@ -72,7 +73,8 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('하의')));
       await tester.pumpAndSettle();
       expect(container.read(closetSortCriterionProvider), ClosetSortCriterion.clothingType);
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(4));
+      // [갱신, Task 7 재검증] 3개(c07도 bottom이었으나 이미 소프트삭제됨).
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
 
       await tester.tap(categoryDropdownFinder());
       await tester.pumpAndSettle();
@@ -82,7 +84,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
       expect(container.read(closetSortCriterionProvider), ClosetSortCriterion.all);
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
       // 네비게이션 자체가 안 일어나므로 뒤로가기 스택도 당연히 안 쌓인다.
       expect(find.byTooltip('뒤로가기'), findsNothing);
     },
@@ -135,7 +137,8 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(ClosetMainScreen), findsOneWidget);
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      // [갱신, Task 7 재검증] 10개(c07/c08는 이미 소프트삭제되어 휴지통으로 이동됨).
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
     },
   );
 

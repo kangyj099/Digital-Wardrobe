@@ -1,6 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../theme/app_effects.dart';
 import '../theme/app_spacing.dart';
+import 'glass_inset_highlight.dart';
 
 /// 프로스티드글래스(블러+반투명 배경+얇은 화이트 보더+soft shadow) 캡슐형(pill) 컨테이너 —
 /// `docs/history/Decision.md`의 "Header/HUD Pinned Rule"이 요구하는 "시각적 스타일은
@@ -41,14 +42,19 @@ class GlassPill extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: padding,
-            alignment: Alignment.center,
-            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
-            child: child,
-          ),
+        child: Stack(
+          children: [
+            BackdropFilter(
+              filter: AppGlassEffect.backdropFilter(),
+              child: Container(
+                padding: padding,
+                alignment: Alignment.center,
+                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.38),
+                child: child,
+              ),
+            ),
+            const GlassInsetHighlight(),
+          ],
         ),
       ),
     );

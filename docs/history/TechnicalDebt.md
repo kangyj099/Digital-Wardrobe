@@ -1,5 +1,212 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] Detail 3화면의 자기 자신 id 조회(`firstWhere`)가 안전가드 대상에서 제외됨
+
+상태: 의도적 미해결(우선순위 낮음)
+
+내용:
+`closet_item_detail_screen.dart:27`/`composition_detail_screen.dart:35`/`style_log_viewer_screen.dart:55`가
+자기 자신의 id(itemId/compositionId/styleLogId)를 `orElse` 없는 `firstWhere`로 조회한다.
+그 화면이 스택에 남아있는 채로 대상이 다른 경로로 purge되면 크래시하지만, 이 앱이 단순
+`GoRoute` push 스택이라(딥링크/탭 상태 유지 없음) 실질 도달 불가능해 가드를 안 함
+(`docs/superpowers/specs/2026-07-21-multi-select-and-trash-design.md` §3.7). Group B
+Task 11(더보기→삭제) 추가로 이 화면들이 스스로를 삭제하는 경로가 생겼지만, 삭제 즉시
+`context.pop()`하므로 build가 다시 안 돌아 이 조회 시점에 영향 없음 — 여전히 안전.
+
+조치 방향(착수 조건): 딥링크나 `StatefulShellRoute` 같은 네비게이션 구조 변경이 생기면
+재검토.
+
+상태: 미해결 (우회책 있음, 근본 원인 미조사)
+
+내용:
+"삭제된 옷 배지+탭차단"(2026-07-29) Worker 태스크 중 발견 — `composition_detail_screen.dart`/`style_log_viewer_screen.dart`의 "사용된 옷"/"착용 옷" 가로 리스트 아이템을 `tester.tap(find.byKey(...))`로 물리 탭 시뮬레이션하면, 위젯 테스트 기본 서페이스(800x600)는 물론 모바일급 서페이스(390x844)로 바꿔도 동일하게 "hitTest가 지정한 위젯에 안 맞음" 경고가 뜨고 실제로 `onTap`이 호출되지 않는다. 재현 조건은 이 두 화면의 코드 변경과 무관함 — 삭제 로직 없이 단일 정상 아이템만 있는 최소 재현에서도, `Stack`/배지 오버레이를 전혀 안 쓴 원래(수정 전) 코드와 동일한 `onTap` 클로저에서도 동일하게 재현됨(격리된 `AppDetailScaffold`+`GoRouter`+평범한 `GestureDetector`만으로 구성한 최소 위젯으로는 재현 안 됨 — `CompositionDetailScreen`류의 "실제 화면" 조합에서만 재현).
+
+`tester.hitTestOnBinding()`으로 직접 hit-test 경로를 덤프해 확인한 바, 대상 `RenderSemanticsGestureHandler`가 hit-test 경로 어디에도 없음 — `AppMainScaffold`가 `Stack` 안에 `Positioned.fill(body)`와 `CategoryToggleDropdown`(Row1, `PopupMenuButton` 기반) 등 여러 `Positioned` 자식을 겹쳐 쌓는 구조(`lib/widgets/app_main_scaffold.dart`)라, `Stack.hitTestChildren`이 페인트 순서상 나중(위)인 헤더 계열 자식을 body보다 먼저 hit-test하면서 어느 시점에 앞선(topmost) 자식이 hit을 가로채는 것으로 추정(정확한 지목 위젯은 미확정 — `RenderConstrainedBox`→`RenderFlex`→`RenderPadding` 조합만 확인, `CategoryToggleDropdown` 후보이나 미검증). 실제 앱/`integration_test`(디바이스 바인딩)에선 이 문제가 안 보임 — `composition_detail_addtile_square_test.dart` 등 기존 `integration_test`가 이미 동일 계열 화면에서 `tester.tap()`으로 정상 동작 중.
+
+우회책(이번 Worker가 실제 적용): 물리 탭 대신 `tester.widget<GestureDetector>(finder).onTap`으로 콜백 자체를 꺼내 null 여부를 검증하고, non-null이면 직접 호출(`activeTileTap!()`)해 이후 `pumpAndSettle()`로 네비게이션 결과만 검증 — hit-test를 우회하고 "조건부 onTap 배선"이라는 실제 검증 대상에는 오히려 더 정확히 집중된다. `test/screens/composition_detail_screen_test.dart`/`test/screens/style_log_viewer_screen_test.dart`의 "삭제된 옷" 테스트 참고.
+
+조치 방향(착수 조건): 다음에 이 계열 화면(Detail 3종 등 `AppMainScaffold` 기반)에서 위젯 테스트로 물리 탭 검증이 필요해지면, 먼저 `tester.hitTestOnBinding()`으로 실제 가로채는 위젯을 특정할 것. 특정되면 `CategoryToggleDropdown`(또는 지목된 위젯)의 hit-test 영역이 시각적 경계를 넘어서는지(`RenderBox.size`가 실제 렌더 크기와 다른지) 확인 후 수정. 급하지 않음 — `onTap` 직접 호출 우회책으로 테스트 커버리지 자체엔 지장 없음, 실제 사용자 탭(디바이스 실행)은 영향받지 않는 것으로 보임(순수 widget-test 환경 이슈로 추정).
+
+---
+
+[Bug] 옷 삭제 후 코디/스타일일지 화면을 오가면 `FlutterError: setState() ... called during build` 발생 — 재현됨, 원인 가설 있음, 미착수 (P1)
+
+상태: **해결(2026-07-28)** — 근본원인은 최초 가설과 달리 provider-to-provider watch(아래 항목 참고). `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`를 `.autoDispose.family`로 전환 + `styleLogsLinkedToItemProvider`의 `compositionsContainingItemProvider` watch를 `compositionsProvider` 직접 필터로 인라인. 사용자의 실제 5단계 재연 시나리오 포함 신규 회귀테스트 3개(`integration_test/closet_item_detail_*_regression_test.dart`) 전부 PASS로 확인. 커밋 `90e44a1`.
+
+내용:
+사용자가 2026-07-28 실사용 중 발견 — 옷장에서 옷 하나를 삭제(휴지통 이동)한 뒤 코디/스타일일지 화면을 왔다갔다 타고 들어가다가 앱이 멈춤. VS Code 디버그 콘솔에서 실제 캐치된 예외를 확인함(Call Stack 캡처, 아래 요약):
+
+```
+FlutterError: "setState() or markNeedsBuild() called during build.
+This UncontrolledProviderScope widget cannot be marked as needing to build..."
+#8  ProviderElement.invalidateSelf
+#9  Ref._invalidateSelf
+#10 Ref.watch.<anonymous closure> (ref.dart:728)
+...
+#18 ProviderContainer.listen
+#19 ConsumerStatefulElement.watch.<anonymous closure>
+#21 ConsumerStatefulElement.watch
+#22 ClosetItemDetailScreen.build (lib/screens/closet_item_detail_screen.dart:27:36)
+...
+#29 ComponentElement._firstBuild
+```
+(참고: 같은 화면에 "type 'Sentinel' is not a subtype of type 'ObjRef'"도 함께 표시됐으나 이건 VS Code 디버거 자체의 변수 표시 오류로 판단 — 위 `FlutterError`가 실제 원인.)
+
+**원인 가설(미검증)**: `ClosetItemDetailScreen.build()`(`lib/screens/closet_item_detail_screen.dart:27`)가 `ref.watch(compositionsContainingItemProvider(itemId))`를 처음(`_firstBuild`) 평가하는 시점에, 그 provider가 의존하는 `compositionsProvider`(또는 상위 체인)가 마침 "dirty"(막 상태변경돼 재계산 대기 중) 상태였던 것으로 추정. 새 family provider를 등록하면서 그 dirty한 상위를 동기적으로 flush하려다, 그 결과로 또 다른 provider가 `_invalidateSelf()`를 호출해야 하는 상황이 발생 — 이게 `BuildScope._flushDirtyElements`(즉 Flutter의 빌드 사이클) 도중 일어나 "빌드 중 setState 금지" 규칙 위반으로 크래시함. 즉 **어떤 provider 상태 변경(삭제 등) 직후 곧바로 이 화면을 새로 빌드하면, provider 의존성 그래프가 같은 프레임 안에서 재계산되려다 충돌**하는 구조적(타이밍) 문제로 추정.
+
+**아래 항목("삭제된 옷이 코디 상세에서 정상 데이터처럼 탭됨")과 연결됐을 가능성**: 사용자의 실제 재현 경로가 옷 삭제 → 코디 상세에서 그 삭제된 옷을 탭해 `ClosetItemDetailScreen`으로 들어간 것과 겹칠 가능성이 있음 — 그 경로 자체가 이 provider 조합을 새로 등록하는 계기였을 수 있음. 다만 확인된 사실은 아니고, 위 스택 자체는 삭제된 아이템인지 여부와 무관하게 재현 가능한 매커니즘으로 보임(`compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider` 자체는 itemId가 삭제됐는지 안 따짐).
+
+조치 방향(착수 조건, 다음 세션):
+1. `systematic-debugging` 스킬 Phase 1(재현) 부터 — 옷 하나 삭제 → 코디 상세(그 옷이 쓰인 코디) 진입 → 다시 나갔다가 스타일일지 진입 → 다시 코디 상세 재진입 등, 정확히 어떤 화면 전환 순서가 이 크래시를 안정적으로 재현하는지 통합테스트로 먼저 확정할 것(현재는 사용자 수동 재현 1회뿐, 자동 재현 스크립트 없음).
+2. 재현되면 `compositionsContainingItemProvider`/`styleLogsLinkedToItemProvider`/`compositionsProvider`/`closetItemsProvider` 중 어느 것이 "빌드 도중 dirty" 상태였는지 실제로 추적(디버그 프린트 또는 Riverpod observer로 provider 재계산 타이밍 로깅) — 위 원인 가설이 맞는지부터 검증.
+3. 표준적인 Riverpod 해결 패턴 후보: 문제되는 watch를 `WidgetsBinding.instance.addPostFrameCallback`으로 지연하거나, 해당 provider를 `autoDispose`로 바꿔 stale 상태가 안 남게 하거나, 화면 진입 시점의 provider 초기화 순서를 조정. 근본 원인 확인 전에는 어느 게 맞는 수정인지 단정하지 말 것(systematic-debugging 원칙 — 근본 원인 먼저).
+
+---
+
+[Bug] 옷 삭제 후 코디 상세의 "사용된 옷" 목록에 삭제된 옷이 정상 데이터처럼 계속 나타나고 탭 가능 (P2)
+
+상태: **해결(2026-07-29)** — 사용자 확정 방향: 목록에서 제외하지 않고 `StatusBadge(label: '삭제됨')` 오버레이 + 탭 차단(`selectable_gallery_tile.dart`의 "미완성" 배지와 동일 패턴). `composition_detail_screen.dart`/`style_log_viewer_screen.dart` 두 곳 다 수정, `Stack(fit: StackFit.expand, children: [Positioned.fill(...), if (isDeleted) Positioned(...)])`로 이미지 크기 유지. Worker→Review 2라운드(1차 P1: Stack 기본 fit이 loose라 이미지가 박스를 못 채우는 회귀 발견→해소)→Tester(실기기 물리 탭 제스처로 배지/탭차단/정상탭 회귀 전부 확인) 사이클 통과. 신규 통합테스트 `integration_test/deleted_item_badge_tap_block_regression_test.dart`.
+
+내용:
+사용자가 2026-07-28 실사용 중 발견 — 옷을 삭제(휴지통 이동)해도 그 옷이 쓰인 코디의 상세 화면(`composition_detail_screen.dart`) "사용된 옷" 목록엔 계속 정상 데이터처럼 나타나고, 탭하면 `closetItemDetail`로 정상 이동한다(마치 삭제 안 된 것처럼).
+
+원인 확인됨: `lib/screens/composition_detail_screen.dart:34`가 `filteredClosetItemsProvider`(삭제 제외)가 아니라 **필터 안 된 원본 `closetItemsProvider`**를 쓴다:
+```dart
+final closetItems = ref.watch(closetItemsProvider);  // 34행
+final usedItems = <ClothingItem>[
+  for (final placement in composition.items)
+    ...closetItems.where((item) => item.id == placement.clothingItemId),
+];
+```
+이 화면 자체가 삭제/휴지통 개념(Group B)이 생기기 전에 만들어져서 `isDeleted` 여부를 애초에 고려하지 않음 — 오늘 밤(Group B) 작업이 만든 회귀가 아니라, 소프트삭제 기능이 이 화면엔 아직 반영 안 된 사전 존재 갭. 크래시는 아니고(단, 위 항목의 크래시와 경로가 겹칠 가능성 있음) "삭제된 데이터가 계속 정상처럼 보이고 눌린다"는 데이터 정합성/UX 버그.
+
+**[범위 확장, 2026-07-28, 위 크래시 버그 조사 중 Worker가 발견]** 같은 패턴의 두 번째 발생 지점: `lib/screens/style_log_viewer_screen.dart:58`("착용 옷" 섹션, 130-144행)도 필터 안 된 원본 `closetItemsProvider`를 그대로 써서 `imagePath` 기준으로 매칭한다(id 매칭조차 아님). 삭제된 옷이 있는 스타일일지를 열람하면 여기서도 삭제된 항목이 정상처럼 나타나고 탭돼 `ClosetItemDetailScreen`으로 진입 가능 — mock 데이터에 이미 `c07`/`c08`이 삭제 상태로 시딩돼 있어 수동 삭제 없이도 재현 가능한 경로.
+
+조치 방향(착수 조건, 다음 세션): `composition_detail_screen.dart`와 `style_log_viewer_screen.dart` 두 곳 모두에서 "사용된 옷"/"착용 옷" 목록의 삭제된 항목을 어떻게 표시할지 결정 필요(옵션: (a) 목록에서 아예 제외, (b) "삭제됨" 배지 표시 후 탭 막기, (c) 탭은 허용하되 상세 화면에서 "휴지통에 있음" 안내) — 이건 코드 버그 수정이 아니라 UX 스펙 결정이 필요한 사안이라 사용자 확인 먼저 필요. 두 곳을 함께 조사·수정 권장(같은 원인, 같은 방향 결정으로 해결 가능).
+
+---
+
+[TechDebt] 코디 삭제 확인창에 "사용 중" 경고 없음 — `composition_main_screen.dart` + `composition_detail_screen.dart` 두 진입점 다 (P2, 미착수)
+
+상태: 미해결
+
+내용:
+위 크래시 버그 조사 과정(2026-07-28)에서 Worker가 발견: `closet_main_screen.dart`의 옷 삭제는 그 옷이 쓰인 코디가 있으면 삭제 전 확인 팝업에 경고를 표시하는데, `composition_main_screen.dart`의 코디 삭제는 그런 "사용 중"류 경고 없이 바로 삭제 확인만 뜬다. 코디 자체를 참조하는 다른 엔티티가 없어서(스타일일지가 코디를 참조하긴 하지만 그 경고가 구현 안 돼 있을 가능성) 비대칭.
+
+**[범위 확장, 2026-07-29, Group B Task 11 Audit 발견]** Task 11이 추가한 두 번째 삭제 진입점 `composition_detail_screen.dart`(더보기→삭제)도 같은 이유로 확인 없이 바로 삭제된다(기존 앱 전역 관례와 일치하는 것이라 Task 11이 새로 만든 비대칭은 아님) — 착수 시 이 파일도 함께 고쳐야 두 진입점이 어긋나지 않음.
+
+조치 방향(착수 조건): 다음에 코디 삭제 흐름(`composition_main_screen.dart`/`composition_detail_screen.dart` 둘 다)을 손댈 때, 그 코디를 참조하는 스타일일지가 있는지 확인해 경고를 추가할지 여부 결정. 급하지 않음.
+
+---
+
+[TechDebt] Riverpod provider-to-provider `ref.watch`가 build 중 ancestor `setState()` 크래시를 유발할 수 있는 일반 패턴 (P2, 미착수)
+
+상태: 해결 없음(회피 사례만 존재) — 구조적 가드 없음
+
+내용:
+아래(바로 위) `setState() ... called during build` 크래시 수정(2026-07-28) 과정에서 Review가 소스 레벨로 확인: Riverpod에서 **provider가 다른 provider를 `ref.watch`하는 경우**(provider-to-provider watch)는 의존성이 변경되면 `Ref._invalidateSelf()` → `ProviderElement.invalidateSelf()` → `scheduler.scheduleProviderRefresh()` 경로를 타고, 그 provider에 리스너가 있으면 최종적으로 `_UncontrolledProviderScopeState.scheduleRefresh()`가 **루트 스코프 위젯에 동기적으로 `setState()`**를 건다(`flutter_riverpod` `provider_scope.dart:318`). 이게 마침 다른 위젯의 빌드 사이클 도중(`BuildScope._flushDirtyElements`) 일어나면 크래시한다. 반면 **위젯이 직접 `ref.watch`하는 경우**(`ConsumerStatefulElement.watch`)는 자기 자신에게만 `markNeedsBuild()`를 걸어서 안전하다.
+
+이번엔 `styleLogsLinkedToItemProvider`가 `compositionsContainingItemProvider`를 provider-to-provider watch하던 것이 원인이라 그 관계를 없애고 인라인하는 것으로 해결했지만, **이 패턴 자체를 막는 구조적 장치는 없음** — 나중에 새 provider가 다른 provider를 watch하는 방식으로 작성되면 같은 클래스의 버그가 재발할 수 있음.
+
+조치 방향(착수 조건): 새 provider 작성 시 "다른 non-trivial provider를 watch하는 provider"를 만들 때 이 위험을 인지하도록 `engineering-principles` 또는 `flutter-implementation-conventions` 스킬에 일반 원칙으로 기록하는 것을 고려. 급하지 않음(지금 당장 코드 변경 불필요, 컨벤션 문서화만 해당).
+
+---
+
+[TechDebt] `GlassToast`의 `IntrinsicWidth`가 매우 긴 메시지에 대한 최대폭 제한이 없음 (P3)
+
+상태: 미해결 (현재 호출부는 전부 안전, 실사용 문제 없음)
+
+내용:
+GlassToast 히트박스 버그 수정(2026-07-28, 사용자 실사용 중 발견 — 토스트가 떠 있는 동안 뒤로가기 버튼이 안 눌리는 문제) 과정에서 `Center(child: IntrinsicWidth(child: Material(...)))`로 교체하며 Review가 발견: `IntrinsicWidth`는 자식의 natural width를 계산해 그 값으로 타이트하게 고정하는데, 이 계산값을 `Positioned(left/right)`가 제공하는 가용 폭으로 미리 clamp하지 않는다. 만약 매우 긴 메시지가 들어오면 `Flexible`+`Text(overflow: ellipsis)`의 ellipsis가 애초에 발동할 기회 없이(자기 자연폭 그대로 받아버려서) 필이 화면 밖으로 밀려날 수 있다. 현재 `GlassToast.show`를 호출하는 모든 곳(`'${ids.length}개 항목이 휴지통으로 이동됨'`, `'${ids.length}개 항목이 복원됨'`, `'휴지통으로 이동됨'`)은 전부 짧은 메시지라 실제로는 문제없음.
+
+조치 방향(착수 조건): 다음에 `GlassToast.show`에 긴 메시지를 넘기는 호출부가 생기면, `glass_toast.dart`에 `ConstrainedBox(maxWidth: ...)`를 `IntrinsicWidth` 바깥에 추가해 화면 폭 근처로 clamp. 급하지 않음.
+
+---
+
+[TechDebt] 휴지통 메인의 다중선택 "닫기" 컨트롤이 다른 3개 화면(옷장/코디/스타일일지)과 다른 위젯 사용 (P2)
+
+상태: 미해결
+
+내용:
+Group B Task 10 완료 직후 Audit(2026-07-28)이 발견: `GalleryMainScreen<T>`(옷장/코디/스타일일지가 공유, Task 7~9)는 다중선택 종료를 `FrostedCloseButton`(아이콘 전용 X)으로 통일하는데, `TrashMainScreen`은 `GalleryMainScreen`을 안 쓰고 로컬로 다중선택을 구현하면서 같은 역할을 `GlassPill(child: TextButton(..., child: Text('닫기')))`(텍스트 필)로 만들었다 — "N개 선택" 표시 pill은 통일돼 있으나 취소 버튼만 시각적으로 어긋남.
+
+조치 방향(착수 조건): 다음에 `trash_main_screen.dart`를 손댈 때 `FrostedCloseButton`으로 교체해 3개 화면과 통일. 순수 시각 일관성 문제, 로직 변경 없음 — 급하지 않음.
+
+---
+
+[TechDebt] 휴지통 정보팝업이 `05_삭제 & 휴지통.md` 스펙과 3가지 지점에서 어긋남 — 계획 문서 자체의 갭, Decision-stage Audit 누락 추정 (P2)
+
+상태: 미해결
+
+내용:
+Group B Task 10(휴지통 실행 배선) Review(2026-07-28)가 발견 — `lib/screens/trash_main_screen.dart`의 `_showTrashItemInfo`(정보팝업)가 스펙(`docs/reference/plan/03_화면별UX명세서/05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md` 29-38행)과 다음 3가지에서 어긋남:
+1. "팝업 상단: ... 우측 모서리 닫기 버튼" — 명시적 X(닫기) 버튼이 없음. 기본 `showModalBottomSheet` 제스처(바깥 탭/아래로 드래그)로만 닫힘.
+2. "이미지 안쪽 중앙 하단: 'N일' ... 오버레이" — 남은 일수가 이미지 위 오버레이가 아니라 헤더 텍스트 줄(`'${entry.category.label} · 영구 삭제까지 ${entry.daysUntilPurge}일'`)에 들어가 있음.
+3. "팝업 하단: [복원] [영구 삭제] 버튼 — 스크롤 생겨도 버튼은 항상 화면 하단 고정" — 현재는 `Column`(`mainAxisSize: MainAxisSize.min`)의 마지막 자식일 뿐, `SingleChildScrollView`+고정 푸터 분리가 없음. 콘텐츠가 길어지면(현재는 `isScrollControlled: true`로 오버플로는 안 나지만) 버튼이 고정되지 않고 함께 스크롤됨.
+
+3건 전부 계획 문서(`docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 3159-3223행)의 원문 코드 자체에 있던 갭으로, 이번 Worker가 새로 만든 문제가 아님 — 계획 확정 전 Decision-stage Audit(크기 무관 항상 거치는 게이트, `Workflow_Project.md` §5)에서 놓친 것으로 추정됨(다른 유사 사례처럼 "의도적 스코프 컷"으로 기록된 근거 문서가 없음). 기능적으로 깨진 건 없음(닫기는 기본 제스처로 여전히 가능, 일수는 여전히 보임, 오버플로는 `isScrollControlled: true`로 이미 해소됨) — 순수 스펙 대비 시각/구조 불일치.
+
+조치 방향(착수 조건): 다음에 `_showTrashItemInfo`를 손댈 때 3가지 함께 정리 — (1) 우상단 `IconButton(Icons.close)` 추가, (2) 일수 배지를 이미지 `Stack` 안 오버레이로 이동, (3) `Column`을 `Expanded(child: SingleChildScrollView(...))` + 고정 버튼 `Row`로 분리. 급하지 않음(현재 모든 실제 기능은 정상 동작).
+
+---
+
+[TechDebt] `comp02` 소프트삭제로 `tapCompositionById` 기반 통합테스트 4개가 깨져 있음 — Task 7 스코프 밖, 별도 정리 필요 (P1)
+
+상태: **해결(2026-07-29)** — 4개 파일 전부 comp02→comp03(+ 필요한 곳은 `style_log_gallery_column_count_test.dart`와 동일한 런타임 주입 패턴)으로 교체, 각 테스트의 원래 검증 의도(리터럴 comp02 ID가 아니라 "두 번째 코디"/"이미 연결된 스타일일지" 등 속성)를 보존함을 Review가 변경 전 코드와 대조해 확인. `style_log_composition_binding_test.dart`의 피커 모달도 `filteredCompositionsProvider`(isDeleted 필터 포함)를 그대로 쓴다는 것을 소스로 재확인 — comp02가 애초에 그 경로에서도 도달 불가능이었음. Worker→Review(findings 없음, 4개 파일 개별 실행 재확인) 사이클 통과, 프로덕션 코드 변경 없어 Tester 생략(Review가 실기기 바이너리로 직접 재검증). 커밋 `199e112`.
+
+내용:
+Group B Task 7 완료 직후 Audit(2026-07-28)이 `composition_style_log_main_screen_test.dart`의 "포멀 코디"(comp02) 스테일 assertion을 지적한 김에, 같은 패턴(`tapCompositionById(tester, 'comp02')` — 코디 메인 화면에 렌더링된 `CompositionGalleryTile`을 predicate로 찾아 탭)이 다른 파일에도 있는지 PM이 전체 grep으로 확인 → 4개 파일에서 comp02를 직접 탭하는 테스트가 실제로 존재함을 확인. `composition_detail_data_binding_test.dart`를 실제로 실행해 최소 1건 실패를 직접 재현·확인함(`Expected: exactly one matching candidate, Actual: Found 0 widgets` — "코디 comp02 타일을 코디 메인에서 찾을 수 없다"):
+- `integration_test/composition_detail_data_binding_test.dart` — comp02 상세 크로스레퍼런스 테스트 1건(확인된 실패)
+- `integration_test/detail_cross_reference_visuals_test.dart` — comp02 상세 이미지 렌더링 테스트 1건(확인된 실패, P1 크래시 수정 Tester가 2026-07-28 재실행해 재확인)
+- `integration_test/detail_thumbnail_square_unification_test.dart` — comp02 상세 스타일일지 타일 정사각 검증 1건(미실행, 동일 추정)
+- `integration_test/style_log_composition_binding_test.dart` — 코디 선택 모달에서 comp02 타일 탭 테스트 1건(확인된 실패, P1 크래시 수정 Tester가 2026-07-28 재실행해 재확인 — 이 화면은 `selectionMode:true` 피커 모달이라 일반 코디 메인과 필터 로직이 같은지는 여전히 별도 확인 필요)
+
+`comp02`는 Task 3(휴지통 집계 재작성, 2026-07-24)에서 소프트삭제됐고 `comp03`이 그 역할(season:null/weather:rain 데모)을 이어받았다 — 즉 이 깨짐은 **Task 7이 만든 게 아니라 Task 3 시점부터 존재했을 가능성이 높은 사전 부채**이며, Task 3 당시 Tester가 5개 특정 런타임 시나리오만 검증해 이 파일들을 못 잡았던 것으로 추정된다. Task 7 스코프(옷장 메인 마이그레이션)와 무관해 이번 태스크에서 처리하지 않음.
+
+조치 방향(착수 조건): 위 4개 파일을 comp02→comp01(또는 여전히 active한 다른 코디)로 교체하거나, `style_log_gallery_column_count_test.dart`가 이미 쓴 방식(런타임 주입으로 임시 코디/스타일일지 추가)을 재사용해 각 테스트의 실제 검증 의도를 훼손하지 않는 선에서 고칠 것. 코디/스타일일지 관련 다음 Task(Group B Task 8/9, 코디·스타일일지 메인 마이그레이션) 착수 시 우선 픽업 권장 — 그 Task들이 코디 메인 화면을 다시 여는 김에 함께 확인하면 저비용.
+
+---
+
+[TechDebt] `GalleryMainScreen<T>`(공용 셸)의 밀도/정렬 토글 콜백에 stale-closure 회귀 위험 잠복 — Task 8/9(코디/스타일일지 마이그레이션) 착수 시 반드시 확인 (P1)
+
+상태: 미해결 (알려진 우회책 있음, 셸 자체는 미수정)
+
+내용:
+Group B Task 7(`GalleryMainScreen<T>` 셸 신설 + 옷장 메인 마이그레이션) Review(2026-07-28)가 발견: `lib/widgets/gallery_main_screen.dart`의 `GlassCircleButton.onTap: () => widget.classification!.onDensityChanged(widget.classification!.density)`(정렬 방향도 동일 패턴)이 `widget.classification!.density`를 **셸의 마지막 build 시점 값**으로 캡처한다 — 이는 `10d3643` 커밋이 이미 한 번 고쳤던 stale-closure 버그(연속 탭이 리빌드 전에 겹치면 두 번째 탭이 낡은 값을 기준으로 동작)와 구조적으로 동일하다. Worker가 실제로 재현 확인(옷장 메인의 회귀 테스트 2개가 `Expected: 4, Actual: 1`로 실패).
+
+Worker의 조치: 계획 문서가 `gallery_main_screen.dart`를 "최종본, 그대로 구현"으로 명시해 셸 자체는 건드리지 않고, **소비 화면**(`lib/screens/closet_main_screen.dart`)의 `onDensityChanged`/`onAscendingChanged` 콜백 바디에서 전달받은 값을 무시하고 그 안에서 새로 `ref.read(...)`하는 방식으로 옷장 메인만 우회 수정했다(Review가 타당하다고 확인).
+
+남은 위험: 이 우회책은 **소비 화면마다 각자 반복해야** 한다 — 셸 자체엔 여전히 버그가 남아있어, Task 8(코디 메인)/Task 9(스타일일지)가 이 셸을 그대로 갖다 쓰면서 이 워크어라운드를 다시 발견/반복하지 않으면 같은 stale-closure 회귀가 재발한다.
+
+조치 방향(착수 조건): Task 8/9 Worker는 착수 시 이 항목을 먼저 확인 — `CompositionMainScreen`/`StyleLogMainScreen`(가칭)의 `onDensityChanged`/`onAscendingChanged`도 옷장 메인과 동일하게 "전달받은 값 무시 + 콜백 내부에서 fresh `ref.read`" 패턴을 반복 적용할 것. 근본 해결(셸 자체 수정)은 계획 문서의 "최종본 그대로 구현" 지시와 충돌하므로, 여러 소비 화면에서 반복될 경우 셸 레벨 수정으로 승격 검토(현재는 소비처 1곳뿐이라 보류).
+
+---
+
+[TechDebt] `SelectableGalleryTile`이 다중선택 모드에서 미완성(`isIncomplete`) 아이템을 탭으로 선택/해제할 수 없음 (P3)
+
+상태: 미해결
+
+내용:
+Group B Task 7 Review(2026-07-28)가 확인: `lib/widgets/selectable_gallery_tile.dart`의 `onTap` 라우팅이 `item.isIncomplete ? onIncompleteTap : onTap`으로 고정돼 있어 `multiSelectMode` 여부를 고려하지 않는다. `onLongPress`는 무조건 다중선택 진입을 트리거하므로, 미완성 아이템도 롱프레스로 다중선택 모드에 들어갈 수는 있지만, 이후 그 아이템을 탭해 선택/해제하려 하면 `onIncompleteTap`(옷장 메인에선 `null`)으로 라우팅돼 아무 반응이 없다. Task 7 Worker가 발견해 `integration_test/closet_multi_select_test.dart`의 테스트 데이터를 `c06`(미완성)→`c09`(미완성 아님)로 교체해 회피(Review가 `c09`이 유효한 대체인지 `mock_data.dart` 대조로 확인, 타당함).
+
+조치 방향(착수 조건): `SelectableGalleryTile.onTap`이 `multiSelectMode`일 때는 `isIncomplete` 여부와 무관하게 항상 선택/해제 콜백으로 라우팅하도록 수정 필요 — 다음에 이 파일 또는 다중선택 플로우를 손댈 때 함께 정리. 현재는 우회(테스트 데이터 선택)로 충분히 커버됨, 급하지 않음.
+
+---
+
+[TechDebt] `MultiSelectCheckmark`가 `AppSemanticColors` 대신 `Colors.white` 하드코딩 + 선택 관련 매직넘버 미등재 (P2/P3)
+
+상태: 미해결
+
+내용:
+Group B Task 5(다중선택 시각 지원) 완료 후 Audit(2026-07-28)이 발견:
+- (P2) `lib/widgets/multi_select_checkmark.dart`의 미선택 상태 배경이 `Colors.white.withValues(alpha: 0.7)`로 하드코딩돼 있는데, 같은 파일군·같은 Stack 안에서 동일한 역할(반투명 near-white 원)을 하는 `trash_gallery_tile.dart`의 카테고리 아이콘 배지는 `semantic.gray50.withValues(alpha: 0.7)`(`Theme.of(context).extension<AppSemanticColors>()!`)를 정확히 쓴다 — 같은 시각 역할을 두 소스로 구현한 불일치. 값 자체는 계획 문서(`docs/superpowers/plans/2026-07-21-multi-select-and-trash.md` 1209행)에서 그대로 온 것이라 Worker 귀책 아님(Decision-stage 코드에 이미 있던 갭).
+- (P3) 4개 타일 파일(`selectable_gallery_tile.dart`/`composition_gallery_tile.dart`/`style_log_gallery_tile.dart`/`trash_gallery_tile.dart`) 전부 `Border.all(color: colorScheme.primary, width: 2)`(선택 시 테두리)를 복붙 반복. `MultiSelectCheckmark` 자체도 `width/height: 22`, `border width: 1.5`, `Icon size: 16` 등 `AppSpacing`/이름 있는 상수 어디에도 안 걸린 리터럴 3개를 가짐 — 위 `classification_group_card.dart` 항목(이 파일 맨 아래, 2026-07-19)과 같은 패턴의 반복.
+- (P3) `flutter analyze`에 새로 잡힌 미등재 경고 1건: `integration_test/trash_purge_safety_test.dart:8`의 `composition_providers.dart` unused import — Task 5 diff 밖(Task 3 잔재로 추정), 아래 "`integration_test/` 파일 3개에 미사용 import" 항목에 파일/건수만 추가하면 됨.
+
+조치 방향(착수 조건): 이 4개 타일 또는 `multi_select_checkmark.dart`를 다음에 손댈 때(유력 후보: 실제 다중선택 모드 진입 배선 Task, 계획 문서 Task 7) `Colors.white`→`semantic.gray50` 교체 + `width: 2`/`22`/`1.5`/`16` 값들을 이름 있는 로컬 const로 승격. 급하지 않음(순수 시각 일관성 문제, 기능 결함 아님).
+
+---
+
 [TechDebt] `InteractiveArtboard` 배경색 버튼/스와치 이너글로우가 밝은 색에서 흰 띠로 보임 (P3)
 
 상태: 미해결 (기능엔 영향 없음, 사용자 확인 후 낮은 우선순위로 보류)
@@ -43,6 +250,10 @@
 
 조치 방향(착수 조건): 다음에 이 파일의 드래그 핸들러들을 손댈 때, 각 `GestureDetector`에 `onPanCancel`을 추가해 대응하는 상태(드래그/리사이즈/회전 각각)를 리셋하고 필요시 `_hideDeleteZoneOverlay()`도 호출하도록 정리. 지금은 P3(막지 않음)로 기록만.
 
+---
+
+[TechDebt] `composition_preview_carousel.dart`/`composition_detail_screen.dart`에 `AppSpacing` 미등재 매직넘버 — 로컬 named const로 유지 중
+
 상태: 미해결
 
 내용:
@@ -79,7 +290,7 @@ Step⑦ 1라운드(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`) 
 
 [TechDebt] `SettingsScreen`이 이미 승인된 `04_설정.md` 스펙과 어긋남 — "전체 데이터 삭제"만 제거, 나머지는 보류 (P1)
 
-상태: 부분 해결 — 사용자 확인 필요한 부분 보류 중
+상태: **해결(2026-07-27)** — 착수 조건이었던 사용자 확인 완료, 스펙 갱신으로 드리프트 해소. 남은 건 코드 구현뿐(`BACKLOG.md` 그룹 C 태스크로 이관, 이 항목 자체는 종료).
 
 내용:
 Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `docs/reference/plan/03_화면별UX명세서/04_설정.md`는 2026-07-09 Design Review에서 승인 확정된 문서로, 로우 2개(알림 토글, 로그아웃/Toast+Undo — confirm 모달 명시적으로 미사용)만 규정하고, 프로필 아이콘 진입점은 옷장/코디/스타일일지 3개 Main 화면 헤더에 있어야 한다고 규정한다. 실제 Step⑥-A 구현(`lib/screens/settings_screen.dart`)은 이 스펙을 참고하지 않고 "다크 모드"/"프로필 편집"/"전체 데이터 삭제"(confirm 모달) 로우를 임의로 추가했다 — PM이 Worker 태스크 스코프 지정 시 이 화면 전용 스펙 문서를 놓치고 `00_페이지 타입 정의.md`의 일반 Utility형 규칙만 참조한 게 원인.
@@ -93,6 +304,8 @@ Step⑥(나머지 화면 적용) 완료 시점 Audit(2026-07-15)이 발견: `doc
 - 3개 Main 화면 헤더에 프로필 아이콘 진입점이 없어 `/settings`가 UI로는 도달 불가능한 라우트(직접 URL 진입만 가능).
 
 조치 방향(착수 조건): 이 화면을 다음에 다시 손댈 때, 04_설정.md 원문대로 재구현할지 아니면 현재 확장을 정식 스펙 갱신 대상으로 삼을지부터 사용자 확인 후 진행.
+
+**해소(2026-07-27)**: 사용자가 직접 확인 — "다크 모드"는 정식 채택(스펙에 로우로 신규 편입), "프로필 편집"은 제외(이 앱에 프로필 개념 자체가 없음), 로그아웃 로우 신설, 휴지통 진입 로우 신규 추가. 상세는 `docs/history/Decision.md` "설정 화면 최종 로우 구성 확정" 항목, 갱신된 스펙은 `04_설정.md` §2/§4/§6. 코드 구현은 `BACKLOG.md` 그룹 C로 이관.
 
 ---
 
@@ -117,6 +330,8 @@ Step⑥-B(선택 모달)에서 옷장(`ClothingItem.isIncomplete` 이미 존재)
 
 내용:
 Typography Pass 3 코드 반영 Review 중 `integration_test/typography_pass3_test.dart`의 unused_import 경고 2건(`closet_main_screen.dart`, `style_log_gallery_tile.dart`)을 먼저 발견. 이후 분류 기준 드릴다운 캡슐 기능(2026-07-19) Audit이 같은 성격의 경고 2건을 추가로 확인 — `integration_test/style_log_gallery_column_count_test.dart`의 `go_router`/`style_log_cross_reference_gallery` unused import(둘 다 2026-07-18 커밋 `6984001`부터 존재, 이번 기능과 무관한 기존 부채). 전부 `flutter analyze` 기준 unused_import 경고일 뿐, 테스트 통과에는 영향 없는 순수 lint 이슈.
+
+**추가(Group B Task 5 Audit, 2026-07-28)**: `integration_test/trash_purge_safety_test.dart:8`의 `composition_providers.dart` unused import 1건 추가 확인 — Task 3(휴지통 집계 재작성) 잔재로 추정, 이번 Task 5 diff와는 무관.
 
 해결 방향: 다음에 각 파일을 손댈 일이 생기면 그때 `import` 줄 제거로 함께 정리. 별도 태스크로 우선순위 부여할 정도는 아님.
 
@@ -196,10 +411,12 @@ Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widg
 
 [TechDebt] `StyleLog` 모델에 정렬/필터 기준 필드(날씨/옷 종류/계절) 자체가 없어 스타일일지 메인 다중 필터 UI를 구현할 수 없음
 
-상태: 미해결
+상태: **데이터 기반 해소(2026-07-29), 필터 UI 자체는 여전히 미착수** — 사용자가 실제 앱을 구동하며 재발견(2026-07-29 Visual Review), 아래 조치 방향대로 모델 확장 완료.
 
 내용:
 `03_스타일 일지.md` UX명세서는 스타일일지 메인의 정렬/필터로 "날짜, 옷 종류, 날씨, 계절 기준 지원(역순 보기 옵션 포함)"을 요구하지만, `StyleLog`(`lib/models/style_log.dart`) 모델에 `season`/`weather`/착용 옷 종류에 대응하는 필드가 전혀 없다(날짜만 `wornDate`로 존재). Step③(코디/스타일일지 메인 적용, 2026-07-13)에서 `style_log_main_screen.dart`를 `AppMainScaffold`로 마이그레이션하며 Review가 이 사실을 지적 — 이전 Step①(전체 화면 Skeleton) 단계엔 "헤더 (스타일 일지 ▾ + 필터 칩)"이라는 placeholder 주석이라도 있었으나, 이번 마이그레이션에서 비기능 정렬 아이콘 하나만 남기고 그 흔적이 사라졌다. 실제 필터 구현은 `StyleLog` 모델 확장(Data/Architecture 레이어 결정) 없이는 불가능 — 모델 필드 추가가 선행돼야 함.
+
+**해소(2026-07-29)**: `season: Season?`/`weather: Weather?`를 `Composition`과 동일 패턴으로 직접 추가. "옷 종류" 기준은 사용자 지시대로 별도 필드를 두지 않고 "착용 옷"에서 파생하는 구조로 설계 — 이를 위해 취약했던 `additionalImagePaths`(이미지 경로 문자열 매칭) 참조를 `wornItemIds`(실제 `ClothingItem.id` 리스트)로 교체(부수적으로 기존 취약한 매칭 패턴 자체도 해소). Worker→Review(findings 없음)→Tester(실기기 검증, purge된 아이템 참조 방어 시나리오 포함) 통과, 커밋 `1b2037f`. **아직 남은 것**: 스타일일지 메인 화면의 실제 정렬/필터 UI(캡슐/드롭다운 등 시각 디자인)는 사용자가 별도로 지시할 예정 — 이 항목은 그 UI 작업이 실제로 붙을 때까지 완전히 닫히지 않음.
 
 ---
 

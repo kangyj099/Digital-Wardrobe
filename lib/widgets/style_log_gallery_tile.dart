@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/style_log.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import 'gallery_meta_label.dart';
+import 'multi_select_checkmark.dart';
 
 /// `StyleLog` 1개를 표시하는 갤러리 타일 — `coverImagePath`로 대표이미지를 렌더링하고
 /// (`SelectableGalleryTile`의 `Image.asset(... fit: BoxFit.contain)` 패턴과 동일), 하단에
@@ -11,24 +13,35 @@ class StyleLogGalleryTile extends StatelessWidget {
     super.key,
     required this.styleLog,
     required this.onTap,
+    this.onLongPress,
+    this.multiSelectMode = false,
+    this.selected = false,
   });
 
   final StyleLog styleLog;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool multiSelectMode;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     final dateLabel = styleLog.wornDate.toIso8601String().substring(0, 10);
     final metaLabel = styleLog.location.isEmpty ? dateLabel : '$dateLabel · ${styleLog.location}';
     return Semantics(
       button: true,
-      label: metaLabel,
+      label: metaLabel + (selected ? ', 선택됨' : ''),
       excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
-          decoration: BoxDecoration(color: semantic.gray200),
+          decoration: BoxDecoration(
+            color: semantic.gray200,
+            border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
+          ),
           child: LayoutBuilder(
             builder: (context, constraints) {
               return Stack(
@@ -40,6 +53,12 @@ class StyleLogGalleryTile extends StatelessWidget {
                         : const SizedBox.shrink(),
                   ),
                   GalleryMetaLabel(label: metaLabel, maxWidth: constraints.maxWidth),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                 ],
               );
             },

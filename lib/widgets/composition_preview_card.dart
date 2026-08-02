@@ -13,8 +13,12 @@ import 'gallery_meta_label.dart';
 class CompositionPreviewCard extends ConsumerWidget {
   const CompositionPreviewCard({super.key, required this.composition, required this.onTap});
 
+  /// `style_log_viewer_screen.dart`가 삭제된(휴지통 이동) 코디를 `StatusBadge`로 표시하며
+  /// 탭을 막을 때 `onTap: null`로 `GestureDetector` 자체를 비활성화한다(`composition_detail_screen.dart`
+  /// "사용된 옷" 타일과 동일 패턴). `CompositionPreviewCarousel` 호출부는 항상
+  /// `!isDeleted` 필터를 거친 목록만 받으므로 실질적으로 항상 non-null 콜백을 넘긴다.
   final Composition composition;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

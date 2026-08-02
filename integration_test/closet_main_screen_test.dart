@@ -216,13 +216,17 @@ void main() {
     return icon.icon!;
   }
 
-  testWidgets('부팅 시 mock 옷 12개가 렌더링되고 미완성 배지 1개가 표시된다', (tester) async {
-    await pumpClosetMain(tester);
+  testWidgets(
+    '[갱신, Task 7 재검증] 부팅 시 mock 옷 10개가 렌더링되고(c07/c08는 이미 소프트삭제되어 '
+    '휴지통으로 이동된 상태라 제외) 미완성 배지 1개가 표시된다',
+    (tester) async {
+      await pumpClosetMain(tester);
 
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
-    expect(find.byType(StatusBadge), findsOneWidget);
-    expect(find.text('미완성'), findsOneWidget);
-  });
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
+      expect(find.byType(StatusBadge), findsOneWidget);
+      expect(find.text('미완성'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     '중분류를 "계절"로 선택하면 소분류 드롭다운에 봄가을·여름·겨울·미분류 4개 옵션이 '
@@ -253,29 +257,34 @@ void main() {
   );
 
   testWidgets(
-    '중분류 "계절"→소분류 "여름" 드릴인 시 그리드가 3개로 줄어들고, 중분류를 "전체보기"로 '
-    '되돌리면 12개로 복원된다',
+    '[갱신, Task 7 재검증] 중분류 "계절"→소분류 "여름" 드릴인 시 그리드가 2개로 줄어들고, '
+    '중분류를 "전체보기"로 되돌리면 10개로 복원된다(c07도 여름이었으나 이미 소프트삭제됨)',
     (tester) async {
       await pumpClosetMain(tester);
 
       await selectCriterion(tester, '계절');
       await selectSubOption(tester, '여름');
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(2));
 
       await selectCriterion(tester, '전체보기');
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
     },
   );
 
-  testWidgets('중분류 "계절"→소분류 "봄가을" 드릴인 시 그리드가 8개로 줄어든다', (tester) async {
-    await pumpClosetMain(tester);
+  testWidgets(
+    '[갱신, Task 7 재검증] 중분류 "계절"→소분류 "봄가을" 드릴인 시 그리드가 7개로 줄어든다',
+    (tester) async {
+      await pumpClosetMain(tester);
 
-    await selectCriterion(tester, '계절');
-    await selectSubOption(tester, '봄가을');
-    // c12는 옷종류/계절 nullable화(2026-07-19) 이후 season이 null(미분류)이라 더 이상
-    // 봄가을 필터에 매칭되지 않는다 — 기존 9개(c12 포함)에서 8개로 줄어든 것이 정상.
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(8));
-  });
+      await selectCriterion(tester, '계절');
+      await selectSubOption(tester, '봄가을');
+      // c12는 옷종류/계절 nullable화(2026-07-19) 이후 season이 null(미분류)이라 더 이상
+      // 봄가을 필터에 매칭되지 않는다. 여기에 더해 c08(springFall)이 이미 소프트삭제되어
+      // 휴지통으로 이동된 상태라 filteredClosetItemsProvider에서 제외된다 — 기존 9개(c12
+      // 포함)→8개(c12 제외)→7개(c08도 제외)로 두 단계에 걸쳐 줄어든 것이 정상.
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(7));
+    },
+  );
 
   testWidgets('아이템이 0개인 겨울로 드릴인 시 크래시 없이 빈 그리드로 전환된다', (tester) async {
     await pumpClosetMain(tester);
@@ -389,8 +398,8 @@ void main() {
 
     expect(find.text('한 장 추가하기'), findsOneWidget);
     expect(find.text('여러 장 추가하기'), findsOneWidget);
-    // 펼침 상태에서도 여전히 옷장 메인 화면(이동하지 않음).
-    expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+    // 펼침 상태에서도 여전히 옷장 메인 화면(이동하지 않음). [갱신, Task 7] 10개(c07/c08 제외).
+    expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
 
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
@@ -450,15 +459,19 @@ void main() {
     expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
   });
 
-  testWidgets('그리드 타일 라벨이 상품명이 아닌 옷 종류(카테고리)로 표시된다', (tester) async {
-    await pumpClosetMain(tester);
+  testWidgets(
+    '[갱신, Task 7 재검증] 그리드 타일 라벨이 상품명이 아닌 옷 종류(카테고리)로 표시된다',
+    (tester) async {
+      await pumpClosetMain(tester);
 
-    // c01(플로럴 원피스), c08(슬립 드레스)은 둘 다 category=onePiece → "한벌옷" 라벨.
-    expect(find.text('한벌옷'), findsNWidgets(2));
-    // 상품명 자체는 화면 어디에도 노출되지 않아야 한다.
-    expect(find.text('플로럴 원피스'), findsNothing);
-    expect(find.text('슬립 드레스'), findsNothing);
-  });
+      // c01(플로럴 원피스)만 category=onePiece → "한벌옷" 라벨. c08(슬립 드레스)도 같은
+      // 카테고리였으나 이미 소프트삭제되어 휴지통으로 이동, 이 그리드에는 안 나타난다.
+      expect(find.text('한벌옷'), findsNWidgets(1));
+      // 상품명 자체는 화면 어디에도 노출되지 않아야 한다.
+      expect(find.text('플로럴 원피스'), findsNothing);
+      expect(find.text('슬립 드레스'), findsNothing);
+    },
+  );
 
   // ── 아래부터 라벨박스 크기조절 리팩터(0da0cee+30a90e5) 검증 ──────────────────
 
@@ -678,7 +691,8 @@ void main() {
 
       // 3) 새로 push된 옷장 메인 인스턴스가 최상단에 보이고, 뒤로가기 버튼이 정확히 1개
       // 나타난다(스택 아래 깔린 이전 옷장 메인 인스턴스가 아니라 최상단 인스턴스만).
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      // [갱신, Task 7] 10개(c07/c08 제외).
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
       expect(backButtonFinder(), findsOneWidget);
 
       // 4) 탭하면 context.pop()이 실제로 동작해 바로 아래(옷 상세 c01)로 돌아간다.
@@ -725,10 +739,11 @@ void main() {
       expect(crossAxisCount(tester), 1);
       expect(backButtonFinder(), findsOneWidget);
 
-      // 계절 드릴다운 정상 동작(중분류 계절→소분류 여름 드릴인 시 3개로 축소).
+      // 계절 드릴다운 정상 동작(중분류 계절→소분류 여름 드릴인 시 2개로 축소).
+      // [갱신, Task 7] c07이 여름이었으나 이미 소프트삭제되어 2개(c06/c10)만 남음.
       await selectCriterion(tester, '계절');
       await selectSubOption(tester, '여름');
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(2));
       expect(backButtonFinder(), findsOneWidget);
 
       // 카테고리 드롭다운으로 다른 화면 이동(context.go, 스택 전체 교체)도 회귀 없이 동작.
@@ -741,11 +756,12 @@ void main() {
   // ── 아래부터 /trash(TrashMainScreen) 검증 ─────────────────────────────────
 
   testWidgets(
-    '[갱신됨, Step⑥-A 재검증] 옷장 메인 위에 /trash 를 인위적으로 push하면 TrashMainScreen이 '
-    '실제로 렌더링되고, 헤더 액션("선택"/"비우기" GlassPill)과 mock 4개 썸네일 그리드가 모두 '
+    '[갱신됨, Task 7 재검증] 옷장 메인 위에 /trash 를 인위적으로 push하면 TrashMainScreen이 '
+    '실제로 렌더링되고, 헤더 액션("선택"/"비우기" GlassPill)과 mock 3개 썸네일 그리드가 모두 '
     '화면에 나타난다 (정상 UI 플로우로는 아직 도달 불가능한 화면 — 카테고리 드롭다운에 옵션이 '
     '없는 것이 플랜에 명시된 의도된 상태. Step⑥-A 이전엔 skeletonRegion 텍스트 "헤더"/"썸네일 '
-    '그리드"로 확인했으나, 실제 화면 구현 후 그 텍스트가 사라져 실제 렌더 요소로 확인 대상을 갱신)',
+    '그리드"로 확인했으나, 실제 화면 구현 후 그 텍스트가 사라져 실제 렌더 요소로 확인 대상을 갱신. '
+    'Task 7 재검증 시 mock 삭제 항목이 실제로는 c07/c08/comp02 3개뿐임을 실측해 4→3으로 갱신한다)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -757,7 +773,7 @@ void main() {
       expect(find.byType(TrashMainScreen), findsOneWidget);
       expect(find.text('선택'), findsOneWidget);
       expect(find.text('비우기'), findsOneWidget);
-      expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+      expect(find.byType(TrashGalleryTile), findsNWidgets(3));
     },
   );
 
@@ -859,11 +875,12 @@ void main() {
   // ── 아래부터 SettingsScreen(Task F) 검증 ────────────────────────────────────
 
   testWidgets(
-    '[갱신됨, 2026-07-15] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
-    '실제로 렌더링되고, 리스트-로우(알림/다크모드/프로필 편집)가 모두 화면에 나타난다 (정상 UI '
+    '[갱신됨, 2026-07-27] 옷장 메인 위에 /settings 를 인위적으로 push하면 SettingsScreen이 '
+    '실제로 렌더링되고, 리스트-로우(알림/다크모드/휴지통/로그아웃)가 모두 화면에 나타난다 (정상 UI '
     '플로우로는 아직 도달 불가능한 화면 — 설정으로 이어지는 진입 UI가 없는 것이 플랜에 명시된 '
-    '의도된 상태. "전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되어 이 목록에서도 '
-    '함께 빠졌다 — 부재 자체는 `settings_trash_shell_test.dart`의 전용 회귀 테스트가 검증한다)',
+    '의도된 상태. "프로필 편집"은 최종 확정 스펙(`04_설정.md`, 2026-07-27)에 없어 제거되어 이 '
+    '목록에서도 함께 빠졌다 — 부재 자체는 `settings_trash_shell_test.dart`의 전용 회귀 테스트가 '
+    '검증한다)',
     (tester) async {
       await pumpClosetMain(tester);
 
@@ -875,7 +892,8 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('알림'), findsOneWidget);
       expect(find.text('다크 모드'), findsOneWidget);
-      expect(find.text('프로필 편집'), findsOneWidget);
+      expect(find.text('휴지통'), findsOneWidget);
+      expect(find.text('로그아웃'), findsOneWidget);
     },
   );
 }

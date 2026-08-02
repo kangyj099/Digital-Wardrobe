@@ -2631,13 +2631,19 @@ class CompositionMainScreen extends ConsumerWidget {
         onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
         onClearSubSelection: () => _clearDrilldown(ref, criterion),
         density: density,
-        onDensityChanged: (current) {
-          final currentIndex = AppDensity.levels.indexOf(current);
+        // [정정, Task 7 Review 2026-07-28] `current`(전달받은 값)를 그대로 쓰면 `10d3643`이
+        // 이미 한 번 고친 stale-closure 버그가 재발한다 — 빌드 시점에 고정된 값이라 리빌드
+        // 전에 연속 탭하면 두 번째 탭이 낡은 값을 기준으로 계산된다. 옷장 메인(Task 7)이 이미
+        // `ref.read(...)`로 매번 새로 읽는 방식으로 우회했다 — 여기도 동일하게 적용.
+        onDensityChanged: (_) {
+          final latest = ref.read(compositionDensityProvider);
+          final currentIndex = AppDensity.levels.indexOf(latest);
           final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
           ref.read(compositionDensityProvider.notifier).state = AppDensity.levels[previousIndex];
         },
         ascending: ascending,
-        onAscendingChanged: (value) => ref.read(compositionSortAscendingProvider.notifier).state = value,
+        onAscendingChanged: (_) =>
+            ref.read(compositionSortAscendingProvider.notifier).state = !ref.read(compositionSortAscendingProvider),
       ),
       onItemTap: (c) {
         if (selectionMode) {

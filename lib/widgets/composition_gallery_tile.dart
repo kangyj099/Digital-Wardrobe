@@ -3,6 +3,7 @@ import '../models/composition.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'gallery_meta_label.dart';
+import 'multi_select_checkmark.dart';
 
 /// `Composition` 1개를 표시하는 갤러리 타일. 아직 아트보드 스냅샷 렌더링 기능이 없다(모델에
 /// 썸네일 필드 자체가 없음) — 그래서 `SelectableGalleryTile`처럼 옷 이미지를 대표사진으로
@@ -14,23 +15,35 @@ class CompositionGalleryTile extends StatelessWidget {
     super.key,
     required this.composition,
     required this.onTap,
+    this.onLongPress,
+    this.multiSelectMode = false,
+    this.selected = false,
   });
 
   final Composition composition;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool multiSelectMode;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     final season = composition.season;
     return Semantics(
       button: true,
-      label: season == null ? composition.name : '${composition.name}, ${season.label}',
+      label: (season == null ? composition.name : '${composition.name}, ${season.label}') +
+          (selected ? ', 선택됨' : ''),
       excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
-          decoration: BoxDecoration(color: semantic.gray200),
+          decoration: BoxDecoration(
+            color: semantic.gray200,
+            border: selected ? Border.all(color: colorScheme.primary, width: 2) : null,
+          ),
           child: LayoutBuilder(
             builder: (context, constraints) {
               return Stack(
@@ -50,6 +63,12 @@ class CompositionGalleryTile extends StatelessWidget {
                   ),
                   if (season != null)
                     GalleryMetaLabel(label: season.label, maxWidth: constraints.maxWidth),
+                  if (multiSelectMode)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      right: AppSpacing.xxs,
+                      child: MultiSelectCheckmark(selected: selected),
+                    ),
                 ],
               );
             },

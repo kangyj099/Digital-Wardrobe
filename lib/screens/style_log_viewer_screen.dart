@@ -9,6 +9,8 @@ import '../router/app_router.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/composition_preview_card.dart';
+import '../widgets/glass_toast.dart';
+import '../widgets/status_badge.dart';
 import 'app_detail_scaffold.dart';
 
 /// 스타일일지 열람 — 카드 구조를 스펙 원문(`03_스타일 일지.md` "대표이미지(1번, 고정) →
@@ -17,7 +19,9 @@ import 'app_detail_scaffold.dart';
 /// `docs/history/Decision.md` "스타일일지 열람 카드 구조를 스펙 원문대로 정정" 참고),
 /// 그 아래 날짜/장소, 그 아래 "착용 옷"(추가 사진) 순으로 배치한다. 코디 슬롯은 연결된
 /// 코디가 있으면 `CompositionPreviewCard`(탭 → 코디 상세), 없으면 `_CompositionAddSlide`
-/// (탭 → 코디 선택 모달을 열어 기존 코디를 골라 연결)를 보여준다.
+/// (탭 → 코디 선택 모달을 열어 기존 코디를 골라 연결)를 보여준다. 연결된 코디가 삭제(휴지통
+/// 이동)됐으면 `StatusBadge('삭제됨')`를 오버레이하고 탭을 막는다("착용 옷" 섹션과 동일한
+/// 소프트삭제 가드 패턴 — 삭제된 코디가 있었다는 사실 자체를 숨기지 않는다).
 class StyleLogViewerScreen extends ConsumerStatefulWidget {
   const StyleLogViewerScreen({super.key, required this.styleLogId});
 
@@ -51,12 +55,20 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
     final log = ref.watch(styleLogsProvider).firstWhere((l) => l.id == widget.styleLogId);
     final linkedComposition = log.linkedCompositionId == null
         ? null
-        : ref.watch(compositionsProvider).firstWhere((c) => c.id == log.linkedCompositionId);
+        : ref
+            .watch(compositionsProvider)
+            .where((c) => c.id == log.linkedCompositionId)
+            .firstOrNull;
     final closetItems = ref.watch(closetItemsProvider);
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
 
     return AppDetailScaffold(
       category: AppCategory.styleLog,
+      onDelete: () {
+        ref.read(styleLogsProvider.notifier).softDeleteMany({widget.styleLogId});
+        context.pop();
+        GlassToast.show(context, message: '휴지통으로 이동됨');
+      },
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -77,11 +89,25 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
                         ? Container(color: semantic.gray200)
                         : Image.asset(log.coverImagePath, fit: BoxFit.cover),
                     linkedComposition != null
-                        ? CompositionPreviewCard(
-                            composition: linkedComposition,
-                            onTap: () => context.push(
-                              AppRoute.compositionDetail.replaceFirst(':id', linkedComposition.id),
-                            ),
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CompositionPreviewCard(
+                                composition: linkedComposition,
+                                onTap: linkedComposition.isDeleted
+                                    ? null
+                                    : () => context.push(
+                                        AppRoute.compositionDetail
+                                            .replaceFirst(':id', linkedComposition.id),
+                                      ),
+                              ),
+                              if (linkedComposition.isDeleted)
+                                const Positioned(
+                                  top: AppSpacing.xxs,
+                                  left: AppSpacing.xxs,
+                                  child: StatusBadge(label: '삭제됨'),
+                                ),
+                            ],
                           )
                         : _CompositionAddSlide(
                             onTap: () => _bindComposition(context, ref, widget.styleLogId),
@@ -112,7 +138,7 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
               '${log.location.isEmpty ? '' : '  ${log.location}'}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            if (log.additionalImagePaths.isNotEmpty) ...[
+            if (log.wornItemIds.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               Text('착용 옷', style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: AppSpacing.xs),
@@ -120,23 +146,44 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
                 height: 96,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: log.additionalImagePaths.length,
+                  itemCount: log.wornItemIds.length,
                   separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.xs),
                   itemBuilder: (context, index) {
-                    final path = log.additionalImagePaths[index];
-                    // `imagePath`가 정확히 일치하는 옷을 역으로 찾아 탭 시 그 옷 상세로
-                    // 이동한다(mock_data.dart 기준 log01의 두 경로는 각각 c11/c07의
-                    // imagePath와 정확히 일치함이 이미 확인된 데이터 정합성).
-                    final match = closetItems.where((i) => i.imagePath == path);
+                    final wornItemId = log.wornItemIds[index];
+                    // ID로 직접 옷을 찾는다(예전 이미지 경로 문자열 일치 방식은 취약해
+                    // ID 참조로 교체 — `docs/history/Decision.md` 참고).
+                    final match = closetItems.where((i) => i.id == wornItemId);
                     final item = match.isEmpty ? null : match.first;
                     return GestureDetector(
-                      onTap: item == null
+                      onTap: (item == null || item.isDeleted)
                           ? null
                           : () =>
                               context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        child: Image.asset(path, width: 96, fit: BoxFit.cover),
+                      child: SizedBox(
+                        width: 96,
+                        height: 96,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                // 방어적 처리 — 정상 데이터라면 item은 항상 존재해야 하지만,
+                                // 못 찾으면(예: 데이터 정합성 깨짐) 회색 placeholder로 대체한다
+                                // (파일 상단 coverImagePath 빈 문자열 가드와 동일 패턴).
+                                child: item == null
+                                    ? Container(color: semantic.gray200)
+                                    : Image.asset(item.imagePath, fit: BoxFit.cover),
+                              ),
+                            ),
+                            if (item != null && item.isDeleted)
+                              const Positioned(
+                                top: AppSpacing.xxs,
+                                left: AppSpacing.xxs,
+                                child: StatusBadge(label: '삭제됨'),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },

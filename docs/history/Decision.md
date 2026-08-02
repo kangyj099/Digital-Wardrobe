@@ -1,5 +1,102 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 프로스티드 글래스 블러/채도/하이라이트 값을 원본 목업 CSS 기준으로 정정 (UI/Screen, Decision)
+
+결정:
+- `GlassPill`/`GlassCircleButton`/`AppDetailScaffold`(더보기 버튼) 3개 공용 글래스 프리미티브의 `BackdropFilter`를 `lib/theme/app_effects.dart`의 `AppGlassEffect.backdropFilter()`로 통일.
+- 블러: `sigmaX/Y: 12` → `AppGlassEffect.blurSigma = 1.5`. 근거: 목업 CSS `backdrop-filter: blur(3px)`, CSS blur-radius ≈ 2×Gaussian-sigma(브라우저 구현 통용 근사) → 3÷2=1.5. 기존 값은 역산하면 CSS `blur(24px)`에 해당 — 목업 대비 8배 과블러였음.
+- 채도: 기존엔 아예 없었음 → `AppGlassEffect.saturationBoost`(표준 SVG `feColorMatrix type="saturate"` 공식, s=1.8=180%)를 `ImageFilter.compose(outer: saturationBoost, inner: blur)`로 blur 다음에 적용(CSS 필터 리스트 `blur(3px) saturate(180%)`의 좌→우 적용 순서와 일치).
+- Inset 하이라이트: `GlassInsetHighlight`(1px, `rgba(255,255,255,0.16)`) 신규 — 목업 CSS `inset 0 1px 0 rgba(255,255,255,0.16)`을 `BoxDecoration`이 지원 안 해서 별도 `Positioned` 레이어로 흉내.
+- 부수 발견·수정: `category_toggle_dropdown.dart`/`classification_drilldown_capsule.dart`의 헤더 트리거 텍스트가 스타일 미지정으로 기본값(14/w500)을 상속 중이었음 — 목업(16px/700, 13px/600~700)에 맞춰 로컬 `.copyWith`로 좁게 수정(공용 `AppTypography.textTheme` 자체는 안 건드림).
+
+사유:
+사용자가 실제 앱을 구동해 Visual Review 하던 중 "프로스티드 글래스 효과가 전혀 유리 같지 않다"고 지적, 이전에도 여러 번 수정 요청했었다고 함 — PM이 원본 목업(`참고자료/목업/옷장 메인/옷장 메인.html`+스크린샷+`옷장 메인 화면.txt`)의 실제 CSS/스펙 값을 코드와 직접 대조해 정량적 원인을 확정. 배경색(`rgba(247,246,243,0.38)`)은 이미 정확히 일치했었고, 블러 강도·채도·인셋 하이라이트 3가지가 실제 원인이었음.
+
+Impact:
+- `lib/theme/app_effects.dart`(신규), `lib/widgets/glass_inset_highlight.dart`(신규), `glass_pill.dart`/`glass_circle_button.dart`/`app_detail_scaffold.dart`/`category_toggle_dropdown.dart`/`classification_drilldown_capsule.dart` 수정.
+- Worker→Review(findings 없음, saturate 행렬/`ImageFilter.compose` 타입 직접 검증)→Tester(97개 케이스, 다른 화면들까지 폭넓게 재확인) 통과, 커밋 `f5b3b38`.
+- 후속 홀리스틱 Audit이 무관한 기존 버그(Group B Task 7의 "선택" 버튼 스타일 누락, P1)를 추가 발견 — 별도 항목 없이 이번 세션에서 바로 수정, 커밋 `7a7bed5`. 상세는 `docs/work/BACKLOG.md` Last Completed 참고.
+
+---
+
+[Decision] 다크모드 `AppSemanticColors.primaryLight` 값 정정 — `colorScheme.primary`와의 충돌 해소 (UI/Screen, Decision)
+
+결정:
+- `lib/theme/app_colors.dart`의 `AppSemanticColors.dark.primaryLight`를 `0xFF93B5CC`(다크 `colorScheme.primary`와 완전히 동일했던 버그값) → `0xFF263F50`로 변경.
+- `gray800`(=다크 `colorScheme.surface`) 재사용안은 기각 — `category_toggle_dropdown.dart`/`classification_drilldown_capsule.dart`의 팝업 메뉴 배경이 이미 `surface` 기반이라, 그 값을 쓰면 이 두 위젯의 "선택됨" 하이라이트가 메뉴 배경에 파묻힘.
+- 대신 `primary`의 HSL(H≈204.2°, S≈35.8%)을 유지한 채 명도(L)만 23%로 낮춰 새 값 도출 — `TextButton` 기본 전경색(`colorScheme.primary`) 대비 5.09:1(AA), `onSurface` 텍스트 대비 9.08:1을 확보.
+
+사유:
+2026-07-29 Visual Review 세션에서 사용자가 발견한 "GlassToast 실행취소 버튼 가시성 부족"/"휴지통 필터칩" 수정 2건이 둘 다 `primaryLight`를 배경색으로 쓰는 `TextButton`이었는데, 다크모드에서 이 토큰이 `colorScheme.primary`(기본 텍스트색)와 완전히 같은 값이라 텍스트가 안 보였다 — 그 배치 완료 후 홀리스틱 Audit이 발견(P1). 라이트모드 값(`primary300`=0xFFC5D3C7)은 애초에 `primary500`(텍스트, 0xFF394550)과 별개 값이라 문제없었는데, 다크모드 값만 "기존 dark primary 재사용" 식으로 대충 채워져 있던 게 원인(이전 결정 기록 참고).
+
+Impact:
+- `lib/theme/app_colors.dart` — `primaryLight` 다크값만 변경, 나머지 팔레트 불변.
+- 영향받는 4개 소비처(`GlassToast`, `trash_main_screen.dart` 필터칩, `category_toggle_dropdown.dart`, `classification_drilldown_capsule.dart`) 전부 실기기 다크모드 구동으로 재확인 완료(Tester) — 원래 버그(GlassToast/필터칩) 해소, 부수 개선(드롭다운/캡슐의 onSurface-on-primaryLight 대비가 기존 1.78:1→9.08:1로 개선, 원래 별개의 미달 이슈였음).
+- 커밋 `0c16786`.
+
+---
+
+[Decision] Group B(다중선택 진입/실행 + 휴지통 복원·영구삭제·비우기) 구현 완료 — `GalleryMainScreen<T>` 제네릭 셸 아키텍처 채택 (Data/Architecture + UI/Screen, Decision)
+
+결정:
+- `docs/superpowers/specs/2026-07-21-multi-select-and-trash-design.md`를 Task 1~11(Task 12는 Group C에서 이미 만족돼 스킵, Task 13은 이 항목 자체)로 구현 완료.
+- Main형 4개 화면(옷장/코디/스타일일지/휴지통)의 공용 로직(다중선택 모드 토글, 선택 id 집합, FAB 노출)을 `lib/widgets/gallery_main_screen.dart`의 `GalleryMainScreen<T>` 제네릭 셸 하나로 통합. 분류(그룹형 드릴다운) 기능은 `ClassificationConfig<T>?`로 옵트인 — 옷장/코디는 제공, 스타일일지는 `null`(플랫+필터), 휴지통은 `GalleryMainScreen<T>` 자체를 안 쓰고 `AppMainScaffold` 직접 배선(2버튼 헤더+필터칩 구조가 달라서).
+- 다중선택 상태는 전역 provider가 아니라 `GalleryMainScreen`의 로컬 `State` — 화면을 벗어나면 자동 초기화.
+- 3개 모델(`ClothingItem`/`Composition`/`StyleLog`) 전체에 `deletedAt`(nullable) 필드 + `copyWith` sentinel 패턴 확장, `TrashEntry.remainingDays`를 `daysUntilPurge`로 명명 변경.
+- 휴지통은 별도 mock provider(`mockTrashEntries`)를 없애고 3-domain 파생 집계(`trashEntriesProvider`)로 전환 — 삭제/복원/영구삭제가 각 도메인 provider(`softDeleteMany`/`restoreMany`/`purgeMany`)에서 바로 반영됨.
+- 영구삭제는 실제 데이터 제거 + 안전가드 3곳(코디 커버이미지 폴백/아트보드 렌더링 skip/스타일일지 연결끊김 처리) — 캐스케이드 배지 UX는 "Editor Draft 구현" 후속 이관 유지.
+- Detail 3화면(옷/코디/스타일일지 상세)의 "더보기" 메뉴에 실제 [삭제] 연결 — 옷은 코디 사용중이면 확인다이얼로그, 코디/스타일일지는 즉시삭제(코디 자체를 참조하는 다른 엔티티 개념이 없어서, `TechnicalDebt.md`의 "사용 중 경고 없음" 항목 참고).
+- 소프트삭제된 항목이 다른 도메인의 크로스 레퍼런스(옷↔코디, 코디↔스타일일지)에 여전히 정상처럼 보이고 탭되는 문제를 발견 즉시 수정하는 정책을 이 라운드에서 확립: **목록/슬롯에서 제외하지 않고, `StatusBadge('삭제됨')` 오버레이 + 탭 차단.** 실제 3개 지점(코디 상세의 "사용된 옷", 스타일일지 열람의 "착용 옷"/"연결된 코디")에 전부 적용 완료.
+
+사유:
+Group B 스펙(review 2회 통과)과 구현계획(review 1회+홀리스틱 Audit 1회 통과, 13 Task)을 그대로 따라 진행. 4개 Main형 화면이 다중선택/휴지통 로직을 각자 중복 구현하지 않고 제네릭 셸로 통합하는 게 유지보수 비용을 줄인다는 판단은 계획 확정 시점에 이미 내려짐(이 Decision은 그 계획이 실제로 끝까지 구현됐음을 기록). 소프트삭제 크로스 레퍼런스 배지 정책은 사용자가 2026-07-29 세션 중 명시적으로 확정(제외 옵션과 비교해 "삭제됐다는 사실 자체를 숨기지 않는" 쪽을 선택).
+
+Impact:
+- `lib/widgets/gallery_main_screen.dart`(신규), `lib/screens/{closet,composition,style_log,trash}_main_screen.dart`(전면 재작성), `lib/screens/app_detail_scaffold.dart`+Detail 3화면(더보기 메뉴 실배선), `lib/providers/{closet,composition,style_log}_providers.dart`(`softDeleteMany`/`restoreMany`/`purgeMany`+`trashEntriesProvider`), `lib/models/*.dart`(`deletedAt` sentinel), `lib/widgets/glass_toast.dart`(신규), `lib/widgets/status_badge.dart` 재사용(삭제 배지).
+- 관련 커밋(대표): `72366f2`/`540ee83`(Task1) `d2c3e3e`(Task2) `14c0ec0`+`029641e`(Task3) `1e1ae17`(Task4) `4487d29`(Task5) `a890c61`(Task6) `7763214`(Task7) `0c5360d`(Task8) `c0e173e`(Task9) `03b7c64`(Task10) `6a0125c`(Task11) — 상세 경위는 `docs/work/BACKLOG.md` git 이력 및 각 커밋 메시지 참고, 이 항목은 요약만 유지.
+- **밀린 Visual Review(Typography Pass 3 이후 누적된 신규 화면/컴포넌트 대상, `Workflow_Design.md` §2.1)는 이 시점에도 아직 트리거 안 됨** — 2026-07-21에는 "Group B 완료 시점에 트리거"라고 사용자 확정했었지만, 실제 트리거 방식(PM 셀프 판정 vs 사용자 직접 확인)은 아직 미정(`docs/work/Questions.md` 참고, 2026-07-29 세션이 사용자 부재로 보류함). Design Tokens는 계속 provisional 상태 유지.
+
+---
+
+[Decision] `GlassToast`/`UndoableActionToast` 2종 공존 확정 — 화면군별 시각 변형, 중복 아님 (UI/Screen, Decision)
+
+결정:
+- `lib/widgets/glass_toast.dart`(Overlay+`GlassPill` 기반)와 `lib/widgets/undoable_action_toast.dart`(`ScaffoldMessenger`+`SnackBar` 기반)를 하나로 통합하지 않고 그대로 공존시킨다.
+- `GlassToast`는 Glass 셸 화면(옷장/코디/스타일일지 메인+Detail — 다중선택 삭제, Detail "더보기" 삭제)용, `UndoableActionToast`는 plain Utility 화면(설정 — 로그아웃)용으로 화면군에 따라 구분해서 쓴다.
+- 두 위젯 모두 `06_Component Strategy.md`의 "C7 UndoableActionToast"(메시지+액션+자동소멸 타이머, record-level undo) 상호작용 계약을 구현하는 동일 패턴의 서로 다른 시각 변형이다 — 이름이 겹치는 건 우연이며 별도 통합 리네이밍은 하지 않는다(이미 각 소비 화면에 자연스럽게 자리잡은 이름 유지가 혼란이 적음).
+- 공용화한 부분: 자동소멸 기본 지속시간만 `AppDurations.toastDefault`(`lib/theme/app_spacing.dart`)로 추출해 두 위젯이 공유. 그 외(시각 스타일/접근성 wiring 등)는 각자 구현 유지.
+
+사유:
+Group B Task 6(`GlassToast` 신설) Review가 두 위젯이 같은 인터랙션을 중복 구현한 것 아니냐고 P1 지적 — `GlassToast`를 규정한 스펙(`docs/superpowers/specs/2026-07-21-multi-select-and-trash-design.md` §5, 2026-07-21 작성, review 2회 통과)이 작성된 시점엔 코드베이스에 Toast/SnackBar 패턴이 전혀 없어 "이 앱이 이미 쓰는 글래스 팔레트와 일관된 커스텀 위젯을 신설한다"고 명시적으로 결정했었다. `UndoableActionToast`는 그보다 나중(Group C Task 1, 2026-07-27, 설정 로그아웃용)에 별도로 생겨 겹쳐 보이게 됐을 뿐 — 실제로는 화면군(Glass 셸 vs plain Utility, `03_화면별UX명세서.md`의 페이지 타입 분류상 근거 있는 구분)이 달라 시각 언어가 다른 게 맞고, 통합하면 오히려 Glass 셸 화면에 어울리지 않는 기본 `SnackBar`가 노출되거나 Utility 화면에 불필요한 Glass 스타일이 들어가는 역효과가 생긴다. PM이 두 스펙 문서(Component Strategy/multi-select-and-trash-design)를 대조해 확정, 사용자 확인 없이 진행(근거가 이미 승인된 문서에 명시돼 있어 새로운 판단이 아니라 기존 결정의 적용).
+
+Impact:
+- `lib/widgets/glass_toast.dart` — 접근성(A13 라이브 리전) 추가, docstring에 공존 사유 명시
+- `lib/widgets/undoable_action_toast.dart` — `AppDurations.toastDefault` 참조로 소폭 변경(기존 동작 불변)
+- `lib/theme/app_spacing.dart` — `AppDurations` 클래스 신설
+- 향후 Task 7 이후(다중선택 삭제 플로우 실배선) 이 구분을 그대로 따를 것 — 헷갈리지 말고 Glass 셸 화면엔 `GlassToast`, Settings류 plain Utility 화면엔 `UndoableActionToast`
+
+[Decision] 설정 화면 최종 로우 구성 확정 — 프로필 편집 제외, 다크모드/휴지통/로그아웃 확정 (UI/Screen, Decision)
+
+결정:
+- `SettingsScreen` 최종 로우 구성을 4개(알림 토글, 다크모드 토글, 휴지통 진입, 로그아웃)로 확정. "일반"(알림/다크모드/휴지통) + "계정"(로그아웃) 2섹션.
+- "프로필 편집" 로우는 채택하지 않는다 — 이 앱에 사용자 프로필/로그인 개념 자체가 존재하지 않음(MVP 기획 어디에도 프로필 엔티티 없음). 기존 구현(`lib/screens/settings_screen.dart`)에 스펙 밖으로 임의 추가돼 있던 항목이었음.
+- 다크모드 로우는 유지하되, 이 결정은 **UI 토글 로우의 존재만** 확정한다 — 실제 `ThemeMode` 전환(현재 `main.dart`가 `ThemeMode.light` 고정)은 별도 Logic/Feature 구현 태스크로 분리, `BACKLOG.md`에 등록.
+- 휴지통 진입 로우 신설 — 기존에 이미 독립 존재하는 `TrashMainScreen`(`/trash`)으로의 진입 경로만 추가. 화면 신규 제작이나 라우트 재설계는 필요 없음(라우트가 이미 `settingsMain`/`trashMain`으로 분리돼 있어 구 스펙의 라우트 네이밍 충돌 우려는 이미 해소된 상태였음).
+- 로그아웃 로우는 2026-07-09 원 승인 스펙(§2/§3, Toast+Undo 패턴)을 그대로 채택 — 지금까지 미구현 상태였던 것을 이번에 실제 구현 대상으로 확정.
+- 위 결정에 따라 `docs/reference/plan/03_화면별UX명세서/04_설정.md` §2/§4/§6을 정정 각주 방식으로 갱신(원문은 취소선으로 보존).
+
+사유:
+`TechnicalDebt.md`에 P1로 기록돼 있던 "SettingsScreen이 승인 스펙과 어긋남" 항목(다크모드/프로필편집이 스펙 밖으로 추가돼 있고, 로그아웃 로우 자체가 없는 드리프트)의 최종 처리 방향을 사용자가 직접 결정 — 착수 조건이었던 "스펙대로 재구현 vs 현재 확장을 정식 스펙 갱신 대상으로 삼을지"에 대해 후자(확장 일부 정식 채택 + 프로필 편집만 제외)로 답함.
+
+Impact:
+- `docs/reference/plan/03_화면별UX명세서/04_설정.md`(스펙 갱신)
+- `docs/history/TechnicalDebt.md`(해당 P1 항목 해소 처리)
+- `docs/work/BACKLOG.md`(그룹 C 구현 태스크로 등록 — 화면 구현 + 다크모드 실동작 배선 + 프로필 편집 삭제 체크리스트)
+- 구현 대상(다음 세션): `lib/screens/settings_screen.dart`, `integration_test/closet_main_screen_test.dart`, `integration_test/settings_trash_shell_test.dart`
+
+Audit(2026-07-27, Decision-Stage 필수 게이트): P1 1건 — §4 문구가 "휴지통 복원/영구삭제/비우기가 이미 동작"하는 것처럼 읽혔으나 실제로는 `TrashMainScreen`의 해당 버튼이 전부 스텁(그룹 B Task 10 미착수)임을 지적, 즉시 정정 반영. 그 외 4개 파일 간 정합성/라우트 실재 여부/테스트 위치 전부 확인됨 — 확정.
+
+
 [Decision] 라우터+앵커 재통합 부분 롤백 — 5개 중 2개(핫패스 참조 문서)는 서브파일 구조로 복귀 (Data/Architecture, Decision — 바로 아래 "라우터+앵커 구조 부모 문서 5종을 단일 파일로 재통합" 항목의 스코프 축소)
 
 결정:

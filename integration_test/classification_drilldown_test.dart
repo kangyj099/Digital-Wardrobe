@@ -111,8 +111,9 @@ void main() {
   );
 
   testWidgets(
-    '옷장 메인: "옷 종류" 그룹 개요에서 "하의" 카드를 탭(드롭다운이 아니라)하면 드릴인되어 '
-    '그리드가 4개 타일로 바뀌고, 캡슐 소분류 텍스트가 자동으로 "하의"로 동기화된다',
+    '[갱신, Task 7 재검증] 옷장 메인: "옷 종류" 그룹 개요에서 "하의" 카드를 탭(드롭다운이 '
+    '아니라)하면 드릴인되어 그리드가 3개 타일로 바뀌고(c07도 bottom이었으나 이미 소프트삭제됨), '
+    '캡슐 소분류 텍스트가 자동으로 "하의"로 동기화된다',
     (tester) async {
       await pumpApp(tester);
 
@@ -120,7 +121,7 @@ void main() {
       await tapGroupCard(tester, '하의');
 
       expect(find.byType(ClassificationGroupCard), findsNothing);
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(4));
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
       expectSubDropdownShows(tester, '하의');
 
       // "전체 그룹 보기"로 되돌리는 것도 같은 provider(소분류 드롭다운)를 통해 동작해야 한다.
@@ -266,8 +267,11 @@ void main() {
   );
 
   testWidgets(
-    '코디 메인: "맑음" 카드 탭 시 comp01만 드릴인되고 캡슐 소분류 텍스트가 "맑음"으로 '
-    '동기화된다, "비" 카드 탭 시 comp02만 드릴인된다',
+    '[갱신, Task 7 재검증] 코디 메인: "맑음" 카드 탭 시 comp01만 드릴인되고 캡슐 소분류 '
+    '텍스트가 "맑음"으로 동기화된다, "비" 카드 탭 시 comp03만 드릴인된다(원래는 comp02가 '
+    '유일한 비-날씨 코디였으나, comp02가 이후 소프트삭제되어 `filteredCompositionsProvider`에서 '
+    '제외됨 — `mock_data.dart`를 확인해보면 comp03이 정확히 comp02와 동일하게 '
+    '`weather: Weather.rain`이면서 삭제되지 않은 상태라 이 자리를 이어받는다)',
     (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
@@ -287,7 +291,7 @@ void main() {
 
       await tapGroupCard(tester, '비');
       expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
-      expect(find.byKey(const ValueKey('comp02')), findsOneWidget);
+      expect(find.byKey(const ValueKey('comp03')), findsOneWidget);
       expectSubDropdownShows(tester, '비');
     },
   );
@@ -317,8 +321,10 @@ void main() {
   );
 
   testWidgets(
-    '코디 선택 모달(/composition/select)에서도 중분류 "날씨" → 카드 탭 드릴인이 정상 동작하고 '
-    '드릴인 상태에서도 미분류 카드는 없다',
+    '[갱신, Task 7 재검증] 코디 선택 모달(/composition/select)에서도 중분류 "날씨" → 카드 탭 '
+    '드릴인이 정상 동작하고 드릴인 상태에서도 미분류 카드는 없다("비" 카드 탭 시 comp03만 '
+    '드릴인된다 — comp02가 소프트삭제되어 comp03이 그 자리를 이어받음, 위 코디 메인 테스트와 '
+    '동일한 이유)',
     (tester) async {
       await pumpApp(tester);
 
@@ -334,7 +340,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionGalleryTile), findsNWidgets(1));
-      expect(find.byKey(const ValueKey('comp02')), findsOneWidget);
+      expect(find.byKey(const ValueKey('comp03')), findsOneWidget);
       expectSubDropdownShows(tester, '비');
     },
   );
@@ -342,14 +348,15 @@ void main() {
   // ── 중분류 재선택 시 소분류 초기화(사용자 지시, 2026-07-20) ──────────────────────
 
   testWidgets(
-    '옷장 메인: "옷 종류"에서 "하의"로 드릴인한 뒤 "계절"로 갔다가 다시 "옷 종류"로 '
-    '돌아오면, 예전에 골랐던 "하의"가 아니라 그룹 개요(카드 5장)로 초기화되어 있다',
+    '[갱신, Task 7 재검증] 옷장 메인: "옷 종류"에서 "하의"로 드릴인한 뒤 "계절"로 갔다가 '
+    '다시 "옷 종류"로 돌아오면, 예전에 골랐던 "하의"가 아니라 그룹 개요(카드 5장)로 초기화되어 '
+    '있다(하의 드릴인 개수는 c07이 이미 소프트삭제되어 4개→3개로 갱신)',
     (tester) async {
       await pumpApp(tester);
 
       await selectCriterion(tester, '옷 종류');
       await tapGroupCard(tester, '하의');
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(4));
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(3));
 
       await selectCriterion(tester, '계절');
       expect(find.byType(ClassificationGroupCard), findsWidgets); // 계절도 그룹 개요로 시작
@@ -357,7 +364,7 @@ void main() {
       await selectCriterion(tester, '옷 종류');
 
       expect(tester.takeException(), isNull);
-      // 버그였다면 여기서 SelectableGalleryTile 4개(예전 "하의" 드릴인)가 곧장 다시
+      // 버그였다면 여기서 SelectableGalleryTile 3개(예전 "하의" 드릴인)가 곧장 다시
       // 나타났을 것 — 그룹 개요(카드 5장)로 초기화되어 있어야 한다.
       expect(find.byType(ClassificationGroupCard), findsNWidgets(5));
       expect(find.byType(SelectableGalleryTile), findsNothing);

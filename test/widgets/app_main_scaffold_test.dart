@@ -191,4 +191,16 @@ void main() {
       expect(onlyRow1, lessThan(withSecondary));
     });
   });
+
+  testWidgets('bottomFloatingActions에 넘긴 위젯들이 하단에 렌더링된다', (tester) async {
+    await pumpAt(
+      tester,
+      mainBuilder: (context) => AppMainScaffold(
+        current: AppCategory.closet,
+        bottomFloatingActions: const [Text('삭제')],
+        body: const SizedBox.shrink(),
+      ),
+    );
+    expect(find.text('삭제'), findsOneWidget);
+  });
 }

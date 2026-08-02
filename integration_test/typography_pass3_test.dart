@@ -5,14 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
-import 'package:digittal_wardrobe/screens/closet_main_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
 import 'package:digittal_wardrobe/screens/style_log_main_screen.dart';
 import 'package:digittal_wardrobe/theme/app_typography.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/selectable_gallery_tile.dart';
 import 'package:digittal_wardrobe/widgets/status_badge.dart';
-import 'package:digittal_wardrobe/widgets/style_log_gallery_tile.dart';
 
 /// Typography Pass 3 확정값(Decision.md) 실 구동 검증. Review 통과분(findings 없음) 대상
 /// Tester 시나리오 — Review는 정적 분석(값 일치, `flutter analyze` 클린, `actionMinimal`의
@@ -177,7 +175,9 @@ void main() {
       expect(delegate.crossAxisCount, 4, reason: '밀도 전환이 의도대로 최대(4열)에 도달했는지 사전 확인.');
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(SelectableGalleryTile), findsNWidgets(12));
+      // mock 옷장 데이터는 12개(c01~c12)지만 c07/c08은 소프트 삭제(isDeleted: true)되어 휴지통으로
+      // 이동해 옷장 그리드에서 제외된다(Group B) — 그리드에 실제로 렌더되는 타일은 12개가 아니라 10개.
+      expect(find.byType(SelectableGalleryTile), findsNWidgets(10));
       expect(find.byType(StatusBadge), findsOneWidget);
 
       // 모든 타일의 라벨박스(ConstrainedBox)가 자기 타일 경계를 넘지 않는지 전수 확인
@@ -254,23 +254,50 @@ void main() {
     },
   );
 
-  // ── 3) 비정형 사용 흐름 — 화면 이동 중 "선택" 버튼 반복 탭 ─────────────────────────
+  // ── 3) 비정형 사용 흐름 — 화면 이동을 끼워 "선택" 버튼을 반복 탭 ────────────────────
 
   testWidgets(
-    '[비정형 사용 흐름] "선택" 버튼을 화면 전환 직전/직후 빠르게 연속 탭해도(현재는 no-op '
-    'onPressed) 크래시 없이 정상 렌더 유지된다',
+    '[비정형 사용 흐름] "선택" 버튼 탭은 no-op이 아니라 다중선택 모드 진입 액션이다 — 탭 시 '
+    '헤더가 "N개 선택"+닫기 버튼으로 바뀌고, 닫기로 나가면 actionMinimal "선택" 버튼이 '
+    '복원되며, 화면 전환 후에도(코디 메인) 같은 흐름이 크래시 없이 재현된다',
     (tester) async {
       await pumpApp(tester);
 
+      // 최초 상태: "선택" 버튼(actionMinimal)이 렌더된다.
+      expectActionMinimalRendered(tester);
+
+      // 탭 1회 → 다중선택 모드 진입. onPressed가 실제로 setState(_multiSelectMode = true)를
+      // 실행하므로 "선택" 텍스트버튼은 사라지고 "0개 선택" 필+닫기 버튼으로 교체된다.
       await tester.tap(find.text('선택'));
-      await tester.tap(find.text('선택'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('선택'), findsNothing);
+      expect(find.text('0개 선택'), findsOneWidget);
+      expect(find.byTooltip('닫기'), findsOneWidget);
+
+      // 닫기 버튼으로 다중선택 모드를 빠져나오면 "선택" 버튼(actionMinimal)이 복원된다.
+      await tester.tap(find.byTooltip('닫기'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('0개 선택'), findsNothing);
+      expectActionMinimalRendered(tester);
+
+      // 화면 전환(코디 메인) 후에도 같은 진입 흐름이 재현된다 — 새 화면 인스턴스라
+      // `_multiSelectMode`는 false로 초기화된 상태에서 시작한다.
       await goToCategory(tester, '코디');
+      expect(find.byType(CompositionMainScreen), findsOneWidget);
+      expectActionMinimalRendered(tester);
+
       await tester.tap(find.text('선택'));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionMainScreen), findsOneWidget);
-      expectActionMinimalRendered(tester);
+      expect(find.text('선택'), findsNothing);
+      expect(find.text('0개 선택'), findsOneWidget);
+      expect(find.byTooltip('닫기'), findsOneWidget);
     },
   );
 }

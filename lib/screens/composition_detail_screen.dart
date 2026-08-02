@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/clothing_item.dart';
 import '../models/enums.dart';
 import '../providers/closet_providers.dart';
 import '../providers/composition_providers.dart';
 import '../providers/style_log_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/glass_toast.dart';
+import '../widgets/status_badge.dart';
 import '../widgets/style_log_cross_reference_gallery.dart';
 import 'app_detail_scaffold.dart';
 
@@ -31,14 +34,19 @@ class CompositionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final composition = ref.watch(compositionsProvider).firstWhere((c) => c.id == compositionId);
     final closetItems = ref.watch(closetItemsProvider);
-    final usedItems = [
+    final usedItems = <ClothingItem>[
       for (final placement in composition.items)
-        closetItems.firstWhere((item) => item.id == placement.clothingItemId),
+        ...closetItems.where((item) => item.id == placement.clothingItemId),
     ];
     final linkedStyleLogs = ref.watch(styleLogsLinkedToCompositionProvider(compositionId));
 
     return AppDetailScaffold(
       category: AppCategory.composition,
+      onDelete: () {
+        ref.read(compositionsProvider.notifier).softDeleteMany({compositionId});
+        context.pop();
+        GlassToast.show(context, message: '휴지통으로 이동됨');
+      },
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -62,17 +70,32 @@ class CompositionDetailScreen extends ConsumerWidget {
                   final item = usedItems[index];
                   return GestureDetector(
                     key: ValueKey(item.id),
-                    onTap: () =>
-                        context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
+                    onTap: item.isDeleted
+                        ? null
+                        : () =>
+                            context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id)),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
                           width: 72,
                           height: 72,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            child: Image.asset(item.imagePath, fit: BoxFit.cover),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  child: Image.asset(item.imagePath, fit: BoxFit.cover),
+                                ),
+                              ),
+                              if (item.isDeleted)
+                                const Positioned(
+                                  top: AppSpacing.xxs,
+                                  left: AppSpacing.xxs,
+                                  child: StatusBadge(label: '삭제됨'),
+                                ),
+                            ],
                           ),
                         ),
                         SizedBox(

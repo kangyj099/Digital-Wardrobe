@@ -12,6 +12,9 @@ class CompositionGalleryGrid extends StatelessWidget {
     required this.compositions,
     required this.density,
     required this.onItemTap,
+    this.onItemLongPress,
+    this.multiSelectMode = false,
+    this.selectedIds = const {},
     this.controller,
     this.topSpacing = 0,
   });
@@ -19,6 +22,16 @@ class CompositionGalleryGrid extends StatelessWidget {
   final List<Composition> compositions;
   final int density;
   final void Function(Composition composition) onItemTap;
+
+  /// [CompositionGalleryTile.onLongPress]로 그대로 전달 — 다중선택 모드 진입 트리거.
+  final void Function(Composition composition)? onItemLongPress;
+
+  /// [CompositionGalleryTile.multiSelectMode]로 그대로 전달.
+  final bool multiSelectMode;
+
+  /// 선택된 항목 id 집합 — [CompositionGalleryTile.selected]로 `composition.id` 포함 여부를
+  /// 변환해 전달.
+  final Set<String> selectedIds;
 
   /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
   final ScrollController? controller;
@@ -39,6 +52,9 @@ class CompositionGalleryGrid extends StatelessWidget {
           key: ValueKey(composition.id),
           composition: composition,
           onTap: () => onItemTap(composition),
+          onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(composition),
+          multiSelectMode: multiSelectMode,
+          selected: selectedIds.contains(composition.id),
         );
       },
     );

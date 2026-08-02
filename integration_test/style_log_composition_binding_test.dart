@@ -103,9 +103,9 @@ void main() {
         expect(hasAssetImage('assets/images/mock/IMG_4259_preview_rev_1.png'), isTrue,
             reason: '커버 이미지(log01.coverImagePath)');
         expect(hasAssetImage('assets/images/mock/IMG_4262_preview_rev_1.png'), isTrue,
-            reason: '추가 사진 1장(log01.additionalImagePaths[0])');
+            reason: '추가 사진 1장(log01.wornItemIds[0] == c11.imagePath)');
         expect(hasAssetImage('assets/images/mock/IMG_4275.PNG'), isTrue,
-            reason: '추가 사진 2장(log01.additionalImagePaths[1])');
+            reason: '추가 사진 2장(log01.wornItemIds[1] == c07.imagePath)');
         expect(tester.takeException(), isNull);
 
         // "착용 옷" 섹션 라벨과 그 가로 스트립(ListView)이 실제로 존재한다(Task 8에서
@@ -122,9 +122,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
 
-        // "착용 옷" 첫 이미지(log01.additionalImagePaths[0] == c11.imagePath)를 탭하면
-        // 실제로 c11(그래픽 맨투맨) 상세로 이동한다(역방향 매칭 — mock_data.dart 데이터
-        // 정합성으로 확인됨).
+        // "착용 옷" 첫 이미지(log01.wornItemIds[0] == 'c11')를 탭하면 실제로 c11(그래픽
+        // 맨투맨) 상세로 이동한다.
         await tester.tap(find.byWidgetPredicate(
           (w) =>
               w is Image &&
@@ -252,9 +251,14 @@ void main() {
 
   group('미연결 스타일일지 — 실제 코디 선택 모달을 통한 바인딩 End-to-End', () {
     testWidgets(
+      // [갱신, Task 7 이후 comp02 소프트삭제] 원래 comp02 타일을 탭해 검증했으나, 이 선택
+      // 모달도 코디 메인과 동일한 `filteredCompositionsProvider`(isDeleted 필터)를 쓴다는
+      // 것을 실측 확인(`composition_main_screen.dart`) — comp02는 여기서도 안 보인다.
+      // comp03(레인 코디)으로 교체해도 "미연결 로그에 코디 선택 모달로 바인딩"이라는 검증
+      // 의도는 동일하게 유지된다.
       'mock엔 미연결 로그가 없어 격리 추가한다 — "+코디 연결하기" 탭 → 실제 '
-      'CompositionMainScreen(selectionMode:true)가 열리고 → comp02 타일 탭 → pop되어 '
-      'CompositionPreviewCard(포멀 코디)로 바뀌고 styleLogsProvider 상태가 실제로 갱신된다',
+      'CompositionMainScreen(selectionMode:true)가 열리고 → comp03 타일 탭 → pop되어 '
+      'CompositionPreviewCard(레인 코디)로 바뀌고 styleLogsProvider 상태가 실제로 갱신된다',
       (tester) async {
         final container = await pumpApp(tester);
         final unlinkedLog = StyleLog(
@@ -287,19 +291,19 @@ void main() {
         expect(find.byTooltip('닫기'), findsOneWidget); // 선택 모달 — 닫기 버튼으로 교체됨.
         expect(find.byType(CompositionGalleryTile), findsNWidgets(2));
 
-        await tester.tap(find.byKey(const ValueKey('comp02')));
+        await tester.tap(find.byKey(const ValueKey('comp03')));
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
         expect(find.byType(CompositionMainScreen), findsNothing);
         expect(find.byType(StyleLogViewerScreen), findsOneWidget);
         expect(find.byType(CompositionPreviewCard), findsOneWidget);
-        expect(find.textContaining('포멀 코디'), findsOneWidget);
+        expect(find.textContaining('레인 코디'), findsOneWidget);
         expect(find.text('코디 연결하기'), findsNothing);
 
         final updatedLog =
             container.read(styleLogsProvider).firstWhere((l) => l.id == 'test-unlinked-log');
-        expect(updatedLog.linkedCompositionId, 'comp02');
+        expect(updatedLog.linkedCompositionId, 'comp03');
       },
     );
 

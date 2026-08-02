@@ -160,27 +160,62 @@ void main() {
     );
 
     testWidgets(
-      '"전체 데이터 삭제" 로우는 승인된 스펙(`04_설정.md`)에 없어 제거되었다 — 텍스트/다이얼로그 '
-      '모두 존재하지 않고, 나머지 화면은 크래시 없이 정상 렌더링된다(회귀 확인)',
+      '[갱신, 2026-07-27] "전체 데이터 삭제"/"프로필 편집" 로우는 모두 최종 확정 스펙'
+      '(`04_설정.md`)에 없어 제거되었다 — 텍스트/다이얼로그 모두 존재하지 않고, 나머지 화면은 '
+      '크래시 없이 정상 렌더링된다(회귀 확인)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.settingsMain);
 
         expect(tester.takeException(), isNull);
         expect(find.text('전체 데이터 삭제'), findsNothing);
+        expect(find.text('프로필 편집'), findsNothing);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('알림'), findsOneWidget);
         expect(find.text('다크 모드'), findsOneWidget);
-        expect(find.text('프로필 편집'), findsOneWidget);
+        expect(find.text('휴지통'), findsOneWidget);
+        expect(find.text('로그아웃'), findsOneWidget);
       },
     );
 
-    testWidgets('"프로필 편집" 로우를 탭해도 크래시 없이 같은 화면에 남아있다(진입 로직 no-op, Step⑦ 몫)', (tester) async {
+    testWidgets('"휴지통" 로우를 탭하면 실제로 TrashMainScreen(`/trash`)으로 진입한다', (tester) async {
       await pumpAppAndPush(tester, AppRoute.settingsMain);
 
-      await tester.tap(find.text('프로필 편집'));
+      await tester.tap(find.text('휴지통'));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+      expect(find.byType(TrashMainScreen), findsOneWidget);
+    });
+
+    testWidgets(
+      '"로그아웃" 로우를 탭하면 크래시 없이 실행취소 액션이 있는 Toast(SnackBar)가 뜨고, '
+      '같은 화면(SettingsScreen)에 남아있다(별도 화면 전환 없음, `04_설정.md` §3)',
+      (tester) async {
+        await pumpAppAndPush(tester, AppRoute.settingsMain);
+
+        await tester.tap(find.text('로그아웃'));
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(SettingsScreen), findsOneWidget);
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(find.text('로그아웃되었습니다'), findsOneWidget);
+        expect(find.text('실행취소'), findsOneWidget);
+      },
+    );
+
+    testWidgets('로그아웃 Toast의 "실행취소"를 탭하면 크래시 없이 Toast가 닫힌다', (tester) async {
+      await pumpAppAndPush(tester, AppRoute.settingsMain);
+
+      await tester.tap(find.text('로그아웃'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.tap(find.text('실행취소'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SnackBar), findsNothing);
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
 
@@ -214,7 +249,10 @@ void main() {
 
   group('TrashMainScreen', () {
     testWidgets(
-      'mock 4개 항목이 크래시 없이 썸네일 그리드로 렌더링되고("N일" 오버레이 포함), 카테고리 '
+      '[갱신, Task 7 재검증] mock 3개 항목(c07/c08/comp02 — comp02는 소프트삭제된 코디, '
+      '나머지 둘은 소프트삭제된 옷)이 크래시 없이 썸네일 그리드로 렌더링되고("N일" 오버레이 '
+      '포함: c07=12일(3일 전 삭제), c08=0일(20일 전 삭제 → 15일 보존기간 초과분은 '
+      '`_daysUntilPurge`가 0으로 clamp), comp02=10일(5일 전 삭제)), 카테고리 '
       '토글은 렌더링되지 않으며(Main-플랫+필터형, showCategoryToggle:false, current 더미값이 실제로 '
       '영향 없음), 뒤로가기 버튼은 나타나며 탭하면 실제 pop되어 옷장 메인으로 돌아간다',
       (tester) async {
@@ -223,11 +261,10 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.byType(TrashMainScreen), findsOneWidget);
         expect(find.byType(CategoryToggleDropdown), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
         expect(find.text('12일'), findsOneWidget);
-        expect(find.text('5일'), findsOneWidget);
-        expect(find.text('27일'), findsOneWidget);
-        expect(find.text('1일'), findsOneWidget);
+        expect(find.text('10일'), findsOneWidget);
+        expect(find.text('0일'), findsOneWidget);
 
         expect(backButtonFinder(), findsOneWidget);
         await tester.tap(backButtonFinder());
@@ -239,19 +276,24 @@ void main() {
     );
 
     testWidgets(
-      '"선택"과 "비우기"는 물리적으로 독립된 GlassPill 2개이며(Header/HUD Pinned Rule), 각각 '
-      '독립적으로 탭 가능하다 — "선택"(no-op 스텁)을 먼저 탭해도 "비우기"의 확인 다이얼로그 '
-      '동작에 영향을 주지 않는다',
+      '[갱신, Task 10] "선택"과 "비우기"는 물리적으로 독립된 GlassPill이며(Header/HUD Pinned '
+      'Rule), 각각 독립적으로 탭 가능하다 — "선택"(다중선택 모드 진입)을 먼저 탭해 들어갔다가 '
+      '"닫기"로 빠져나와도 "비우기"의 확인 다이얼로그 동작에 영향을 주지 않는다. 헤더 액션 '
+      '2개("선택"/"비우기") + Row2 카테고리 필터칩 4개(전체/옷장/코디/스타일일지)가 모두 독립된 '
+      'GlassPill이라 총 6개다(Task 10에서 카테고리 필터칩이 새로 추가됨)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
-        expect(find.byType(GlassPill), findsNWidgets(2));
+        expect(find.byType(GlassPill), findsNWidgets(6));
 
         await tester.tap(find.text('선택'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNWidgets(3));
+
+        await tester.tap(find.text('닫기'));
+        await tester.pumpAndSettle();
 
         await tester.tap(find.text('비우기'));
         await tester.pumpAndSettle();
@@ -260,8 +302,8 @@ void main() {
     );
 
     testWidgets(
-      '"비우기" 탭 시 강한 확인 다이얼로그가 뜨고, 확인을 눌러도 실제 삭제 없이 그리드 4개 '
-      '항목이 그대로 남는다(no-op)',
+      '[갱신, Task 10] "비우기" 탭 시 강한 확인 다이얼로그가 뜨고, 확인을 누르면 실제로 전체 '
+      '삭제되어 그리드가 빈다(Task 10 이전엔 no-op 스텁이었으나 이제 실제 실행됨)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
@@ -269,13 +311,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(AlertDialog), findsOneWidget);
-        expect(find.text('정말 비우시겠습니까? 휴지통의 모든 항목이 영구 삭제됩니다.'), findsOneWidget);
+        expect(find.text('전체 3개 항목을 영구 삭제하시겠어요? 되돌릴 수 없어요'), findsOneWidget);
 
         await tester.tap(find.text('비우기').last); // 다이얼로그 내부 확인 버튼
         await tester.pumpAndSettle();
 
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        expect(find.byType(TrashGalleryTile), findsNothing);
       },
     );
 
@@ -288,12 +330,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+      expect(find.byType(TrashGalleryTile), findsNWidgets(3));
     });
 
     testWidgets(
-      '그리드 타일 탭 시 상세 페이지 전환이 아니라 정보 바텀시트가 뜨고, 복원/영구삭제 버튼을 '
-      '눌러도 항목이 그리드에서 사라지지 않으며 어떤 상세 화면으로도 전환되지 않는다(no-op)',
+      '[갱신, Task 10] 그리드 타일 탭 시 상세 페이지 전환이 아니라 이미지+제작일이 포함된 정보 '
+      '바텀시트가 뜨고, [복원]을 누르면 실제로 복원되어 시트가 닫히고 그리드에서 사라지며 '
+      '어떤 상세 화면으로도 전환되지 않는다(Task 10 이전엔 no-op 스텁이었으나 이제 실제 실행됨)',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
@@ -302,25 +345,18 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('옷장 · 영구 삭제까지 12일'), findsOneWidget);
+        expect(find.byType(Image), findsWidgets);
         expect(find.text('복원'), findsOneWidget);
         expect(find.text('영구 삭제'), findsOneWidget);
 
         await tester.tap(find.text('복원'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        // no-op이라 시트가 닫히지 않고 그대로 열려 있어야 한다.
-        expect(find.text('영구 삭제'), findsOneWidget);
 
-        await tester.tap(find.text('영구 삭제'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-
-        // 바텀시트를 닫고(모달 라우트 pop) 그리드가 4개 그대로인지, 어떤 상세 화면으로도
-        // 전환되지 않았는지 확인한다.
-        Navigator.of(tester.element(find.text('복원'))).pop();
-        await tester.pumpAndSettle();
-
-        expect(find.byType(TrashGalleryTile), findsNWidgets(4));
+        // 실제 복원이라 시트가 닫히고, 그리드에서도 사라져 3개→2개가 된다. [갱신, Task 7
+        // 재검증] mock 삭제 항목이 실제로는 c07/c08/comp02 3개뿐임.
+        expect(find.text('영구 삭제'), findsNothing);
+        expect(find.byType(TrashGalleryTile), findsNWidgets(2));
         expect(find.byType(ClosetItemDetailScreen), findsNothing);
         expect(find.byType(CompositionDetailScreen), findsNothing);
         expect(find.byType(StyleLogViewerScreen), findsNothing);
@@ -343,7 +379,10 @@ void main() {
 
         expect(topOpacity(tester), 0);
 
-        await tester.drag(find.byType(GridView), const Offset(0, -80));
+        // [갱신, Task 10] Row2(카테고리 필터칩)가 추가되며 Content Spacer/topHintThreshold가
+        // 64→120으로 늘어나(hasSecondaryRow: true), 기존 드래그량(80)으로는 더 이상 임계값을
+        // 넘지 못한다 — 임계값을 확실히 넘도록 드래그량을 늘린다.
+        await tester.drag(find.byType(GridView), const Offset(0, -160));
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);

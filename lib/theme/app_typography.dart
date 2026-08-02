@@ -40,12 +40,12 @@ class AppTypography {
       titleLarge: style(pretendard, 22, FontWeight.w600),
       titleMedium: style(pretendard, 16, FontWeight.w600),
       titleSmall: style(pretendard, 14, FontWeight.w600),
-      bodyLarge: style(pretendard, 16, FontWeight.w500),
-      bodyMedium: style(pretendard, 14, FontWeight.w500),
+      bodyLarge: style(pretendard, 20, FontWeight.w500),
+      bodyMedium: style(pretendard, 16, FontWeight.w500),
       bodySmall: style(pretendard, 12, FontWeight.w500),
-      labelLarge: style(pretendard, 14, FontWeight.w500),
-      labelMedium: style(pretendard, 12, FontWeight.w500),
-      labelSmall: style(pretendard, 13, FontWeight.w500),
+      labelLarge: style(pretendard, 16, FontWeight.w500),
+      labelMedium: style(pretendard, 14, FontWeight.w500),
+      labelSmall: style(pretendard, 12, FontWeight.w500),
     );
   }
 }

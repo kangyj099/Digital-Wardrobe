@@ -12,6 +12,9 @@ class GroupedGalleryGrid extends StatelessWidget {
     required this.density,
     required this.onItemTap,
     this.onIncompleteTap,
+    this.onItemLongPress,
+    this.multiSelectMode = false,
+    this.selectedIds = const {},
     this.controller,
     this.topSpacing = 0,
   });
@@ -23,6 +26,15 @@ class GroupedGalleryGrid extends StatelessWidget {
   /// [SelectableGalleryTile.onIncompleteTap]으로 그대로 전달 — null(기본)이면 미완성
   /// 항목 탭이 비활성화된 기존 동작 유지. 선택 모달(`selectionMode`)에서만 채워진다.
   final void Function(ClothingItem item)? onIncompleteTap;
+
+  /// [SelectableGalleryTile.onLongPress]로 그대로 전달 — 다중선택 모드 진입 트리거.
+  final void Function(ClothingItem item)? onItemLongPress;
+
+  /// [SelectableGalleryTile.multiSelectMode]로 그대로 전달.
+  final bool multiSelectMode;
+
+  /// 선택된 항목 id 집합 — [SelectableGalleryTile.selected]로 `item.id` 포함 여부를 변환해 전달.
+  final Set<String> selectedIds;
 
   /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
   final ScrollController? controller;
@@ -44,6 +56,9 @@ class GroupedGalleryGrid extends StatelessWidget {
           item: item,
           onTap: () => onItemTap(item),
           onIncompleteTap: onIncompleteTap == null ? null : () => onIncompleteTap!(item),
+          onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(item),
+          multiSelectMode: multiSelectMode,
+          selected: selectedIds.contains(item.id),
         );
       },
     );

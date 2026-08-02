@@ -16,7 +16,7 @@ void main() {
     expect(container.read(compositionGridDisplayStateProvider), CompositionGridDisplayState.groupOverview);
   });
 
-  test('계절 미분류로 드릴인하면 season이 null인 코디만 남는다(mock comp02)', () {
+  test('계절 미분류로 드릴인하면 season이 null인 코디만 남는다(mock comp03)', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 

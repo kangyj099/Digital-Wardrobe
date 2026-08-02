@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../models/clothing_item.dart';
 import '../models/enums.dart';
 import '../providers/classification_models.dart';
 import '../providers/closet_providers.dart';
+import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
-import '../widgets/app_main_scaffold.dart';
-import '../widgets/app_scroll_container.dart';
-import '../widgets/classification_drilldown_capsule.dart';
 import '../widgets/classification_group_grid.dart';
 import '../widgets/expandable_add_fab.dart';
-import '../widgets/glass_circle_button.dart';
+import '../widgets/gallery_main_screen.dart';
+import '../widgets/glass_toast.dart';
 import '../widgets/grouped_gallery_grid.dart';
 import '../widgets/selection_aware_header_actions.dart';
 
-/// [selectionMode]가 true면 별도 화면을 새로 만들지 않고 이 Main 화면을 "선택 모달"로
-/// 재호출한다 — 기능 재사용 원칙(`_공통 규칙.md`), 표는
-/// `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 "선택 모달(옷장/
-/// 코디 재호출)" 행. 뒤로가기/카테고리 토글/FAB은 숨기고 헤더 우상단은 "선택"(다중선택)
-/// 대신 닫기(X) 버튼으로 바뀐다. 분류 기준 캡슐은 원 화면과 동일 사양으로 유지된다(표에
-/// 명시된 예외).
 class ClosetMainScreen extends ConsumerStatefulWidget {
   const ClosetMainScreen({super.key, this.selectionMode = false, this.onItemSelected});
 
@@ -35,98 +29,102 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
   @override
   Widget build(BuildContext context) {
     final criterion = ref.watch(closetSortCriterionProvider);
-    // 전역 단순 규칙(Task 3/4에서 확정) — ascending은 모든 기준에서 그대로 "화면에 보이는
-    // 방향"과 같다(기준별 반전 없음), 그래서 버튼 아이콘/툴팁도 이 값을 그대로 쓴다.
     final ascending = ref.watch(closetSortAscendingProvider);
     final displayState = ref.watch(closetGridDisplayStateProvider);
     final density = ref.watch(closetDensityProvider);
+    final items = ref.watch(filteredClosetItemsProvider);
+    final groups = ref.watch(closetGroupSummariesProvider);
 
     final singleLabel = criterion == ClosetSortCriterion.all ? '한 장 추가하기' : '이 분류에 한 장 추가하기';
     final multiLabel = criterion == ClosetSortCriterion.all ? '여러 장 추가하기' : '이 분류에 여러 장 추가하기';
 
-    // Content Spacer(스펙 §4) — Row1(카테고리 토글/선택) + Row2(캡슐/밀도/◎ 스텁) 높이만
-    // 합산한다(groupingBar 밴드는 삭제됨 — 캡슐은 Row2 안의 floating pill이라 별도 밴드가
-    // 필요 없음).
-    final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: true);
-
-    return AppMainScaffold(
+    return GalleryMainScreen<ClothingItem>(
       current: AppCategory.closet,
+      items: items,
+      itemId: (item) => item.id,
       showBackButton: !widget.selectionMode,
       showCategoryToggle: !widget.selectionMode,
+      selectionMode: widget.selectionMode,
       headerActions: buildSelectionAwareHeaderActions(
         selectionMode: widget.selectionMode,
         onClose: () => context.pop(),
       ),
-      // 이 화면이 옷장의 메인이라는 신호 — 헤더 드롭다운에서 "옷장"을 다시 골라도
-      // 네비게이션 없이 이 콜백만 호출된다(사용자 지시, 2026-07-20).
       onReselectCurrentCategory: () {
         ref.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.all;
         _resetAllDrilldowns(ref);
       },
-      secondaryControlsLeft: [
-        ClassificationDrilldownCapsule(
-          criterionLabels: [for (final c in ClosetSortCriterion.values) c.label],
-          selectedCriterionIndex: criterion.index,
-          onCriterionChanged: (index) {
-            ref.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.values[index];
-            _resetAllDrilldowns(ref);
-          },
-          hasSubClassification: criterion.hasSubClassification,
-          subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
-          subOptionLabels: _subOptionLabels(ref, criterion),
-          selectedSubOptionIndex: _selectedSubOptionIndex(ref, criterion),
-          onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
-          onClearSubSelection: () => _clearDrilldown(ref, criterion),
-        ),
-        GlassCircleButton(
-          icon: ascending ? Icons.arrow_upward : Icons.arrow_downward,
-          tooltip: ascending ? '오름차순' : '내림차순',
-          onTap: () => ref.read(closetSortAscendingProvider.notifier).state = !ascending,
-        ),
-      ],
-      secondaryControlsRight: [
-        GlassCircleButton(
-          icon: AppDensity.iconFor(density),
-          tooltip: '그리드 밀도 전환',
-          onTap: () {
-            final current = ref.read(closetDensityProvider);
-            final currentIndex = AppDensity.levels.indexOf(current);
-            final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
-            ref.read(closetDensityProvider.notifier).state = AppDensity.levels[previousIndex];
-          },
-        ),
-      ],
-      body: AppScrollContainer(
-        topHintThreshold: contentTopSpacing,
-        builder: (context, controller) {
-          if (displayState == ClosetGridDisplayState.groupOverview) {
-            final groups = ref.watch(closetGroupSummariesProvider);
-            return ClassificationGroupGrid(
-              groups: groups,
-              density: density,
-              controller: controller,
-              topSpacing: contentTopSpacing,
-              onGroupTap: (group) => _drillIntoValue(ref, criterion, group.value),
-            );
-          }
-          final items = ref.watch(filteredClosetItemsProvider);
-          return GroupedGalleryGrid(
-            items: items,
+      classification: ClassificationConfig<ClothingItem>(
+        criterionLabels: [for (final c in ClosetSortCriterion.values) c.label],
+        selectedCriterionIndex: criterion.index,
+        onCriterionChanged: (index) {
+          ref.read(closetSortCriterionProvider.notifier).state = ClosetSortCriterion.values[index];
+          _resetAllDrilldowns(ref);
+        },
+        hasSubClassification: criterion.hasSubClassification,
+        subHint: criterion.hasSubClassification ? criterion.subClassificationHint : null,
+        subOptionLabels: _subOptionLabels(ref, criterion),
+        selectedSubOptionIndex: _selectedSubOptionIndex(ref, criterion),
+        onSubOptionSelected: (index) => _drillInto(ref, criterion, index),
+        onClearSubSelection: () => _clearDrilldown(ref, criterion),
+        density: density,
+        // 전달받은 `current` 인자를 그대로 쓰지 않고 여기서 다시 ref.read로 최신값을
+        // 조회한다 — `GalleryMainScreen`의 밀도 버튼 onTap이 `widget.classification!.density`
+        // (직전 build 시점 스냅샷)를 캡처해 넘기므로, 프레임 반영 없이 연속 탭하면(리빌드가
+        // 끼어들지 않으면) 두 번째 탭도 같은 스냅샷을 넘겨받아 순환이 깨진다(stale-closure
+        // race, commit 10d3643이 고친 것과 동일한 버그가 GalleryMainScreen 도입으로
+        // 재발했었음 — 옷장 메인 회귀테스트가 실제로 이 재발을 잡아냄, 2026-07-28).
+        // ref.read로 탭 시점 최신 상태를 직접 조회하면 이 스냅샷 지연과 무관해진다.
+        onDensityChanged: (_) {
+          final latest = ref.read(closetDensityProvider);
+          final currentIndex = AppDensity.levels.indexOf(latest);
+          final previousIndex = currentIndex - 1 < 0 ? AppDensity.levels.length - 1 : currentIndex - 1;
+          ref.read(closetDensityProvider.notifier).state = AppDensity.levels[previousIndex];
+        },
+        ascending: ascending,
+        // 위 onDensityChanged와 동일한 이유로 전달받은 `value`(스냅샷 기반 `!ascending`)를
+        // 그대로 쓰지 않고, ref.read로 최신 상태를 다시 읽어 반전한다.
+        onAscendingChanged: (_) =>
+            ref.read(closetSortAscendingProvider.notifier).state = !ref.read(closetSortAscendingProvider),
+      ),
+      onItemTap: (item) {
+        if (widget.selectionMode) {
+          widget.onItemSelected?.call(item.id);
+        } else {
+          context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id));
+        }
+      },
+      onDeleteSelected: (ids) => _confirmAndDelete(context, ref, ids),
+      gridBuilder: ({
+        required density,
+        required controller,
+        required topSpacing,
+        required multiSelectMode,
+        required selectedIds,
+        required onItemTap,
+        required onItemLongPress,
+      }) {
+        if (displayState == ClosetGridDisplayState.groupOverview) {
+          return ClassificationGroupGrid(
+            groups: groups,
             density: density,
             controller: controller,
-            topSpacing: contentTopSpacing,
-            onItemTap: (item) {
-              if (widget.selectionMode) {
-                widget.onItemSelected?.call(item.id);
-              } else {
-                context.push(AppRoute.closetItemDetail.replaceFirst(':id', item.id));
-              }
-            },
-            onIncompleteTap: widget.selectionMode ? (item) => context.push(AppRoute.closetAdd) : null,
+            topSpacing: topSpacing,
+            onGroupTap: (group) => _drillIntoValue(ref, criterion, group.value),
           );
-        },
-      ),
-      floatingActionButton: widget.selectionMode
+        }
+        return GroupedGalleryGrid(
+          items: items,
+          density: density,
+          controller: controller,
+          topSpacing: topSpacing,
+          multiSelectMode: multiSelectMode,
+          selectedIds: selectedIds,
+          onItemTap: onItemTap,
+          onItemLongPress: onItemLongPress,
+          onIncompleteTap: widget.selectionMode ? (item) => context.push(AppRoute.closetAdd) : null,
+        );
+      },
+      fab: widget.selectionMode
           ? null
           : ExpandableAddFab(
               options: [
@@ -137,10 +135,37 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     );
   }
 
-  // 날짜·시간의 소분류(연도)는 고정 옵션이 아니라 실제 데이터에서 나온 그룹 목록이라,
-  // closetGroupSummariesProvider를 그대로 라벨 소스로 쓴다 — 그룹 카드 탭과 드롭다운 직접
-  // 선택이 정확히 같은 순서/값 집합을 참조하게 되어(스펙 §3.1 "두 진입 경로가 같은 상태로
-  // 수렴한다") 드릴인 후 캡슐 텍스트도 자동으로 맞아떨어진다(Review 지적 P0 해결).
+  /// 스펙(`05_삭제 & 휴지통.md` 42행)이 요구하는 사전 경고 — 선택된 옷 중 코디에 쓰이는
+  /// 게 있으면 확인을 받는다. "각 코디는 다음 편집 시 자동으로 제거돼요"라는 캐스케이드
+  /// 자동정리 약속은 "Editor Draft 구현" 후속 작업 전까지 실제로 없으므로 문구에서 뺀다
+  /// (프로젝트 홀리스틱 Audit 지적, 2026-07-21 — 이 단순 경고 자체는 Group B 스코프에 포함).
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref, Set<String> ids) async {
+    final linkedCount =
+        ids.where((id) => ref.read(compositionsContainingItemProvider(id)).isNotEmpty).length;
+    if (linkedCount > 0) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('사용 중인 코디가 있어요'),
+          content: Text('선택한 항목 중 $linkedCount개가 사용 중인 코디에 쓰이고 있어요. 삭제하면 휴지통으로 이동해요.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('취소')),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('휴지통으로 이동')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    if (!context.mounted) return;
+    ref.read(closetItemsProvider.notifier).softDeleteMany(ids);
+    GlassToast.show(
+      context,
+      message: '${ids.length}개 항목이 휴지통으로 이동됨',
+      actionLabel: '실행취소',
+      onAction: () => ref.read(closetItemsProvider.notifier).restoreMany(ids),
+    );
+  }
+
   List<String> _subOptionLabels(WidgetRef ref, ClosetSortCriterion criterion) {
     return switch (criterion) {
       ClosetSortCriterion.clothingType => [
@@ -199,9 +224,6 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     }
   }
 
-  /// 그룹 카드를 직접 탭했을 때 — [group.value]가 이미 실제 enum 값(또는 미분류=null)이라
-  /// `_drillInto`의 인덱스 변환 없이 바로 세팅한다(스펙 §3.1 "두 진입 경로가 같은 상태로
-  /// 수렴한다").
   void _drillIntoValue(WidgetRef ref, ClosetSortCriterion criterion, Object? value) {
     switch (criterion) {
       case ClosetSortCriterion.clothingType:
@@ -217,12 +239,6 @@ class _ClosetMainScreenState extends ConsumerState<ClosetMainScreen> {
     }
   }
 
-  /// 중분류를 바꿀 때마다 모든 소분류 드릴인 상태를 초기화한다 — 그러지 않으면 "옷 종류"
-  /// 에서 "하의"로 드릴인한 뒤 "계절"로 갔다가 다시 "옷 종류"로 돌아왔을 때, 그룹 개요가
-  /// 아니라 이전에 골랐던 "하의" 드릴인 상태가 곧장 다시 나타나는 문제가 있었다(사용자
-  /// 지시, 2026-07-20 — "이전에 동일 중분류에서 선택한 소분류를 기억하고 있음"). 3개
-  /// provider 전부를 무조건 초기화하는 이유: 지금 중분류가 뭐든 상관없이 항상 깨끗한
-  /// 상태에서 시작해야 하고, 관련 없는 provider를 null로 되돌리는 건 부작용이 없다.
   void _resetAllDrilldowns(WidgetRef ref) {
     ref.read(closetDrilledCategoryProvider.notifier).state = null;
     ref.read(closetDrilledSeasonProvider.notifier).state = null;

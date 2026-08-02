@@ -6,6 +6,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/main.dart';
 import 'package:digittal_wardrobe/models/composition.dart';
+import 'package:digittal_wardrobe/models/style_log.dart';
 import 'package:digittal_wardrobe/providers/composition_providers.dart';
 import 'package:digittal_wardrobe/providers/style_log_providers.dart';
 import 'package:digittal_wardrobe/router/app_router.dart';
@@ -168,16 +169,33 @@ void main() {
       );
     });
 
-    testWidgets('comp02 상세의 log02 타일도 실제로 정사각(비율 ≈ 1)으로 렌더링된다', (tester) async {
-      await pumpApp(tester);
-      await goToCategory(tester, '코디');
-      await tapCompositionById(tester, 'comp02');
+    testWidgets(
+      // [갱신, Task 7 이후 comp02 소프트삭제] 원래 comp02(log02 직접 연결)로 검증했으나 comp02가
+      // 코디 메인에서 더 이상 보이지 않는다 — comp03에 런타임 주입 스타일일지 1장으로 "다른 코디에
+      // 연결된 두 번째 타일도 정사각인가"라는 동일 의도를 재현한다.
+      'comp03 상세의 런타임 주입 스타일일지 타일도 실제로 정사각(비율 ≈ 1)으로 렌더링된다',
+      (tester) async {
+        final container = await pumpApp(tester);
+        await goToCategory(tester, '코디');
+        await tapCompositionById(tester, 'comp03');
 
-      final tileFinder = find.byType(StyleLogGalleryTile);
-      expect(tileFinder, findsOneWidget);
-      final size = tester.getSize(tileFinder);
-      expect(size.width / size.height, closeTo(1, 0.05));
-    });
+        container.read(styleLogsProvider.notifier).state = [
+          ...container.read(styleLogsProvider),
+          StyleLog(
+            id: 'test-comp03-log-square',
+            coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
+            wornDate: DateTime(2026, 1, 10),
+            linkedCompositionId: 'comp03',
+          ),
+        ];
+        await tester.pumpAndSettle();
+
+        final tileFinder = find.byType(StyleLogGalleryTile);
+        expect(tileFinder, findsOneWidget);
+        final size = tester.getSize(tileFinder);
+        expect(size.width / size.height, closeTo(1, 0.05));
+      },
+    );
   });
 
   group('스타일일지 미연결 코디 — "+" 타일 실제 탭 → 선택 모달 → 복귀 후 바인딩 반영(엔드투엔드)', () {
