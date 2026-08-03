@@ -27,9 +27,10 @@ import '../widgets/undoable_action_toast.dart';
 /// Tester가 "값이 항상 false로 고정돼 탭해도 반응 없음"을 지적해 `StatelessWidget`에서 이
 /// 상태를 갖는 `StatefulWidget`으로 승격).
 ///
-/// 최종 로우 구성(4개: 알림 토글/다크모드 토글/휴지통 진입/로그아웃)은
+/// 최종 로우 구성(4개: 알림 토글/다크모드 토글/휴지통 진입/계정)은
 /// `04_설정.md`(2026-07-27 확정)를 따른다 — "프로필 편집"은 이 앱에 프로필 엔티티 자체가
-/// 없어 채택하지 않는다. 로그아웃 로우는 파괴적 스타일(Error 색상)이지만 confirm 모달(C11)
+/// 없어 채택하지 않는다. 계정 로우는 로그인 상태에 따라 "로그아웃"/"로그인" 중 하나로만
+/// 표시된다(`_isLoggedIn`). 로그아웃 로우는 파괴적 스타일(Error 색상)이지만 confirm 모달(C11)
 /// 대신 즉시 실행 + Toast+Undo(C7, `UndoableActionToast`)를 쓴다(같은 문서 §3 근거) — 재로그인
 /// 으로 완전히 되돌릴 수 있는 가역 액션이라 I6의 confirm 대상(비가역 액션)에 해당하지 않는다.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -102,19 +103,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   /// 로그아웃 로우 탭 핸들러 — `04_설정.md` §3(C11 미사용, C7 Toast+Undo 채택) 동작 정의를
-  /// 그대로 구현한다. mock 단계(§5, 실제 로그인/세션 시스템 없음)라 실제 세션 무효화 로직은
-  /// 없지만, 이 화면 전용 [_isLoggedIn] 상태(C7의 기존 삭제-항목 상태 스토어와는 별개의
-  /// 독립 스토어)는 Undo 창 만료 시점에만 실제로 전환된다 — 이미 로그인 상태에서 로그아웃을
-  /// "실행취소"하는 것은 원상태 유지일 뿐이라 [onUndo]는 no-op으로 둔다.
+  /// 그대로 구현한다: 탭 즉시 낙관적으로 로그아웃 상태 전환, Undo 시 로그인 상태 복원, 창
+  /// 만료 시는 이미 적용된 전환을 그냥 확정하는 것뿐이라 추가 동작 없음(no-op). 이 화면 전용
+  /// [_isLoggedIn] 상태는 C7의 기존 삭제-항목 상태 스토어와는 별개의 독립 스토어다 — 동일한
+  /// optimistic-immediate + undo-reverses 패턴을 쓰는 `closet_main_screen.dart`의
+  /// `softDeleteMany`/`restoreMany` 선례와 타이밍을 맞춘다.
   void _handleLogout(BuildContext context) {
+    setState(() => _isLoggedIn = false);
     UndoableActionToast.show(
       context,
       message: '로그아웃되었습니다',
       actionLabel: '실행취소',
-      onUndo: () {},
-      onExpire: () {
-        if (mounted) setState(() => _isLoggedIn = false);
+      onUndo: () {
+        if (mounted) setState(() => _isLoggedIn = true);
       },
+      onExpire: () {},
     );
   }
 
