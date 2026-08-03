@@ -162,7 +162,7 @@ StyleLogItem (N:N link between StyleLog and ClothingItem)
 (to be revisited during design/implementation)
 
 Area	Choice	Reason
-Data storage	Firebase (Firestore + Cloud Storage), local-first — revised 2026-08-03: no Anonymous Auth at all; app runs fully offline from first launch using a local placeholder scope, cloud sync/backup only begins once the user explicitly links a social account (Google/Naver/Kakao/GitHub candidates, TBD)	Zero network required until the user opts in; avoids an Anonymous-Auth phase that would need its own later migration. Full design: `docs/reference/architecture/00_DataSchema.md` §11
+Data storage	Firebase (Firestore + Cloud Storage), local-first — revised 2026-08-03: no Anonymous Auth at all; app runs fully offline from first launch using a local placeholder scope, cloud sync/backup only begins once the user explicitly links a social account (Google/Naver/Kakao/GitHub candidates, TBD)	Zero network required until the user opts in; avoids an Anonymous-Auth phase that would need its own later migration. Full design: `docs/reference/data/00_DataSchema.md` §11
 Background removal	Remove.bg API	No need to operate own model; fallback to manual masking if offline
 Auto-tagging	Claude API (Vision)	Image input → structured JSON tags; no separate classification model required
 Client	Flutter (Dart) — Android/iOS dual support	Single codebase ensures feature parity; go_router supports navigation stack requirements
