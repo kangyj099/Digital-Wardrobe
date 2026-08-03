@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Firestore 스키마 — 오프라인/로컬퍼스트 아키텍처 전면 확정 + 필드 4종 확장 (Data/API/Architecture, Decision) — 아래 "[Decision] 전체 앱 Firestore 데이터 스키마 설계 확정" 항목의 후속
+
+결정:
+- **Anonymous Auth 완전 폐기, 진짜 로컬퍼스트로 전환**: 이전 항목이 전제했던 "Anonymous Auth가 설치 즉시 uid 부여" 모델을 폐기 — 링크(소셜로그인: 구글/네이버/카카오/깃허브 후보, 미확정) 전엔 Firebase Auth 호출 자체가 없음. 대신 고정 로컬 placeholder 스코프(`unlinked_local` — 최초 제안 `__unlinked_local__`는 Firestore 예약 패턴(`__.*__`)과 충돌해 라운드2 Audit에서 발견·수정) + `disableNetwork()`로 완전 오프라인 동작, 링크 시점에 실제 uid로 문서 일괄 마이그레이션 + `enableNetwork()`. 상세: `00_DataSchema.md` §11.
+- `wearCount` 집계: 기존 결정(client-side Firestore 트랜잭션)을 폐기 — 트랜잭션은 오프라인에서 동작 안 함. `WriteBatch`+`FieldValue.increment()`로 교체. 단, 같은 StyleLog를 여러 오프라인 기기가 동시 수정하면 카운터도 드리프트될 수 있음(라운드2 Review 발견, 배열 last-write-wins 문제와 별개) — 단일기기 전제라 지금은 추가 설계 안 함.
+- 신규 필드: `User.lastActiveAt`/`lastSyncedAt`/`authProvider`, `ClothingItem.color`(자유텍스트→폐쇄형 enum 제안 전환)/`hasGraphic`/`hasPattern`(MVP 3택1 필드 대체)/`acquiredAt`/`analysisMetadata`+`analysisModelVersion`+`analyzedAt`(추천 알고리즘용 분석 버저닝, 내용은 미정), `Composition.tags`, `StyleLog.createdAt`+`wornDate`(nullable로 변경).
+- `TrashEntry.createdAt`이 `StyleLog.wornDate`를 매핑하던 기존 코드 동작을 새 `StyleLog.createdAt`으로 옮기기로 확정(사용자 확인).
+- 마이그레이션 시 이미지 파일(로컬 경로→실제 Storage 경로+업로드)도 별도 처리 필요함을 명시(라운드2 Audit 발견, 기존 "단순 문서 복사" 서술이 이미지 필드엔 안 맞았음).
+
+사유:
+사용자가 테이블별로 직접 리뷰(User→ClothingItem→Composition→StyleLog)하며 다수 필드를 확장/수정, 그 과정에서 "서버 연결 없이도 완전한 오프라인 로컬앱" 요구사항이 나와 §11을 두 차례 재작성. 리뷰 라운드2(Development Review architecture)가 P1 2건(§1 정당화 문구가 폐기된 Anonymous Auth 모델을 계속 인용/`wearCount` "안전하다" 주장이 동일 StyleLog 동시편집 케이스엔 안 맞음) 발견 후 수정·재검증 통과, 이어진 Audit 라운드2가 추가 P1 3건(`unlinked_local` 예약패턴 충돌/마이그레이션 시 이미지 처리 누락/이 Decision.md 항목이 낡음) 발견 — 앞 둘은 즉시 수정, 세 번째가 이 항목.
+
+Impact:
+- `docs/reference/data/00_DataSchema.md` 수정(경로도 `docs/reference/architecture/`에서 이동). 코드 변경 없음 — Decision 단계 문서만.
+- 커밋(`feature/db-schema-design` 브랜치, 대표): `9bae16f`~`9f8fd9d`(라운드2 리뷰 대상 전체), `a2e1ac9`(Review 라운드2 수정), 이후 Audit 라운드2 수정 커밋.
+- 후속 백로그: Open Question #11/#12(color enum, hasGraphic/hasPattern 실제 코드 반영)/#13·#19(Storage 오프라인 큐, 마이그레이션 시 이미지 처리)/#17(wornDate null 정렬 UI) — `docs/work/BACKLOG.md` 참고.
+
+---
+
 [Decision] 전체 앱 Firestore 데이터 스키마 설계 확정 (Data/API/Architecture, Decision)
 
 결정:

@@ -49,10 +49,19 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 ---
 
-**병렬 작업 완료(2026-08-02) — 전체 앱 Firestore 데이터 스키마 설계 확정**: `../Digital-Wardrobe-db-schema-design` worktree(`feature/db-schema-design`, `dev`에서 분기)에서 Data/API/Architecture × Decision 문서 신설, Worker→Development Review(architecture, 1라운드 수정 후 통과)→Audit(홀리스틱) 파이프라인 전부 통과해 스키마 확정. 산출물: `docs/reference/data/00_DataSchema.md`. 핵심 결정(서브컬렉션 토폴로지 등) 상세는 `docs/history/Decision.md` 최상단 항목 참고 — 이 Current 항목(Style Log 필터 등)과는 무관한 별도 스레드.
+**병렬 작업 완료(2026-08-02~04) — 전체 앱 Firestore 데이터 스키마 설계 확정(2라운드)**: `../Digital-Wardrobe-db-schema-design` worktree(`feature/db-schema-design`, `dev`에서 분기)에서 Data/API/Architecture × Decision 문서 신설 및 확장. 1라운드(Worker→Review→Audit)에 이어, 사용자 테이블별 직접 리뷰(User→ClothingItem→Composition→StyleLog) 중 오프라인/로컬퍼스트 아키텍처 요구사항이 나와 §11 전면 재작성 → Development Review 2라운드(P1 2건 수정)→Audit 2라운드(P1 3건 수정) 전부 통과. 산출물: `docs/reference/data/00_DataSchema.md`. 상세는 `docs/history/Decision.md` 최상단 2개 항목 참고 — 이 Current 항목(Style Log 필터 등)과는 무관한 별도 스레드.
 - (P2) 텍스트 검색(`00_MVP.md` §4.1, MVP 포함 기능)이 스키마 문서에 전혀 다뤄지지 않음 — Firestore 네이티브 풀텍스트 검색이 없어 클라이언트 사이드 필터링 전략 명시가 필요(Audit 2026-08-02 발견). 다음에 `00_DataSchema.md` 손댈 때 섹션/Open Question 추가.
 - (P3) `00_DataSchema.md` Open Question #5의 미구현 필드 예시 목록에 `ClothingItem.size`/`Composition.mood_tags` 누락(기능상 문제 없음, 예시만 불완전, Audit 2026-08-02 발견) — 다음에 이 문서 손댈 때 보완.
 - (P2) `lib/providers/trash_providers.dart`(또는 관련 mapping 지점)에서 `TrashEntry.createdAt`이 현재 `StyleLog.wornDate`를 매핑하고 있음 — 스키마 리뷰(2026-08-04)로 `StyleLog.createdAt`(신규 필드)로 옮기기로 확정(`00_DataSchema.md` §5/Open Question #18 참고). 실제 Firestore 마이그레이션 시점에 함께 반영.
+- **(P2) 실제 Firestore 마이그레이션 착수 시 함께 반영해야 할 스키마 확장분 일괄 목록** (`00_DataSchema.md` 2라운드 리뷰, 2026-08-04) — 지금은 전부 Decision-stage 문서에만 존재, 코드 미반영:
+  - `User` Dart 모델 자체가 아직 없음 — `lib/models/user.dart` 신설 필요(`email`/`authProvider`/`createdAt`/`lastActiveAt`/`lastSyncedAt`).
+  - `ClothingItem.color`: `String?` → `ClothingColor?`(신규 enum, `enums.dart`, Open Question #11의 16개 후보값) 타입 변경 + 기존 mock 데이터 재태깅.
+  - `ClothingItem.hasGraphic`/`hasPattern`(신규 bool? 필드, Open Question #12) — `00_MVP.md` §4.1 스펙 변경(3택1→독립 2개)에 대응.
+  - `ClothingItem.acquiredAt`(신규 Timestamp? 필드).
+  - `ClothingItem.analysisMetadata`/`analysisModelVersion`/`analyzedAt`(신규, §12 — 내부 구조는 추천 알고리즘 설계 후 결정, Open Question #16).
+  - `Composition.tags`(신규 `List<String>` 필드).
+  - `StyleLog.createdAt`(신규) / `wornDate`(nullable로 타입 변경) — Trash 매핑 변경(위 항목)과 함께.
+  - §11 전체(Anonymous Auth 제거, `unlinked_local` 로컬 스코프+`disableNetwork()`, 링크 시 실 uid 마이그레이션+이미지 재처리, Open Question #13/#19) — 이건 스키마가 아니라 앱 초기화/인증 아키텍처 자체를 새로 구현하는 별도 큰 작업, 다른 항목들과 규모가 다름.
 
 ---
 
