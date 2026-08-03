@@ -44,8 +44,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notificationsEnabled = false;
 
   /// 세션/로그인 시스템 부재(§5) — 앱이 Anonymous Auth 기반이라 항상 "로그인된" 상태로
-  /// 시작한다. 로그아웃 로우의 Toast+Undo(C7) Undo 창이 만료되는 시점에만 실제로
-  /// `false`로 전환된다(아래 `_handleLogout`의 `onExpire` 참고).
+  /// 시작한다. 로그아웃 로우 탭 즉시 `false`로 낙관적 전환되고, Toast+Undo(C7) 창에서
+  /// "실행취소"하면 `true`로 복원된다(아래 `_handleLogout` 참고).
   bool _isLoggedIn = true;
 
   @override
