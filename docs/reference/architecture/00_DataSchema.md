@@ -43,9 +43,10 @@ Justification against this app's actual constraints:
 | `email` | string | yes | sourced from the linked social provider's profile (not manually typed) — `null` until linked, see §11 for the auth model |
 | `authProvider` | string | yes | which social provider was used to link — proposed enum candidates (2026-08-03, **not finalized**): `google` / `naver` / `kakao` / `github`. List may shrink before implementation — see Open Question #15. **Not yet in code** (no `User` Dart model exists yet at all) |
 | `createdAt` | Timestamp | no | account creation time — for a linked user, this is link time, not local-first-use time (that's `acquiredAt`-equivalent for the whole account, tracked locally, not in this doc since it's pre-link and never reaches Firestore) |
-| `lastActiveAt` | Timestamp | no | 최근 접속 시각 — 앱 실행/재개(또는 재로그인)마다 갱신. `createdAt`과 별개 필드(계정 생성 시각 vs 최근 사용 시각). 사용자 스키마 리뷰(2026-08-03)로 추가 |
+| `lastActiveAt` | Timestamp | no | 최근 접속 시각 — 앱 실행/재개(또는 재로그인)마다 갱신, **오프라인이어도 갱신됨**(로컬 이벤트). `createdAt`과 별개 필드(계정 생성 시각 vs 최근 사용 시각). 사용자 스키마 리뷰(2026-08-03)로 추가 |
+| `lastSyncedAt` | Timestamp | yes | 마지막으로 서버와 동기화가 실제로 완료된 시각 — `lastActiveAt`과 달리 **온라인 상태에서만 갱신됨**(§11 링크 이후, `enableNetwork()` 상태에서 pending write가 전부 서버에 반영된 시점). 링크 직후 최초 동기화 전까지 `null`. 클라이언트가 `waitForPendingWrites()` 완료 시점에 이 필드를 갱신하는 방식 제안. 멀티기기 사용 시 기기마다 각자 이 값을 덮어써서 마지막으로 동기화한 기기 기준이 됨(현재 단일기기 전제라 더 설계하지 않음). 사용자 스키마 리뷰(2026-08-03)로 추가 |
 
-Kept minimal, mirroring `00_MVP.md` §5's own draft (`id`/`email`/`created_at`) plus `lastActiveAt`/`authProvider` added per direct user review. No dedicated `User` Dart model exists in `lib/models/` yet, so nothing beyond this is invented. **This entire document (`users/{uid}`) only exists once a user has linked an account** — see §11 for what happens before that point.
+Kept minimal, mirroring `00_MVP.md` §5's own draft (`id`/`email`/`created_at`) plus `lastActiveAt`/`lastSyncedAt`/`authProvider` added per direct user review. No dedicated `User` Dart model exists in `lib/models/` yet, so nothing beyond this is invented. **This entire document (`users/{uid}`) only exists once a user has linked an account** — see §11 for what happens before that point.
 
 **Deliberately not included yet** (see Open Question #10): fields tied to a not-yet-defined monetization/billing model — e.g. `closetSlotLimit`(이용 가능한 최대 옷장 칸 수) or `bgRemovalCreditsRemaining`(이미지 배경 자동 제거 잔여 시도 횟수). Flagged by the user during review (2026-08-03) as likely-needed once a billing tier structure exists, but not added now since that structure isn't decided yet.
 
