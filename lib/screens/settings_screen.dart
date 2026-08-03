@@ -42,6 +42,11 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notificationsEnabled = false;
 
+  /// 세션/로그인 시스템 부재(§5) — 앱이 Anonymous Auth 기반이라 항상 "로그인된" 상태로
+  /// 시작한다. 로그아웃 로우의 Toast+Undo(C7) Undo 창이 만료되는 시점에만 실제로
+  /// `false`로 전환된다(아래 `_handleLogout`의 `onExpire` 참고).
+  bool _isLoggedIn = true;
+
   @override
   Widget build(BuildContext context) {
     final contentTopSpacing = AppMainScaffold.contentSpacerHeight(hasSecondaryRow: false);
@@ -78,12 +83,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             const _SettingsSectionLabel('계정'),
-            _SettingsRow(
-              title: '로그아웃',
-              leadingIcon: Icons.logout,
-              color: Theme.of(context).colorScheme.error,
-              onTap: () => _handleLogout(context),
-            ),
+            _isLoggedIn
+                ? _SettingsRow(
+                    title: '로그아웃',
+                    leadingIcon: Icons.logout,
+                    color: Theme.of(context).colorScheme.error,
+                    onTap: () => _handleLogout(context),
+                  )
+                : _SettingsRow(
+                    title: '로그인',
+                    leadingIcon: Icons.login,
+                    onTap: () => _handleLoginPlaceholder(context),
+                  ),
           ],
         ),
       ),
@@ -91,17 +102,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   /// 로그아웃 로우 탭 핸들러 — `04_설정.md` §3(C11 미사용, C7 Toast+Undo 채택) 동작 정의를
-  /// 그대로 구현한다. mock 단계(§5, 실제 로그인/세션 시스템 없음)라 [onUndo]/[onExpire] 모두
-  /// 지금 취할 실제 상태 변경이 없다 — 로그아웃용 세션 상태는 이 화면 전용의 독립 스토어여야
-  /// 한다는 결정(§3)에 따라, 실제 세션 시스템이 생기면 이 자리에 그 화면 전용 상태를 채운다
-  /// (C7의 기존 삭제-항목 상태 스토어와는 절대 공유하지 않는다).
+  /// 그대로 구현한다. mock 단계(§5, 실제 로그인/세션 시스템 없음)라 실제 세션 무효화 로직은
+  /// 없지만, 이 화면 전용 [_isLoggedIn] 상태(C7의 기존 삭제-항목 상태 스토어와는 별개의
+  /// 독립 스토어)는 Undo 창 만료 시점에만 실제로 전환된다 — 이미 로그인 상태에서 로그아웃을
+  /// "실행취소"하는 것은 원상태 유지일 뿐이라 [onUndo]는 no-op으로 둔다.
   void _handleLogout(BuildContext context) {
     UndoableActionToast.show(
       context,
       message: '로그아웃되었습니다',
       actionLabel: '실행취소',
       onUndo: () {},
-      onExpire: () {},
+      onExpire: () {
+        if (mounted) setState(() => _isLoggedIn = false);
+      },
+    );
+  }
+
+  /// 로그인 로우 탭 핸들러 — 실제 로그인 화면/플로우는 Post-MVP(§5, 이 태스크 범위 밖)라
+  /// "준비 중" 안내만 하고 상태는 바꾸지 않는다.
+  void _handleLoginPlaceholder(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        content: const Text('기능 준비 중입니다.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('확인')),
+        ],
+      ),
     );
   }
 }
