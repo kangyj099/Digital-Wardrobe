@@ -52,6 +52,7 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 **병렬 작업 완료(2026-08-02) — 전체 앱 Firestore 데이터 스키마 설계 확정**: `../Digital-Wardrobe-db-schema-design` worktree(`feature/db-schema-design`, `dev`에서 분기)에서 Data/API/Architecture × Decision 문서 신설, Worker→Development Review(architecture, 1라운드 수정 후 통과)→Audit(홀리스틱) 파이프라인 전부 통과해 스키마 확정. 산출물: `docs/reference/data/00_DataSchema.md`. 핵심 결정(서브컬렉션 토폴로지 등) 상세는 `docs/history/Decision.md` 최상단 항목 참고 — 이 Current 항목(Style Log 필터 등)과는 무관한 별도 스레드.
 - (P2) 텍스트 검색(`00_MVP.md` §4.1, MVP 포함 기능)이 스키마 문서에 전혀 다뤄지지 않음 — Firestore 네이티브 풀텍스트 검색이 없어 클라이언트 사이드 필터링 전략 명시가 필요(Audit 2026-08-02 발견). 다음에 `00_DataSchema.md` 손댈 때 섹션/Open Question 추가.
 - (P3) `00_DataSchema.md` Open Question #5의 미구현 필드 예시 목록에 `ClothingItem.size`/`Composition.mood_tags` 누락(기능상 문제 없음, 예시만 불완전, Audit 2026-08-02 발견) — 다음에 이 문서 손댈 때 보완.
+- (P2) `lib/providers/trash_providers.dart`(또는 관련 mapping 지점)에서 `TrashEntry.createdAt`이 현재 `StyleLog.wornDate`를 매핑하고 있음 — 스키마 리뷰(2026-08-04)로 `StyleLog.createdAt`(신규 필드)로 옮기기로 확정(`00_DataSchema.md` §5/Open Question #18 참고). 실제 Firestore 마이그레이션 시점에 함께 반영.
 
 ---
 
