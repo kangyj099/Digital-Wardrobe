@@ -6,13 +6,13 @@ Digital Closet (working title, `digittal_wardrobe`)
 
 Version: 1.0.0+1
 
-Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
+Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반 — `lib/screens/`·`widgets/`·`providers/`·`models/` 다수 구현·테스트 통과, 실제 Firebase/AI 백엔드 연동은 아직) — 2026-08-04 정정, 이전 "코드는 스켈레톤뿐" 표기는 낡은 상태였음
 
 ---
 
 # Current Milestone
 
-디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `.claude/policies/Workflow_Design.md` §2)
+디자인 시스템 구축(Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library, 순서 근거: `.claude/policies/Workflow_Design.md` §2) 마무리는 보류 상태 — PR #20("디자인 임시 종료하고, 레이아웃&데이터작업으로 전환")로 레이아웃/데이터 작업(스타일일지 필터 UI, 이번 DB 스키마 설계 등)이 병행 시작됨. Design Tokens는 여전히 provisional, 밀린 Visual Review 트리거 시점도 미정(아래 "Current" 섹션의 "판단 보류 — Visual Review 트리거 시점" 항목 참고) — 2026-08-04 정정.
 
 ---
 
@@ -87,20 +87,26 @@ Flutter 프론트엔드 Hi-Fi 화면 스프린트 — mock 데이터 기반 UI�
 
 # MVP Progress
 
-`docs/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
+`docs/reference/plan/00_MVP.md` §2 스코프 기준. **2026-08-04 정정**: 아래는 "실제 Firebase/AI 백엔드 연동" 기준 체크리스트로, 전부 미착수인 게 맞음 — 단 mock 데이터 기반 Hi-Fi UI는 항목별로 상당 부분 이미 구현·테스트 통과돼 있음(오해 방지를 위해 UI 상태를 각 줄에 병기). 상세는 `docs/reference/plan/00_MVP.md`/`Decision.md` 참고.
 
-- [ ] Clothing archiving (AI 배경제거 + 자동태깅)
-- [ ] View/filter by tags
-- [ ] Composition (가상 코디, 편집 가능)
-- [ ] Style Log
-- [ ] Clothing-based history
-- [ ] Automatic wear count
+- [ ] Clothing archiving (AI 배경제거 + 자동태깅) — UI: 옷장 메인/상세/등록(`closet_main_screen.dart`/`closet_item_detail_screen.dart`/`closet_add_screen.dart`) 구현됨, AI 연동 없음
+- [ ] View/filter by tags — UI: 그룹형 드릴다운/필터 구현됨(그룹 A), 실데이터 없음
+- [ ] Composition (가상 코디, 편집 가능) — UI: 메인/상세/에디터(`composition_main_screen.dart`/`composition_detail_screen.dart`/`composition_editor_screen.dart`) 존재, 아트보드 실제 렌더링은 그룹 D 이월(위 "Current" 참고)
+- [ ] Style Log — UI: 메인/뷰어/등록(`style_log_main_screen.dart`/`style_log_viewer_screen.dart`/`style_log_add_screen.dart`) 구현됨, 필터/정렬 UI는 진행 중(위 "Current" 참고)
+- [ ] Clothing-based history — 상세 화면들의 상호참조(캐러셀/갤러리)는 구현됨, mock 데이터 기준
+- [ ] Automatic wear count — UI 표시는 있으나 자동 집계 로직 자체가 미구현(mock이 값 하드코딩); Firestore 마이그레이션 시 집계 메커니즘은 `docs/reference/data/00_DataSchema.md` §7에 이미 설계됨
 
 ---
 
 # Current Folder
 
-`lib/` (현재 `main.dart` 스켈레톤만 존재)
+`lib/` — **2026-08-04 정정**(이전 "main.dart 스켈레톤만 존재" 표기는 낡은 상태였음, 실제로는):
+- `screens/`: 13개 파일(옷장/코디/스타일일지/휴지통 메인·상세·등록·에디터, 설정, 공용 스캐폴드 등)
+- `widgets/`: 36개 파일(공용 컴포넌트)
+- `providers/`: 6개(도메인별 + 분류/테마)
+- `models/`: 5개(`ClothingItem`/`Composition`/`StyleLog`/`TrashEntry`/`enums`)
+- `theme/`, `mock/`, `router/`도 별도 존재
+- `integration_test/`, `test/`에 광범위한 테스트 스위트 존재(다수 통과 확인됨, 상세는 git log/Decision.md)
 
 ---
 
