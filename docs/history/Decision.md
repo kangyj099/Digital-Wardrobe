@@ -1,5 +1,62 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 설정 화면 "로그인" 진입점 위치 확정 — 로그아웃 로우와 동일 슬롯에서 상태 전환 (UI/Screen, Decision — Implementation 태스크 중 결정, 사후 기록)
+
+결정:
+- 로그인 기능의 진입점 위치를 확정: 별도 화면/로우를 새로 만들지 않고, 설정 화면 "계정" 섹션의 기존 로그아웃 로우와 동일 슬롯을 재사용 — 로그인 상태면 "로그아웃"(destructive 스타일), 로그아웃 상태면 "로그인"(일반 스타일)으로 라벨/아이콘/색상만 전환.
+- "로그인" 탭 시 실제 로그인 화면/인증 로직은 만들지 않고 "기능 준비 중입니다" AlertDialog만 노출(상태 변경 없음).
+- `04_설정.md` §5가 "로그인 진입점 존재/위치는 범위 밖"으로 유보해뒀던 것 중 **위치**만 이번에 좁혀 확정 — 인증 연동/세션 무효화/계정연동/멀티기기 동기화는 여전히 Post-MVP(`00_MVP.md` §8) 범위 밖.
+- 로그아웃→로그인 상태 전환 타이밍은 기존 C7 선례(`closet_main_screen.dart`의 `softDeleteMany`/`restoreMany`)와 동일하게 탭 즉시 낙관적 전환 + Undo 시 복원으로 통일(최초 구현은 Undo 만료 시점 전환으로 스펙과 반대로 구현됐다가 Review에서 P1으로 지적돼 정정).
+
+사유:
+사용자가 설정 화면에 로그인 버튼(준비중 팝업) 추가를 요청, 이어서 "로그인 상태면 로그아웃, 로그아웃 상태면 로그인으로 보이게" 토글로 구체화. Worker 구현 후 Review가 이 결정이 §5의 범위 유보와 충돌하는데도 문서/Decision.md에 반영이 안 됐음을 P1로 지적 — 새 화면/로우를 만들지 않고 기존 로그아웃 슬롯을 재사용하는 게 최소 변경이라 이 형태로 확정.
+
+Impact:
+- `lib/screens/settings_screen.dart`: `_isLoggedIn` state 신설, 로우 1개가 상태에 따라 분기, 전환 타이밍 정정.
+- `docs/reference/plan/03_화면별UX명세서/04_설정.md` §2 로우4, §5 갱신(같은 세션에서 반영).
+- 실제 로그인 인증/계정연동/멀티기기 동기화 스코프는 안 당겨짐 — 이 결정은 그게 착수되기 전까지 보여줄 placeholder UI 위치만 정한 것.
+
+---
+
+[Decision] §12.1 Data/API/Architecture×Decision 행에 §5 Decision-Stage Pipeline 적용 + `docs/reference/data/`·`docs/reference/architecture/` 폴더 신설 (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §12.1 표에서 Data/API/Architecture×Decision 행만 "Development Review (architecture), pre-review"에 머물러 있던 걸 UI/Screen·Logic/Feature Decision 행과 동일하게 "Development Review (architecture) + mandatory Audit before confirmation(크기 무관, §5 Decision-Stage Pipeline 적용)"으로 정정. §5 Pipeline 도입 시(2026-07-23, 아래 "설계/계획 확정 전 Audit 필수화" 결정) 이 행만 갱신이 누락돼 있었음.
+- 같은 행의 Required Materials를 "Development workflow policy"(추상적)에서 "Plan reference docs(MVP/Needs/IA&UserFlow/화면별UX명세서) + `Decision.md`"로 구체화 — 화면에 노출되는 데이터 항목이 스키마 설계의 1차 입력이기 때문.
+- Data/API/Architecture×Implementation 행 Required Materials에 "Finalized data model doc(`docs/reference/data/`)" 추가.
+- `docs/reference/data/`(Firestore 컬렉션/필드 스키마 등 확정 데이터 모델 문서용) · `docs/reference/architecture/`(Auth/Storage 연동, 상태관리, 모듈 경계 등 앱 상위 구조 문서용, 현재는 빈 폴더) 신설. `docs/reference/design/`·`docs/reference/plan/`과 동급의 새 Reference 카테고리.
+- `Workflow_Project.md` 버전 3.1 → 3.2 (§1.6 minor bump 대상: 표 내용 변경).
+
+사유:
+사용자가 DB 설계 세션과 화면별 기능 감사 세션을 병렬로 새로 착수하려던 중, PM이 기존 파이프라인이 이 두 산출물을 어디에 놓고 무슨 검증을 거치게 할지 점검 — Data/Architecture×Decision 행이 다른 두 Decision 행과 달리 확정 전 Audit 요구가 빠져 있었고, 그 결과물을 놓을 Reference 폴더 자체가 없었음을 발견. DB 스키마는 Firestore(이미 `00_MVP.md` §6에 결정됨)이므로 관계형 ERD가 아니라 컬렉션/문서 구조로 설계해야 함도 함께 확인.
+
+Impact:
+- 이번 세션은 정책/폴더 정비까지이며 코드 변경 없음.
+- 후속: DB 설계 세션을 Layer=Data/Architecture, Stage=Decision으로 태깅해 §5 Pipeline(소단위 초안→Review→전체조립→Audit→확정)으로 착수 예정. 화면별 기능 감사는 기존 `audit` 서브에이전트 역할(Missing functionality 체크)을 그대로 재사용.
+
+---
+
+[Decision] 옷장 메인 레이아웃/데이터 감사 후속 — 핀치·검색·탭 애니메이션·정렬 UI 스펙 확정 (UI/Screen, Decision)
+
+결정:
+- 핀치 제스처(오므리기/벌리기)로 갤러리 밀도 조절 도입. 벌리면 밀도↓(타일 커짐)/오므리면 밀도↑. 기존 버튼과 동일한 3단계(`AppDensity.min/mid/max`)로 스냅하되, 버튼의 고정방향 순환(rotation) 로직은 재사용하지 않고 제스처 방향에 따라 자연스러운 순서로 이동 후 양 끝에서 clamp(래핑 없음). 제스처 중 실시간 확대/축소 피드백, release 시 임계값 기반 스냅. 스크롤 앵커링을 핀치+기존 밀도 버튼 둘 다에 신규 적용(현재 버튼엔 없던 기능). 롱프레스(다중선택)와 충돌 시 핀치 시작되면 롱프레스 타이머 취소.
+- 검색 버튼(ExpandableSearchField) 인터랙션 확정: 원형 버튼이 오른쪽 가장자리를 앵커로 캡슐로 모핑, 왼쪽 툴바 컨트롤(분류/밀도)은 8~16px 밀리며 fade-out(자리 대체, 겹침 아님), 검색 아이콘은 애니메이션 내내 고정, 바운스 없음, 180~220ms `easeOutCubic`. 기존 `AppSpacing.searchExpand`=300ms 상수는 이 값으로 대체 필요.
+- 툴바 레이아웃 재배치: 분류 캡슐+밀도 버튼(3/4 크기)을 왼쪽 그룹으로 묶고, 검색 버튼은 오른쪽 끝에 간격을 두고 단독 배치. `GalleryMainScreen` 공유 위젯이라 코디 메인에도 동일 적용됨.
+- 탭 반응 애니메이션: 스케일다운(0.96~0.98배) 방식 확정, Material 리플 방식은 기각.
+- 정렬 UI 구조: 분류 캡슐이 정렬 기준까지 겸하는 현재 구현 구조를 그대로 유지하기로 확정, `01_옷장.md`를 실제 구현 기준으로 갱신(정렬 전용 UI 분리안은 기각).
+- 오름/내림차순 토글 버튼(↑↓)은 스펙에서 완전히 삭제 — MVP 이후로 미루는 게 아니라 기능 자체를 없앰. 정렬은 분류 캡슐의 고정 방향 기본값만 지원.
+
+사유:
+PR #20(Step⑦ Group B/C) 병합 후 사용자 승인 하에 진행한 "페이지별 레이아웃/노출 정보값 감사"에서 옷장 메인을 스펙(`01_옷장.md`)과 대조한 결과 핀치 제스처·텍스트 검색이 완전히 누락, 탭 반응 애니메이션 없음, 정렬 UI가 스펙과 다른 구조로 흡수 통합돼 있음을 발견(4건). 각각 사용자와 논의해 세부 동작을 확정. 정렬 방향 토글 버튼은 툴바 재배치 논의 중 처음엔 유지+축소 대상이었으나, 사용자가 이후 이 버튼 자체를 완전히 없애기로 결정(단순화).
+
+Impact:
+- 이번 세션은 감사+설계 확정까지이며 코드 변경 없음(구현은 별도 Worker 착수 예정).
+- `docs/reference/plan/03_화면별UX명세서/01_옷장.md`: 분류+정렬 통합 서술로 갱신, 오름/내림차순 토글 언급 제거(사용자 직접 수정 포함).
+- `docs/work/옷장메인_재설계_체크리스트.md`: "미착수(Task 4)" 섹션 및 "제스처 통합" 섹션에 위 스펙 반영.
+- 착수 시 영향받는 코드: `lib/screens/closet_main_screen.dart`(밀도 로직/핀치 추가), `lib/widgets/gallery_main_screen.dart`(툴바 레이아웃 재배치, 정렬 버튼 제거), `lib/theme/app_spacing.dart`(`searchExpand` 상수값), `lib/providers/closet_providers.dart`(`closetSortAscendingProvider`/`ascending` 관련 정리) — `GalleryMainScreen` 공유 위젯이라 코디 메인도 함께 영향받음.
+
+---
+
 [Decision] 프로스티드 글래스 블러/채도/하이라이트 값을 원본 목업 CSS 기준으로 정정 (UI/Screen, Decision)
 
 결정:
