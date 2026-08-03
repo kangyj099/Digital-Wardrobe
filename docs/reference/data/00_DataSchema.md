@@ -74,6 +74,9 @@ Source of truth for shape: `lib/models/clothing_item.dart`.
 | `isIncomplete` | boolean | no (default `false`) | Editor Draft marker, see §9 |
 | `isDeleted` | boolean | no (default `false`) | soft-delete flag, see §5 |
 | `deletedAt` | Timestamp | yes | set together with `isDeleted:true`; cleared on restore |
+| `analysisMetadata` | map | yes | 추천 알고리즘용 사진 분석 결과 컨테이너 — **내부 구조는 아직 미정**(추천 알고리즘 설계 시점에 결정, 지금 억지로 필드를 구체화하지 않음). MVP 초안(`00_MVP.md` §5)의 `internal_tags` 개념을 일반화한 것 — 사용자에게 노출되지 않는 내부용 데이터. See §12 |
+| `analysisModelVersion` | string | yes | 이 `analysisMetadata`를 생성한 분석 모델의 버전 식별자. `null` = 아직 한 번도 분석 안 됨. 앱의 "현재 목표 버전"(아이템별 값 아닌 전역 설정)과 비교해 재분석 필요 여부 판단, see §12 |
+| `analyzedAt` | Timestamp | yes | 마지막 분석 완료 시각. 재분석 여부 판단 자체엔 `analysisModelVersion` 비교만으로 충분(이 필드는 판단에 필수는 아님) — 디버깅/UI 표시용으로 유지, 다른 타임스탬프 필드들과 일관성 유지 |
 
 **Required vs. optional input (2026-08-03 user review)**: the Nullable column above is the only distinction this document models — it reflects storage-level optionality, not which fields a UI form forces the user to fill in before saving. Whether an entry screen additionally *requires* a nullable field (e.g. always asking for `color` even though it's nullable at the DB level) is an implementation-stage UI/form-validation decision, intentionally left unmodeled here.
 
@@ -232,6 +235,18 @@ Cloud Storage (images) does not get the same automatic offline queue that Firest
 
 ---
 
+## 12. `ClothingItem` analysis metadata & model versioning
+
+**Requirement (user, 2026-08-04)**: `ClothingItem` needs a container for photo-analysis metadata destined for a future clothing-recommendation algorithm. The analysis model may be replaced later, and some items may never get analyzed (offline at capture time, API failure, etc.) — so the schema needs to track *which model version* produced the stored metadata and *whether/when* analysis happened, so the client can decide when to (re-)analyze once connectivity is available.
+
+**Decided now vs. deferred**: this section designs the **versioning/tracking envelope** (§3's `analysisMetadata`/`analysisModelVersion`/`analyzedAt` fields) — that part doesn't depend on knowing what the future recommendation algorithm actually needs. The **internal shape of `analysisMetadata` itself is deliberately not designed here** — pre-defining specific sub-fields before the recommendation algorithm exists would be speculative, the same reasoning this document has applied throughout (e.g. §3's "deliberately not included" fields). Revisit this the moment that algorithm's actual input requirements are known.
+
+**How re-analysis is triggered**: the client compares an item's stored `analysisModelVersion` against the app's current target model version (a single global constant/config value, not stored per-item) — a mismatch (or `null`, meaning never analyzed) means the item is due for (re-)analysis. No stored "needs reanalysis" boolean is needed; it's fully derivable from that comparison, the same "derive, don't duplicate" pattern §6 already uses for `TrashEntry`.
+
+**This is independent of §11's link-gating.** §11 governs whether *Firestore/Cloud Storage* sync is allowed (gated on explicit account linking). Photo analysis is a call to an external AI service (Claude Vision, per `00_MVP.md` §4.1, same as the existing `category`/`color`/`season`/`material`/`hasGraphic`/`hasPattern` auto-tagging already in this document) — it only needs general internet connectivity, not a linked Firebase account. A fully local, never-linked user can still get their clothes analyzed whenever their device happens to have Wi-Fi; the resulting `analysisMetadata` just stays in the local `users/__unlinked_local__/...` scope like everything else until/unless they later link.
+
+---
+
 ## Open Questions for Review
 
 1. **[Biggest call]** Collection topology — user-scoped subcollections (`users/{uid}/...`) chosen over flat top-level collections + `userId` field. Full justification in §1. Challenge this first if you disagree with the choice.
@@ -253,3 +268,4 @@ Cloud Storage (images) does not get the same automatic offline queue that Firest
 13. **Cloud Storage offline upload queue (§11)** — unlike Firestore documents, image uploads (`imagePath`/`coverImagePath`/etc., §8) have no automatic offline queue in the Firebase SDK; an upload attempted offline simply fails rather than queuing for retry. Needs its own client-side pending-upload handling at implementation time (e.g. save locally + retry on reconnect). Not designed further in this Decision-stage document — flagged so it isn't assumed to be free just because Firestore's offline behavior is.
 14. ~~Does "usable without server connection" need to cover a device's very first launch?~~ **Resolved (2026-08-03, final): yes** — confirmed architecture is zero-network-ever pre-link, using a fixed local placeholder scope (`users/__unlinked_local__/...`) with `disableNetwork()`, migrated to a real `uid` only when the user explicitly links a social account. No Anonymous Auth phase at all — see §11 for the full design. This turned out not to need a separate local-DB engine either: Firestore's own local persistence cache serves as the local database, pointed at the placeholder path instead of a real `uid`.
 15. **Social login provider set (§2 `authProvider`)** — user is considering Google / Naver / Kakao / GitHub as of 2026-08-03, explicitly not finalized ("더 줄일 수도 있음" — the list may shrink). No email/password option under consideration. This document proposes the field now (nullable string, candidate enum values above) so §11's linking flow has somewhere to record which provider was used, but the exact final provider set is Implementation-stage work to confirm before `authProvider` is added as a real Dart enum.
+16. **`ClothingItem.analysisMetadata` internal shape (§12)** — deliberately undesigned. The versioning envelope (`analysisMetadata`/`analysisModelVersion`/`analyzedAt`) is confirmed, but what actually goes inside `analysisMetadata` depends entirely on the not-yet-designed clothing-recommendation algorithm. Revisit when that algorithm's input requirements are known — do not pre-populate sub-fields speculatively.
