@@ -18,13 +18,15 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 # Last Completed
 
-**Flutter Hi-Fi 스프린트 마무리 + dev PR 생성(2026-08-01)** — Step⑦ 그룹 A~C 전체(다중선택+휴지통, 설정, 다크모드 등) + 라이브 Visual Review 버그수정/시각수정 배치 + 목업 대조 글래스 효과 정정 + `StyleLog` 데이터 확장까지 이 세션 전체 작업을 `feature/flutter-hifi-screens`에서 마무리하고 `dev`로 PR 생성. **PR #20(`https://github.com/kangyj099/Digital-Wardrobe/pull/20`) — 아직 병합 안 됨, 사용자가 직접 병합해야 함(정책상 PM은 병합 실행 안 함).** 상세 경위는 git log 참고(주요 커밋: `e6c7cff`~`7a7bed5`).
+**설정 화면 로그인/로그아웃 토글 로우 구현(2026-08-04)** — 계정 로우 1개가 로그인 상태에 따라 라벨/스타일 전환(로그인 진입점 위치 결정 겸함, `Decision.md` 기록). Worker→Review(P1 2건: 상태전환 타이밍/문서 미반영→수정)→Tester(Fail 1건: 공용 `UndoableActionToast`의 SDK `persist` 기본값 버그 발견→Worker가 `lib/widgets/undoable_action_toast.dart`까지 확장 수정→Review→Tester 재통과, 6/6 Pass) 전체 사이클 완료. 커밋 `379aa04`~`5079a64`(구현), `8b4a863`(문서/정책). 같은 세션에서 `Workflow_Project.md` §12.1 Data/Architecture×Decision 행의 Audit 게이트 누락도 별건으로 발견·수정(버전 3.2).
 
 ---
 
 # Current
 
 **PR #20 병합 확인 완료(2026-08-02)** — `dev`로 병합됨(머지 커밋 `afbafe7`). 단, 병합은 커밋 `7425a13` 시점에 일어났고, 그 직후 세션 종료 직전에 만들어진 커밋 `0c14af7`(BACKLOG에 이 감사 계획 표를 기록한 커밋)는 병합 3분 뒤 push돼 PR에 포함되지 못하고 `feature/flutter-hifi-screens`에 고아로 남아 있었음 — `dev` fast-forward 동기화 후 `feature/layout-data-audit` 브랜치를 새로 파고 `0c14af7`를 cherry-pick으로 가져와 반영(커밋 `23a6a55`). 아래 감사 작업은 이 브랜치(`feature/layout-data-audit`, `dev`에서 분기)에서 진행.
+
+**대기 중 — 별도 세션 `feature/db-schema-design`(PR #21, 미병합)에 Firestore 데이터 스키마 확정본이 `docs/reference/architecture/00_DataSchema.md`로 있음.** 이 세션에서 확정한 폴더 분리(`data/`=스키마, `architecture/`=상위구조)와 경로가 어긋나 있어 사용자가 병합 전 `docs/reference/data/00_DataSchema.md`로 옮기기로 함(미착수). PR #21 머지/동기화 시 확인할 것.
 
 **진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/layout-data-audit`에서 착수(2026-08-02)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
 
