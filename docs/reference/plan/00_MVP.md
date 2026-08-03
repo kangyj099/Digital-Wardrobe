@@ -67,7 +67,7 @@ Auto-tagging fields (to be returned via Claude Vision prompt design)
 
 Clothing type (tops/bottoms/outerwear/shoes/accessories, detailed categories)
 Color (1–2 dominant colors)
-Presence of graphics (plain/pattern/print)
+Presence of graphics and pattern, as two independent flags rather than a single plain/pattern/print choice (revised 2026-08-03: an item can have both a printed graphic and a repeating textile pattern at once, which the original mutually-exclusive 3-way field couldn't represent) — `hasGraphic` (graphic/logo/print present) and `hasPattern` (repeating textile pattern, e.g. stripes/checks/florals, present)
 Mood (minimal/casual/formal, etc.) — may have low accuracy; requires validation in Phase 1.5
 Material (perception-based fabric feel, closed set of ~18 values — e.g. cotton/denim/knit/leather, not fiber-composition percentages; added to support future outfit-recommendation analysis of frequently-worn combinations) — same low-accuracy caveat as Mood; requires validation in Phase 1.5. Full value list: see `ClothingItem.material` / `kClothingMaterials` in the app's data model.
 
