@@ -1,4 +1,4 @@
-> Version 3.1 — Defines the project workflow. Single consolidated document (former per-section subfiles under `workflow_project/` merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
+> Version 3.2 — Defines the project workflow. Single consolidated document (former per-section subfiles under `workflow_project/` merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
 > This workflow applies across the entire project, including planning, design, development, and release.
 
 # Project Workflow
@@ -356,9 +356,7 @@ Focus on finding problems, but do not propose unnecessary design changes.
 
 # 9. Audit Principles
 
-An Audit evaluates the entire project, not the current task.
-
-It creates new tasks rather than making direct modifications.
+→ §2 Feature Audit ("Checks" / "Important") — already fully defined there, not restated here.
 
 # 10. Definition of Done
 
@@ -382,19 +380,19 @@ When a task step is completed, always verify the following — including for eac
 
 # 11. Core Operating Principles
 
-Always remember:
+Index of rules already stated in full elsewhere in this document — not a second copy. Domain documents (Development/Design) point here rather than restating these lines themselves.
 
-1. The Source of Truth is the Git repository and the Reference documents.
-2. Sessions do not share memory except through an orchestrated handoff summary.
-3. Handoffs are orchestrated by the PM agent; mandatory checkpoints require human confirmation.
-4. Each session has only one purpose.
-5. Use the pipeline appropriate for the task size.
-6. Review identifies problems.
-7. Audit evaluates the project as a whole.
-8. Reference documents are always kept up to date.
-9. History documents are never deleted.
-10. Always evaluate the Change Impact before making changes.
-11. PM must convert Required Materials into an explicit Task Manifest — each item tagged Read/Edit/Write — before spawning a Worker (see §12.4).
+1. Source of Truth → §1.3
+2. Sessions share no memory except via orchestrated handoff → §3
+3. Handoffs are PM-orchestrated; mandatory checkpoints need human confirmation → §3
+4. One Session = One Purpose → §1.2
+5. Pipeline by task size → §4, §5
+6. Review principles → §8
+7. Audit principles → §9 (→ §2 Feature Audit)
+8. Reference documents always current → §6
+9. History documents never deleted → §6
+10. Change Impact evaluated before changes → §7
+11. Task Manifest required before spawning a Worker → §12.4
 
 # 12. Role Information Access
 

@@ -1,6 +1,6 @@
 # Design Workflow
 
-> Version 3.0
+> Version 3.1
 >
 > Purpose: A design workflow policy for efficiently collaborating with AI on Flutter-based mobile app design. Single consolidated document (former `workflow_design/` subfiles merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
 
@@ -83,12 +83,7 @@ If structural changes are required after Design Tokens are approved, the represe
 → Skill: `uiux-design-conventions` (`.claude/skills/uiux-design-conventions/SKILL.md`) — Design Review / Visual Review checklists live here.
 
 # 7. Design Audit
-
-Reviews the project's overall design.
-
-Audit does not make direct modifications. It creates tasks for the PM.
-
-**Review Areas**
+→ `Workflow_Project.md` §2 Feature Audit 참고(Read-only, PM에게 태스크만 제안). Design 도메인 Review Areas:
 
 * Cross-screen consistency
 * Design System conflicts
@@ -131,10 +126,9 @@ Evaluate the Change Impact before making any design changes.
 1. The Design System takes precedence over individual screens.
 2. Shared rules are defined in the Page Type specification.
 3. Individual screens contain only their unique characteristics.
-4. Review identifies problems.
-5. Audit evaluates the project as a whole.
-6. The Design System is always kept up to date.
-7. Prioritize component reusability.
-8. Always consider Flutter implementation feasibility.
-9. Always evaluate the Change Impact before making changes.
-10. Design is inseparable from development.
+4. Review/Audit 범위 원칙 → `Workflow_Project.md` §11 참고.
+5. The Design System is always kept up to date.
+6. Prioritize component reusability.
+7. Always consider Flutter implementation feasibility.
+8. Always evaluate the Change Impact before making changes.
+9. Design is inseparable from development.

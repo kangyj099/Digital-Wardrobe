@@ -1,4 +1,4 @@
-> Version 2.0
+> Version 2.1
 > Purpose: A development implementation policy for solo app development projects using Claude Code that **minimizes token usage while maintaining project quality and consistency.** Single consolidated document (former `workflow_development/04_Roles.md` merged back into this file on 2026-07-22 for reading convenience — see `docs/history/Decision.md`).
 
 ---
@@ -21,18 +21,7 @@
 # 1. Core Principles
 
 ## Source of Truth
-
-The project's Source of Truth is the Git repository and the latest Reference documents.
-
-Source code is based on Git, while planning, policies, and design are based on the latest Reference documents.
-
-AI sessions are not the project's source of truth.
-
-**Principles**
-
-* Source code is based on Git.
-* AI is not a code repository.
-* Chat is a discussion space.
+→ `Workflow_Project.md` §1.3 (per §1.7, no development-specific elaboration needed here).
 
 ---
 
@@ -134,20 +123,7 @@ If the classification is ambiguous, prioritize the impact scope.
 # 4. Roles
 
 ## PM (Project Manager)
-
-Manages the entire project (not limited to development).
-
-**Responsibilities**
-
-* Project management
-* Prioritization
-* Scheduling
-* Feature planning
-* Selecting the next task
-
-**Does not**
-
-* Write code
+→ `Workflow_Project.md` §2 PM 참고. Dev 도메인 비고: PM 역할은 development에 국한되지 않음(전사 총괄).
 
 ---
 
@@ -209,28 +185,11 @@ Used only for large-scale tasks.
 ---
 
 ## Tester
+→ `Workflow_Project.md` §2 Tester 참고. Dev 도메인 추가사항(Project.md에 없는 것만):
 
-Runs after Review passes. Exercises the actual running app (Flutter `integration_test`) to check what static review can't see — runtime behavior, not code.
-
-**Responsibilities**
-
-* Check behavior results, not code
-* Cover realistic non-standard flows, not just the happy path
-* Check regressions in existing features connected to the change
-* Check every defined state (success, loading, empty, error, retry, cancel) that's actually implemented
-* Check that the same data displays consistently across screens
-* Check that saved data survives navigation/re-entry
-* Check that repeated input or duplicate requests don't create duplicate data
-* Check behavior against Reference documents and project policy
 * Design and commit its own `integration_test/` scripts (never touches `lib/`)
 * Report Pass/Fail with mandatory reproduction steps for every Fail
-
-**Does not**
-
-* Implement or fix anything
-* Propose refactors
-* Evaluate code style (that's Review's job)
-* Invent scenarios for features that aren't actually implemented yet
+* **Does not** (추가): Invent scenarios for features that aren't actually implemented yet
 
 ---
 
@@ -349,11 +308,10 @@ Always remember:
 2. Handoffs should contain only the minimum necessary information.
 3. Use the pipeline appropriate for the task size (S/M/L/XL).
 4. Small tasks should use a lightweight pipeline.
-5. Review identifies problems.
-6. Audit evaluates the project as a whole.
-7. Decision Log and Technical Debt are maintained as cumulative documents.
-8. Reference documents are always kept up to date.
-9. Each session has only one purpose.
+5. Review/Audit 범위 원칙 → `Workflow_Project.md` §11 참고.
+6. Decision Log and Technical Debt are maintained as cumulative documents.
+7. Reference documents are always kept up to date.
+8. Each session has only one purpose.
 
 ---
 
