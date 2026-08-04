@@ -67,7 +67,7 @@ Auto-tagging fields (to be returned via Claude Vision prompt design)
 
 Clothing type (tops/bottoms/outerwear/shoes/accessories, detailed categories)
 Color (1–2 dominant colors)
-Presence of graphics (plain/pattern/print)
+Presence of graphics and pattern, as two independent flags rather than a single plain/pattern/print choice (revised 2026-08-03: an item can have both a printed graphic and a repeating textile pattern at once, which the original mutually-exclusive 3-way field couldn't represent) — `hasGraphic` (graphic/logo/print present) and `hasPattern` (repeating textile pattern, e.g. stripes/checks/florals, present)
 Mood (minimal/casual/formal, etc.) — may have low accuracy; requires validation in Phase 1.5
 Material (perception-based fabric feel, closed set of ~18 values — e.g. cotton/denim/knit/leather, not fiber-composition percentages; added to support future outfit-recommendation analysis of frequently-worn combinations) — same low-accuracy caveat as Mood; requires validation in Phase 1.5. Full value list: see `ClothingItem.material` / `kClothingMaterials` in the app's data model.
 
@@ -162,13 +162,13 @@ StyleLogItem (N:N link between StyleLog and ClothingItem)
 (to be revisited during design/implementation)
 
 Area	Choice	Reason
-Data storage	Firebase (Firestore + Cloud Storage + Auth, using Anonymous Auth)	Enables login-free local/cloud hybrid usage; easy future account linking
+Data storage	Firebase (Firestore + Cloud Storage), local-first — revised 2026-08-03: no Anonymous Auth at all; app runs fully offline from first launch using a local placeholder scope, cloud sync/backup only begins once the user explicitly links a social account (Google/Naver/Kakao/GitHub candidates, TBD)	Zero network required until the user opts in; avoids an Anonymous-Auth phase that would need its own later migration. Full design: `docs/reference/data/00_DataSchema.md` §11
 Background removal	Remove.bg API	No need to operate own model; fallback to manual masking if offline
 Auto-tagging	Claude API (Vision)	Image input → structured JSON tags; no separate classification model required
 Client	Flutter (Dart) — Android/iOS dual support	Single codebase ensures feature parity; go_router supports navigation stack requirements
 Composition canvas	Custom implementation using Flutter GestureDetector + Matrix4	Requires custom implementation due to lack of suitable off-the-shelf packages supporting move/rotate/scale/z-index
 Image loading/caching	cached_network_image	Required for performance/thermal management via thumbnail caching
-Offline/backup	Firestore offline cache + manual export/import files	Enables partial offline usage even without login
+Offline/backup	Firestore offline cache (as the primary local database pre-link, not just a fallback) + manual export/import files	Full offline usage is the default mode, not a degraded fallback — see `00_DataSchema.md` §11
 Development environment	Windows + Flutter SDK	Android via local emulator; iOS builds/signing via Codemagic (cloud macOS) → TestFlight for device testing
 7. Screen List (Draft)
 Closet Main (group view) / Closet list (grid view)
@@ -189,7 +189,7 @@ Screen transition flow diagrams (user flow diagrams) and hi-fi UI mockups will b
 — detailed screen-by-screen specs will be referenced in a separate “Screen UX Specification” document
 
 8. Post-Launch Checklist (Post-MVP Phase)
- Firebase Auth-based login (Anonymous → full account upgrade, consider social login)
+ Social login linking flow (Google/Naver/Kakao/GitHub candidates — no Anonymous Auth phase, see `00_DataSchema.md` §11 for the local-placeholder-to-real-uid migration this login flow must perform)
  Onboarding flow (empty closet UX, first item upload guidance)
  Privacy policy / Terms of service (required for Play Store)
  Camera/storage permission explanation UX

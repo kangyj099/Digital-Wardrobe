@@ -1,5 +1,45 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Firestore 스키마 — 오프라인/로컬퍼스트 아키텍처 전면 확정 + 필드 4종 확장 (Data/API/Architecture, Decision) — 아래 "[Decision] 전체 앱 Firestore 데이터 스키마 설계 확정" 항목의 후속
+
+결정:
+- **Anonymous Auth 완전 폐기, 진짜 로컬퍼스트로 전환**: 이전 항목이 전제했던 "Anonymous Auth가 설치 즉시 uid 부여" 모델을 폐기 — 링크(소셜로그인: 구글/네이버/카카오/깃허브 후보, 미확정) 전엔 Firebase Auth 호출 자체가 없음. 대신 고정 로컬 placeholder 스코프(`unlinked_local` — 최초 제안 `__unlinked_local__`는 Firestore 예약 패턴(`__.*__`)과 충돌해 라운드2 Audit에서 발견·수정) + `disableNetwork()`로 완전 오프라인 동작, 링크 시점에 실제 uid로 문서 일괄 마이그레이션 + `enableNetwork()`. 상세: `00_DataSchema.md` §11.
+- `wearCount` 집계: 기존 결정(client-side Firestore 트랜잭션)을 폐기 — 트랜잭션은 오프라인에서 동작 안 함. `WriteBatch`+`FieldValue.increment()`로 교체. 단, 같은 StyleLog를 여러 오프라인 기기가 동시 수정하면 카운터도 드리프트될 수 있음(라운드2 Review 발견, 배열 last-write-wins 문제와 별개) — 단일기기 전제라 지금은 추가 설계 안 함.
+- 신규 필드: `User.lastActiveAt`/`lastSyncedAt`/`authProvider`, `ClothingItem.color`(자유텍스트→폐쇄형 enum 제안 전환)/`hasGraphic`/`hasPattern`(MVP 3택1 필드 대체)/`acquiredAt`/`analysisMetadata`+`analysisModelVersion`+`analyzedAt`(추천 알고리즘용 분석 버저닝, 내용은 미정), `Composition.tags`, `StyleLog.createdAt`+`wornDate`(nullable로 변경).
+- `TrashEntry.createdAt`이 `StyleLog.wornDate`를 매핑하던 기존 코드 동작을 새 `StyleLog.createdAt`으로 옮기기로 확정(사용자 확인).
+- 마이그레이션 시 이미지 파일(로컬 경로→실제 Storage 경로+업로드)도 별도 처리 필요함을 명시(라운드2 Audit 발견, 기존 "단순 문서 복사" 서술이 이미지 필드엔 안 맞았음).
+
+사유:
+사용자가 테이블별로 직접 리뷰(User→ClothingItem→Composition→StyleLog)하며 다수 필드를 확장/수정, 그 과정에서 "서버 연결 없이도 완전한 오프라인 로컬앱" 요구사항이 나와 §11을 두 차례 재작성. 리뷰 라운드2(Development Review architecture)가 P1 2건(§1 정당화 문구가 폐기된 Anonymous Auth 모델을 계속 인용/`wearCount` "안전하다" 주장이 동일 StyleLog 동시편집 케이스엔 안 맞음) 발견 후 수정·재검증 통과, 이어진 Audit 라운드2가 추가 P1 3건(`unlinked_local` 예약패턴 충돌/마이그레이션 시 이미지 처리 누락/이 Decision.md 항목이 낡음) 발견 — 앞 둘은 즉시 수정, 세 번째가 이 항목.
+
+Impact:
+- `docs/reference/data/00_DataSchema.md` 수정(경로도 `docs/reference/architecture/`에서 이동). 코드 변경 없음 — Decision 단계 문서만.
+- 커밋(`feature/db-schema-design` 브랜치, 대표): `9bae16f`~`9f8fd9d`(라운드2 리뷰 대상 전체), `a2e1ac9`(Review 라운드2 수정), 이후 Audit 라운드2 수정 커밋.
+- 후속 백로그: Open Question #11/#12(color enum, hasGraphic/hasPattern 실제 코드 반영)/#13·#19(Storage 오프라인 큐, 마이그레이션 시 이미지 처리)/#17(wornDate null 정렬 UI) — `docs/work/BACKLOG.md` 참고.
+
+---
+
+[Decision] 전체 앱 Firestore 데이터 스키마 설계 확정 (Data/API/Architecture, Decision)
+
+결정:
+- `docs/reference/data/00_DataSchema.md` 신설 — User/ClothingItem/Composition/StyleLog 4개 도메인의 Firestore/Cloud Storage 스키마를 정식화. `00_MVP.md` §5의 낡은 초안 대신 현재 `lib/models/*.dart`를 필드 형태의 소스오브트루스로 삼음.
+- **최대 결정**: 사용자 스코프 서브컬렉션(`users/{uid}/clothingItems`, `.../compositions`, `.../styleLogs`) 채택 — flat 컬렉션+`userId` 필드 대신. 근거: Anonymous Auth가 설치 즉시 `uid`를 부여(부트스트래핑 공백 없음)/추후 계정 연결 시 `uid` 불변(마이그레이션 불필요)/보안 규칙이 구조적으로 더 안전(`userId` 필터 누락 위험 자체가 없음)/현재 교차유저 쿼리 필요 없음(향후 필요해지면 collection-group 쿼리로 커버 가능).
+- 소프트삭제/휴지통: 별도 Trash 컬렉션 없음 — 3개 서브컬렉션의 `isDeleted`/`deletedAt` 필드로 클라이언트 쿼리(`where isDeleted==true`) 파생, 기존 `trashEntriesProvider` 패턴과 동일.
+- `wearCount` 집계: 클라이언트 사이드 Firestore 트랜잭션 채택(Cloud Function 트리거 아님) — 1인 개발/개인용 우선 앱이라 배포 파이프라인 오버헤드가 정당화 안 됨.
+- `Composition.items`(≤15개 상한 기확정)는 embedded array 유지, 1MiB 문서 한도 문제 없음(15개×~200byte≈3KB).
+- `Composition.backgroundColor`(`ArtboardBackgroundColor` enum) 필드 추가 — Development Review가 최초 누락 발견(P1), 수정 후 재검증 통과.
+- Editor Draft(`editor_drafts`) 토폴로지: 2026-07-15 결정("`editor_drafts` 컬렉션, `{recordType, recordId}` 키")이 멀티테넌시를 고려하지 않았던 점을 재확인, `users/{uid}/editorDrafts/{recordType}_{recordId}`로 중첩하는 안을 제안(§1 토폴로지와 일관) — 최종 확정 아님, 문서 내 Open Question으로 유지.
+
+사유:
+사용자가 Firestore 실제 백엔드 전환에 앞서 전체 데이터 모델 설계를 요청(2026-08-02). Worker 초안 → Development Review(architecture, 1라운드: P1 backgroundColor 누락/P3 낡은 인용 → 수정 후 재검증 통과) → Audit(홀리스틱, Decision-stage 확정 전 크기무관 필수) 순서로 진행. Audit이 추가로 P1 2건(Editor Draft 토폴로지 미반영 — 이 세션에서 즉시 수정/ `Workflow_Project.md` §5·§12.1 정책 문서 자기모순 — 사용자 판단으로 백로그 최우선 등록, 지금 안 고침)과 P2(텍스트검색 아키텍처 미기술)/P3(Open Question #5 목록 불완전)를 발견. P2/P3는 일반 백로그.
+
+Impact:
+- 신규 파일: `docs/reference/data/00_DataSchema.md`. 커밋(`feature/db-schema-design` 브랜치): `87f7b4f`(초안) → `588c136`(Review fix) → `6ba82b1`(Audit fix).
+- 코드 변경 없음 — Decision 단계 문서만, 실제 Firestore 마이그레이션 구현은 별도 후속 Task.
+- 후속 백로그: `Workflow_Project.md` §5/§12.1 Audit-필수 문구 누락 수정(P1, 최우선), 텍스트검색 아키텍처 보강(P2), Open Question #5 목록 보완(P3) — 전부 `docs/work/BACKLOG.md` 참고.
+
+---
+
 [Decision] 프로스티드 글래스 블러/채도/하이라이트 값을 원본 목업 CSS 기준으로 정정 (UI/Screen, Decision)
 
 결정:

@@ -6,13 +6,13 @@ Digital Closet (working title, `digittal_wardrobe`)
 
 Version: 1.0.0+1
 
-Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
+Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI 백엔드 연동 전)
 
 ---
 
 # Current Milestone
 
-디자인 시스템 구축 — Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library (순서 근거: `.claude/policies/Workflow_Design.md` §2)
+레이아웃 & 데이터 작업 — 스타일일지 필터 UI, Firestore 데이터 스키마 설계 등. 디자인 시스템 구축(Brand Guide → Hi-Fi Sample → Visual Review → Design Tokens → Component Library, 순서 근거: `.claude/policies/Workflow_Design.md` §2)은 완성 전 보류 상태, Design Tokens는 provisional 유지. 밀린 Visual Review 트리거 시점은 아래 "Current" 섹션의 "판단 보류 — Visual Review 트리거 시점" 항목 참고.
 
 ---
 
@@ -49,6 +49,22 @@ Status: 🟡 기획/디자인 단계 (코드는 아직 스켈레톤뿐)
 
 ---
 
+**병렬 작업 완료(2026-08-02~04) — 전체 앱 Firestore 데이터 스키마 설계 확정(2라운드)**: `../Digital-Wardrobe-db-schema-design` worktree(`feature/db-schema-design`, `dev`에서 분기)에서 Data/API/Architecture × Decision 문서 신설 및 확장. 1라운드(Worker→Review→Audit)에 이어, 사용자 테이블별 직접 리뷰(User→ClothingItem→Composition→StyleLog) 중 오프라인/로컬퍼스트 아키텍처 요구사항이 나와 §11 전면 재작성 → Development Review 2라운드(P1 2건 수정)→Audit 2라운드(P1 3건 수정) 전부 통과. 산출물: `docs/reference/data/00_DataSchema.md`. 상세는 `docs/history/Decision.md` 최상단 2개 항목 참고 — 이 Current 항목(Style Log 필터 등)과는 무관한 별도 스레드.
+- (P2) 텍스트 검색(`00_MVP.md` §4.1, MVP 포함 기능)이 스키마 문서에 전혀 다뤄지지 않음 — Firestore 네이티브 풀텍스트 검색이 없어 클라이언트 사이드 필터링 전략 명시가 필요(Audit 2026-08-02 발견). 다음에 `00_DataSchema.md` 손댈 때 섹션/Open Question 추가.
+- (P3) `00_DataSchema.md` Open Question #5의 미구현 필드 예시 목록에 `ClothingItem.size`/`Composition.mood_tags` 누락(기능상 문제 없음, 예시만 불완전, Audit 2026-08-02 발견) — 다음에 이 문서 손댈 때 보완.
+- (P2) `lib/providers/trash_providers.dart`(또는 관련 mapping 지점)에서 `TrashEntry.createdAt`이 현재 `StyleLog.wornDate`를 매핑하고 있음 — 스키마 리뷰(2026-08-04)로 `StyleLog.createdAt`(신규 필드)로 옮기기로 확정(`00_DataSchema.md` §5/Open Question #18 참고). 실제 Firestore 마이그레이션 시점에 함께 반영.
+- **(P2) 실제 Firestore 마이그레이션 착수 시 함께 반영해야 할 스키마 확장분 일괄 목록** (`00_DataSchema.md` 2라운드 리뷰, 2026-08-04) — 지금은 전부 Decision-stage 문서에만 존재, 코드 미반영:
+  - `User` Dart 모델 자체가 아직 없음 — `lib/models/user.dart` 신설 필요(`email`/`authProvider`/`createdAt`/`lastActiveAt`/`lastSyncedAt`).
+  - `ClothingItem.color`: `String?` → `ClothingColor?`(신규 enum, `enums.dart`, Open Question #11의 16개 후보값) 타입 변경 + 기존 mock 데이터 재태깅.
+  - `ClothingItem.hasGraphic`/`hasPattern`(신규 bool? 필드, Open Question #12) — `00_MVP.md` §4.1 스펙 변경(3택1→독립 2개)에 대응.
+  - `ClothingItem.acquiredAt`(신규 Timestamp? 필드).
+  - `ClothingItem.analysisMetadata`/`analysisModelVersion`/`analyzedAt`(신규, §12 — 내부 구조는 추천 알고리즘 설계 후 결정, Open Question #16).
+  - `Composition.tags`(신규 `List<String>` 필드).
+  - `StyleLog.createdAt`(신규) / `wornDate`(nullable로 타입 변경) — Trash 매핑 변경(위 항목)과 함께.
+  - §11 전체(Anonymous Auth 제거, `unlinked_local` 로컬 스코프+`disableNetwork()`, 링크 시 실 uid 마이그레이션+이미지 재처리, Open Question #13/#19) — 이건 스키마가 아니라 앱 초기화/인증 아키텍처 자체를 새로 구현하는 별도 큰 작업, 다른 항목들과 규모가 다름.
+
+---
+
 **병렬 작업 완료(2026-07-23) — 하네스 파이프라인 보완 + 문서 구조 개편**: `../Digital-Wardrobe-pipeline-docs` worktree(`feature/pipeline-docs-restructure`, `feature/flutter-hifi-screens`에서 분기)에서 아래 3건을 독립적으로 완료, `dev`로 PR 대기 중 — 이 Current 항목(Group B 등)과는 무관한 별도 스레드라 그대로 계속 진행하면 됨.
 1. Task 완료 시 "세션 내 후속 작업 없음" 판단되면 BACKLOG.md만으로 새 세션이 이어받을 수 있는지 시뮬레이션 후 문제없으면 `/clear` 권유 — `Workflow_Project.md` §3 신설, CLAUDE.md 체크포인트 7번.
 2. 설계/계획(Decision 단계) 산출물은 크기 무관 확정 전 Audit 필수 — `Workflow_Project.md` §5 "Decision-Stage (Design & Plan) Pipeline" 신설 + §12.1 표 갱신, `.claude/agents/audit.md` 트리거 추가. 이 플랜 자체가 이 원칙의 첫 적용 사례(Review 1회+Audit 1회 통과 후 확정).
@@ -64,26 +80,33 @@ Flutter 프론트엔드 Hi-Fi 화면 스프린트 — mock 데이터 기반 UI�
 
 # Next
 
+- **[최우선] `Workflow_Project.md` §5/§12.1 정책 문서 자기모순 수정** — §12.1 표의 `Data/API/Architecture | Decision` 행에 "mandatory Audit before confirmation (크기 무관)" 문구가 누락돼 있음(`UI/Screen`·`Logic/Feature` 두 Decision 행엔 있음). §5 "Decision-Stage (Design & Plan) Pipeline" 본문 scope 문장도 Data/Architecture를 언급 안 함. DB 스키마 설계 확정 전 Audit(2026-08-02)이 발견(P1) — 이 Audit 자체가 그 누락된 규칙으로 트리거됐다는 자기모순이라 신뢰도 문제. `.claude/policies/**` 수정이라 실제 Edit 전 사용자 확인 필요(CLAUDE.md 체크포인트 2) — 사용자가 지금 당장은 보류, 백로그 최우선으로 등록만 해달라고 확정(2026-08-02).
 - ~~`ui-ux-pro-max` 플러그인에서 Flutter 관련 내용만 추출해 프로젝트 로컬 스킬로 이식~~ **완료(2026-07-18)** — `feature/flutter-ui-reference-skill` 브랜치(저장소 바깥 sibling worktree)에 방치돼 있던 450줄 초안을 이어받아 검증 후 커밋. 검증 내용: (1) Flutter 52개 가이드라인·팔레트/폰트 표 샘플을 원본 플러그인 로컬 캐시(`~/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/data/*.csv`)와 대조해 추출 정확성 확인, (2) 라이선스 고지문이 원본 `LICENSE` 파일과 정확히 일치함을 재확인(MIT, Copyright Next Level Builder). 산출물: `.claude/skills/flutter-ui-reference/SKILL.md`. 후속 조치로 `.claude/settings.json`에 `"ui-ux-pro-max@ui-ux-pro-max-skill": false` 추가해 이 프로젝트에서만 원본 플러그인(7개 스킬: banner-design/brand/design/design-system/slides/ui-styling/ui-ux-pro-max) 비활성화 — 전역 설정은 그대로 둬서 다른 프로젝트는 영향 없음.
 
 ---
 
 # MVP Progress
 
-`docs/reference/plan/00_MVP.md` §2 스코프 기준, 코드 구현 여부 (전부 미착수):
+`docs/reference/plan/00_MVP.md` §2 스코프 기준, **실제 Firebase/AI 백엔드 연동** 여부 체크리스트(UI 구현 상태는 각 줄에 병기).
 
-- [ ] Clothing archiving (AI 배경제거 + 자동태깅)
-- [ ] View/filter by tags
-- [ ] Composition (가상 코디, 편집 가능)
-- [ ] Style Log
-- [ ] Clothing-based history
-- [ ] Automatic wear count
+- [ ] Clothing archiving (AI 배경제거 + 자동태깅) — UI: 옷장 메인/상세/등록(`closet_main_screen.dart`/`closet_item_detail_screen.dart`/`closet_add_screen.dart`) 구현됨, AI 연동 없음
+- [ ] View/filter by tags — UI: 그룹형 드릴다운/필터 구현됨(그룹 A), 실데이터 없음
+- [ ] Composition (가상 코디, 편집 가능) — UI: 메인/상세/에디터(`composition_main_screen.dart`/`composition_detail_screen.dart`/`composition_editor_screen.dart`) 존재, 아트보드 실제 렌더링은 그룹 D 이월(위 "Current" 참고)
+- [ ] Style Log — UI: 메인/뷰어/등록(`style_log_main_screen.dart`/`style_log_viewer_screen.dart`/`style_log_add_screen.dart`) 구현됨, 필터/정렬 UI는 진행 중(위 "Current" 참고)
+- [ ] Clothing-based history — 상세 화면들의 상호참조(캐러셀/갤러리)는 구현됨, mock 데이터 기준
+- [ ] Automatic wear count — UI 표시는 있으나 자동 집계 로직 자체가 미구현(mock이 값 하드코딩); Firestore 마이그레이션 시 집계 메커니즘은 `docs/reference/data/00_DataSchema.md` §7에 이미 설계됨
 
 ---
 
 # Current Folder
 
-`lib/` (현재 `main.dart` 스켈레톤만 존재)
+`lib/`:
+- `screens/`: 13개 파일(옷장/코디/스타일일지/휴지통 메인·상세·등록·에디터, 설정, 공용 스캐폴드 등)
+- `widgets/`: 36개 파일(공용 컴포넌트)
+- `providers/`: 6개(도메인별 + 분류/테마)
+- `models/`: 5개(`ClothingItem`/`Composition`/`StyleLog`/`TrashEntry`/`enums`)
+- `theme/`, `mock/`, `router/`도 별도 존재
+- `integration_test/`, `test/`에 광범위한 테스트 스위트 존재(다수 통과 확인됨, 상세는 git log/Decision.md)
 
 ---
 
