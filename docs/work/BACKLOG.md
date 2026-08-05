@@ -30,6 +30,8 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 **브랜치 전환 — 현재 작업 브랜치는 `feature/layout-data-audit-recovery`(2026-08-05).** 동시 세션의 브랜치 체크아웃 충돌로 이 세션이 완료한 설정화면 로그인/로그아웃 토글 작업(커밋 5개)이 구 브랜치(`feature/layout-data-audit`)에 고아로 남았다가 병합으로 복구됨 — 사고 경위/복구 방법은 `Decision.md` 최상단 항목 참고. 아래 감사 작업은 이제 이 브랜치에서 계속 진행.
 
+**PR #23 생성 완료, 병합 대기 중(`https://github.com/kangyj099/Digital-Wardrobe/pull/23`)** — `feature/layout-data-audit-recovery` → `dev`. 설정화면 로그인/로그아웃 토글 + 옷장 감사 스펙 확정 + §12.1 정책 정정 + 브랜치 복구 전부 포함. 사용자가 직접 병합해야 함(정책상 PM은 병합 실행 안 함).
+
 **진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/layout-data-audit`에서 착수(2026-08-02)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
 
 **감사 대상 및 계획(플랜 파일은 세션 로컬이라 여기 원문 보존)**:
