@@ -24,9 +24,11 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Current
 
-**PR #20 병합 확인 완료(2026-08-02)** — `dev`로 병합됨(머지 커밋 `afbafe7`). 단, 병합은 커밋 `7425a13` 시점에 일어났고, 그 직후 세션 종료 직전에 만들어진 커밋 `0c14af7`(BACKLOG에 이 감사 계획 표를 기록한 커밋)는 병합 3분 뒤 push돼 PR에 포함되지 못하고 `feature/flutter-hifi-screens`에 고아로 남아 있었음 — `dev` fast-forward 동기화 후 `feature/layout-data-audit` 브랜치를 새로 파고 `0c14af7`를 cherry-pick으로 가져와 반영(커밋 `23a6a55`). 아래 감사 작업은 이 브랜치(`feature/layout-data-audit`, `dev`에서 분기)에서 진행.
+**PR #20 병합 확인 완료(2026-08-02)** — `dev`로 병합됨(머지 커밋 `afbafe7`). 단, 병합은 커밋 `7425a13` 시점에 일어났고, 그 직후 세션 종료 직전에 만들어진 커밋 `0c14af7`(BACKLOG에 이 감사 계획 표를 기록한 커밋)는 병합 3분 뒤 push돼 PR에 포함되지 못하고 `feature/flutter-hifi-screens`에 고아로 남아 있었음 — `dev` fast-forward 동기화 후 `feature/layout-data-audit` 브랜치를 새로 파고 `0c14af7`를 cherry-pick으로 가져와 반영(커밋 `23a6a55`).
 
-**대기 중 — 별도 세션 `feature/db-schema-design`(PR #21, 미병합)에 Firestore 데이터 스키마 확정본이 `docs/reference/architecture/00_DataSchema.md`로 있음.** 이 세션에서 확정한 폴더 분리(`data/`=스키마, `architecture/`=상위구조)와 경로가 어긋나 있어 사용자가 병합 전 `docs/reference/data/00_DataSchema.md`로 옮기기로 함(미착수). PR #21 머지/동기화 시 확인할 것.
+**PR #21 병합 완료 — DB 스키마 `docs/reference/data/00_DataSchema.md`로 이미 정착됨.** 별도 세션에서 진행한 Firestore 스키마 설계(오프라인/로컬퍼스트 아키텍처 확정 포함, Anonymous Auth 폐기)가 `dev`에 병합 완료, 경로도 이미 `data/`로 맞춰져 있음(더 이상 이동 작업 불필요). 상세는 `Decision.md` 참고.
+
+**브랜치 전환 — 현재 작업 브랜치는 `feature/layout-data-audit-recovery`(2026-08-05).** 동시 세션의 브랜치 체크아웃 충돌로 이 세션이 완료한 설정화면 로그인/로그아웃 토글 작업(커밋 5개)이 구 브랜치(`feature/layout-data-audit`)에 고아로 남았다가 병합으로 복구됨 — 사고 경위/복구 방법은 `Decision.md` 최상단 항목 참고. 아래 감사 작업은 이제 이 브랜치에서 계속 진행.
 
 **진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/layout-data-audit`에서 착수(2026-08-02)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
 

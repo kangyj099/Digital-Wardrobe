@@ -1,5 +1,21 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 동시 세션의 브랜치 체크아웃 충돌로 커밋 5개 고아화 — 병합으로 복구 (Data/Architecture, Decision — Operational process change / structural risk)
+
+결정(사고 기록 + 복구):
+- 이 세션이 설정화면 작업 중이던 사이, 같은 저장소 디렉토리에서 동작한 다른 세션이 `git checkout`으로 이 세션의 작업 브랜치(`feature/layout-data-audit`)를 `dev`로, 이어 새 브랜치 `feature/layout-data-audit-recovery`로 바꿔치기함 — 이 세션이 완료한 커밋 5개(설정화면 로그인/로그아웃 토글 구현 전체 사이클, Worker/Review/Tester 통과분)가 새 브랜치 히스토리에 없는 고아 상태가 됨(원격 미푸시 상태였음).
+- `feature/layout-data-audit`(고아 커밋을 여전히 가진 로컬 브랜치)를 `feature/layout-data-audit-recovery`에 병합해 복구. 충돌은 `Decision.md`(둘 다 맨 위에 새 항목을 추가하는 로그 파일) 1개뿐, 커밋 타임스탬프 기준(이 세션 2026-08-04, 상대 세션 2026-08-05)으로 순서 정리해 해소. 코드 파일은 전부 무충돌 병합.
+
+사유:
+`Workflow_Project.md` §15는 이미 "저장소 안 worktree는 검색 중복을 일으킨다"는 이유로 병렬 세션을 저장소 바깥 형제 디렉토리에 두라고 규정하고 있었으나, 이번 사고는 그보다 더 심각한 위험(브랜치 체크아웃 자체가 서로를 덮어써 커밋을 고아로 만듦)을 보여줌. 복구 과정에서 발견한 커밋 `7f8b651`의 메시지도 유사한 "concurrent session's branch operations" 위험을 이미 한 번 언급하고 있어 반복되는 문제로 보임.
+
+Impact:
+- 코드 유실 없음(git object store에 남아있어 복구 가능했음) — 다만 로컬 전용 커밋이라 완전히 안전하진 않았던 상황.
+- `feature/layout-data-audit`(구 브랜치)는 이제 `feature/layout-data-audit-recovery`에 완전히 포함됨 — 브랜치 삭제는 파괴적 작업이라 PM이 스스로 하지 않음, 사용자 판단 대기.
+- 후속 검토 필요(사용자 판단): §15를 "검색 중복 방지"뿐 아니라 "브랜치 상태 충돌 방지"까지 포괄하도록 근거를 확장할지 — 서브에이전트 worktree뿐 아니라 사용자가 직접 여는 병렬 세션도 예외 없이 격리된 워크트리를 쓰도록 강제할지.
+
+---
+
 [Decision] `ClothingItem.lastWornDate`는 저장 필드가 아니라 파생값 (Data/Architecture, Decision) — `00_DataSchema.md` Open Question #3 해소
 
 결정:
