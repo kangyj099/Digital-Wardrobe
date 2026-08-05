@@ -1,5 +1,41 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] `ClothingItem.lastWornDate`는 저장 필드가 아니라 파생값 (Data/Architecture, Decision) — `00_DataSchema.md` Open Question #3 해소
+
+결정:
+- `ClothingItem`에 `lastWornDate` 필드를 별도로 두지 않는다. 이 옷을 참조하는 `StyleLog` 중 `wornDate`가 null이 아닌 것들의 최댓값으로 클라이언트에서 파생시킨다(참조하는 `StyleLog`가 없거나 전부 `wornDate`가 null이면 마지막 착용일 없음).
+- `TrashEntry`(§6)와 동일한 "파생 read model" 패턴 — write-time 집계(예: `wearCount`처럼 트랜잭션/배치로 갱신) 방식은 채택하지 않음.
+
+사유:
+옷 상세 화면 레이아웃/데이터 감사 중 "마지막 착용일 표시" 스펙 요구가 미구현으로 발견됨 — 확인해보니 `00_DataSchema.md` Open Question #3이 이미 같은 이슈를 "필드를 지금 미리 선언할지, 나중에 추가할지" 형태로 열어두고 있었음. 옷 상세 감사를 계기로 정확한 정의(연결된 스타일일지 중 최신 착용일)를 사용자가 직접 확정.
+
+Impact:
+- `docs/reference/data/00_DataSchema.md` §3/Open Question #3 갱신 완료(파생 규칙 명시).
+- 코드 변경 없음(Decision 단계) — 착수 시 `lib/providers/closet_providers.dart` 또는 유사한 provider에 파생 로직 추가, `closet_item_detail_screen.dart`에 표시.
+
+---
+
+[Decision] 옷장 메인 레이아웃/데이터 감사 후속 — 핀치·검색·탭 애니메이션·정렬 UI 스펙 확정 (UI/Screen, Decision)
+
+결정:
+- 핀치 제스처(오므리기/벌리기)로 갤러리 밀도 조절 도입. 벌리면 밀도↓(타일 커짐)/오므리면 밀도↑. 기존 버튼과 동일한 3단계(`AppDensity.min/mid/max`)로 스냅하되, 버튼의 고정방향 순환(rotation) 로직은 재사용하지 않고 제스처 방향에 따라 자연스러운 순서로 이동 후 양 끝에서 clamp(래핑 없음). 제스처 중 실시간 확대/축소 피드백, release 시 임계값 기반 스냅. 스크롤 앵커링을 핀치+기존 밀도 버튼 둘 다에 신규 적용(현재 버튼엔 없던 기능). 롱프레스(다중선택)와 충돌 시 핀치 시작되면 롱프레스 타이머 취소.
+- 검색 버튼(ExpandableSearchField) 인터랙션 확정: 원형 버튼이 오른쪽 가장자리를 앵커로 캡슐로 모핑, 왼쪽 툴바 컨트롤(분류/밀도)은 8~16px 밀리며 fade-out(자리 대체, 겹침 아님), 검색 아이콘은 애니메이션 내내 고정, 바운스 없음, 180~220ms `easeOutCubic`. 기존 `AppSpacing.searchExpand`=300ms 상수는 이 값으로 대체 필요.
+- 툴바 레이아웃 재배치: 분류 캡슐+밀도 버튼(3/4 크기)을 왼쪽 그룹으로 묶고, 검색 버튼은 오른쪽 끝에 간격을 두고 단독 배치. `GalleryMainScreen` 공유 위젯이라 코디 메인에도 동일 적용됨.
+- 탭 반응 애니메이션: 스케일다운(0.96~0.98배) 방식 확정, Material 리플 방식은 기각.
+- 정렬 UI 구조: 분류 캡슐이 정렬 기준까지 겸하는 현재 구현 구조를 그대로 유지하기로 확정, `01_옷장.md`를 실제 구현 기준으로 갱신(정렬 전용 UI 분리안은 기각).
+- 오름/내림차순 토글 버튼(↑↓)은 스펙에서 완전히 삭제 — MVP 이후로 미루는 게 아니라 기능 자체를 없앰. 정렬은 분류 캡슐의 고정 방향 기본값만 지원.
+
+사유:
+PR #20(Step⑦ Group B/C) 병합 후 사용자 승인 하에 진행한 "페이지별 레이아웃/노출 정보값 감사"에서 옷장 메인을 스펙(`01_옷장.md`)과 대조한 결과 핀치 제스처·텍스트 검색이 완전히 누락, 탭 반응 애니메이션 없음, 정렬 UI가 스펙과 다른 구조로 흡수 통합돼 있음을 발견(4건). 각각 사용자와 논의해 세부 동작을 확정. 정렬 방향 토글 버튼은 툴바 재배치 논의 중 처음엔 유지+축소 대상이었으나, 사용자가 이후 이 버튼 자체를 완전히 없애기로 결정(단순화).
+
+Impact:
+- 이번 세션은 감사+설계 확정까지이며 코드 변경 없음(구현은 별도 Worker 착수 예정).
+- `docs/reference/plan/03_화면별UX명세서/01_옷장.md`: 분류+정렬 통합 서술로 갱신, 오름/내림차순 토글 언급 제거(사용자 직접 수정 포함).
+- `docs/work/옷장메인_재설계_체크리스트.md`: "미착수(Task 4)" 섹션 및 "제스처 통합" 섹션에 위 스펙 반영.
+- 착수 시 영향받는 코드: `lib/screens/closet_main_screen.dart`(밀도 로직/핀치 추가), `lib/widgets/gallery_main_screen.dart`(툴바 레이아웃 재배치, 정렬 버튼 제거), `lib/theme/app_spacing.dart`(`searchExpand` 상수값), `lib/providers/closet_providers.dart`(`closetSortAscendingProvider`/`ascending` 관련 정리) — `GalleryMainScreen` 공유 위젯이라 코디 메인도 함께 영향받음.
+
+---
+
 [Decision] Firestore 스키마 — 오프라인/로컬퍼스트 아키텍처 전면 확정 + 필드 4종 확장 (Data/API/Architecture, Decision) — 아래 "[Decision] 전체 앱 Firestore 데이터 스키마 설계 확정" 항목의 후속
 
 결정:
