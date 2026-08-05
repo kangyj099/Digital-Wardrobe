@@ -15,6 +15,42 @@ Impact:
 
 ---
 
+[Decision] 설정 화면 "로그인" 진입점 위치 확정 — 로그아웃 로우와 동일 슬롯에서 상태 전환 (UI/Screen, Decision — Implementation 태스크 중 결정, 사후 기록)
+
+결정:
+- 로그인 기능의 진입점 위치를 확정: 별도 화면/로우를 새로 만들지 않고, 설정 화면 "계정" 섹션의 기존 로그아웃 로우와 동일 슬롯을 재사용 — 로그인 상태면 "로그아웃"(destructive 스타일), 로그아웃 상태면 "로그인"(일반 스타일)으로 라벨/아이콘/색상만 전환.
+- "로그인" 탭 시 실제 로그인 화면/인증 로직은 만들지 않고 "기능 준비 중입니다" AlertDialog만 노출(상태 변경 없음).
+- `04_설정.md` §5가 "로그인 진입점 존재/위치는 범위 밖"으로 유보해뒀던 것 중 **위치**만 이번에 좁혀 확정 — 인증 연동/세션 무효화/계정연동/멀티기기 동기화는 여전히 Post-MVP(`00_MVP.md` §8) 범위 밖.
+- 로그아웃→로그인 상태 전환 타이밍은 기존 C7 선례(`closet_main_screen.dart`의 `softDeleteMany`/`restoreMany`)와 동일하게 탭 즉시 낙관적 전환 + Undo 시 복원으로 통일(최초 구현은 Undo 만료 시점 전환으로 스펙과 반대로 구현됐다가 Review에서 P1으로 지적돼 정정).
+
+사유:
+사용자가 설정 화면에 로그인 버튼(준비중 팝업) 추가를 요청, 이어서 "로그인 상태면 로그아웃, 로그아웃 상태면 로그인으로 보이게" 토글로 구체화. Worker 구현 후 Review가 이 결정이 §5의 범위 유보와 충돌하는데도 문서/Decision.md에 반영이 안 됐음을 P1로 지적 — 새 화면/로우를 만들지 않고 기존 로그아웃 슬롯을 재사용하는 게 최소 변경이라 이 형태로 확정.
+
+Impact:
+- `lib/screens/settings_screen.dart`: `_isLoggedIn` state 신설, 로우 1개가 상태에 따라 분기, 전환 타이밍 정정.
+- `docs/reference/plan/03_화면별UX명세서/04_설정.md` §2 로우4, §5 갱신(같은 세션에서 반영).
+- 실제 로그인 인증/계정연동/멀티기기 동기화 스코프는 안 당겨짐 — 이 결정은 그게 착수되기 전까지 보여줄 placeholder UI 위치만 정한 것.
+
+---
+
+[Decision] §12.1 Data/API/Architecture×Decision 행에 §5 Decision-Stage Pipeline 적용 + `docs/reference/data/`·`docs/reference/architecture/` 폴더 신설 (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §12.1 표에서 Data/API/Architecture×Decision 행만 "Development Review (architecture), pre-review"에 머물러 있던 걸 UI/Screen·Logic/Feature Decision 행과 동일하게 "Development Review (architecture) + mandatory Audit before confirmation(크기 무관, §5 Decision-Stage Pipeline 적용)"으로 정정. §5 Pipeline 도입 시(2026-07-23, 아래 "설계/계획 확정 전 Audit 필수화" 결정) 이 행만 갱신이 누락돼 있었음.
+- 같은 행의 Required Materials를 "Development workflow policy"(추상적)에서 "Plan reference docs(MVP/Needs/IA&UserFlow/화면별UX명세서) + `Decision.md`"로 구체화 — 화면에 노출되는 데이터 항목이 스키마 설계의 1차 입력이기 때문.
+- Data/API/Architecture×Implementation 행 Required Materials에 "Finalized data model doc(`docs/reference/data/`)" 추가.
+- `docs/reference/data/`(Firestore 컬렉션/필드 스키마 등 확정 데이터 모델 문서용) · `docs/reference/architecture/`(Auth/Storage 연동, 상태관리, 모듈 경계 등 앱 상위 구조 문서용, 현재는 빈 폴더) 신설. `docs/reference/design/`·`docs/reference/plan/`과 동급의 새 Reference 카테고리.
+- `Workflow_Project.md` 버전 3.1 → 3.2 (§1.6 minor bump 대상: 표 내용 변경).
+
+사유:
+사용자가 DB 설계 세션과 화면별 기능 감사 세션을 병렬로 새로 착수하려던 중, PM이 기존 파이프라인이 이 두 산출물을 어디에 놓고 무슨 검증을 거치게 할지 점검 — Data/Architecture×Decision 행이 다른 두 Decision 행과 달리 확정 전 Audit 요구가 빠져 있었고, 그 결과물을 놓을 Reference 폴더 자체가 없었음을 발견. DB 스키마는 Firestore(이미 `00_MVP.md` §6에 결정됨)이므로 관계형 ERD가 아니라 컬렉션/문서 구조로 설계해야 함도 함께 확인.
+
+Impact:
+- 이번 세션은 정책/폴더 정비까지이며 코드 변경 없음.
+- 후속: DB 설계 세션을 Layer=Data/Architecture, Stage=Decision으로 태깅해 §5 Pipeline(소단위 초안→Review→전체조립→Audit→확정)으로 착수 예정. 화면별 기능 감사는 기존 `audit` 서브에이전트 역할(Missing functionality 체크)을 그대로 재사용.
+
+---
+
 [Decision] 옷장 메인 레이아웃/데이터 감사 후속 — 핀치·검색·탭 애니메이션·정렬 UI 스펙 확정 (UI/Screen, Decision)
 
 결정:

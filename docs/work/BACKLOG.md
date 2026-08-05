@@ -18,16 +18,35 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Last Completed
 
-**라이브 Visual Review 배치(2026-07-29) 완료** — 사용자가 앱을 직접 구동하며 발견한 버그 3건+시각수정 2건 수정(옷장 다중선택 미완성 배지 탭 안 됨/마우스 드래그 스와이프 안 됨/GlassToast 가시성/휴지통 필터칩 오버플로+다중선택, 커밋 `e6c7cff`~`8021b81`) → Audit이 다크모드 `primaryLight`가 `colorScheme.primary`와 겹치는 P1 발견·즉시 해소(커밋 `0c16786`). 상세는 git log 참고.
-
-**목업 대조 기반 프로스티드 글래스 수정 + 후속 Audit(2026-07-30~08-01) 완료** — 사용자가 "글래스 효과가 유리 같지 않다"고 지적, 원본 목업(`참고자료/목업/옷장 메인/`)과 코드를 직접 대조해 원인 확정: 블러 8배 과함(sigma12→1.5)/`saturate(180%)` 누락/inset 하이라이트 누락/헤더 텍스트 굵기 미스매치. `AppGlassEffect`(블러+채도 합성 유틸) 신설해 3개 공용 글래스 프리미티브(`GlassPill`/`GlassCircleButton`/`AppDetailScaffold` 더보기버튼)에 적용, Worker→Review→Tester(97개 케이스) 통과 — 커밋 `f5b3b38`. **Task 크기 L로 Audit 실행** — P1 발견: Group B Task 7 셸 추출 때 "선택" 버튼의 `actionMinimal` 스타일이 누락돼 옷장/코디/스타일일지 메인 3화면에서 기본 크기로 렌더링되던 기존 버그(글래스 수정과 무관, `Decision.md`가 요구하는 "앱에서 가장 작은 텍스트" 위반) — 공용 `SelectionEntryButton` 위젯 추출로 해소, Worker→Review→Tester 통과 — 커밋 `7a7bed5`. 스타일일지 필터 UI 스펙도 이 사이에 정본 확정(`docs/reference/design/features/style_log/filter.md`, 오타 파일명 정정) — 커밋 `4bea03f`.
+**설정 화면 로그인/로그아웃 토글 로우 구현(2026-08-04)** — 계정 로우 1개가 로그인 상태에 따라 라벨/스타일 전환(로그인 진입점 위치 결정 겸함, `Decision.md` 기록). Worker→Review(P1 2건: 상태전환 타이밍/문서 미반영→수정)→Tester(Fail 1건: 공용 `UndoableActionToast`의 SDK `persist` 기본값 버그 발견→Worker가 `lib/widgets/undoable_action_toast.dart`까지 확장 수정→Review→Tester 재통과, 6/6 Pass) 전체 사이클 완료. 커밋 `379aa04`~`5079a64`(구현), `8b4a863`(문서/정책). 같은 세션에서 `Workflow_Project.md` §12.1 Data/Architecture×Decision 행의 Audit 게이트 누락도 별건으로 발견·수정(버전 3.2).
 
 ---
 
 # Current
 
-**진행 중 — 스타일일지 메인 필터/정렬 UI(사용자 발견 버그2)**: 스펙(`03_스타일 일지.md` 7-10행)이 "정렬/필터: 날짜/옷종류/날씨/계절 4기준+역순"을 요구하는데 `style_log_main_screen.dart`엔 이 UI가 아직 없음(Task 9가 `classification: null`로 넘겨서 그룹/정렬 캡슐 자체가 안 그려짐). **데이터 기반 선행 작업 완료(2026-07-29, 커밋 `1b2037f`)** — `StyleLog`에 `season`/`weather` 직접 추가, "옷 종류"는 사용자 지시대로 필드 중복 없이 "착용 옷" 참조에서 파생하도록 `additionalImagePaths`(취약한 이미지경로 매칭)를 `wornItemIds`(실제 ID 참조)로 교체.
-**UI 스펙 확정(2026-07-30/31, 사용자 확인)**: `docs/reference/design/features/style_log/filter.md`("Style Log Filter UI Revision")가 정본. 핵심 구조 — **Filter UI는 헤더 아래 고정 행이 아니라 콘텐츠 위에 뜨는 Floating Control Layer**(별도 레이아웃 공간 안 차지, 기존 헤더 글래스 컴포넌트와 동일 시각 언어 재사용). 필터 버튼(기본/활성/펼침 3상태) + 선택된 필터를 보여주는 Floating Group(가로 스크롤, × 개별 삭제) + Anchor Popup 패널(초기화만 있고 별도 적용 버튼 없음, 패널 닫히는 모든 경우에 일괄 Apply) + 기간/계절/날씨 3섹션(아코디언 없이 항상 펼침, Wrap 레이아웃). **다음**: 실제 구현 착수는 사용자 지시 대기.
+**PR #20 병합 확인 완료(2026-08-02)** — `dev`로 병합됨(머지 커밋 `afbafe7`). 단, 병합은 커밋 `7425a13` 시점에 일어났고, 그 직후 세션 종료 직전에 만들어진 커밋 `0c14af7`(BACKLOG에 이 감사 계획 표를 기록한 커밋)는 병합 3분 뒤 push돼 PR에 포함되지 못하고 `feature/flutter-hifi-screens`에 고아로 남아 있었음 — `dev` fast-forward 동기화 후 `feature/layout-data-audit` 브랜치를 새로 파고 `0c14af7`를 cherry-pick으로 가져와 반영(커밋 `23a6a55`). 아래 감사 작업은 이 브랜치(`feature/layout-data-audit`, `dev`에서 분기)에서 진행.
+
+**대기 중 — 별도 세션 `feature/db-schema-design`(PR #21, 미병합)에 Firestore 데이터 스키마 확정본이 `docs/reference/architecture/00_DataSchema.md`로 있음.** 이 세션에서 확정한 폴더 분리(`data/`=스키마, `architecture/`=상위구조)와 경로가 어긋나 있어 사용자가 병합 전 `docs/reference/data/00_DataSchema.md`로 옮기기로 함(미착수). PR #21 머지/동기화 시 확인할 것.
+
+**진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/layout-data-audit`에서 착수(2026-08-02)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
+
+**감사 대상 및 계획(플랜 파일은 세션 로컬이라 여기 원문 보존)**:
+
+| 페이지 | 스펙 파일 | 구현 파일 | 상태 |
+|---|---|---|---|
+| 옷장 메인 | `01_옷장.md` | `closet_main_screen.dart` | 완성 |
+| 옷 상세 | `01_옷장.md` | `closet_item_detail_screen.dart` | 완성(사용자가 "원하는 대로 안 나왔다"고 지적한 페이지, 최우선 점검 후보) |
+| 옷 추가 | `01_옷장.md` | `closet_add_screen.dart` | 스켈레톤만(대조 대상 아님) |
+| 코디 메인 | `02_코디 (가상 조합).md` | `composition_main_screen.dart` | 완성 |
+| 코디 상세 | `02_코디 (가상 조합).md` | `composition_detail_screen.dart` | 완성 |
+| 코디 제작(에디터) | `02_코디 (가상 조합).md` | `composition_editor_screen.dart` | 스켈레톤만(대조 대상 아님, "Editor Draft 구현" 착수 전) |
+| 스타일일지 메인 | `03_스타일 일지.md`(+`filter.md`) | `style_log_main_screen.dart` | 완성(필터 UI 제외) |
+| 스타일일지 열람 | `03_스타일 일지.md` | `style_log_viewer_screen.dart` | 완성 |
+| 스타일일지 추가 | `03_스타일 일지.md` | `style_log_add_screen.dart` | 스켈레톤만(대조 대상 아님) |
+| 설정 | `04_설정.md` | `settings_screen.dart` | 완성 |
+| 삭제&휴지통 | `05_삭제 & 휴지통.md` | `trash_main_screen.dart` | 완성 |
+
+방법(페이지당 동일): (1) 스펙 전문에서 레이아웃 요구사항+노출 데이터 항목 항목화 (2) 구현 파일과 하나씩 대조 (3) `항목|스펙 요구|실제 구현|상태(있음/없음/다른 형태)` 표로 기록, **색상/크기/여백 등 시각 디테일은 표에 안 올림**. 목업(옷장 메인/스타일일지 상세/코디 제작 3곳만 존재)은 레이아웃 구조 참고용으로만 곁들이고 시각 값 추출은 안 함. Explore 서브에이전트 병렬 파견으로 1차 수집 후 PM이 직접 재확인. 산출물은 페이지별로 순서대로(옷장 메인→옷 상세→코디 메인→코디 상세→스타일일지 메인→스타일일지 열람→설정→휴지통) 하나씩 보고, 한 번에 몰아서 안 줌. 이번 라운드는 점검만(코드 변경 없음) — 발견 후 수정은 사용자 확인 받고 별도 진행.
 
 **Step⑦ 나머지 스코프 진행 상황 — 그룹 A/B/C 완료, 그룹 D 미착수**: 그룹 A(그룹형 드릴다운, 2026-07-19)/그룹 B(다중선택+휴지통, 13 Task 전부 완료)/그룹 C(설정 나머지 — 다크모드 실동작 포함, 2026-07-28) 전부 완료. 상세 경위는 `Decision.md`/git log(태그: Task 이름으로 검색)가 1차 소스, 이 파일은 더 이상 Task별 세부 내역을 보존하지 않음.
 - **그룹 D(에디터급 이월 항목 — 겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩)**: 아직 스펙 착수 전. "Editor Draft 구현"과 인프라 상당 부분 겹칠 가능성 높음 — 아트보드 렌더링은 그룹 B의 코디 삭제 캐스케이드용 스냅샷 아키텍처와도 연결됨. 착수 전 `../Digital-Wardrobe-composition-artboard` worktree(`feature/composition-artboard-widget`, 코디 아트보드 `InteractiveArtboard` 병렬 작업)가 `composition_editor_screen.dart`를 실제로 배선하는 단계에 들어갔는지 `git log origin/dev..feature/composition-artboard-widget --stat`로 재확인할 것(그 전까진 `lib/widgets/interactive_artboard/`에만 격리돼 파일 겹침 없음, 2026-07-21 확인).
