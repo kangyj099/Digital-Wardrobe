@@ -1102,3 +1102,26 @@ Impact:
 - `.claude/policies/Workflow_Project.md` §5 수정, 버전 3.1로 상향.
 - 기존 M/L/XL 재검증 문구는 그대로 유지, 새 하위 절 하나만 추가 — CLAUDE.md에 이미 있는 에이전트 재사용 원칙은 참조만 하고 재서술하지 않음.
 - 앱 코드/런타임 동작 변화 없음 — Worker→Review만 진행(문서 전용 변경, Tester 불필요).
+
+---
+
+[Decision] 정책 문서 4종 + CLAUDE.md 간 중복 서술 통합 — 조항 구조는 유지, 반복 규칙만 참조로 대체 (`Workflow_Project.md` §9/§11 3.1→3.2, `Workflow_Development.md` §1/§4/§7 2.0→2.1, `Workflow_Design.md` §7/§12 3.0→3.1, `CLAUDE.md` 체크포인트 3/4/5/6/7 + "진행 중 작업 상태" 문단)
+
+배경:
+사용자가 "정책 문서들이 법전식(번호 매긴 조항, 중첩 예외, 상세 예시)이라 읽기 복잡하고 오히려 성능을 떨어뜨리는 것 같다, 미사여구 없이 간결해지면 좋겠는데 AI 입장에선 다른가"라고 문제 제기(2026-07-30). PM 판단: 조항식 구조·정밀한 용어 자체는 모호한 산문보다 AI에게 오히려 유리(추론에 의존하지 않아도 됨) — 문제는 형식이 아니라 **같은 규칙이 여러 문서/절에 다른 말로 반복 서술되는 것**. 근거: 바로 앞 Decision 항목에서 PM 본인이 쓴 조항이 CLAUDE.md:37과 중복인 걸 스스로 못 알아챈 사건. `audit` 서브에이전트에게 정책 문서 5개(CLAUDE.md + policies 4종)를 대상으로 중복 탐지 감사를 위임, 다음을 발견: CLAUDE.md 체크포인트 3~7과 "진행 중 작업 상태" 문단이 `Workflow_Project.md` §13.2/§13.3/§5/§13.4/§3을 재서술(P0/P1, CLAUDE.md는 세션마다 매번 읽혀 비용이 가장 큼); `Workflow_Development.md` §4의 PM·Tester가 `Workflow_Project.md` §2를 거의 그대로 복사(P0/P1, Worker/Review 스폰마다 읽힘); "Review identifies problems."/"Audit evaluates the project as a whole." 두 문장이 Project/Development/Design 세 문서에 토씨까지 동일하게 반복(P1); "Audit은 못 고치고 태스크만 만든다"가 `Workflow_Project.md` 안에서만 §2·§9 두 번 반복 포함 5곳에 반복(P2); `Workflow_Development.md` §1이 `Workflow_Project.md` §1.3을 그대로 베낌(P2); `Workflow_Project.md` §11이 같은 문서 내 다른 절 대부분을 재요약(P3, 위 세 문서 공통 문장 중복의 원인 뿌리). `Workflow_Frontend.md`는 findings 없음 — 스킬 참조 위임 패턴을 이미 올바르게 쓰고 있어 이게 목표 패턴으로 확인됨.
+
+결정:
+- 조항 번호·구조·정밀한 용어는 전부 그대로 유지한다 — 이번 통합은 문체를 산문으로 풀어쓰는 게 아니라, 중복된 규칙 서술을 "→ §X 참고" 포인터로 대체하는 것에 한정.
+- `Workflow_Project.md` §9(Audit Principles)를 §2 Feature Audit로의 포인터로 축소. §11(Core Operating Principles)을 각 항목이 실제 정의된 절 번호를 가리키는 색인표로 전환(문서 내부 재요약 제거) — 버전 3.1→3.2.
+- `Workflow_Development.md` §1(Source of Truth), §4의 PM·Tester를 `Workflow_Project.md` §1.3/§2로의 포인터로 축소하되, 각 역할의 dev 도메인 고유 추가사항(Tester의 `integration_test/` 작성 권한, PM의 "development 국한 아님" 비고 등 — Project.md에 없는 내용)은 그대로 유지. §7의 "Review identifies problems."/"Audit evaluates..." 두 줄을 `Workflow_Project.md` §11 참고 한 줄로 병합(9개 항목→8개) — 버전 2.0→2.1.
+- `Workflow_Design.md` §7(Design Audit) 서두를 `Workflow_Project.md` §2로의 포인터로 축소(Design 고유 Review Areas 5개는 유지). §12의 동일 두 줄도 같은 방식으로 병합(10개 항목→9개) — 버전 3.0→3.1.
+- `CLAUDE.md` 체크포인트 3(dev/main 커밋 게이트)·4(작업↔리뷰↔테스트 사이클)·5(dev 동기화)·6(Design 마일스톤)·7(연속성 시뮬레이션)과 "진행 중 작업 상태" 문단에서, `Workflow_Project.md`/`Workflow_Design.md`가 이미 전체 서술한 세부 규칙(Tester 실패 시 재수행 조건, PR 게이트 세부 조건, Decision-Stage Audit 게이트 조건, BACKLOG Current 갱신 원칙 등)을 걷어내고 "무엇을 언제 하는지" 한 줄 요약 + `Workflow_Project.md`/`Workflow_Design.md` 절 번호 포인터로 대체. 체크포인트 1·2는 이미 올바른 패턴이라 변경 없음.
+- Worker instance 일반화 커밋(`8134b5f`, "워커 인스턴스 수명"→"에이전트 인스턴스 수명", feature/flutter-hifi-screens에서 사용자가 직접 커밋했으나 dev엔 미병합)을 이 브랜치로 cherry-pick — `Workflow_Project.md` §5의 재검증 루프 조항이 "CLAUDE.md 에이전트 인스턴스 수명"을 가리키는데, dev 기준 브랜치엔 그 일반화된 표현이 아직 없어 포인터가 어긋날 뻔한 걸 미리 바로잡음.
+
+사유:
+"조항 구조 유지 + 중복 제거"가 맞는 방향인 이유: 모호한 산문으로 풀면 여러 서브에이전트가 각자 콜드 스폰 상태에서 같은 문서를 다르게 해석할 위험이 커져, 이 하네스가 추적성을 위해 멀티에이전트 게이트를 쓰는 목적과 정반대로 간다. 반대로 중복 제거는 정밀도 손실 없이 (a) 읽기 복잡도와 (b) 매 서브에이전트 스폰마다 드는 토큰 비용을 동시에 줄인다. Development.md의 Worker/Review/Integrator 섹션은 감사가 "5개 역할 전부"를 제안했지만 실제로 비교해보니 Project.md의 더 짧고 일반적인 정의를 실질적으로 확장(dev 도메인 전용 세부 항목 다수 추가)하고 있어 진짜 중복이 아니었음 — PM 자체 재검증으로 스코프를 좁혀 PM/Tester만 손봄(감사 요약 문구도 "체크포인트 2~7"이라 했지만 실제 근거는 체크포인트 3~7+문단 43이었던 것과 같은 종류의 자체 과장 — Where 근거를 직접 대조해 실제 대상만 수정).
+
+Impact:
+- `.claude/policies/Workflow_Project.md`(§9, §11, 버전 3.2), `Workflow_Development.md`(§1, §4 PM/Tester, §7, 버전 2.1), `Workflow_Design.md`(§7, §12, 버전 3.1), `CLAUDE.md`(체크포인트 3/4/5/6/7, "진행 중 작업 상태" 문단) 수정.
+- `Workflow_Frontend.md`는 변경 없음(findings 없었음).
+- 그 어떤 조항의 **의미**도 바뀌지 않음 — 서술 위치와 중복 여부만 정리. 앱 코드/런타임 동작 변화 없음, Worker→Review만 진행(Tester 불필요).
