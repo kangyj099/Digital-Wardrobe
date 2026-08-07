@@ -1,5 +1,23 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] `StyleLog.additionalImagePaths` 필드 복원 + 카드 3~10번 슬롯 상호작용 확정 (Data/Architecture + UI/Screen, Decision) — `00_DataSchema.md` 오류 정정
+
+결정:
+- `00_DataSchema.md`가 "`00_MVP.md` §4.3의 추가 사진 개념이 `wornItemIds`로 대체됐다"고 서술했던 것은 **오류** — `wornItemIds`(착용 옷, `ClothingItem` 참조)와 카드 3~10번 슬롯의 "추가 사진"(실제 업로드 이미지)은 서로 다른 별개 기능이다. `03_스타일 일지.md`가 정본.
+- `StyleLog`에 `additionalImagePaths`(`array<string>`, Cloud Storage 경로) 필드를 스키마에 복원. 슬롯 상한 **10개**(대표사진 1번+코디 2번 고정, 추가 사진 최대 8장).
+- 재배치 상호작용: 사진을 꾹 눌러 스냅 → 좌우로 드래그하면 인접 슬롯과 한 칸씩 순서 교환. 1·2번 슬롯은 재배치 대상 아님.
+- 슬롯이 다 안 찼으면, 내용 있는 마지막 슬롯의 다음 슬롯에 [+] 버튼이 표시되어 그 자리에서 바로 사진 추가 가능.
+
+사유:
+스타일일지 열람 화면 레이아웃/데이터 감사 중 "카드 3번째 슬롯(추가 사진) 없음"을 발견 — 처음엔 `00_DataSchema.md`의 기존 서술(`wornItemIds`로 대체됨)을 근거로 "이미 결정된 사항, 새 버그 아님"으로 보고했으나, 사용자가 `03_스타일 일지.md`가 정본이며 `00_DataSchema.md` 쪽이 잘못됐다고 정정 — 둘은 애초에 다른 기능(착용한 옷 참조 vs 실제 추가 촬영 사진)이었음.
+
+Impact:
+- `docs/reference/data/00_DataSchema.md` §5 필드표+Note+§8 Storage 경로표 갱신 완료(오류 서술 제거, 필드 추가).
+- `docs/reference/plan/03_화면별UX명세서/03_스타일 일지.md` — 슬롯 상한/재배치/[+] 버튼 상세 스펙 추가.
+- 코드 변경 없음(Decision 단계) — 착수 시 `lib/models/style_log.dart`에 필드 추가, 카드 `PageView`를 3~10번 슬롯까지 확장하는 화면 구현 필요(스타일일지 열람 감사의 후속 구현 작업으로 BACKLOG에 등록 예정).
+
+---
+
 [Decision] 코디 편집기(Task A) — Editor Draft 모델 실제 적용 + `Composition.backgroundColor` 필드 추가 (Data/Architecture + UI/Screen, Decision)
 
 결정:
