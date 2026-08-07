@@ -408,11 +408,11 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 | UI/Screen | Implementation (Frontend) | Development Review + spec-compliance check | Finalized design tokens/system doc, screen UX spec, existing widgets (`lib/`), Development workflow policy, Frontend workflow policy (`Workflow_Frontend.md` — stage-index anchor doc, lists the Frontend-specific skills to invoke) |
 | Logic/Feature | Decision (Planning) | Small-unit review — `writing-plans` Self-Review(3항목) + 정책 대조 승인이 충족되면 대체 가능, 미충족 시 `review` 서브에이전트 — + mandatory Audit before confirmation (크기 무관) | Plan reference docs, **Skill: `documentation-conventions`** (invoke first) |
 | Logic/Feature | Implementation | Development Review (functional) | Related code, Plan reference docs, **Skill: `engineering-principles`** (invoke first) |
-| Data/API/Architecture | Decision | Development Review (architecture), pre-review | Development workflow policy, **Skill: `documentation-conventions`** (invoke first) |
-| Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema, **Skill: `engineering-principles`** (invoke first) |
+| Data/API/Architecture | Decision | Development Review (architecture) + mandatory Audit before confirmation (크기 무관, §5 Decision-Stage Pipeline 적용) | Plan reference docs(MVP/Needs/IA&UserFlow/화면별UX명세서 — 화면에 노출되는 데이터 항목이 스키마 후보), `Decision.md`, **Skill: `documentation-conventions`** (invoke first) |
+| Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema, Finalized data model doc (`docs/reference/data/`), **Skill: `engineering-principles`** (invoke first) |
 | (any Layer with runtime behavior) | Implementation — Tester pass | Runs after Review passes | Same Reference docs as Review for that Layer/Stage, `Decision.md`/`TechnicalDebt.md`, Worker's handoff + modified files, and the runnable app itself (not the raw exploratory material behind a Decision-stage task) |
 
-(§5 "Decision-Stage (Design & Plan) Pipeline"의 확정-전-Audit 규칙이 위 Design/Planning 두 행 모두에 반영되어 있음 — 본문 규칙과 이 표가 따로 갱신되며 어긋나는 걸 방지하기 위해 두 행을 함께 갱신함.)
+(§5 "Decision-Stage (Design & Plan) Pipeline"의 확정-전-Audit 규칙이 위 Design/Planning/Data 세 행 모두에 반영되어 있음 — 본문 규칙과 이 표가 따로 갱신되며 어긋나는 걸 방지하기 위해 세 행을 함께 갱신함.)
 
 ## 12.2 Worker vs. Review Materials
 

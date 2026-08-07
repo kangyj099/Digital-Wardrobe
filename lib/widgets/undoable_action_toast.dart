@@ -44,6 +44,13 @@ class UndoableActionToast {
         ),
         duration: duration,
         action: SnackBarAction(label: actionLabel, onPressed: onUndo),
+        // SDK 기본값은 `persist = persist ?? action != null`(snack_bar.dart)이라, action이
+        // 있는 SnackBar는 기본적으로 `persist: true`가 되어 `ScaffoldMessengerState`가 자동소멸
+        // 타이머 만료 시 `hideCurrentSnackBar()`를 호출하지 않고 그냥 리턴한다(scaffold.dart
+        // `build()`의 `if (snack.persist) return;`) — 즉 사용자가 아무 조작도 안 하면 토스트가
+        // 화면에 무기한 남는다. 이 위젯은 자동소멸을 보장해야 하므로(`GlassToast`의 동등 계약)
+        // 명시적으로 `false`를 넘겨 SDK 기본 동작을 오버라이드한다.
+        persist: false,
       ),
     );
 

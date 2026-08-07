@@ -27,11 +27,13 @@ final List<Composition> mockCompositions = [
     createdAt: DateTime(2025, 3, 10),
     season: Season.springFall,
     weather: Weather.clear,
+    // x/y는 캔버스 대비 정규화된(0.0~1.0) 아이템 중심 좌표(`CompositionItemPlacement` doc
+    // 참고) — 4개를 겹치지 않는 2x2 산포로 배치한 순수 데모값(실사용자 데이터 아님).
     items: const [
-      CompositionItemPlacement(clothingItemId: 'c01', x: 40, y: 40, zIndex: 0),
-      CompositionItemPlacement(clothingItemId: 'c11', x: 60, y: 120, zIndex: 1),
-      CompositionItemPlacement(clothingItemId: 'c07', x: 60, y: 260, zIndex: 2),
-      CompositionItemPlacement(clothingItemId: 'c03', x: 80, y: 380, zIndex: 3),
+      CompositionItemPlacement(clothingItemId: 'c01', x: 0.3, y: 0.25, zIndex: 0),
+      CompositionItemPlacement(clothingItemId: 'c11', x: 0.7, y: 0.25, zIndex: 1),
+      CompositionItemPlacement(clothingItemId: 'c07', x: 0.3, y: 0.65, zIndex: 2),
+      CompositionItemPlacement(clothingItemId: 'c03', x: 0.7, y: 0.65, zIndex: 3),
     ],
   ),
   Composition(
@@ -41,8 +43,8 @@ final List<Composition> mockCompositions = [
     // season 미지정 — 코디 "계절" 분류의 미분류 카드 데모용.
     weather: Weather.rain,
     items: const [
-      CompositionItemPlacement(clothingItemId: 'c04', x: 40, y: 40, zIndex: 0),
-      CompositionItemPlacement(clothingItemId: 'c05', x: 70, y: 140, zIndex: 1),
+      CompositionItemPlacement(clothingItemId: 'c04', x: 0.3, y: 0.35, zIndex: 0),
+      CompositionItemPlacement(clothingItemId: 'c05', x: 0.65, y: 0.6, zIndex: 1),
     ],
     isDeleted: true,
     deletedAt: DateTime.now().subtract(const Duration(days: 5)),
@@ -57,8 +59,8 @@ final List<Composition> mockCompositions = [
     // season 미지정 — 코디 "계절" 분류의 미분류 카드 데모용.
     weather: Weather.rain,
     items: const [
-      CompositionItemPlacement(clothingItemId: 'c04', x: 40, y: 40, zIndex: 0),
-      CompositionItemPlacement(clothingItemId: 'c05', x: 70, y: 140, zIndex: 1),
+      CompositionItemPlacement(clothingItemId: 'c04', x: 0.3, y: 0.35, zIndex: 0),
+      CompositionItemPlacement(clothingItemId: 'c05', x: 0.65, y: 0.6, zIndex: 1),
     ],
   ),
 ];

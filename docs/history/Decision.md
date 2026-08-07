@@ -1,5 +1,127 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 코디 편집기(Task A) — Editor Draft 모델 실제 적용 + `Composition.backgroundColor` 필드 추가 (Data/Architecture + UI/Screen, Decision)
+
+결정:
+- `composition_editor_screen.dart`(코디 만들기/편집)를 `docs/history/Decision.md`의 기존 "Editor 저장 모델 전환" 결정(Editor Draft + Commit/Cancel)에 맞춰 실제로 구현. `CompositionDraft` 모델 + `compositionDraftProvider`(family, compositionId별) 신설 — 아트보드 제스처(이동/회전/크기조절/삭제/배경색)는 전부 Draft에만 실시간 반영, Record(`compositionsProvider`)는 손대지 않는다.
+- `EditorHeader`에 완료(✔) 버튼 추가(nullable `onCommit` 콜백, 다른 2개 Add/Create 스켈레톤 화면엔 영향 없음). 완료 시 Draft→Record 반영 후 Draft 폐기, 취소 시 Draft만 폐기(Record는 진입 이전 상태 그대로 — Rollback).
+- `Composition`에 `ArtboardBackgroundColor? backgroundColor` 필드 신규 추가(기존 `season`/`weather`/`coverImagePath`와 동일한 `_unset` sentinel `copyWith` 패턴) — 배경색도 완료해야 저장되고 취소하면 사라지도록, Draft/Commit/Cancel 일관성을 배경색까지 확장.
+
+사유:
+Task A(옷장/코디 레이아웃 감사에서 발견된 "코디 상세에 아트보드 렌더링 없음" 갭 해소) 진행 중 Audit이 P1 발견: 처음 구현이 제스처마다 Record에 직접 저장하는 방식이었는데, 이는 기존 "Editor 저장 모델 전환" 결정 및 `_공통 규칙.md` §레코드 저장 원칙이 코디 편집기를 명시적으로 Editor Draft 대상으로 지정해둔 것과 정면으로 어긋남. 사용자가 즉시 Draft 모델로 리워크하기로 결정. 리워크 도중 Tester가 배경색이 완료해도 저장 안 되는 것(당시 `Composition`에 필드 자체가 없었음)을 발견 → 사용자가 필드 추가도 함께 결정(`00_DataSchema.md` Open Question #9가 이미 이 필드를 제안해둔 상태였음).
+
+Impact:
+- 신규: `lib/models/composition_draft.dart`, `lib/providers/composition_editor_providers.dart`(Draft provider 포함).
+- 수정: `lib/models/composition.dart`(`backgroundColor` 필드), `lib/providers/composition_providers.dart`(`updateItems`/`add`), `lib/screens/composition_editor_screen.dart`(Draft 기반 전면 재작성), `lib/widgets/editor_header.dart`(`onCommit` 파라미터).
+- `docs/reference/data/00_DataSchema.md` Open Question #9 — "제안" 상태에서 "실제 Dart 모델에 반영됨"으로 갱신.
+- Worker→Review→Tester 사이클을 리워크 전/후 두 번, Audit도 두 번(최초 P1 발견 라운드 + 리워크 후 최종 재검토) 거쳐 통과 — 최종 Audit에서 남은 P2 다수는 `TechnicalDebt.md`/`BACKLOG.md`에 별도 기록.
+- `ClothingItemDraft`/`StyleLogDraft`(다른 두 Editor 화면의 Draft)는 이번 스코프 밖 — 각 화면이 실제로 Editor 상호작용을 갖추는 시점에 개별 적용 예정.
+
+---
+
+[Decision] 코디 메인 [+] 버튼 — 분류별 자동 태그 적용 범위 확정, 라벨 전환은 보류 (UI/Screen, Decision)
+
+결정:
+- 분류(계절/날씨) 드릴다운 중 [+] 버튼으로 코디를 만들면, 보고 있던 분류값(season 또는 weather)을 새 코디에 자동 적용한다 — 두 기준 모두 동일한 방식으로 처리(계절이면 season, 날씨면 weather).
+- 스펙(`02_코디 (가상 조합).md`)의 "라벨 [이 분류로 코디 만들기]로 전환" 요구는 **지금은 보류** — FAB은 아이콘 전용(`FloatingActionButton`) 그대로 유지, 텍스트 라벨 없음.
+
+사유:
+코디 메인 레이아웃/데이터 감사에서 발견 — 옷장 메인은 최소한 FAB 라벨 전환이라도 있었는데, 코디 메인은 그마저 없고 분류 자동 적용 로직 자체가 없었음. 사용자가 두 가지를 분리해서 판단: 자동 태그 적용 범위는 옷장과 같은 패턴으로 확정, 라벨 표시는 당장 필요 없다고 판단해 보류.
+
+Impact:
+- 코드 변경 없음(Decision 단계) — 실제 배선은 "코디 제작(에디터)" 착수 시점(현재 스켈레톤)에 함께 반영 예정, `docs/work/BACKLOG.md` "Editor Draft 구현" 항목에 포인터만 추가.
+- 라벨 전환은 폐기가 아니라 보류 — 필요해지면 재검토.
+
+---
+
+[Decision] 동시 세션의 브랜치 체크아웃 충돌로 커밋 5개 고아화 — 병합으로 복구 (Data/Architecture, Decision — Operational process change / structural risk)
+
+결정(사고 기록 + 복구):
+- 이 세션이 설정화면 작업 중이던 사이, 같은 저장소 디렉토리에서 동작한 다른 세션이 `git checkout`으로 이 세션의 작업 브랜치(`feature/layout-data-audit`)를 `dev`로, 이어 새 브랜치 `feature/layout-data-audit-recovery`로 바꿔치기함 — 이 세션이 완료한 커밋 5개(설정화면 로그인/로그아웃 토글 구현 전체 사이클, Worker/Review/Tester 통과분)가 새 브랜치 히스토리에 없는 고아 상태가 됨(원격 미푸시 상태였음).
+- `feature/layout-data-audit`(고아 커밋을 여전히 가진 로컬 브랜치)를 `feature/layout-data-audit-recovery`에 병합해 복구. 충돌은 `Decision.md`(둘 다 맨 위에 새 항목을 추가하는 로그 파일) 1개뿐, 커밋 타임스탬프 기준(이 세션 2026-08-04, 상대 세션 2026-08-05)으로 순서 정리해 해소. 코드 파일은 전부 무충돌 병합.
+
+사유:
+`Workflow_Project.md` §15는 이미 "저장소 안 worktree는 검색 중복을 일으킨다"는 이유로 병렬 세션을 저장소 바깥 형제 디렉토리에 두라고 규정하고 있었으나, 이번 사고는 그보다 더 심각한 위험(브랜치 체크아웃 자체가 서로를 덮어써 커밋을 고아로 만듦)을 보여줌. 복구 과정에서 발견한 커밋 `7f8b651`의 메시지도 유사한 "concurrent session's branch operations" 위험을 이미 한 번 언급하고 있어 반복되는 문제로 보임.
+
+Impact:
+- 코드 유실 없음(git object store에 남아있어 복구 가능했음) — 다만 로컬 전용 커밋이라 완전히 안전하진 않았던 상황.
+- `feature/layout-data-audit`(구 브랜치)는 이제 `feature/layout-data-audit-recovery`에 완전히 포함됨 — 브랜치 삭제는 파괴적 작업이라 PM이 스스로 하지 않음, 사용자 판단 대기.
+- 후속 검토 필요(사용자 판단): §15를 "검색 중복 방지"뿐 아니라 "브랜치 상태 충돌 방지"까지 포괄하도록 근거를 확장할지 — 서브에이전트 worktree뿐 아니라 사용자가 직접 여는 병렬 세션도 예외 없이 격리된 워크트리를 쓰도록 강제할지.
+
+---
+
+[Decision] `ClothingItem.lastWornDate`는 저장 필드가 아니라 파생값 (Data/Architecture, Decision) — `00_DataSchema.md` Open Question #3 해소
+
+결정:
+- `ClothingItem`에 `lastWornDate` 필드를 별도로 두지 않는다. 이 옷을 참조하는 `StyleLog` 중 `wornDate`가 null이 아닌 것들의 최댓값으로 클라이언트에서 파생시킨다(참조하는 `StyleLog`가 없거나 전부 `wornDate`가 null이면 마지막 착용일 없음).
+- `TrashEntry`(§6)와 동일한 "파생 read model" 패턴 — write-time 집계(예: `wearCount`처럼 트랜잭션/배치로 갱신) 방식은 채택하지 않음.
+
+사유:
+옷 상세 화면 레이아웃/데이터 감사 중 "마지막 착용일 표시" 스펙 요구가 미구현으로 발견됨 — 확인해보니 `00_DataSchema.md` Open Question #3이 이미 같은 이슈를 "필드를 지금 미리 선언할지, 나중에 추가할지" 형태로 열어두고 있었음. 옷 상세 감사를 계기로 정확한 정의(연결된 스타일일지 중 최신 착용일)를 사용자가 직접 확정.
+
+Impact:
+- `docs/reference/data/00_DataSchema.md` §3/Open Question #3 갱신 완료(파생 규칙 명시).
+- 코드 변경 없음(Decision 단계) — 착수 시 `lib/providers/closet_providers.dart` 또는 유사한 provider에 파생 로직 추가, `closet_item_detail_screen.dart`에 표시.
+
+---
+
+[Decision] 설정 화면 "로그인" 진입점 위치 확정 — 로그아웃 로우와 동일 슬롯에서 상태 전환 (UI/Screen, Decision — Implementation 태스크 중 결정, 사후 기록)
+
+결정:
+- 로그인 기능의 진입점 위치를 확정: 별도 화면/로우를 새로 만들지 않고, 설정 화면 "계정" 섹션의 기존 로그아웃 로우와 동일 슬롯을 재사용 — 로그인 상태면 "로그아웃"(destructive 스타일), 로그아웃 상태면 "로그인"(일반 스타일)으로 라벨/아이콘/색상만 전환.
+- "로그인" 탭 시 실제 로그인 화면/인증 로직은 만들지 않고 "기능 준비 중입니다" AlertDialog만 노출(상태 변경 없음).
+- `04_설정.md` §5가 "로그인 진입점 존재/위치는 범위 밖"으로 유보해뒀던 것 중 **위치**만 이번에 좁혀 확정 — 인증 연동/세션 무효화/계정연동/멀티기기 동기화는 여전히 Post-MVP(`00_MVP.md` §8) 범위 밖.
+- 로그아웃→로그인 상태 전환 타이밍은 기존 C7 선례(`closet_main_screen.dart`의 `softDeleteMany`/`restoreMany`)와 동일하게 탭 즉시 낙관적 전환 + Undo 시 복원으로 통일(최초 구현은 Undo 만료 시점 전환으로 스펙과 반대로 구현됐다가 Review에서 P1으로 지적돼 정정).
+
+사유:
+사용자가 설정 화면에 로그인 버튼(준비중 팝업) 추가를 요청, 이어서 "로그인 상태면 로그아웃, 로그아웃 상태면 로그인으로 보이게" 토글로 구체화. Worker 구현 후 Review가 이 결정이 §5의 범위 유보와 충돌하는데도 문서/Decision.md에 반영이 안 됐음을 P1로 지적 — 새 화면/로우를 만들지 않고 기존 로그아웃 슬롯을 재사용하는 게 최소 변경이라 이 형태로 확정.
+
+Impact:
+- `lib/screens/settings_screen.dart`: `_isLoggedIn` state 신설, 로우 1개가 상태에 따라 분기, 전환 타이밍 정정.
+- `docs/reference/plan/03_화면별UX명세서/04_설정.md` §2 로우4, §5 갱신(같은 세션에서 반영).
+- 실제 로그인 인증/계정연동/멀티기기 동기화 스코프는 안 당겨짐 — 이 결정은 그게 착수되기 전까지 보여줄 placeholder UI 위치만 정한 것.
+
+---
+
+[Decision] §12.1 Data/API/Architecture×Decision 행에 §5 Decision-Stage Pipeline 적용 + `docs/reference/data/`·`docs/reference/architecture/` 폴더 신설 (Data/Architecture, Decision — Operational process change)
+
+결정:
+- `Workflow_Project.md` §12.1 표에서 Data/API/Architecture×Decision 행만 "Development Review (architecture), pre-review"에 머물러 있던 걸 UI/Screen·Logic/Feature Decision 행과 동일하게 "Development Review (architecture) + mandatory Audit before confirmation(크기 무관, §5 Decision-Stage Pipeline 적용)"으로 정정. §5 Pipeline 도입 시(2026-07-23, 아래 "설계/계획 확정 전 Audit 필수화" 결정) 이 행만 갱신이 누락돼 있었음.
+- 같은 행의 Required Materials를 "Development workflow policy"(추상적)에서 "Plan reference docs(MVP/Needs/IA&UserFlow/화면별UX명세서) + `Decision.md`"로 구체화 — 화면에 노출되는 데이터 항목이 스키마 설계의 1차 입력이기 때문.
+- Data/API/Architecture×Implementation 행 Required Materials에 "Finalized data model doc(`docs/reference/data/`)" 추가.
+- `docs/reference/data/`(Firestore 컬렉션/필드 스키마 등 확정 데이터 모델 문서용) · `docs/reference/architecture/`(Auth/Storage 연동, 상태관리, 모듈 경계 등 앱 상위 구조 문서용, 현재는 빈 폴더) 신설. `docs/reference/design/`·`docs/reference/plan/`과 동급의 새 Reference 카테고리.
+- `Workflow_Project.md` 버전 3.1 → 3.2 (§1.6 minor bump 대상: 표 내용 변경).
+
+사유:
+사용자가 DB 설계 세션과 화면별 기능 감사 세션을 병렬로 새로 착수하려던 중, PM이 기존 파이프라인이 이 두 산출물을 어디에 놓고 무슨 검증을 거치게 할지 점검 — Data/Architecture×Decision 행이 다른 두 Decision 행과 달리 확정 전 Audit 요구가 빠져 있었고, 그 결과물을 놓을 Reference 폴더 자체가 없었음을 발견. DB 스키마는 Firestore(이미 `00_MVP.md` §6에 결정됨)이므로 관계형 ERD가 아니라 컬렉션/문서 구조로 설계해야 함도 함께 확인.
+
+Impact:
+- 이번 세션은 정책/폴더 정비까지이며 코드 변경 없음.
+- 후속: DB 설계 세션을 Layer=Data/Architecture, Stage=Decision으로 태깅해 §5 Pipeline(소단위 초안→Review→전체조립→Audit→확정)으로 착수 예정. 화면별 기능 감사는 기존 `audit` 서브에이전트 역할(Missing functionality 체크)을 그대로 재사용.
+
+---
+
+[Decision] 옷장 메인 레이아웃/데이터 감사 후속 — 핀치·검색·탭 애니메이션·정렬 UI 스펙 확정 (UI/Screen, Decision)
+
+결정:
+- 핀치 제스처(오므리기/벌리기)로 갤러리 밀도 조절 도입. 벌리면 밀도↓(타일 커짐)/오므리면 밀도↑. 기존 버튼과 동일한 3단계(`AppDensity.min/mid/max`)로 스냅하되, 버튼의 고정방향 순환(rotation) 로직은 재사용하지 않고 제스처 방향에 따라 자연스러운 순서로 이동 후 양 끝에서 clamp(래핑 없음). 제스처 중 실시간 확대/축소 피드백, release 시 임계값 기반 스냅. 스크롤 앵커링을 핀치+기존 밀도 버튼 둘 다에 신규 적용(현재 버튼엔 없던 기능). 롱프레스(다중선택)와 충돌 시 핀치 시작되면 롱프레스 타이머 취소.
+- 검색 버튼(ExpandableSearchField) 인터랙션 확정: 원형 버튼이 오른쪽 가장자리를 앵커로 캡슐로 모핑, 왼쪽 툴바 컨트롤(분류/밀도)은 8~16px 밀리며 fade-out(자리 대체, 겹침 아님), 검색 아이콘은 애니메이션 내내 고정, 바운스 없음, 180~220ms `easeOutCubic`. 기존 `AppSpacing.searchExpand`=300ms 상수는 이 값으로 대체 필요.
+- 툴바 레이아웃 재배치: 분류 캡슐+밀도 버튼(3/4 크기)을 왼쪽 그룹으로 묶고, 검색 버튼은 오른쪽 끝에 간격을 두고 단독 배치. `GalleryMainScreen` 공유 위젯이라 코디 메인에도 동일 적용됨.
+- 탭 반응 애니메이션: 스케일다운(0.96~0.98배) 방식 확정, Material 리플 방식은 기각.
+- 정렬 UI 구조: 분류 캡슐이 정렬 기준까지 겸하는 현재 구현 구조를 그대로 유지하기로 확정, `01_옷장.md`를 실제 구현 기준으로 갱신(정렬 전용 UI 분리안은 기각).
+- 오름/내림차순 토글 버튼(↑↓)은 스펙에서 완전히 삭제 — MVP 이후로 미루는 게 아니라 기능 자체를 없앰. 정렬은 분류 캡슐의 고정 방향 기본값만 지원.
+
+사유:
+PR #20(Step⑦ Group B/C) 병합 후 사용자 승인 하에 진행한 "페이지별 레이아웃/노출 정보값 감사"에서 옷장 메인을 스펙(`01_옷장.md`)과 대조한 결과 핀치 제스처·텍스트 검색이 완전히 누락, 탭 반응 애니메이션 없음, 정렬 UI가 스펙과 다른 구조로 흡수 통합돼 있음을 발견(4건). 각각 사용자와 논의해 세부 동작을 확정. 정렬 방향 토글 버튼은 툴바 재배치 논의 중 처음엔 유지+축소 대상이었으나, 사용자가 이후 이 버튼 자체를 완전히 없애기로 결정(단순화).
+
+Impact:
+- 이번 세션은 감사+설계 확정까지이며 코드 변경 없음(구현은 별도 Worker 착수 예정).
+- `docs/reference/plan/03_화면별UX명세서/01_옷장.md`: 분류+정렬 통합 서술로 갱신, 오름/내림차순 토글 언급 제거(사용자 직접 수정 포함).
+- `docs/work/옷장메인_재설계_체크리스트.md`: "미착수(Task 4)" 섹션 및 "제스처 통합" 섹션에 위 스펙 반영.
+- 착수 시 영향받는 코드: `lib/screens/closet_main_screen.dart`(밀도 로직/핀치 추가), `lib/widgets/gallery_main_screen.dart`(툴바 레이아웃 재배치, 정렬 버튼 제거), `lib/theme/app_spacing.dart`(`searchExpand` 상수값), `lib/providers/closet_providers.dart`(`closetSortAscendingProvider`/`ascending` 관련 정리) — `GalleryMainScreen` 공유 위젯이라 코디 메인도 함께 영향받음.
+
+---
+
 [Decision] Firestore 스키마 — 오프라인/로컬퍼스트 아키텍처 전면 확정 + 필드 4종 확장 (Data/API/Architecture, Decision) — 아래 "[Decision] 전체 앱 Firestore 데이터 스키마 설계 확정" 항목의 후속
 
 결정:

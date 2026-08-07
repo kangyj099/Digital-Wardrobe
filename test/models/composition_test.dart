@@ -28,4 +28,17 @@ void main() {
     final restored = deleted.copyWith(deletedAt: null, isDeleted: false);
     expect(restored.deletedAt, isNull);
   });
+
+  test('backgroundColor 기본값은 null이고, copyWith로 설정/해제 둘 다 가능하다', () {
+    expect(base().backgroundColor, isNull);
+
+    final withColor = base().copyWith(backgroundColor: ArtboardBackgroundColor.darkGray);
+    expect(withColor.backgroundColor, ArtboardBackgroundColor.darkGray);
+
+    final cleared = withColor.copyWith(backgroundColor: null);
+    expect(cleared.backgroundColor, isNull);
+
+    // 파라미터를 아예 안 넘기면(sentinel 기본값) 기존 값을 유지해야 함.
+    expect(withColor.copyWith().backgroundColor, ArtboardBackgroundColor.darkGray);
+  });
 }
