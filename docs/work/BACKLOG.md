@@ -43,7 +43,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 | 옷 추가 | `01_옷장.md` | `closet_add_screen.dart` | 스켈레톤만(대조 대상 아님) |
 | 코디 메인 | `02_코디 (가상 조합).md` | `composition_main_screen.dart` | 완성 |
 | 코디 상세 | `02_코디 (가상 조합).md` | `composition_detail_screen.dart` | 완성 |
-| 코디 제작(에디터) | `02_코디 (가상 조합).md` | `composition_editor_screen.dart` | 스켈레톤만(대조 대상 아님, "Editor Draft 구현" 착수 전) |
+| 코디 제작(에디터) | `02_코디 (가상 조합).md` | `composition_editor_screen.dart` | Task A 완료(2026-08-06) — `InteractiveArtboard`(이동/회전/크기조절/z-index/겹침팝업/배경색) + Editor Draft/Commit/Cancel 모델 연결. 옷 추가 바텀시트/코디 이름 필드/하단 Thumbnail 그리드/Undo는 여전히 스코프 밖 |
 | 스타일일지 메인 | `03_스타일 일지.md`(+`filter.md`) | `style_log_main_screen.dart` | 완성(필터 UI 제외) |
 | 스타일일지 열람 | `03_스타일 일지.md` | `style_log_viewer_screen.dart` | 완성 |
 | 스타일일지 추가 | `03_스타일 일지.md` | `style_log_add_screen.dart` | 스켈레톤만(대조 대상 아님) |
@@ -53,8 +53,10 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 방법(페이지당 동일): (1) 스펙 전문에서 레이아웃 요구사항+노출 데이터 항목 항목화 (2) 구현 파일과 하나씩 대조 (3) `항목|스펙 요구|실제 구현|상태(있음/없음/다른 형태)` 표로 기록, **색상/크기/여백 등 시각 디테일은 표에 안 올림**. 목업(옷장 메인/스타일일지 상세/코디 제작 3곳만 존재)은 레이아웃 구조 참고용으로만 곁들이고 시각 값 추출은 안 함. Explore 서브에이전트 병렬 파견으로 1차 수집 후 PM이 직접 재확인. 산출물은 페이지별로 순서대로(옷장 메인→옷 상세→코디 메인→코디 상세→스타일일지 메인→스타일일지 열람→설정→휴지통) 하나씩 보고, 한 번에 몰아서 안 줌. 이번 라운드는 점검만(코드 변경 없음) — 발견 후 수정은 사용자 확인 받고 별도 진행.
 
 **Step⑦ 나머지 스코프 진행 상황 — 그룹 A/B/C 완료, 그룹 D 미착수**: 그룹 A(그룹형 드릴다운, 2026-07-19)/그룹 B(다중선택+휴지통, 13 Task 전부 완료)/그룹 C(설정 나머지 — 다크모드 실동작 포함, 2026-07-28) 전부 완료. 상세 경위는 `Decision.md`/git log(태그: Task 이름으로 검색)가 1차 소스, 이 파일은 더 이상 Task별 세부 내역을 보존하지 않음.
-- **그룹 D(에디터급 이월 항목 — 겹친 아이템 팝업/아트보드 실제 렌더링/추가사진 드래그 순서변경/신규 생성 바인딩)**: 아직 스펙 착수 전. "Editor Draft 구현"과 인프라 상당 부분 겹칠 가능성 높음 — 아트보드 렌더링은 그룹 B의 코디 삭제 캐스케이드용 스냅샷 아키텍처와도 연결됨. 착수 전 `../Digital-Wardrobe-composition-artboard` worktree(`feature/composition-artboard-widget`, 코디 아트보드 `InteractiveArtboard` 병렬 작업)가 `composition_editor_screen.dart`를 실제로 배선하는 단계에 들어갔는지 `git log origin/dev..feature/composition-artboard-widget --stat`로 재확인할 것(그 전까진 `lib/widgets/interactive_artboard/`에만 격리돼 파일 겹침 없음, 2026-07-21 확인).
-- **"Editor Draft 구현"(별도 후속 작업, Step⑦ 전체 완료 후)**: 도메인별 `draftsProvider`(`ClothingItemDraft`/`CompositionDraft`/`StyleLogDraft`) 신설, `EditorHeader.onCancel`/`AutoSaveIndicator` Draft 기준 배선, Editor 3화면 실제 Commit/Cancel 로직, `isIncomplete` 토글 로직. Recovery는 세션 내 복원만 범위. 착수 전 `AutoSaveIndicator` 독스트링/Editor 3화면 skeleton 라벨의 구 정책("상시 저장" 서술) 정리, Editor 3화면 `EditorHeader`+`skeletonRegion` 보일러플레이트 중복(P3) 추출도 함께 검토. 착수 시 아이템 개수 상한 15개(`Decision.md` 확정)도 실제 코드에 반영. **`composition_main_screen.dart`의 [+] 버튼 분류별 자동 태그 적용(`Decision.md` 참고)도 착수 시 함께 배선.**
+- **그룹 D(에디터급 이월 항목)**: "아트보드 실제 렌더링"은 Task A로 코디 편집기 쪽 완료. 남은 것 — 코디 상세(`composition_detail_screen.dart`)에 정적 렌더 아트보드 추가(Task B, 진행 예정), 추가사진 드래그 순서변경, 옷 추가 바텀시트를 통한 신규 생성 바인딩.
+- **"Editor Draft 구현"**: `CompositionDraft`/`compositionDraftProvider`는 Task A로 실제 구현·적용 완료(Commit/Cancel/Rollback 전부 동작). `ClothingItemDraft`/`StyleLogDraft`(옷 추가/스타일일지 추가 화면)는 여전히 미착수 — 각 화면이 실제 Editor 상호작용(옷 추가의 배경제거/크롭/마스킹 등)을 갖추는 시점에 개별 적용. `AutoSaveIndicator` 위젯은 이번에도 안 건드림(여전히 구정책 "상시 저장" 독스트링인 채로 미사용 상태) — 다음에 옷 추가/스타일일지 추가 화면 중 하나를 실제 착수할 때 정리. `composition_main_screen.dart`의 [+] 버튼 분류별 자동 태그 적용(`Decision.md` 참고)도 여전히 미배선 — 옷 추가 바텀시트 착수 시 함께.
+
+**판단 보류 — "자동 매칭"(코디↔스타일일지 착용 옷 자동 동기화) 논의**: 코디 상세 감사에서 새로 발견(스펙엔 있으나 `linkToComposition()`이 아이템 동기화를 전혀 안 함, 기존 추적 중이던 사안 아님). 사용자가 "스타일일지 쪽 개념이니 스타일일지 감사 때 논의"로 미룸 — 스타일일지 열람 감사 진행 시 최우선으로 다시 꺼낼 것.
 
 **미픽업 P2/P3 백로그 (다음에 해당 파일 손댈 때)**:
 - (P2) `02_코디 (가상 조합).md` 8행 "정렬/필터에 날씨·계절 기준 지원(스타일 일지와 공통)" 문구가 실제 구현과 어긋남 — 2026-07-19 스펙 근거로 갱신.

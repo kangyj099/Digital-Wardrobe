@@ -1,5 +1,24 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 코디 편집기(Task A) — Editor Draft 모델 실제 적용 + `Composition.backgroundColor` 필드 추가 (Data/Architecture + UI/Screen, Decision)
+
+결정:
+- `composition_editor_screen.dart`(코디 만들기/편집)를 `docs/history/Decision.md`의 기존 "Editor 저장 모델 전환" 결정(Editor Draft + Commit/Cancel)에 맞춰 실제로 구현. `CompositionDraft` 모델 + `compositionDraftProvider`(family, compositionId별) 신설 — 아트보드 제스처(이동/회전/크기조절/삭제/배경색)는 전부 Draft에만 실시간 반영, Record(`compositionsProvider`)는 손대지 않는다.
+- `EditorHeader`에 완료(✔) 버튼 추가(nullable `onCommit` 콜백, 다른 2개 Add/Create 스켈레톤 화면엔 영향 없음). 완료 시 Draft→Record 반영 후 Draft 폐기, 취소 시 Draft만 폐기(Record는 진입 이전 상태 그대로 — Rollback).
+- `Composition`에 `ArtboardBackgroundColor? backgroundColor` 필드 신규 추가(기존 `season`/`weather`/`coverImagePath`와 동일한 `_unset` sentinel `copyWith` 패턴) — 배경색도 완료해야 저장되고 취소하면 사라지도록, Draft/Commit/Cancel 일관성을 배경색까지 확장.
+
+사유:
+Task A(옷장/코디 레이아웃 감사에서 발견된 "코디 상세에 아트보드 렌더링 없음" 갭 해소) 진행 중 Audit이 P1 발견: 처음 구현이 제스처마다 Record에 직접 저장하는 방식이었는데, 이는 기존 "Editor 저장 모델 전환" 결정 및 `_공통 규칙.md` §레코드 저장 원칙이 코디 편집기를 명시적으로 Editor Draft 대상으로 지정해둔 것과 정면으로 어긋남. 사용자가 즉시 Draft 모델로 리워크하기로 결정. 리워크 도중 Tester가 배경색이 완료해도 저장 안 되는 것(당시 `Composition`에 필드 자체가 없었음)을 발견 → 사용자가 필드 추가도 함께 결정(`00_DataSchema.md` Open Question #9가 이미 이 필드를 제안해둔 상태였음).
+
+Impact:
+- 신규: `lib/models/composition_draft.dart`, `lib/providers/composition_editor_providers.dart`(Draft provider 포함).
+- 수정: `lib/models/composition.dart`(`backgroundColor` 필드), `lib/providers/composition_providers.dart`(`updateItems`/`add`), `lib/screens/composition_editor_screen.dart`(Draft 기반 전면 재작성), `lib/widgets/editor_header.dart`(`onCommit` 파라미터).
+- `docs/reference/data/00_DataSchema.md` Open Question #9 — "제안" 상태에서 "실제 Dart 모델에 반영됨"으로 갱신.
+- Worker→Review→Tester 사이클을 리워크 전/후 두 번, Audit도 두 번(최초 P1 발견 라운드 + 리워크 후 최종 재검토) 거쳐 통과 — 최종 Audit에서 남은 P2 다수는 `TechnicalDebt.md`/`BACKLOG.md`에 별도 기록.
+- `ClothingItemDraft`/`StyleLogDraft`(다른 두 Editor 화면의 Draft)는 이번 스코프 밖 — 각 화면이 실제로 Editor 상호작용을 갖추는 시점에 개별 적용 예정.
+
+---
+
 [Decision] 코디 메인 [+] 버튼 — 분류별 자동 태그 적용 범위 확정, 라벨 전환은 보류 (UI/Screen, Decision)
 
 결정:

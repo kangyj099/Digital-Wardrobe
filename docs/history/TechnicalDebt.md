@@ -1,5 +1,18 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] Task A(코디 편집기 Draft 리워크) Audit 발견 P2 3건 — 신규 코디 Draft 공유키, ArtboardItem.id 중복 리스크, id 생성 관례 미문서화
+
+상태: 미해결(현재 도달 불가능한 경로들이라 낮은 우선순위, 관련 UI가 생기는 시점에 재검토)
+
+내용:
+1. **신규 코디 Draft가 단일 슬롯(`null` 키) 공유**: `compositionDraftProvider`(`composition_editor_providers.dart`)는 family이고 기존 코디는 `compositionId`로 구분되지만, "코디 만들기"(id 없이 진입)는 항상 같은 `null` 키를 쓴다. 취소/완료 버튼이 아닌 다른 경로(시스템 뒤로가기 등, 이 앱은 `PopScope`/`WillPopScope`를 어디에도 안 씀)로 벗어나면 다음 "신규 생성" 시도가 이전 시도의 남은 아이템을 이어받는다. 지금은 아이템 추가 UI 자체가 없어 도달 불가능.
+2. **`ArtboardItem.id = clothingItemId` 재사용**(`composition_editor_providers.dart`): 코디 하나에 같은 옷을 두 번 배치하면 `Positioned(key: ValueKey('${item.id}:...'))`(interactive_artboard.dart)가 중복 키로 충돌한다. 지금 데이터 모델/UI가 중복 배치를 만들 방법이 없어 도달 불가능.
+3. **신규 코디 id 생성 방식**(`'comp_${DateTime.now().microsecondsSinceEpoch}'`, `composition_editor_screen.dart`)이 이 프로젝트에서 클라이언트가 ID를 생성하는 첫 사례라, 다른 두 Editor 화면(옷 추가/스타일일지 추가)이 나중에 신규 레코드를 만들 때 따라야 할 공식 관례가 아직 없다.
+
+조치 방향(착수 조건): 1번은 "옷 추가 바텀시트"(코디 편집기에 아이템 추가 UI) 착수 시 세션별 nonce 키로 교체하거나 `PopScope`로 이탈 경로를 막을 것. 2번은 아이템 중복 배치를 허용하는 UI가 생기면 `CompositionItemPlacement`에 별도 placement id를 추가할 것. 3번은 `ClothingItemDraft`/`StyleLogDraft` 착수 시 이 방식을 그대로 재사용할지 확정.
+
+---
+
 [TechDebt] Detail 3화면의 자기 자신 id 조회(`firstWhere`)가 안전가드 대상에서 제외됨
 
 상태: 의도적 미해결(우선순위 낮음)
@@ -220,7 +233,7 @@ Group B Task 5(다중선택 시각 지원) 완료 후 Audit(2026-07-28)이 발�
 
 [TechDebt] `InteractiveArtboard` Round 2 Audit(2026-07-19) 발견 P2/P3 2건 — 배경색 버튼 비주얼 스타일 불일치, 핸들-버튼 코너 충돌 가능성
 
-상태: 미해결 (낮은 우선순위로 기록만, `composition_editor_screen.dart` 연결 시점에 재검토)
+상태: 미해결 (연결 시점 도래·재검토 완료 — Task A Audit이 재확인, 여전히 화면에 실사용자가 도달 가능한 문제는 아니라 계속 보류. 다음 재검토 트리거: 이 위젯의 시각 스타일을 다시 손댈 때)
 
 내용:
 1. (P2) `_backgroundColorButton()`/`_backgroundSwatch()`(`interactive_artboard.dart`)가 이 프로젝트의 기존 "플로팅 컨트롤" 관례(`GlassPill`/`GlassCircleButton` — 프로스티드글래스 블러+흰 테두리+그림자+`kMinInteractiveDimension`(48px))를 안 따르고, 단색 `Container`+`colorScheme.outline` 테두리+44px(핸들과 동일 상수)로 따로 구현됨. 위 항목("터치타겟 상수 이원화")과 같은 종류의 드리프트가 한 번 더 늘어난 것 — 화면에 실제로 안 붙어있는 지금은 안 급하지만, 연결 시점에 `GlassCircleButton` 스타일로 재스킨 검토.
@@ -237,7 +250,7 @@ Group B Task 5(다중선택 시각 지원) 완료 후 Audit(2026-07-28)이 발�
 1. `_handleVisualDiameter = 44.0`(`interactive_artboard.dart`)가 접근성 최소 터치영역 44px를 독자적으로 상수화했는데, 기존 `GlassPill`/`GlassCircleButton`은 같은 개념을 Flutter의 `kMinInteractiveDimension`(48.0)으로 이미 표준화해 쓰고 있다. 두 값 다 각자 근거는 있지만(44=WCAG 최소, 48=Material 상수+`AppMainScaffold` 헤더 간격 계산과 결합) 서로 참조가 없어 "이 프로젝트엔 캐노니컬 최소 터치크기가 2개"라는 사실이 코드만 봐선 안 드러남.
 2. `build()`의 `sortedItems`와 `_handleTapUp`의 `matches..sort(...)`가 Dart 기본 `List.sort`(안정 정렬 미보장)를 쓴다. `ArtboardItem.zIndex` 기본값이 0이라, 아직 서로 다른 zIndex를 부여받지 않은 아이템들(예: 막 추가된 직후) 사이에 동률이 생기면 리빌드마다 페인트/히트우선순위 순서가 조용히 뒤바뀔 수 있다.
 
-조치 방향(착수 조건): 1번은 `composition_editor_screen.dart` 연결 라운드에서 아트보드 핸들이 GlassPill/GlassCircleButton 크롬과 시각적으로 인접하게 배치될 때 재검토(지금은 코드 변경 불필요). 2번은 다음에 이 파일을 손댈 때 `(zIndex, id)` 같은 타이브레이커를 추가해 동률 정렬을 결정적으로 만들 것.
+조치 방향(착수 조건): 1번은 연결 시점(Task A) 도래·재검토 완료 — 아트보드 핸들이 GlassPill/GlassCircleButton과 시각적으로 인접 배치되는 상황이 아직 없어 계속 보류, 다음엔 실제 인접 배치가 생길 때 재검토. 2번은 다음에 이 파일을 손댈 때 `(zIndex, id)` 같은 타이브레이커를 추가해 동률 정렬을 결정적으로 만들 것.
 
 ---
 
