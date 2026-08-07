@@ -18,21 +18,15 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Last Completed
 
-**설정 화면 로그인/로그아웃 토글 로우 구현(2026-08-04)** — 계정 로우 1개가 로그인 상태에 따라 라벨/스타일 전환(로그인 진입점 위치 결정 겸함, `Decision.md` 기록). Worker→Review(P1 2건: 상태전환 타이밍/문서 미반영→수정)→Tester(Fail 1건: 공용 `UndoableActionToast`의 SDK `persist` 기본값 버그 발견→Worker가 `lib/widgets/undoable_action_toast.dart`까지 확장 수정→Review→Tester 재통과, 6/6 Pass) 전체 사이클 완료. 커밋 `379aa04`~`5079a64`(구현), `8b4a863`(문서/정책). 같은 세션에서 `Workflow_Project.md` §12.1 Data/Architecture×Decision 행의 Audit 게이트 누락도 별건으로 발견·수정(버전 3.2).
+**Task A — 코디 편집기 `InteractiveArtboard` 연결 + Editor Draft 모델 실제 적용(2026-08-07)** — 이동/회전/크기조절/z-index/겹침팝업/배경색 스와치까지 전부 연결, `Composition.backgroundColor` 필드 신설, Draft/Commit/Cancel 정책 위반 발견→즉시 리워크까지 포함해 Worker↔Review↔Tester↔Audit 여러 라운드 통과. 동시 세션의 브랜치 히스토리 재구성으로 병합 충돌 발생 — cherry-pick 방식으로 안전 복구(상세는 `Decision.md` 최상단 항목). PR #23 병합 완료(`dev`, 머지 커밋 `3231e09`).
 
 ---
 
 # Current
 
-**PR #20 병합 확인 완료(2026-08-02)** — `dev`로 병합됨(머지 커밋 `afbafe7`). 단, 병합은 커밋 `7425a13` 시점에 일어났고, 그 직후 세션 종료 직전에 만들어진 커밋 `0c14af7`(BACKLOG에 이 감사 계획 표를 기록한 커밋)는 병합 3분 뒤 push돼 PR에 포함되지 못하고 `feature/flutter-hifi-screens`에 고아로 남아 있었음 — `dev` fast-forward 동기화 후 `feature/layout-data-audit` 브랜치를 새로 파고 `0c14af7`를 cherry-pick으로 가져와 반영(커밋 `23a6a55`).
+**진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/composition-detail-static-artboard`에서 착수(2026-08-07)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
 
-**PR #21 병합 완료 — DB 스키마 `docs/reference/data/00_DataSchema.md`로 이미 정착됨.** 별도 세션에서 진행한 Firestore 스키마 설계(오프라인/로컬퍼스트 아키텍처 확정 포함, Anonymous Auth 폐기)가 `dev`에 병합 완료, 경로도 이미 `data/`로 맞춰져 있음(더 이상 이동 작업 불필요). 상세는 `Decision.md` 참고.
-
-**브랜치 전환 — 현재 작업 브랜치는 `feature/layout-data-audit-recovery`(2026-08-05).** 동시 세션의 브랜치 체크아웃 충돌로 이 세션이 완료한 설정화면 로그인/로그아웃 토글 작업(커밋 5개)이 구 브랜치(`feature/layout-data-audit`)에 고아로 남았다가 병합으로 복구됨 — 사고 경위/복구 방법은 `Decision.md` 최상단 항목 참고. 아래 감사 작업은 이제 이 브랜치에서 계속 진행.
-
-**PR #23 생성 완료, 병합 대기 중(`https://github.com/kangyj099/Digital-Wardrobe/pull/23`)** — `feature/layout-data-audit-recovery` → `dev`. 설정화면 로그인/로그아웃 토글 + 옷장 감사 스펙 확정 + §12.1 정책 정정 + 브랜치 복구 전부 포함. 사용자가 직접 병합해야 함(정책상 PM은 병합 실행 안 함).
-
-**진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/layout-data-audit`에서 착수(2026-08-02)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
+**Task B 착수 — 코디 상세에 정적 렌더 아트보드 위젯 추가**: 드래그/회전/크기조절/배경색 변경 없이 `ArtboardItemView`만 재사용하는 새 위젯. 기존 "사용된 옷" 가로 리스트는 유지, 그 위에 아트보드 섹션 신규 추가. 탭(단일선택/겹침팝업)·롱프레스(편집 진입)는 유지, 탭한 아이템은 하단 목록과 스크롤+강조 연동.
 
 **감사 대상 및 계획(플랜 파일은 세션 로컬이라 여기 원문 보존)**:
 
