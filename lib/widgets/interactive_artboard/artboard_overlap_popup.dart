@@ -23,6 +23,7 @@ class ArtboardOverlapPopup extends StatefulWidget {
     required this.selectedItemId,
     required this.onSelect,
     required this.onReorder,
+    this.reorderable = true,
   });
 
   /// z-순서 내림차순(위→아래)으로 이미 정렬되어 들어온다.
@@ -32,6 +33,12 @@ class ArtboardOverlapPopup extends StatefulWidget {
   final String? selectedItemId;
   final ValueChanged<String> onSelect;
   final ValueChanged<List<String>> onReorder;
+
+  /// false면 드래그 재배열 UI(행 끝 드래그핸들)를 감추고, 탭으로 선택만 가능한 순수
+  /// 목록으로 렌더링한다 — 코디 상세(읽기 전용 화면, `static_artboard.dart`)처럼 겹친
+  /// 아이템의 렌더 순서를 바꾸면 안 되는 호출부를 위함. 기본값 true로 코디 편집기
+  /// (`interactive_artboard.dart`)의 기존 재배열 동작은 그대로 유지된다.
+  final bool reorderable;
 
   @override
   State<ArtboardOverlapPopup> createState() => _ArtboardOverlapPopupState();
@@ -47,27 +54,35 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
       elevation: 4,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
-      child: ReorderableListView(
-        shrinkWrap: true,
-        buildDefaultDragHandles: false,
-        // `onReorder`는 최신 Flutter SDK에서 deprecated 됐다(`onReorderItem`으로 대체,
-        // newIndex를 oldIndex 제거분까지 이미 보정해 전달함) — 플랜 작성 시점 이후
-        // SDK가 올라가며 생긴 차이라 여기서만 최신 API로 교체, 동작은 동일하다.
-        onReorderItem: (oldIndex, newIndex) {
-          setState(() {
-            final moved = _order.removeAt(oldIndex);
-            _order.insert(newIndex, moved);
-          });
-          widget.onReorder(_order.map((item) => item.id).toList());
-        },
-        children: [
-          for (var i = 0; i < _order.length; i++) _row(context, _order[i], i, colorScheme),
-        ],
-      ),
+      child: widget.reorderable
+          ? ReorderableListView(
+              shrinkWrap: true,
+              buildDefaultDragHandles: false,
+              // `onReorder`는 최신 Flutter SDK에서 deprecated 됐다(`onReorderItem`으로 대체,
+              // newIndex를 oldIndex 제거분까지 이미 보정해 전달함) — 플랜 작성 시점 이후
+              // SDK가 올라가며 생긴 차이라 여기서만 최신 API로 교체, 동작은 동일하다.
+              onReorderItem: (oldIndex, newIndex) {
+                setState(() {
+                  final moved = _order.removeAt(oldIndex);
+                  _order.insert(newIndex, moved);
+                });
+                widget.onReorder(_order.map((item) => item.id).toList());
+              },
+              children: [
+                for (var i = 0; i < _order.length; i++)
+                  _row(context, _order[i], i, colorScheme),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final item in _order) _row(context, item, null, colorScheme),
+              ],
+            ),
     );
   }
 
-  Widget _row(BuildContext context, ArtboardItem item, int index, ColorScheme colorScheme) {
+  Widget _row(BuildContext context, ArtboardItem item, int? index, ColorScheme colorScheme) {
     final isSelected = item.id == widget.selectedItemId;
     // Tester가 발견한 버그 수정: Container(color: ...)로 ListTile을 감싸면 Flutter가
     // "ListTile background color or ink splashes may be invisible" FlutterError를
@@ -95,10 +110,12 @@ class _ArtboardOverlapPopupState extends State<ArtboardOverlapPopup> {
         ],
       ),
       onTap: () => widget.onSelect(item.id),
-      trailing: ReorderableDragStartListener(
-        index: index,
-        child: const Icon(Icons.drag_handle),
-      ),
+      trailing: index == null
+          ? null
+          : ReorderableDragStartListener(
+              index: index,
+              child: const Icon(Icons.drag_handle),
+            ),
     );
   }
 }
