@@ -126,6 +126,7 @@ Source of truth for shape: `lib/models/style_log.dart`.
 | `wornDate` | Timestamp | yes | 실제로 착용한 날짜 — nullable(오래된 사진을 등록하며 정확한 날짜를 모르거나 비워둘 수 있는 경우 지원). **UI 영향**: 스타일일지 메인 화면은 날짜순 정렬/그룹핑을 전제하므로(`00_MVP.md` §4.3 "Sorted by date", 진행 중인 필터 UI 스펙), `wornDate`가 null인 항목의 정렬 위치(맨 끝? 별도 그룹?)는 구현 단계에서 정해야 함 — see Open Question #17 |
 | `linkedCompositionId` | string | yes | references `compositions/{id}` within the same user scope |
 | `wornItemIds` | array&lt;string&gt; | no (default `[]`) | list of `clothingItems/{id}` references — replaced an earlier, fragile image-path-string-matching approach (`docs/history/TechnicalDebt.md`, 2026-07-29 entry) |
+| `additionalImagePaths` | array&lt;string&gt; | no (default `[]`) | Cloud Storage paths, see §8. 카드 슬롯 3~10번(대표사진=1번/코디=2번은 고정, 나머지 최대 8장)에 들어가는 실제 업로드 사진 — `wornItemIds`(착용 옷 참조)와는 별개 필드. 슬롯 상한(10) 근거: `03_스타일 일지.md`. **Not yet in `lib/models/style_log.dart`** |
 | `season` | string | yes | → `Season` enum |
 | `weather` | string | yes | → `Weather` enum |
 | `location` | string | no (default `''`) | |
@@ -133,7 +134,7 @@ Source of truth for shape: `lib/models/style_log.dart`.
 | `isDeleted` | boolean | no (default `false`) | |
 | `deletedAt` | Timestamp | yes | |
 
-Note: `00_MVP.md` §4.3's "additional images (#3 onward, reorderable)" concept was superseded — the worn-item images shown in the UI are resolved by dereferencing `wornItemIds` against the existing `ClothingItem.imagePath` values, not stored as separate StyleLog-owned photos. No `additionalImagePaths`-equivalent field exists in the current model, so none is defined here.
+Note: `wornItemIds`(착용 옷 참조, `ClothingItem` 대상)와 `additionalImagePaths`(카드 3~10번 슬롯 사진, 실제 업로드 이미지)는 서로 별개 필드다 — 화면 하단의 "착용 옷" 가로 목록과 카드 자체의 추가 사진 슬롯은 다른 기능이다.
 
 No separate `StyleLogItem` join collection: `wornItemIds` is a simple embedded array of ID strings, which fully replaces the N:N join table in `00_MVP.md` §5's stale draft.
 
@@ -174,6 +175,7 @@ Confirmed via `lib/providers/style_log_providers.dart` and `lib/providers/closet
 | `ClothingItem.imagePath` | `users/{uid}/clothingItems/{itemId}/processed.jpg` | background-removed image (Remove.bg output, `00_MVP.md` §4.1) — matches the single-field shape in `lib/models/clothing_item.dart` today |
 | *(no current field)* | `users/{uid}/clothingItems/{itemId}/original.jpg` | proposed convention **if/when** an original-image field is added (see Open Question #2) — not added to §3's field table since it isn't in the current Dart model |
 | `StyleLog.coverImagePath` | `users/{uid}/styleLogs/{logId}/cover.jpg` | |
+| `StyleLog.additionalImagePaths[]` | `users/{uid}/styleLogs/{logId}/additional_{index}.jpg` | 카드 슬롯 3~10번, index는 배열 순서(0~7) — 순서 변경 시 파일이 아니라 배열 순서만 바뀜(경로 재정렬 불필요) |
 | `StyleLog.wornItemIds` | *(no Storage path of its own)* | ID references only, resolved at read time against the referenced `ClothingItem.imagePath` — no image duplication |
 | `Composition.coverImagePath` | *(no independent upload, by current design)* | expected to always be a copy of one of the composition's own item images' Storage path — see Open Question #8 |
 | `Composition.items[].clothingItemId` | *(no Storage path)* | ID reference only |
