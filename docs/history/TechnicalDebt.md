@@ -1,5 +1,16 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[TechDebt] Task B(코디 상세 정적 아트보드) — `StaticArtboard`/`InteractiveArtboard` 간 상수 중복 (P3)
+
+상태: 미해결(낮은 우선순위, 두 위젯 다 안정화되면 재검토)
+
+내용:
+`static_artboard.dart`가 `_hitAreaInsetFactor`(0.85)/겹침 팝업 카드 크기·여백 관련 상수/`baseItemSizeFraction`(0.28)/히트테스트 공식을 `interactive_artboard.dart`에서 그대로 복제해 갖고 있음(import 대신 값 재선언) — "그 파일은 이번 Task에서 수정 금지"라는 스코프 제약 때문에 불가피했던 선택으로 Review가 확인, 지금은 두 파일이 같은 값을 쓰고 있음. 나중에 한쪽만 값을 바꾸면 서서히 어긋날 위험이 있음.
+
+조치 방향(착수 조건): 두 아트보드 위젯이 각자 더 안정화되면, 공유 기하 상수(히트 영역 비율, 팝업 카드 크기 등)를 별도 공용 파일로 추출해 양쪽이 같은 곳을 참조하도록 정리.
+
+---
+
 [TechDebt] Task A(코디 편집기 Draft 리워크) Audit 발견 P2 3건 — 신규 코디 Draft 공유키, ArtboardItem.id 중복 리스크, id 생성 관례 미문서화
 
 상태: 미해결(현재 도달 불가능한 경로들이라 낮은 우선순위, 관련 UI가 생기는 시점에 재검토)

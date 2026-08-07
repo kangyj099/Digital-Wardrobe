@@ -18,15 +18,15 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Last Completed
 
-**Task A — 코디 편집기 `InteractiveArtboard` 연결 + Editor Draft 모델 실제 적용(2026-08-07)** — 이동/회전/크기조절/z-index/겹침팝업/배경색 스와치까지 전부 연결, `Composition.backgroundColor` 필드 신설, Draft/Commit/Cancel 정책 위반 발견→즉시 리워크까지 포함해 Worker↔Review↔Tester↔Audit 여러 라운드 통과. 동시 세션의 브랜치 히스토리 재구성으로 병합 충돌 발생 — cherry-pick 방식으로 안전 복구(상세는 `Decision.md` 최상단 항목). PR #23 병합 완료(`dev`, 머지 커밋 `3231e09`).
+**Task B — 코디 상세에 정적 렌더 아트보드 위젯 추가(2026-08-07)** — 신규 `StaticArtboard`(드래그/회전/크기조절/배경색버튼 없음, 탭 선택+겹침팝업+롱프레스 편집진입만) 위젯을 "사용된 옷" 리스트 위에 배치, 탭 시 하단 리스트 스크롤+강조 연동. Worker→Review→Tester 전체 통과(8개 시나리오, mock 데이터에 없는 겹침 케이스는 Tester가 로컬 테스트 데이터로 직접 구성해 검증). 커밋 `a8196af`, `feature/composition-detail-static-artboard` 브랜치.
 
 ---
 
 # Current
 
-**진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획, `feature/composition-detail-static-artboard`에서 착수(2026-08-07)**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
+**진행 중 — 페이지별 레이아웃/노출 정보값 감사(Layout & Data Completeness Audit), 사용자 승인된 계획**: 사용자가 "화면 구성이 원하는 대로 안 나왔다"고 지적 — **역할 분담 재확정: 레이아웃 구조/기능/데이터 바인딩은 PM(Claude) 담당, 시각 디자인 디테일(색상/크기/간격/블러/타이포 등)은 이제 사용자가 직접 담당**(Claude 메모리 `feedback_layout_data_vs_visual_design_scope.md`에 기록 완료, 새 세션에서도 자동 로드됨). 순서 합의: 레이아웃 → 기능 수정/추가 → 데이터 연결 → (디자인 디테일은 사용자가 나중에).
 
-**Task B 착수 — 코디 상세에 정적 렌더 아트보드 위젯 추가**: 드래그/회전/크기조절/배경색 변경 없이 `ArtboardItemView`만 재사용하는 새 위젯. 기존 "사용된 옷" 가로 리스트는 유지, 그 위에 아트보드 섹션 신규 추가. 탭(단일선택/겹침팝업)·롱프레스(편집 진입)는 유지, 탭한 아이템은 하단 목록과 스크롤+강조 연동.
+**다음 — `feature/composition-detail-static-artboard`를 `dev`로 PR 생성 예정, 이후 스타일일지 메인 필터 UI 또는 스타일일지 열람 감사로 진행.**
 
 **감사 대상 및 계획(플랜 파일은 세션 로컬이라 여기 원문 보존)**:
 
@@ -36,7 +36,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 | 옷 상세 | `01_옷장.md` | `closet_item_detail_screen.dart` | 완성(사용자가 "원하는 대로 안 나왔다"고 지적한 페이지, 최우선 점검 후보) |
 | 옷 추가 | `01_옷장.md` | `closet_add_screen.dart` | 스켈레톤만(대조 대상 아님) |
 | 코디 메인 | `02_코디 (가상 조합).md` | `composition_main_screen.dart` | 완성 |
-| 코디 상세 | `02_코디 (가상 조합).md` | `composition_detail_screen.dart` | 완성 |
+| 코디 상세 | `02_코디 (가상 조합).md` | `composition_detail_screen.dart` | Task B 완료(2026-08-07) — `StaticArtboard` 렌더링 추가 |
 | 코디 제작(에디터) | `02_코디 (가상 조합).md` | `composition_editor_screen.dart` | Task A 완료(2026-08-06) — `InteractiveArtboard`(이동/회전/크기조절/z-index/겹침팝업/배경색) + Editor Draft/Commit/Cancel 모델 연결. 옷 추가 바텀시트/코디 이름 필드/하단 Thumbnail 그리드/Undo는 여전히 스코프 밖 |
 | 스타일일지 메인 | `03_스타일 일지.md`(+`filter.md`) | `style_log_main_screen.dart` | 완성(필터 UI 제외) |
 | 스타일일지 열람 | `03_스타일 일지.md` | `style_log_viewer_screen.dart` | 완성 |
