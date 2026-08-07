@@ -110,3 +110,24 @@ enum Weather {
         Weather.snow => '눈',
       };
 }
+
+// TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
+/// [Composition.backgroundColor]에 허용되는 값 — 코디 편집기 아트보드 배경색 스와치의
+/// 닫힌 값 집합(MVP는 흰색/밝은회색/어두운회색/검정 4단, `02_코디 (가상 조합).md` §11.1).
+/// `Color` 매핑(`.value` getter)은 `package:flutter/material.dart` 의존이라 여기(순수
+/// Dart 모델 레이어)에 두지 않고 `lib/widgets/interactive_artboard/
+/// artboard_background_color.dart`의 extension으로 분리돼 있다 — `lib/models/`가 Flutter
+/// UI 레이어에 의존하지 않게 하기 위함(Audit 지적, 2026-08-07 레이어 위반 해소).
+enum ArtboardBackgroundColor {
+  white,
+  lightGray,
+  darkGray,
+  black;
+
+  String get label => switch (this) {
+        ArtboardBackgroundColor.white => '흰색',
+        ArtboardBackgroundColor.lightGray => '밝은 회색',
+        ArtboardBackgroundColor.darkGray => '어두운 회색',
+        ArtboardBackgroundColor.black => '검정',
+      };
+}

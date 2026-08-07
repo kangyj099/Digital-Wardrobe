@@ -28,6 +28,32 @@ class CompositionsNotifier extends StateNotifier<List<Composition>> {
   void purgeMany(Set<String> ids) {
     state = [for (final c in state) if (!ids.contains(c.id)) c];
   }
+
+  /// [compositionId] 레코드의 `items`(및 선택적으로 `backgroundColor`)를 교체한다 —
+  /// 코디 편집기의 완료(✔) 시점에 Draft → Record Commit 경로로 호출된다(Editor
+  /// Draft/Commit/Cancel 모델, `docs/history/Decision.md` "Editor 저장 모델 전환").
+  /// [backgroundColor]를 안 넘기면(기본값 null) 기존 배경색을 그대로 둔다.
+  void updateItems(
+    String compositionId,
+    List<CompositionItemPlacement> items, {
+    ArtboardBackgroundColor? backgroundColor,
+  }) {
+    state = [
+      for (final c in state)
+        if (c.id == compositionId)
+          c.copyWith(items: items, backgroundColor: backgroundColor ?? c.backgroundColor)
+        else
+          c,
+    ];
+  }
+
+  /// 신규 Composition 레코드 추가 — 코디 편집기가 id 없이(신규 생성) 진입했을 때
+  /// 완료(✔) 시점에 Draft → Record Commit 경로로 호출된다(Editor Draft/Commit/Cancel
+  /// 모델, `docs/history/Decision.md` "Editor 저장 모델 전환" — `updateItems`와 동일한
+  /// 커밋 시점).
+  void add(Composition composition) {
+    state = [...state, composition];
+  }
 }
 
 final compositionsProvider =

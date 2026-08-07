@@ -31,4 +31,39 @@ void main() {
     await tester.pump();
     expect(helpTapped, isTrue);
   });
+
+  testWidgets('onCommit이 null이면(기본값) 완료 버튼이 렌더되지 않는다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: EditorHeader(onCancel: () {}, onHelpTap: () {}),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('완료'), findsNothing);
+  });
+
+  testWidgets('onCommit을 넘기면 완료(체크) 버튼이 렌더되고 탭 시 콜백이 호출된다', (tester) async {
+    var committed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: EditorHeader(
+            onCancel: () {},
+            onHelpTap: () {},
+            onCommit: () => committed = true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('완료'), findsOneWidget);
+    await tester.tap(find.byTooltip('완료'));
+    await tester.pump();
+    expect(committed, isTrue);
+  });
 }

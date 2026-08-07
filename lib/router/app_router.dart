@@ -22,6 +22,11 @@ class AppRoute {
   static const compositionMain = '/composition';
   static const compositionDetail = '/composition/:id';
   static const compositionEditor = '/composition/editor';
+
+  /// `compositionEditor`의 편집(기존 코디 열기) 변형 — 다른 상세/편집 라우트들의
+  /// `:id` 관례(`closetItemDetail`, `compositionDetail` 등)를 그대로 재사용. id 없이
+  /// 진입하면 신규 생성, `:id`로 진입하면 해당 코디를 편집(둘 다 같은 화면 빌더).
+  static const compositionEditorWithId = '/composition/editor/:id';
   static const compositionSelect = '/composition/select';
   static const styleLogMain = '/style-log';
   static const styleLogViewer = '/style-log/:id';
@@ -62,6 +67,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoute.compositionEditor,
         builder: (context, state) => const CompositionEditorScreen(),
+      ),
+      GoRoute(
+        path: AppRoute.compositionEditorWithId,
+        builder: (context, state) =>
+            CompositionEditorScreen(compositionId: state.pathParameters['id']),
       ),
       GoRoute(
         // 선택 모달(코디 재호출).
