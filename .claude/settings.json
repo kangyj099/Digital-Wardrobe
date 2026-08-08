@@ -39,7 +39,7 @@
     ]
   },
   "enabledPlugins": {
-    "figma@claude-plugins-official": false,
+    "figma@claude-plugins-official": true,
     "ui-ux-pro-max@ui-ux-pro-max-skill": false
   }
 }
