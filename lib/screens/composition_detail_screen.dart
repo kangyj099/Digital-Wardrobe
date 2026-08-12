@@ -111,7 +111,16 @@ class _CompositionDetailScreenState extends ConsumerState<CompositionDetailScree
       onDelete: () {
         ref.read(compositionsProvider.notifier).softDeleteMany({compositionId});
         context.pop();
-        GlassToast.show(context, message: '휴지통으로 이동됨');
+        // 스펙(`05_삭제 & 휴지통.md` "동작") "휴지통으로 이동됨 · 실행취소" — 메인 갤러리
+        // 다중선택 삭제(`composition_main_screen.dart`)와 동일한 실행취소 패턴을 상세 화면
+        // 단일삭제 진입점에도 적용한다. `compositionId`는 값으로 캡처되고 `ref`는 팝된
+        // 화면보다 오래 살아남아 press 시점에 `ref.read(...)`로 안전하게 접근할 수 있다.
+        GlassToast.show(
+          context,
+          message: '휴지통으로 이동됨',
+          actionLabel: '실행취소',
+          onAction: () => ref.read(compositionsProvider.notifier).restoreMany({compositionId}),
+        );
       },
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
