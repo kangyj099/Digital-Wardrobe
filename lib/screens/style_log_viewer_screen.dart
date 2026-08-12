@@ -65,17 +65,23 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
     return AppDetailScaffold(
       category: AppCategory.styleLog,
       onDelete: () {
-        ref.read(styleLogsProvider.notifier).softDeleteMany({widget.styleLogId});
+        // [Review P0 수정] `context.pop()` 이후 팝된 화면의 element는 dispose되고, `ref`는
+        // 그 element에 묶여 있어 나중(토스트 액션 탭 시점)에 `ref.read(...)`를 호출하면
+        // `ConsumerStatefulElement._assertNotDisposed()`가 release 빌드에서도 `StateError`를
+        // 던진다(`ref`가 화면보다 오래 산다는 가정이 틀렸음 — Review가 `flutter_riverpod`
+        // 실제 소스로 확인). `ref`가 아니라 notifier 객체 자체를 pop 이전에 미리 캡처해
+        // 재사용한다 — `StateNotifier`는 위젯과 독립적으로 살아있다.
+        final notifier = ref.read(styleLogsProvider.notifier);
+        notifier.softDeleteMany({widget.styleLogId});
         context.pop();
         // 스펙(`05_삭제 & 휴지통.md` "동작") "휴지통으로 이동됨 · 실행취소" — 메인 갤러리
         // 다중선택 삭제(`style_log_main_screen.dart`)와 동일한 실행취소 패턴을 상세 화면
-        // 단일삭제 진입점에도 적용한다. `widget.styleLogId`는 값으로 캡처되고 `ref`는 팝된
-        // 화면보다 오래 살아남아 press 시점에 `ref.read(...)`로 안전하게 접근할 수 있다.
+        // 단일삭제 진입점에도 적용한다.
         GlassToast.show(
           context,
           message: '휴지통으로 이동됨',
           actionLabel: '실행취소',
-          onAction: () => ref.read(styleLogsProvider.notifier).restoreMany({widget.styleLogId}),
+          onAction: () => notifier.restoreMany({widget.styleLogId}),
         );
       },
       body: Padding(
