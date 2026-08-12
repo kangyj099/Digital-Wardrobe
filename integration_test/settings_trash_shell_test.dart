@@ -336,7 +336,11 @@ void main() {
     testWidgets(
       '[갱신, Task 10] 그리드 타일 탭 시 상세 페이지 전환이 아니라 이미지+제작일이 포함된 정보 '
       '바텀시트가 뜨고, [복원]을 누르면 실제로 복원되어 시트가 닫히고 그리드에서 사라지며 '
-      '어떤 상세 화면으로도 전환되지 않는다(Task 10 이전엔 no-op 스텁이었으나 이제 실제 실행됨)',
+      '어떤 상세 화면으로도 전환되지 않는다(Task 10 이전엔 no-op 스텁이었으나 이제 실제 실행됨) '
+      '[갱신, trash-cascade-ui-fixes] "N일"이 제목 문자열에서 분리되어 이미지 위 오버레이로 '
+      '이동했다(`TrashGalleryTile`의 "12일" 오버레이 패턴 재사용, 이 파일 265번째 줄 근처의 '
+      '단언과 동일한 방식) — 제목엔 카테고리 라벨만 남고, "12일"은 배경 그리드 타일(이 화면 '
+      '자체의 c07 타일)과 팝업 이미지 오버레이 2곳에 각각 렌더링되어 총 2개가 된다',
       (tester) async {
         await pumpAppAndPush(tester, AppRoute.trashMain);
 
@@ -344,7 +348,15 @@ void main() {
         await tester.tap(find.byType(TrashGalleryTile).first);
         await tester.pumpAndSettle();
 
-        expect(find.text('옷장 · 영구 삭제까지 12일'), findsOneWidget);
+        // 예전 결합 문자열은 더 이상 없다 — 카테고리 라벨(제목)과 "N일"(이미지 오버레이)이
+        // 분리되어 렌더링된다.
+        expect(find.text('옷장 · 영구 삭제까지 12일'), findsNothing);
+        expect(find.text('옷장'), findsNWidgets(2), reason: '카테고리 필터칩("옷장") + 팝업 제목("옷장")');
+        expect(
+          find.text('12일'),
+          findsNWidgets(2),
+          reason: '배경 그리드의 c07 타일 오버레이 + 팝업 이미지 위 오버레이, 총 2곳',
+        );
         expect(find.byType(Image), findsWidgets);
         expect(find.text('복원'), findsOneWidget);
         expect(find.text('영구 삭제'), findsOneWidget);
