@@ -15,6 +15,7 @@ class CompositionGalleryGrid extends StatelessWidget {
     this.onItemLongPress,
     this.multiSelectMode = false,
     this.selectedIds = const {},
+    this.deletedClothingItemIds = const {},
     this.controller,
     this.topSpacing = 0,
   });
@@ -32,6 +33,14 @@ class CompositionGalleryGrid extends StatelessWidget {
   /// 선택된 항목 id 집합 — [CompositionGalleryTile.selected]로 `composition.id` 포함 여부를
   /// 변환해 전달.
   final Set<String> selectedIds;
+
+  /// 휴지통으로 이동(소프트 삭제)된 옷 id 집합 — 스펙("옷 삭제 시 코디 캐스케이드 처리"
+  /// §"코디 목록: 삭제된 옷 포함 코디는 타일에 작은 배지") 판정용. `selectedIds`와 같은
+  /// 패턴으로 호출부(`composition_main_screen.dart`)가 `closetItemsProvider`를 한 번만
+  /// watch해 만든 id 집합을 그대로 넘긴다 — 각 코디가 이 집합에 속한 옷을 참조하는지는
+  /// 이 어댑터가 `composition.items`를 순회하며 매핑 시점에 판정해
+  /// [CompositionGalleryTile.hasDeletedItem]으로 변환한다.
+  final Set<String> deletedClothingItemIds;
 
   /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
   final ScrollController? controller;
@@ -55,6 +64,7 @@ class CompositionGalleryGrid extends StatelessWidget {
           onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(composition),
           multiSelectMode: multiSelectMode,
           selected: selectedIds.contains(composition.id),
+          hasDeletedItem: composition.items.any((p) => deletedClothingItemIds.contains(p.clothingItemId)),
         );
       },
     );
