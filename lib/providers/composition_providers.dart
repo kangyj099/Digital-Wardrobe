@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../models/clothing_item.dart';
 import '../models/composition.dart';
 import '../models/enums.dart';
 import '../mock/mock_data.dart';
@@ -29,19 +30,32 @@ class CompositionsNotifier extends StateNotifier<List<Composition>> {
     state = [for (final c in state) if (!ids.contains(c.id)) c];
   }
 
-  /// [compositionId] 레코드의 `items`(및 선택적으로 `backgroundColor`)를 교체한다 —
-  /// 코디 편집기의 완료(✔) 시점에 Draft → Record Commit 경로로 호출된다(Editor
-  /// Draft/Commit/Cancel 모델, `docs/history/Decision.md` "Editor 저장 모델 전환").
-  /// [backgroundColor]를 안 넘기면(기본값 null) 기존 배경색을 그대로 둔다.
+  /// [compositionId] 레코드의 `items`(및 선택적으로 `backgroundColor`/`coverImagePath`)를
+  /// 교체한다 — 두 트리거 지점이 공통으로 호출한다(`docs/reference/data/00_DataSchema.md`
+  /// §13.2): (a) 코디 편집기의 완료(✔) Draft → Record Commit, (b) 코디 편집 진입 시
+  /// "삭제된 옷 자동 정리" write-back(`confirmAndCleanUpDeletedItemsBeforeEditing`,
+  /// `composition_editor_providers.dart`). [backgroundColor]를 안 넘기면(기본값 null)
+  /// 기존 배경색을 그대로 둔다. [coverImagePath]도 같은 규칙 — null이면(캡처/저장 실패
+  /// 등, §13.3 "실패 처리") 기존 스냅샷 경로를 그대로 유지한다.
+  ///
+  /// `isIncomplete`는 이 메서드가 호출될 때마다 `items.isEmpty`로 무조건 재계산한다
+  /// (§13.5) — "정리 후 0개 남으면 기존 '미완성' 처리 재사용" 요구를 새 상태 없이
+  /// 만족시키고, 항목이 다시 채워져 재커밋되면 자동으로 원복된다.
   void updateItems(
     String compositionId,
     List<CompositionItemPlacement> items, {
     ArtboardBackgroundColor? backgroundColor,
+    String? coverImagePath,
   }) {
     state = [
       for (final c in state)
         if (c.id == compositionId)
-          c.copyWith(items: items, backgroundColor: backgroundColor ?? c.backgroundColor)
+          c.copyWith(
+            items: items,
+            backgroundColor: backgroundColor ?? c.backgroundColor,
+            coverImagePath: coverImagePath ?? c.coverImagePath,
+            isIncomplete: items.isEmpty,
+          )
         else
           c,
     ];
@@ -282,4 +296,33 @@ final compositionCoverImageProvider = Provider.family<String?, String>((ref, com
     if (matches.isNotEmpty) return matches.first.imagePath;
   }
   return null;
+});
+
+/// [placement]가 "정리 대상"인지 — `docs/reference/data/00_DataSchema.md` §13.4의 공유
+/// 판정: `clothingItemId`가 [closetItems]에 아예 없거나(완전 삭제/purge된 경우), 있어도
+/// 매칭된 [ClothingItem.isDeleted]가 true(휴지통 상태)면 정리 대상이다.
+bool _placementNeedsCleanup(CompositionItemPlacement placement, List<ClothingItem> closetItems) {
+  final match = closetItems.where((item) => item.id == placement.clothingItemId).firstOrNull;
+  return match == null || match.isDeleted;
+}
+
+/// [compositionId] 코디의 placement 중 위 §13.4 판정에 걸리는 것들 — 편집 진입 가드의
+/// 확인 다이얼로그 `{N}`(`confirmAndCleanUpDeletedItemsBeforeEditing`,
+/// `composition_editor_providers.dart`)과 향후 코디 상세 "다음 편집 시 자동 정리" 배너가
+/// 공유하는 근거(§13.7, 배너 자체는 이번 스코프 밖).
+final compositionDeletedItemPlacementsProvider =
+    Provider.family<List<CompositionItemPlacement>, String>((ref, compositionId) {
+  final composition = ref.watch(compositionsProvider).where((c) => c.id == compositionId).firstOrNull;
+  if (composition == null) return const [];
+  final closetItems = ref.watch(closetItemsProvider);
+  return composition.items.where((p) => _placementNeedsCleanup(p, closetItems)).toList();
+});
+
+/// [compositionId] 코디에 §13.4 판정(완전 삭제 또는 휴지통 상태)에 걸리는 옷이 하나라도
+/// 있는지 — Gallery Tile "연결끊김" 배지(`composition_gallery_grid.dart`)와 편집 진입
+/// 가드가 공유하는 단일 소스. 이전에는 `composition_main_screen.dart`가 소프트 삭제된
+/// 옷만 보는 inline `Set<String>`으로 이 판정을 따로 계산했는데(완전 삭제/purge된 경우를
+/// 놓침) — 이 provider로 교체됐다(§13.4, `docs/history/Decision.md`).
+final compositionHasDeletedItemsProvider = Provider.family<bool, String>((ref, compositionId) {
+  return ref.watch(compositionDeletedItemPlacementsProvider(compositionId)).isNotEmpty;
 });

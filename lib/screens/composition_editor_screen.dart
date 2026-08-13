@@ -6,9 +6,11 @@ import '../models/composition.dart';
 import '../providers/closet_providers.dart';
 import '../providers/composition_editor_providers.dart';
 import '../providers/composition_providers.dart';
+import '../services/composition_snapshot_service.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/editor_header.dart';
 import '../widgets/interactive_artboard/artboard_item.dart';
+import '../widgets/interactive_artboard/composition_snapshot_capture.dart';
 import '../widgets/interactive_artboard/interactive_artboard.dart';
 
 /// 코디 만들기(편집) 화면. `compositionId`가 있으면 기존 코디를 열어 편집, 없으면
@@ -131,19 +133,59 @@ class _CompositionEditorScreenState extends ConsumerState<CompositionEditorScree
     ref.read(compositionDraftProvider(widget.compositionId).notifier).deleteItem(itemId);
   }
 
-  /// 완료(✔) — Draft의 최종 items/backgroundColor를 Record에 반영(Commit)하고
-  /// Draft를 정리한다.
-  void _handleCommit() {
+  /// 완료(✔) — Draft의 최종 items/backgroundColor를 Record에 반영(Commit)하기 전에
+  /// 평면 렌더 스냅샷을 캡처+저장해 `coverImagePath`도 함께 갱신한다
+  /// (`docs/reference/data/00_DataSchema.md` §13.2(a)). `EditorHeader.onCommit`은
+  /// `VoidCallback`(`void Function()`)이지만 `Future<void> Function()`은 그 서브타입이라
+  /// (Dart의 void-반환 공변) 그대로 할당 가능하다.
+  Future<void> _handleCommit() async {
     final draft = ref.read(compositionDraftProvider(widget.compositionId));
     final compositionId = draft.compositionId;
+    final closetItems = ref.read(closetItemsProvider);
+    final artboardItems = draft.items
+        .map((placement) => compositionPlacementToArtboardItem(placement, closetItems))
+        .whereType<ArtboardItem>()
+        .toList();
+
+    final newId = compositionId ?? 'comp_${DateTime.now().microsecondsSinceEpoch}';
+    final previousCoverImagePath = compositionId == null
+        ? null
+        : ref.read(compositionsProvider).firstWhere((c) => c.id == compositionId).coverImagePath;
+
+    String? newCoverImagePath;
+    try {
+      final pngBytes = await captureCompositionSnapshot(
+        context,
+        items: artboardItems,
+        backgroundColor: draft.backgroundColor,
+      );
+      newCoverImagePath = await saveCompositionSnapshot(
+        compositionId: newId,
+        pngBytes: pngBytes,
+        previousCoverImagePath: previousCoverImagePath,
+      );
+    } catch (_) {
+      // §13.3 실패 처리 — 캡처/저장 실패는 커밋 자체를 막지 않는다(non-fatal). 기존
+      // coverImagePath를 그대로 두고 items/backgroundColor/isIncomplete 갱신은 계속
+      // 진행한다.
+      newCoverImagePath = null;
+    }
+
+    // [§13.2(a)] 위 캡처/저장이 여러 await를 거치는 동안 화면이 이미 unmount됐을 수
+    // 있다 — 이후 `ref`/`context` 사용(커밋 반영, pop) 전에 반드시 확인한다. `State.context`를
+    // 쓰는 화면이라 `context.mounted`가 아니라 `mounted`(State 자체의 getter)로 가드해야
+    // `use_build_context_synchronously` 린트가 뒤이은 `context.pop()`까지 안전하다고
+    // 인식한다(`flutter-implementation-conventions` 스킬의 `if (!mounted) return;` 관례).
+    if (!mounted) return;
+
     if (compositionId != null) {
       ref.read(compositionsProvider.notifier).updateItems(
             compositionId,
             draft.items,
             backgroundColor: draft.backgroundColor,
+            coverImagePath: newCoverImagePath,
           );
     } else {
-      final newId = 'comp_${DateTime.now().microsecondsSinceEpoch}';
       ref.read(compositionsProvider.notifier).add(
             Composition(
               id: newId,
@@ -151,6 +193,8 @@ class _CompositionEditorScreenState extends ConsumerState<CompositionEditorScree
               items: draft.items,
               createdAt: DateTime.now(),
               backgroundColor: draft.backgroundColor,
+              coverImagePath: newCoverImagePath,
+              isIncomplete: draft.items.isEmpty,
             ),
           );
     }

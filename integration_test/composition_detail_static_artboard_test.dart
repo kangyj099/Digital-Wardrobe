@@ -241,7 +241,13 @@ void main() {
   });
 
   group('4) 아이템 롱프레스(~1.5초) — 편집 화면 진입', () {
-    testWidgets('c01을 1.5초 이상 눌렀다 떼면 compositionEditorWithId 라우트로 이동한다', (tester) async {
+    // comp01은 c07(삭제됨)을 포함하므로(그룹 6 참고), 편집 진입 시 §13.2(b) "삭제된 옷 자동
+    // 정리" 확인 다이얼로그가 먼저 뜬다(`docs/reference/data/00_DataSchema.md`,
+    // `confirmAndCleanUpDeletedItemsBeforeEditing`) — 진행을 선택해야 실제로 편집 화면으로
+    // 넘어간다.
+    testWidgets(
+        'c01을 1.5초 이상 눌렀다 떼면 삭제된 옷 정리 확인 다이얼로그가 뜨고, 진행을 선택하면 compositionEditorWithId 라우트로 이동한다',
+        (tester) async {
       await pumpApp(tester);
       await goToCategory(tester, '코디');
       await tapCompositionById(tester, 'comp01');
@@ -252,21 +258,61 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull, reason: '롱프레스 타이머 발동 자체에서 예외가 없어야 함');
-      expect(find.byType(CompositionEditorScreen), findsOneWidget, reason: '롱프레스가 편집 화면으로 이어지지 않음');
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.text('삭제된 옷이 포함돼 있어요'), findsOneWidget, reason: '정리 대상(c07)이 있으므로 확인 다이얼로그가 떠야 함');
+      expect(find.text('삭제된 옷 1개 포함, 편집 시작 시 자동 제거돼요.'), findsOneWidget);
+      expect(find.byType(CompositionEditorScreen), findsNothing, reason: '다이얼로그 확인 전엔 아직 편집 화면으로 넘어가면 안 됨');
+
+      await tester.tap(find.text('진행'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull, reason: '정리(캡처+저장+write-back) 자체에서 예외가 없어야 함');
+      expect(find.byType(CompositionEditorScreen), findsOneWidget, reason: '진행 선택 후 편집 화면으로 이어져야 함');
       expect(
         tester.widget<CompositionEditorScreen>(find.byType(CompositionEditorScreen)).compositionId,
         'comp01',
       );
 
-      // 화면이 이미 바뀐 뒤 포인터를 떼는 것까지 안전해야 한다(dispose 관련 크래시 이력).
-      await gesture.up();
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull, reason: '롱프레스로 화면 전환된 뒤 포인터를 떼도 예외가 없어야 함');
-
       await tester.tap(find.text('취소'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byType(CompositionDetailScreen), findsOneWidget);
+    });
+
+    // comp02는 삭제/purge된 옷이 없는 코디(그룹 1~3이 쓰는 comp01과 달리 검증된 바 없어
+    // mock_data.dart를 직접 재확인하기보다, 정리 대상이 없는 코디를 로컬로 구성해 no-op
+    // 경로(다이얼로그 없이 즉시 진입)를 검증한다.
+    testWidgets('정리 대상이 없는 코디는 다이얼로그 없이 즉시 편집 화면으로 이동한다', (tester) async {
+      final container = await pumpApp(tester);
+      final clean = Composition(
+        id: 'test-clean-edit-entry',
+        name: '정리 대상 없음',
+        createdAt: DateTime(2026, 1, 1),
+        items: const [CompositionItemPlacement(clothingItemId: 'c01', x: 0.5, y: 0.5)],
+      );
+      container.read(compositionsProvider.notifier).state = [
+        ...container.read(compositionsProvider),
+        clean,
+      ];
+      final context = tester.element(find.byType(ClosetMainScreen));
+      GoRouter.of(context).push(AppRoute.compositionDetail.replaceFirst(':id', clean.id));
+      await tester.pumpAndSettle();
+
+      final point = tester.getCenter(artboardKey('c01'));
+      final gesture = await tester.startGesture(point);
+      await tester.pump(const Duration(milliseconds: 1600));
+      await tester.pumpAndSettle();
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.text('삭제된 옷이 포함돼 있어요'), findsNothing, reason: '정리 대상이 없으면 다이얼로그가 뜨면 안 됨');
+      expect(find.byType(CompositionEditorScreen), findsOneWidget, reason: '즉시 편집 화면으로 넘어가야 함');
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
     });
   });
 

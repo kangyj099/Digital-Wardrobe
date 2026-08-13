@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:digittal_wardrobe/models/composition.dart';
 import 'package:digittal_wardrobe/theme/app_spacing.dart';
@@ -22,13 +23,19 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: Scaffold(
-          body: CompositionGalleryGrid(
-            compositions: compositions,
-            density: AppDensity.mid,
-            onItemTap: (_) {},
+      ProviderScope(
+        // `CompositionGalleryGrid`가 `ConsumerWidget`으로 전환됨(§13.4,
+        // `compositionHasDeletedItemsProvider`를 코디별로 직접 watch하기 위함) — 이 provider가
+        // 내부적으로 `compositionsProvider`/`closetItemsProvider`를 참조하므로 `ProviderScope`
+        // 없이는 렌더링 자체가 불가능하다.
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: CompositionGalleryGrid(
+              compositions: compositions,
+              density: AppDensity.mid,
+              onItemTap: (_) {},
+            ),
           ),
         ),
       ),
@@ -48,13 +55,15 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: Scaffold(
-          body: CompositionGalleryGrid(
-            compositions: compositions,
-            density: AppDensity.mid,
-            onItemTap: (c) => tapped = c,
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: CompositionGalleryGrid(
+              compositions: compositions,
+              density: AppDensity.mid,
+              onItemTap: (c) => tapped = c,
+            ),
           ),
         ),
       ),

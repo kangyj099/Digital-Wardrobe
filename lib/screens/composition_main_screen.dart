@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../models/composition.dart';
 import '../models/enums.dart';
 import '../providers/classification_models.dart';
-import '../providers/closet_providers.dart';
 import '../providers/composition_providers.dart';
 import '../router/app_router.dart';
 import '../theme/app_spacing.dart';
@@ -27,14 +26,6 @@ class CompositionMainScreen extends ConsumerWidget {
     final density = ref.watch(compositionDensityProvider);
     final compositions = ref.watch(filteredCompositionsProvider);
     final groups = ref.watch(compositionGroupSummariesProvider);
-    // 스펙("옷 삭제 시 코디 캐스케이드 처리" §"코디 목록: 삭제된 옷 포함 코디는 타일에 작은
-    // 배지") — 새 `.family` provider를 만들지 않고, 이 build() 안에서 `closetItemsProvider`를
-    // 한 번만 watch해 삭제된 옷 id 집합을 만든다. 실제 코디별 판정(어느 코디가 이 집합에 속한
-    // 옷을 참조하는지)은 `CompositionGalleryGrid`가 타일 매핑 시점에 수행한다.
-    final deletedClothingItemIds = {
-      for (final item in ref.watch(closetItemsProvider))
-        if (item.isDeleted) item.id,
-    };
 
     return GalleryMainScreen<Composition>(
       current: AppCategory.composition,
@@ -120,7 +111,6 @@ class CompositionMainScreen extends ConsumerWidget {
           topSpacing: topSpacing,
           multiSelectMode: multiSelectMode,
           selectedIds: selectedIds,
-          deletedClothingItemIds: deletedClothingItemIds,
           onItemTap: onItemTap,
           onItemLongPress: onItemLongPress,
         );

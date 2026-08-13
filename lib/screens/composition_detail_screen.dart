@@ -68,6 +68,17 @@ class _CompositionDetailScreenState extends ConsumerState<CompositionDetailScree
     }
   }
 
+  /// 아트보드 편집 진입(롱프레스) — 네비게이션 전에 반드시 "삭제된 옷 자동 정리" 가드를
+  /// 통과시킨다(`docs/reference/data/00_DataSchema.md` §13.2(b)). `false`(사용자 취소)면
+  /// 편집 화면으로 push하지 않는다.
+  Future<void> _handleEditRequested(BuildContext context, WidgetRef ref, String compositionId) async {
+    final canProceed =
+        await confirmAndCleanUpDeletedItemsBeforeEditing(context, ref, compositionId);
+    if (!canProceed) return;
+    if (!context.mounted) return;
+    context.push(AppRoute.compositionEditorWithId.replaceFirst(':id', compositionId));
+  }
+
   /// 아트보드 아이템 탭(단일 또는 겹침 팝업에서 선택) 공통 핸들러 — [usedItems] 안에서
   /// 같은 id를 찾아 그 위치로 스크롤하고 잠깐 테두리로 강조한다(스펙 §코디 상세).
   void _handleArtboardItemTap(String itemId, List<ClothingItem> usedItems) {
@@ -145,9 +156,7 @@ class _CompositionDetailScreenState extends ConsumerState<CompositionDetailScree
                 items: artboardItems,
                 backgroundColor: composition.backgroundColor ?? ArtboardBackgroundColor.white,
                 onItemTap: (itemId) => _handleArtboardItemTap(itemId, usedItems),
-                onEditRequested: () => context.push(
-                  AppRoute.compositionEditorWithId.replaceFirst(':id', compositionId),
-                ),
+                onEditRequested: () => _handleEditRequested(context, ref, compositionId),
               ),
             ),
             const SizedBox(height: AppSpacing.md),

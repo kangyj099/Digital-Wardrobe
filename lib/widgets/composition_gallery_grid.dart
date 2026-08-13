@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/composition.dart';
+import '../providers/composition_providers.dart';
 import 'app_gallery_grid.dart';
 import 'composition_gallery_tile.dart';
 
 /// `List<Composition>` + [CompositionGalleryTile] 매핑 전용 어댑터 — `GroupedGalleryGrid`와
 /// 동일한 얇은 어댑터 패턴. 순수 그리드 레이아웃 메커니즘(패딩/density→crossAxisCount/gap/
 /// aspectRatio) 자체는 [AppGalleryGrid]가 담당한다.
-class CompositionGalleryGrid extends StatelessWidget {
+///
+/// `ConsumerWidget`인 이유: [CompositionGalleryTile.hasDeletedItem] 판정을
+/// `compositionHasDeletedItemsProvider`(§13.4의 단일 공유 판정,
+/// `docs/reference/data/00_DataSchema.md`)로 코디별로 직접 조회하기 위함 — 이전에는
+/// 호출부(`composition_main_screen.dart`)가 만든 inline `Set<String>`(소프트 삭제된 옷만
+/// 봄, 완전 삭제/purge된 경우를 놓침)을 넘겨받았으나 이 provider로 교체됐다.
+class CompositionGalleryGrid extends ConsumerWidget {
   const CompositionGalleryGrid({
     super.key,
     required this.compositions,
@@ -15,7 +23,6 @@ class CompositionGalleryGrid extends StatelessWidget {
     this.onItemLongPress,
     this.multiSelectMode = false,
     this.selectedIds = const {},
-    this.deletedClothingItemIds = const {},
     this.controller,
     this.topSpacing = 0,
   });
@@ -34,14 +41,6 @@ class CompositionGalleryGrid extends StatelessWidget {
   /// 변환해 전달.
   final Set<String> selectedIds;
 
-  /// 휴지통으로 이동(소프트 삭제)된 옷 id 집합 — 스펙("옷 삭제 시 코디 캐스케이드 처리"
-  /// §"코디 목록: 삭제된 옷 포함 코디는 타일에 작은 배지") 판정용. `selectedIds`와 같은
-  /// 패턴으로 호출부(`composition_main_screen.dart`)가 `closetItemsProvider`를 한 번만
-  /// watch해 만든 id 집합을 그대로 넘긴다 — 각 코디가 이 집합에 속한 옷을 참조하는지는
-  /// 이 어댑터가 `composition.items`를 순회하며 매핑 시점에 판정해
-  /// [CompositionGalleryTile.hasDeletedItem]으로 변환한다.
-  final Set<String> deletedClothingItemIds;
-
   /// [AppScrollContainer]가 연결하는 스크롤 컨트롤러 — [AppGalleryGrid]로 그대로 전달.
   final ScrollController? controller;
 
@@ -49,7 +48,7 @@ class CompositionGalleryGrid extends StatelessWidget {
   final double topSpacing;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppGalleryGrid(
       itemCount: compositions.length,
       density: density,
@@ -57,6 +56,7 @@ class CompositionGalleryGrid extends StatelessWidget {
       topSpacing: topSpacing,
       itemBuilder: (context, index) {
         final composition = compositions[index];
+        final hasDeletedItem = ref.watch(compositionHasDeletedItemsProvider(composition.id));
         return CompositionGalleryTile(
           key: ValueKey(composition.id),
           composition: composition,
@@ -64,7 +64,7 @@ class CompositionGalleryGrid extends StatelessWidget {
           onLongPress: onItemLongPress == null ? null : () => onItemLongPress!(composition),
           multiSelectMode: multiSelectMode,
           selected: selectedIds.contains(composition.id),
-          hasDeletedItem: composition.items.any((p) => deletedClothingItemIds.contains(p.clothingItemId)),
+          hasDeletedItem: hasDeletedItem,
         );
       },
     );

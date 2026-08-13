@@ -49,12 +49,19 @@ class StaticArtboard extends StatefulWidget {
     required this.onItemTap,
     required this.onEditRequested,
     this.baseItemSizeFraction = 0.28,
+    this.boundaryKey,
   });
 
   final List<ArtboardItem> items;
   final ArtboardBackgroundColor backgroundColor;
   final ValueChanged<String> onItemTap;
   final VoidCallback onEditRequested;
+
+  /// 루트 `RepaintBoundary`에 부여하는 key — `composition_snapshot_capture.dart`가
+  /// 오프스크린으로 이 위젯을 마운트해 `RenderRepaintBoundary.toImage()`로 캡처할 때
+  /// 이 key로 해당 렌더 객체를 찾는다(`docs/reference/data/00_DataSchema.md` §13.1).
+  /// 일반 사용(코디 상세의 인터랙티브 렌더링)에서는 넘기지 않는다(기본값 null).
+  final Key? boundaryKey;
 
   /// 캔버스 짧은 변 대비 baseItemSize 비율 — `InteractiveArtboard.baseItemSizeFraction`과
   /// 동일 기본값(스펙 §2.1). 같은 코디 데이터를 편집기와 동일한 크기감으로 보여주기 위해
@@ -93,13 +100,16 @@ class _StaticArtboardState extends State<StaticArtboard> {
           onTapDown: (details) => _handleTapDown(details, canvasSize, baseItemSize),
           onTapUp: (details) => _handleTapUp(details, canvasSize, baseItemSize),
           onTapCancel: _cancelLongPressTimer,
-          child: ColoredBox(
-            color: widget.backgroundColor.value,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                for (final item in sortedItems) _itemLayer(item, canvasSize, baseItemSize),
-              ],
+          child: RepaintBoundary(
+            key: widget.boundaryKey,
+            child: ColoredBox(
+              color: widget.backgroundColor.value,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  for (final item in sortedItems) _itemLayer(item, canvasSize, baseItemSize),
+                ],
+              ),
             ),
           ),
         );
