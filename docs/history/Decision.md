@@ -1,5 +1,26 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 코디 스냅샷 캡처/로컬 저장 아키텍처 확정 (Data/Architecture, Decision)
+
+결정:
+- **캡처 대상은 `StaticArtboard`, `InteractiveArtboard` 아님** — 후자는 배경색 버튼/선택 테두리/핸들 등 에디터 전용 크롬을 같은 영역에 그려 캡처에 섞여 들어감. `RepaintBoundary`+`GlobalKey`로 감싸 화면 밖(큰 음수 offset, `Opacity(0)` 래핑은 절대 금지 — `RenderOpacity`가 `alpha==0`이면 자식을 아예 페인트하지 않아 레이어가 안 붙고 `toImage()`가 무조건 실패함)에 `Overlay`로 마운트해 `toImage()`.
+- **트리거 지점 2곳, 쓰기 경로는 동일**: (a) 에디터 완료(✔) 커밋, (b) 코디 편집 진입 시 "삭제된 옷 자동 정리" — 둘 다 `CompositionsNotifier.updateItems`로 귀결. (b)는 에디터 화면이 아니라 **네비게이션 호출부**(코디 상세의 편집 진입 지점)에서 실행돼야 함 — `compositionDraftProvider`가 `autoDispose`가 아니라서, 방치된(취소하지 않고 뒤로가기한) 기존 Draft가 있으면 그 Draft의 `create`가 재실행 안 되기 때문. 정리를 실행한 직후 반드시 `ref.invalidate(compositionDraftProvider(compositionId))`로 그 Draft를 무효화해야 다음 진입이 정리된 Record를 다시 읽음 — 이건 기존 "Editor 저장 모델 전환" 결정(방치 Draft 재사용)을 뒤집는 게 아니라, "실제로 정리를 실행한 경우"에만 적용되는 좁은 예외.
+- **로컬 저장**: `path_provider` 신규 의존성 추가, `getApplicationSupportDirectory()`(캐시/임시 아님 — OS가 예고 없이 비울 수 있어 "스냅샷은 안 깨짐" 보장이 깨짐) 아래 PNG 저장. 파일명은 매 재생성마다 새로 발급(`{compositionId}_{microsecondsSinceEpoch}.png`) — `Image.file`의 캐시가 mtime이 아니라 경로 기준이라, 고정 파일명 덮어쓰기는 재생성 후에도 이전 이미지가 계속 캐시로 보이는 문제가 생김. 이전 파일은 best-effort 삭제(실패해도 커밋 자체는 막지 않음).
+- **`lib/services/` 폴더 신설**: 이번이 첫 사례. **규칙(향후 기능 전반에 적용되는 선례로 확정)**: Riverpod 상태를 다루지 않는 순수 비동기 I/O·플랫폼 연동 로직 → `services/`, Riverpod 상태를 다루는 로직은 계속 `providers/`. (export/import, 업로드 큐, AI 분석 등 다음 기능들도 이 규칙을 따름.)
+- **`Composition.isIncomplete`**: 기존 "미완성 배지"의 2026-07-15 Draft-존재-여부 판정 규칙(`_공통 규칙.md`)과는 별개의, Record에 영속되는 조건. `updateItems`(위 두 트리거 지점 공통) 호출마다 `items.isEmpty`로 무조건 재계산 — "정리 후 0개 남으면 기존 미완성 처리 재사용" 요구를 새 상태 없이 만족.
+- **스코프 컷(후속 과제로 이관, 이번 결정에 미포함)**: 코디 상세 화면이 스냅샷 대신 `composition.items`를 라이브 렌더링하는 것 자체는 이번에 안 고침 — 탭 하이라이트/롱프레스 편집진입 같은 상호작용이 평면 PNG만으로는 안 되기 때문(별도 탭 오버레이 그리드 설계 필요). "다음 편집 시 자동 정리" 안내 배너도 같은 후속 과제.
+
+사유:
+삭제&휴지통 페이지 감사에서 스펙("코디는 저장 시마다 평면 렌더링 스냅샷 저장, 목록/상세는 항상 스냅샷 사용")이 실제로는 전혀 구현 안 된 것을 발견 — `Composition.coverImagePath` 필드만 있고 아무도 채우지 않음. 사용자가 "전부 즉시 수정, 스냅샷 아키텍처 우선"으로 지시. Worker Draft → Review(1차 P0: `Opacity(0)` 래핑이 `RenderOpacity`/`RepaintBoundary` 동작상 캡처를 무조건 실패시킴, Flutter SDK 소스로 직접 검증됨 → 수정 후 재검증 통과) → Audit(1차 FAIL, P1 4건: 방치 Draft가 정리를 무효화할 수 있는 취약점 / `lib/services/` 폴더 선례 미확정 / 병행 진행 중이던 Track A의 "연결끊김" 배지 구현이 이 설계와 다른 판정 기준을 씀 / BACKLOG.md가 두 병행 브랜치에서 갈라짐 → 앞 3건 수정 후 재검증 PASS, 4번째는 PM의 머지 시점 처리 항목으로 분리) 전체 파이프라인 통과.
+
+Impact:
+- `docs/reference/data/00_DataSchema.md` §13 신설(§8 표/Open Question #8 갱신 포함).
+- `docs/work/BACKLOG.md`에 코디 상세 스냅샷 표시/정리 배너 후속 과제 등록(위 스코프 컷 항목).
+- 코드 변경 없음(Decision 단계) — 실제 구현(`lib/services/composition_snapshot_service.dart` 신설, `composition_editor_screen.dart`/`composition_providers.dart`/`composition_editor_providers.dart`/`composition_gallery_tile.dart` 수정, `pubspec.yaml`에 `path_provider` 추가 등)은 별도 L Task로 후속 진행. 그 Task는 병행 진행된 Track A(삭제&휴지통 UI 픽스)의 "연결끊김" 배지 판정 로직을 이 결정의 `compositionHasDeletedItemsProvider`로 교체하는 것을 스코프에 명시 포함해야 함.
+- **머지 시 주의**: `feature/composition-snapshot-architecture`와 `feature/trash-cascade-ui-fixes`가 같은 커밋(24b7008)에서 분기된 뒤 각자 `BACKLOG.md`의 Current 섹션을 다르게 수정함 — 둘을 `dev`에 합칠 때 자동 병합에 맡기지 말고, 이 스냅샷 결정의 후속 과제 기록을 Track A 쪽의 (더 최신으로 재구성된) Current 섹션 위에 수동으로 다시 적용할 것.
+
+---
+
 [Decision] 코디↔스타일일지 "자동 매칭" 동작 세부 확정 (Logic/Feature, Decision)
 
 결정:

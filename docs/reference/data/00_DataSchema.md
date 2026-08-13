@@ -177,7 +177,7 @@ Confirmed via `lib/providers/style_log_providers.dart` and `lib/providers/closet
 | `StyleLog.coverImagePath` | `users/{uid}/styleLogs/{logId}/cover.jpg` | |
 | `StyleLog.additionalImagePaths[]` | `users/{uid}/styleLogs/{logId}/additional_{index}.jpg` | 카드 슬롯 3~10번, index는 배열 순서(0~7) — 순서 변경 시 파일이 아니라 배열 순서만 바뀜(경로 재정렬 불필요) |
 | `StyleLog.wornItemIds` | *(no Storage path of its own)* | ID references only, resolved at read time against the referenced `ClothingItem.imagePath` — no image duplication |
-| `Composition.coverImagePath` | *(no independent upload, by current design)* | expected to always be a copy of one of the composition's own item images' Storage path — see Open Question #8 |
+| `Composition.coverImagePath` | `users/{uid}/compositions/{compositionId}/snapshot.png` (proposed, unreachable until Cloud Storage migration — §13 covers today's local-only equivalent) | auto-generated flat-render snapshot of the composition's items, not a copy of any single item's image — see §13 |
 | `Composition.items[].clothingItemId` | *(no Storage path)* | ID reference only |
 
 ---
@@ -255,6 +255,88 @@ Cloud Storage (images) does not get the same automatic offline queue that Firest
 
 ---
 
+## 13. Composition Snapshot Capture & Local Storage (pre-Firestore)
+
+Resolves Open Question #8. Implements the capture/storage core of `05_삭제 & 휴지통 (Main형, 플랫+필터 변형).md`'s "옷 삭제 시 코디 캐스케이드 처리": *"코디는 저장 시마다 평면 렌더링 스냅샷 이미지 저장... 라이브 데이터 정리는 '편집 진입' 시점에만 발생."* Local-file storage only — separate from, and not blocked by, §1's Firestore topology; slots into the same local-file-now/upload-later pattern §11.3 already establishes for other image types.
+
+**Scope**: covers snapshot capture + local storage, the Gallery Tile display (`CompositionCoverImage`, §13.3), and the deleted-clothing-item cascade cleanup write-back. Does **not** cover Composition Detail's snapshot display or its "다음 편집 시 자동 정리" banner — those are a follow-up, see §13.7.
+
+### 13.1 Capture mechanism
+
+- Render target is `StaticArtboard` (`lib/widgets/interactive_artboard/static_artboard.dart`), not `InteractiveArtboard`. `InteractiveArtboard` always paints editor-only chrome (background-color button/swatch list, selection border, handles) into the same `Stack` that would need capturing; `StaticArtboard` already renders exactly items + background, nothing else.
+- Only edit to `static_artboard.dart`: add an optional `boundaryKey` (`Key?`) param and wrap its existing `ColoredBox(color: backgroundColor, child: Stack(...))` in `RepaintBoundary(key: boundaryKey, child: ...)`. `interactive_artboard.dart` is untouched.
+- New file `lib/widgets/interactive_artboard/composition_snapshot_capture.dart`:
+  ```
+  Future<Uint8List> captureCompositionSnapshot(
+    BuildContext context, {
+    required List<ArtboardItem> items,
+    required ArtboardBackgroundColor backgroundColor,
+    double captureSize = 1024,
+  })
+  ```
+  Mounts a boundary-keyed `StaticArtboard` (fixed `captureSize × captureSize` logical box) into an `OverlayEntry` via `Overlay.of(context)`, kept off the visible frame via a large negative `Positioned` offset only (e.g. `Positioned(left: -captureSize * 4, top: 0, ...)`) — **not** `Opacity(opacity: 0)`: `RenderOpacity.paint()` skips painting its child entirely when `_alpha == 0`, so a `RepaintBoundary` nested inside it never gets a layer attached and `toImage()`'s `layer! as OffsetLayer` throws. Off-screen positioning and layer-tree painting are independent — a widget positioned outside the visible viewport still paints normally and captures fine. Awaits `SchedulerBinding.instance.endOfFrame` (twice — standard Flutter widget-to-image safety margin) so paint actually completes; calls `RenderRepaintBoundary.toImage(pixelRatio: 1.0)` → `toByteData(format: ui.ImageByteFormat.png)`; removes+disposes the `OverlayEntry` in a `finally`.
+- Fixed logical capture size (1024×1024 @ `pixelRatio: 1.0`), not derived from the calling device's `MediaQuery` — deterministic output resolution. `baseItemSizeFraction` is already relative to canvas shortest side, so item proportions match on-screen appearance regardless of absolute pixel size.
+- PNG output (per task framing) — composited result is fully opaque anyway (`ArtboardBackgroundColor.value` is always an opaque fill), so this is a losslessness/simplicity choice over JPEG, not a transparency requirement.
+- **Known risk, not fully solved here**: a `ClothingItem.imagePath` never rendered anywhere this session (cold `Image.asset` decode) might not finish decoding within the capture's `endOfFrame` wait, capturing a blank tile for that item. Both trigger points below only fire moments after the same images were already visibly on-screen (Editor Commit: live on `InteractiveArtboard`; cleanup write-back: on `StaticArtboard` in Composition Detail), so the image cache is warm in practice. Flagged for Review; `precacheImage()` per item before capture is the mitigation if testing shows otherwise.
+
+### 13.2 Trigger points
+
+- **(a) Editor Commit** (`CompositionEditorScreen._handleCommit`): becomes `Future<void> _handleCommit() async {...}` — stays assignable to `EditorHeader.onCommit`'s `VoidCallback`, since `Future<void> Function()` is a subtype of `void Function()` in Dart. Sequence: resolve `draft.items` → `ArtboardItem`s via the existing `compositionPlacementToArtboardItem` (same closet lookup `build()` already does) → `captureCompositionSnapshot(...)` → `saveCompositionSnapshot(...)` (§13.3) → existing `CompositionsNotifier.updateItems`/`.add()` call, now also passing the new `coverImagePath`. This crosses several `await` points before the existing `context.pop()` — needs a `context.mounted` guard immediately before that pop (Implementation-stage detail; `flutter analyze`'s `use_build_context_synchronously` lint should catch it if missed).
+- **(b) 삭제된 옷 자동 정리 write-back**: no separate write path — reuses `CompositionsNotifier.updateItems` (same as (a)), invoked from a different call site, *before* navigation into the editor rather than from the ✔ handler. New function, `composition_editor_providers.dart`:
+  ```
+  Future<bool> confirmAndCleanUpDeletedItemsBeforeEditing(
+    BuildContext context, WidgetRef ref, String compositionId,
+  )
+  ```
+  Returns `true` (caller proceeds to `context.push` the editor route) if there was nothing to clean up or the user confirmed; `false` if the user cancelled (caller does not navigate). Behavior: computes deleted/missing placements via §13.4's shared predicate → none found: returns `true` immediately, no dialog, no write → some found: shows the confirm dialog ("삭제된 옷 {N}개 포함, 편집 시작 시 자동 제거", cancel/proceed) → on proceed: builds the cleaned `items` list, captures+saves a new snapshot from that cleaned list, calls `updateItems(compositionId, cleanedItems, coverImagePath: newPath)` (`backgroundColor` unchanged), returns `true`.
+  - Must run at the **navigation call site** (`CompositionDetailScreen`'s `StaticArtboard.onEditRequested`, currently a plain `context.push(...)`) and complete *before* `compositionDraftProvider(compositionId)` is first read — that provider's `create` callback does a one-time `ref.read(compositionsProvider)`, so the Draft must initialize from the already-cleaned Record. Any future entry point that opens the editor with an existing `compositionId` must route through this same guard rather than duplicating the check.
+  - **Stale-Draft carve-out**: `compositionDraftProvider` is deliberately not `.autoDispose` (`docs/history/Decision.md`'s "Editor 저장 모델 전환" entry — an abandoned edit session's uncommitted Draft is meant to be reused on re-entry, e.g. after a back-button exit with no `PopScope`). That means if a Draft instance for this `compositionId` already exists from an earlier abandoned session, its `create` callback won't re-fire on the next entry, so it would keep serving pre-cleanup items (including soft-deleted ones — `compositionPlacementToArtboardItem` only drops placements with *no* match, not soft-deleted matches) even after this guard writes the cleaned Record. **Whenever the guard actually performs a cleanup write-back** (not the no-op "nothing to clean up" path), it must also call `ref.invalidate(compositionDraftProvider(compositionId))` right after the write, forcing the next read to re-initialize from the now-cleaned Record. This is a narrow, explicit carve-out of the existing reuse-abandoned-Draft decision — reuse still applies in every case where no cleanup fired — not a reversal of it.
+  - A later `✕`/취소 inside the editor session does not undo this — the removal already committed to the Record before the editor even opened, matching the spec's "즉시 저장" wording literally.
+
+### 13.3 Storage strategy
+
+- Add `path_provider` to `pubspec.yaml` (`flutter pub add path_provider`, no version hand-pinned here). First runtime-written (non-asset) image files in this codebase.
+- New file `lib/services/composition_snapshot_service.dart` — first file under a new `lib/services/` top-level folder. **Folder rule (settled, applies beyond this feature)**: `lib/services/` holds pure async I/O/platform-integration logic with no Riverpod state; anything that touches Riverpod state stays in `providers/`. This is the precedent for future features facing the same split (export/import, upload queue, AI analysis) — not re-litigated per feature:
+  ```
+  Future<String> saveCompositionSnapshot({
+    required String compositionId,
+    required Uint8List pngBytes,
+    String? previousCoverImagePath,
+  })
+  bool isBundledAssetPath(String path) => path.startsWith('assets/');
+  ```
+  - Directory: `<applicationSupportDirectory>/composition_snapshots/` (via `getApplicationSupportDirectory()`), created with `recursive: true` if absent — not cache/temp dir, since the OS can purge those without warning, which would defeat "list/detail always uses the snapshot, doesn't break." App-private directory, no extra platform storage permission needed.
+  - Filename: `{compositionId}_{DateTime.now().microsecondsSinceEpoch}.png` — every regeneration gets a **new** filename rather than overwriting a fixed one, because `Image.file`'s cache is keyed by path only (not mtime); reusing the same filename would keep showing a stale cached image after regeneration without extra cache-eviction bookkeeping. Same disambiguation pattern the codebase already uses for new-composition IDs (`'comp_${DateTime.now().microsecondsSinceEpoch}'`).
+  - After a successful write, if `previousCoverImagePath` is non-null and `!isBundledAssetPath(previousCoverImagePath)`, delete that old file, best-effort (swallow `FileSystemException`, no retry) — reduces local storage growth across repeated edits of the same composition in the common case, but isn't a hard guarantee: a delete that keeps failing (e.g. a file lock) leaves that one orphaned with nothing retrying it. Low real-world impact at this app's scale; not designed further here.
+  - Returns the new absolute file path string; this becomes `Composition.coverImagePath`.
+- New widget `lib/widgets/composition_cover_image.dart`, `CompositionCoverImage`: branches on `isBundledAssetPath(path)` → `Image.asset(path, ...)` if true, else `Image.file(File(path), ...)`. Call sites (`CompositionGalleryTile`, the group-summary thumbnails in `composition_providers.dart`, a future Composition Detail snapshot display) use this instead of each guessing which `Image.*` constructor applies. Any future seed `coverImagePath` values in mock data are expected to be `assets/...` paths and need no migration for this widget to handle correctly.
+- **Failure handling**: capture/write failures are non-fatal to commit — swallow, keep the Record's previous `coverImagePath` unchanged, still proceed with the `items`/`backgroundColor`/`isIncomplete` update. Exact user-facing surfacing (silent retry-next-commit vs. a toast) is an Implementation-stage UI decision, not made here.
+- **Cloud Storage migration (future, out of scope now)**: when this app gains Cloud Storage sync (§11), composition snapshots follow the same local-file-now/upload-later bridging §11.3 already establishes — proposed path convention already added to §8's table (`users/{uid}/compositions/{compositionId}/snapshot.png`), not designed further here.
+
+### 13.4 Shared "deleted items" detection
+
+- One predicate, reused by both the edit-entry guard (§13.2b) and any future Composition Detail "다음 편집 시 자동 정리" banner: a placement needs cleanup if its `clothingItemId` either (a) has no match at all in `closetItemsProvider` (permanently purged), or (b) matches a `ClothingItem` with `isDeleted == true` (soft-deleted / in Trash). Both cases are stripped during cleanup; both count toward the confirmation dialog's `{N}`.
+- Proposed as `Provider.family<bool, String>` in `composition_providers.dart` (same pattern as the existing `compositionsContainingItemProvider`): `compositionHasDeletedItemsProvider`. A count/list-returning variant covers the `{N}` needed by both the dialog and a future banner.
+- **Must also become the Gallery Tile "연결끊김" badge's source once implemented.** A parallel branch (`feature/trash-cascade-ui-fixes`) independently added that badge to `CompositionGalleryTile` as an inline `composition.items.any(...)` check against soft-deleted items only — missing the permanently-purged case this predicate correctly covers (first bullet above). Once both land, `composition_main_screen.dart`/`composition_gallery_grid.dart`'s ad hoc check must be replaced with `compositionHasDeletedItemsProvider` so there's a single source of truth, not two divergent definitions of "this composition has a deleted item." §13's stated scope (opening paragraph) doesn't mention the Gallery Tile badge at all — the eventual implementation task must list this replacement as an explicit line item, not leave it for a Worker to infer from §13 alone.
+
+### 13.5 `isIncomplete` mechanics
+
+- Not governed by the 2026-07-15 Draft-existence rule (`_공통 규칙.md` "미완성 레코드 표시") — that rule scopes Gallery Badge *display sourcing* to the "not-yet-committed mid-edit" case, and its UI wiring is still unimplemented (`docs/work/BACKLOG.md`). This is a different, complementary condition on the **persisted** `Composition.isIncomplete` field.
+- Decision: `CompositionsNotifier.updateItems` derives `isIncomplete: items.isEmpty` unconditionally on every call (both Editor Commit and the cleanup write-back reuse this one method, §13.2). `CompositionEditorScreen._handleCommit`'s `add()` path (brand-new composition) sets `isIncomplete: draft.items.isEmpty` the same way when constructing the new `Composition`.
+- Directly satisfies "정리 후 0개 남으면 ... 기존 '미완성' 처리 재사용" by reusing the existing persisted field/mechanism instead of inventing a new "빈 코디" state, and self-corrects: items re-added and re-committed later flips `isIncomplete` back to `false` the same way. No new field, no new state machine.
+
+### 13.6 What does not change
+
+- `CompositionDraft` (`lib/models/composition_draft.dart`) gets no `coverImagePath` field — it is derived output produced only at commit time, never a user-editable Draft value.
+- No retroactive/eager snapshot generation for existing records. Compositions untouched by this cascade (existing mock data, or simply never re-opened in the editor) keep whatever `coverImagePath` they already have (`null` today, falling back to `compositionCoverImageProvider`'s first-item-image logic, unchanged) — generation only ever happens at an actual commit (§13.2a) or an actual cleanup write-back (§13.2b), never as a batch/background job.
+
+### 13.7 Explicitly out of scope here
+
+- `CompositionDetailScreen` currently renders a **live** `StaticArtboard` from `composition.items`, not the stored snapshot — "목록/상세는 항상 스냅샷 사용" calls for Detail to show `coverImagePath` via `CompositionCoverImage` instead. Switching that over is a UI/interaction tradeoff, not a capture/storage question: `StaticArtboard`'s tap-to-highlight/long-press-to-edit interactivity depends on live per-item hit-testing, which a flat PNG can't provide by itself (the underlying `items[]` positions are still in the Record and could back an invisible tap-overlay grid over the static image — not designed here). Flagged as a follow-up Screen×Implementation task.
+- The "다음 편집 시 자동 정리" notice banner's display (text/placement) in Composition Detail — its data condition is specified in §13.4, but wiring the banner itself belongs to the same follow-up task as above.
+
+---
+
 ## Open Questions for Review
 
 1. **[Biggest call]** Collection topology — user-scoped subcollections (`users/{uid}/...`) chosen over flat top-level collections + `userId` field. Full justification in §1. Challenge this first if you disagree with the choice.
@@ -264,7 +346,7 @@ Cloud Storage (images) does not get the same automatic offline queue that Firest
 5. `00_MVP.md` §4.1's remaining richer auto-tagging fields (`moodTags`, `internalTags`, `brand`/`purchasePlace`/`price`) are described in the MVP doc but don't exist in `lib/models/clothing_item.dart` yet. They're intentionally left out of §3's field table to stay consistent with "Dart models are the current source of truth" — not because they were overlooked. (`hasGraphic`/`hasPattern` are handled separately — see Open Question #12.)
 6. Composite indexes for combined filters (`isDeleted` + season/category/wearCount sort, etc., §6) are explicitly deferred to implementation time, not designed in this document.
 7. Editor Draft persistence topology (§10): `docs/history/Decision.md`'s 2026-07-15 "Editor 저장 모델 전환" entry already committed to a dedicated `editor_drafts` collection keyed by `{recordType, recordId}`, separate from the Record collections (§3/§4/§5) — this predates and was made independently of §1's user-scoped-subcollection topology decision in this document. §10 proposes reading that prior decision as silent-on-multi-tenancy (not a considered flat-topology choice) and nesting it as `users/{uid}/editorDrafts/{recordType}_{recordId}` for consistency with §1, while keeping the prior decision's compound key intact. **This reading is a judgment call, not confirmed** — Review/PM/user should explicitly weigh in on whether that's a fair interpretation of the 2026-07-15 decision, or whether it should instead stay a literal flat `editor_drafts` collection as originally worded (in which case §1's topology decision would need an explicit carve-out for this one collection).
-8. `Composition.coverImagePath` semantics (§8): currently assumed to always duplicate an existing composition-item's `ClothingItem.imagePath` Storage path (no independent upload), since the picker UI that would let a user upload a genuinely distinct cover image doesn't exist yet (`docs/history/Decision.md` notes the "field만 먼저" pattern — value-picking UI not built). Revisit if that Editor UI ships with real upload capability.
+8. ~~`Composition.coverImagePath` semantics (§8): currently assumed to always duplicate an existing composition-item's `ClothingItem.imagePath` Storage path.~~ **Resolved differently: not a copy of an item image, and not a manual-upload picker either.** §13 specifies an auto-generated flat-render snapshot PNG, produced at every Editor commit and at the deleted-items cleanup write-back, stored locally (pre-Firestore) via `path_provider`.
 9. `Composition.backgroundColor` (§4) — the artboard background-color swatch control is real, current MVP scope (`docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md:36`), implemented as a closed-vocabulary enum, `ArtboardBackgroundColor` (`lib/widgets/interactive_artboard/artboard_background_color.dart`). `lib/models/composition.dart` now has a persisted field for it: `ArtboardBackgroundColor? backgroundColor`, nullable, using the same `_unset`-sentinel `copyWith` pattern as `season`/`weather`/`coverImagePath`. The Firestore field shape proposed here (string, nullable, mapping to that enum) still applies as the serialization target.
 10. **User billing/quota fields (§2)** — once a monetization model is defined, `users/{uid}` will likely need fields such as a max-closet-slot limit and/or a remaining-background-removal-attempts counter. Neither is added now since the billing tier structure itself doesn't exist yet — this is a placeholder for future work, not a design decision to make today. When a billing model is defined, revisit this doc to add the concrete field(s) (naming, type, and whether it's a hard quota enforced by security rules or a soft client-side-checked counter).
 11. **`ClothingItem.color` closed-vocabulary list (§3)** — `color` is closed like `category`/`season`/`material`, not free text. No such list exists in the codebase yet, so this document proposes one (pending user sign-off on the exact set):

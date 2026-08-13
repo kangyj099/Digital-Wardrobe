@@ -39,6 +39,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 타이틀 붙는데 옷 상세는 안 붙음(비대칭). `closet_item_detail_screen.dart`에 `Text(titleSmall)` 헤더 추가로 해소 가능.
 - (P2) `AppDetailScaffold`가 같은 역할의 `AppMainScaffold`와 달리 `lib/screens/`에 배치됨(`lib/widgets/`가 자연스러움) — 호출부 3곳뿐인 지금이 이동 비용 최저.
 - (P1) `CompositionGalleryTile`(코디 메인 그리드) 이미지가 아직 텍스트 전용 — `coverImagePath` 필드는 이미 있어 착수 비용 낮음.
+- (P1) 코디 상세(`composition_detail_screen.dart`)가 스냅샷 대신 `composition.items`에서 `StaticArtboard`를 라이브 렌더링 중 — `00_DataSchema.md` §13.7 지적대로 스냅샷(`CompositionCoverImage`) 표시 + "다음 편집 시 자동 정리" 배너로 전환 필요. `StaticArtboard`의 탭-하이라이트/롱프레스-편집 인터랙션을 정지 이미지 위에서 유지할 별도 설계(탭 오버레이 그리드 등) 필요 — §13 확정 후 후속 Task로 착수.
 - (P3) Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지, 아직 미제작. 계약(Overlay, 레이아웃 비침습)은 `2026-07-13-scroll-container-and-header-hud-architecture.md` §3/§6 참고.
 - (P3) `flutter analyze` 미등재 lint 경고 다수(`typography_pass3_test.dart` 항목에 누적 기록 중, `TechnicalDebt.md` 참고) — 급하지 않음, 해당 파일 손댈 때 정리.
 
