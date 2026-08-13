@@ -58,9 +58,13 @@ class Composition {
   /// 코디 자체에 붙는 선택적 태그(실제 착용일 관측 날씨가 아님) — `season`과 동일 성격.
   final Weather? weather;
 
-  /// 사용자가 지정한 대표 이미지(신규 기능, 이번 라운드에 선택 UI는 없음 — `docs/history/
-  /// TechnicalDebt.md` "CompositionGalleryTile이 아직 텍스트만 표시" 참고). `null`이면
-  /// [compositionCoverImageProvider]가 첫 번째 옷 이미지로 폴백한다.
+  /// 코디의 평면 렌더 스냅샷 PNG 경로 — 사용자가 직접 고르는 게 아니라, 에디터 완료(✔)
+  /// 커밋 시점 또는 "삭제된 옷 자동 정리" write-back 시점마다
+  /// `captureCompositionSnapshot`/`saveCompositionSnapshot`
+  /// (`lib/widgets/interactive_artboard/composition_snapshot_capture.dart`,
+  /// `lib/services/composition_snapshot_service.dart`)이 자동 생성해 채운다
+  /// (`docs/reference/data/00_DataSchema.md` §13). 아직 한 번도 커밋된 적 없는 코디는
+  /// `null`이고, 이 경우 [compositionCoverImageProvider]가 첫 번째 옷 이미지로 폴백한다.
   final String? coverImagePath;
 
   /// 아트보드 배경색 스와치 값(`ArtboardBackgroundColor`, 흰색/밝은회색/어두운회색/검정
