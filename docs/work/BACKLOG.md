@@ -24,7 +24,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Current
 
-**Track B(코디 스냅샷 아키텍처) — Decision 확정 완료(2026-08-12), L 구현은 Track A 병합 대기 중**: 스펙(`05_삭제 & 휴지통...md` "옷 삭제 시 코디 캐스케이드 처리")의 핵심 전제 "코디는 저장 시마다 평면 렌더링 스냅샷 이미지 저장"이 실제로 미구현이었던 것을 Worker Draft→Review(P0 1건: 오프스크린 캡처 기법이 실제로는 항상 실패하는 구조였음, Flutter SDK 소스로 검증)→Audit(1차 FAIL, P1 4건 — Draft 재사용이 캐스케이드 정리를 무효화할 수 있는 취약점 등) 전체 사이클로 확정, `Decision.md`(§13 요약 포함) 커밋 완료. 구현은 Track A가 이미 만든 "연결끊김" 배지 로직(불완전한 판정 기준)을 이 결정의 `compositionHasDeletedItemsProvider`로 교체하는 게 스코프에 포함돼 있어, Track A가 실제로 `dev`에 병합된 뒤 그 위에서 L Task로 착수하는 게 충돌 없이 안전 — Track A 병합 완료 시 최우선으로 착수할 것.
+**Track B(코디 스냅샷 아키텍처) — Decision 확정(2026-08-12) 후 L 구현 완료, Tester 대기 중(2026-08-13)**: Worker Draft→Review(P0 1건: 오프스크린 캡처 기법이 실제로는 항상 실패하는 구조였음, Flutter SDK 소스로 검증)→Audit(1차 FAIL, P1 4건 — Draft 재사용이 캐스케이드 정리를 무효화할 수 있는 취약점 등)로 아키텍처 확정(`Decision.md` §13 요약 참고) → `feature/trash-cascade-ui-fixes`(Track A) 위에서 L 구현(캡처/저장, 편집 커밋 연동, 삭제된 옷 자동정리+Draft invalidate, Track A의 불완전했던 "연결끊김" 배지 판정을 `compositionHasDeletedItemsProvider`로 교체) → Review 통과(P0/P1 없음, `feature/composition-snapshot-implementation` 브랜치, 커밋 `42ee7ba`). **`path_provider` 추가로 이 프로젝트 최초의 네이티브 플러그인이 생기며 Windows 빌드/테스트가 전부 막힘**("Developer Mode 필요" 에러) — 사용자가 Developer Mode 활성화하는 대로 Tester 착수.
 
 **스타일일지 열람 감사 논의 완료(2026-08-07), 실제 구현은 아직 착수 전(위 Track A/B와는 별개 대기열)**: 확정된 발견 4건 — (1) 착용 옷 목록에 [+] 추가 버튼 없음 (2) 날짜/장소 편집 UI 없음 (3)(4) "자동 매칭"(코디↔스타일일지 착용 옷 자동 동기화, 양방향 둘 다) 미구현. `StyleLog.additionalImagePaths` 필드 정정(카드 3~10번 슬롯 사진, `wornItemIds`와는 별개 — `00_DataSchema.md` 오류 수정, `Decision.md` 참고) + 슬롯 10개 상한/롱프레스 드래그 재배치/빈 슬롯 [+] 스펙 확정(`03_스타일 일지.md`). **"연결 바텀시트" 패턴을 `_공통 규칙.md`로 일반화**(좌상단 고정 [+] 타일로 신규 생성, 생성 후 원래 화면으로 프리즈 복귀, 시트 자동 스크롤 — 옷/코디/스타일일지 전체 연결 지점에 재사용, `01_옷장.md`/`02_코디.md`/`03_스타일 일지.md` 전부 이 참조로 정리 완료). 현재 구현(`_bindComposition`/`_bindStyleLog`)은 전체화면 push 방식이라 "바텀시트"가 아님 — 이것도 실제 구현 시 함께 고쳐야 함. **자동 매칭 세부 동작도 확정 완료**(1회성 복사·참조 아님, 재연결 시 누적, 반대방향은 스타일일지發 신규생성에만 적용, 기본 배치 로직은 나중에 교체 쉽게 만들 것 — `Decision.md` 참고). 이 항목 전체(4건 + 연결 바텀시트 실제 구현 + `additionalImagePaths` 필드/화면 + 자동 매칭)를 하나의 Task로 묶어 등록할 것.
 
@@ -38,7 +38,6 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 - (P2) `02_코디 (가상 조합).md` 8행 "정렬/필터에 날씨·계절 기준 지원(스타일 일지와 공통)" 문구가 실제 구현과 어긋남 — 2026-07-19 스펙 근거로 갱신.
 - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 타이틀 붙는데 옷 상세는 안 붙음(비대칭). `closet_item_detail_screen.dart`에 `Text(titleSmall)` 헤더 추가로 해소 가능.
 - (P2) `AppDetailScaffold`가 같은 역할의 `AppMainScaffold`와 달리 `lib/screens/`에 배치됨(`lib/widgets/`가 자연스러움) — 호출부 3곳뿐인 지금이 이동 비용 최저.
-- (P1) `CompositionGalleryTile`(코디 메인 그리드) 이미지가 아직 텍스트 전용 — `coverImagePath` 필드는 이미 있어 착수 비용 낮음.
 - (P1) 코디 상세(`composition_detail_screen.dart`)가 스냅샷 대신 `composition.items`에서 `StaticArtboard`를 라이브 렌더링 중 — `00_DataSchema.md` §13.7 지적대로 스냅샷(`CompositionCoverImage`) 표시 + "다음 편집 시 자동 정리" 배너로 전환 필요. `StaticArtboard`의 탭-하이라이트/롱프레스-편집 인터랙션을 정지 이미지 위에서 유지할 별도 설계(탭 오버레이 그리드 등) 필요 — §13 확정 후 후속 Task로 착수.
 - (P3) Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지, 아직 미제작. 계약(Overlay, 레이아웃 비침습)은 `2026-07-13-scroll-container-and-header-hud-architecture.md` §3/§6 참고.
 - (P3) `flutter analyze` 미등재 lint 경고 다수(`typography_pass3_test.dart` 항목에 누적 기록 중, `TechnicalDebt.md` 참고) — 급하지 않음, 해당 파일 손댈 때 정리.

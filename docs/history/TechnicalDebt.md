@@ -405,7 +405,7 @@ Header/HUD Stack 재설계(2026-07-13) 후 Audit이 발견: `lib/widgets/glass_p
 
 [TechDebt] `CompositionGalleryTile`이 아직 텍스트만 표시 — 향후 `Composition.coverImagePath` 필드 신설로 해소 예정(사용자 확정)
 
-상태: 미해결 (방향 확정, 미착수 — 단 착수 비용이 낮아짐, 2026-07-16)
+상태: **해결(2026-08-13)** — 코디 스냅샷 캡처/저장 아키텍처(`00_DataSchema.md` §13, `Decision.md` 참고) 구현으로 `coverImagePath`가 실제로 채워지고 `CompositionGalleryTile`이 `CompositionCoverImage`로 렌더링. `coverImagePath`가 `null`인 동안(신규 코디를 아직 한 번도 커밋 안 한 경우)은 기존 텍스트 표시로 폴백.
 
 내용:
 Step③ Audit(2026-07-13)이 P1으로 지적: `CompositionGalleryTile`(`lib/widgets/composition_gallery_tile.dart`)이 코디 이름+계절 텍스트만 표시해 `02_코디 (가상 조합).md`의 "옷장과 동일한 레이아웃/버튼 패턴"(실제 사진 타일) 요구와 어긋난다. 대응 방식 3가지(대표 아이템 이미지 1장 재사용 / 미니 아트보드 합성 렌더 / `StyleLog`처럼 `coverImagePath` 필드 신설)를 검토한 결과 사용자가 **`coverImagePath` 필드 신설**로 확정(2026-07-13) — 단, 지금 당장 착수하지 않고 현행 텍스트 표시를 유지한 채 이후 라운드로 미룬다. 필드 신설 시 사용자가 대표 이미지를 지정/캡처하는 로직(신규 기능)이 선행돼야 하므로 순수 Frontend 표시 변경이 아니라 Data/Architecture 결정 + Editor(Step⑤) 연동이 함께 필요.
