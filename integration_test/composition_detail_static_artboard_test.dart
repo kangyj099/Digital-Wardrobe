@@ -267,6 +267,16 @@ void main() {
 
       await tester.tap(find.text('진행'));
       await tester.pumpAndSettle();
+      // [Tester 수정] 정리 write-back은 오프스크린 캡처(`toImage`)와 PNG 파일 쓰기라는,
+      // 프레임을 스케줄하지 않는 비동기 구간을 지나므로 `pumpAndSettle()`만으로는 완료를
+      // 기다리지 못한다(실기기 실행에서 확인 — 편집 화면 진입 전에 단언이 먼저 실행돼
+      // 실패했고, 테스트 종료 후에야 뒤늦게 이어지던 커밋이 컨테이너 dispose 예외를 냈다).
+      // 실제 시간을 흘려보내며 편집 화면 진입을 기다린다.
+      for (var i = 0; i < 100 && find.byType(CompositionEditorScreen).evaluate().isEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull, reason: '정리(캡처+저장+write-back) 자체에서 예외가 없어야 함');
       expect(find.byType(CompositionEditorScreen), findsOneWidget, reason: '진행 선택 후 편집 화면으로 이어져야 함');
