@@ -39,6 +39,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 - (P2) 옷 상세의 코디 캐러셀/스타일일지 갤러리 섹션에 제목(라벨) 누락 — 코디 상세는 타이틀 붙는데 옷 상세는 안 붙음(비대칭). `closet_item_detail_screen.dart`에 `Text(titleSmall)` 헤더 추가로 해소 가능.
 - (P2) `AppDetailScaffold`가 같은 역할의 `AppMainScaffold`와 달리 `lib/screens/`에 배치됨(`lib/widgets/`가 자연스러움) — 호출부 3곳뿐인 지금이 이동 비용 최저.
 - (P1) 코디 상세(`composition_detail_screen.dart`)가 스냅샷 대신 `composition.items`에서 `StaticArtboard`를 라이브 렌더링 중 — `00_DataSchema.md` §13.7 지적대로 스냅샷(`CompositionCoverImage`) 표시 + "다음 편집 시 자동 정리" 배너로 전환 필요. `StaticArtboard`의 탭-하이라이트/롱프레스-편집 인터랙션을 정지 이미지 위에서 유지할 별도 설계(탭 오버레이 그리드 등) 필요 — §13 확정 후 후속 Task로 착수.
+- (P2) **삭제 UX 흐름이 6개 진입점에 각각 복제됨 — 공용 핸들러로 통합 필요**: 상태 변경 계층(`softDeleteMany`/`restoreMany`/`purgeMany`)은 도메인별 1벌씩만 있고 모든 진입점이 그걸 호출해 문제없으나, 그 위의 "확인 다이얼로그 → 소프트삭제 → pop → 토스트 → 실행취소 배선" 흐름은 메인 갤러리 3곳 + 상세화면 3곳에 손으로 복제돼 있음. 실제 피해 사례: (1) 실행취소 크래시 P0가 상세화면 3곳에서 동일하게 발생해 3개 파일을 각각 고쳐야 했음(2026-08-13), (2) `_confirmAndDelete`가 `closet_main_screen.dart`/`closet_item_detail_screen.dart`에 같은 이름으로 두 벌 존재하며 문구만 다름, (3) 아래 "코디 삭제에 '사용 중' 경고 없음" TechDebt도 강제하는 공용 경로가 없어 생긴 비대칭. 통합 시 도메인별 경고 정책까지 한 곳에서 강제하면 그 TechDebt도 함께 해소됨. 부수적으로 3개 도메인 Notifier의 소프트삭제/복원/영구삭제 구현이 변수명만 다른 복붙이라 제네릭 믹스인(`SoftDeletableNotifier<T>`) 후보.
 - (P3) Scrollbar / Scroll Hint(`<`/`>`)는 프로젝트 공용 디자인 후보로 유지, 아직 미제작. 계약(Overlay, 레이아웃 비침습)은 `2026-07-13-scroll-container-and-header-hud-architecture.md` §3/§6 참고.
 - (P3) `flutter analyze` 미등재 lint 경고 다수(`typography_pass3_test.dart` 항목에 누적 기록 중, `TechnicalDebt.md` 참고) — 급하지 않음, 해당 파일 손댈 때 정리.
 
