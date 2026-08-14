@@ -213,4 +213,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('옷 상세'), findsOneWidget);
   });
+
+  testWidgets(
+    '삭제 후 화면이 pop된 뒤에도 토스트의 "실행취소"를 누르면 크래시 없이 실제로 복원된다 '
+    '(Review P0 회귀 방지: pop된 화면의 ref로 나중에 읽으면 release에서도 StateError가 나므로, '
+    'pop 이전에 캡처해둔 notifier를 써야 함)',
+    (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          compositionsProvider.overrideWith((ref) => _FixedCompositionsNotifier([composition])),
+          styleLogsProvider.overrideWith((ref) => _FixedStyleLogsNotifier(const [])),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final router = GoRouter(
+        initialLocation: '/list',
+        routes: [
+          GoRoute(path: '/list', builder: (context, state) => const Scaffold(body: Text('코디 목록'))),
+          GoRoute(
+            path: '/composition/:id',
+            builder: (context, state) =>
+                CompositionDetailScreen(compositionId: state.pathParameters['id']!),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      router.push('/composition/test-comp');
+      await tester.pumpAndSettle();
+      expect(find.byType(CompositionDetailScreen), findsOneWidget);
+
+      await tester.tap(find.byTooltip('더보기 메뉴'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('삭제'));
+      await tester.pumpAndSettle();
+
+      // pop되어 목록 화면으로 돌아왔다 — 코디 상세 화면의 element는 이미 dispose된 상태.
+      expect(find.text('코디 목록'), findsOneWidget);
+      expect(find.byType(CompositionDetailScreen), findsNothing);
+      expect(container.read(compositionsProvider).first.isDeleted, isTrue);
+
+      // "실행취소"를 지금(화면이 pop된 뒤) 누른다 — 고친 코드가 pop 이전에 notifier를 캡처해둔
+      // 덕에 크래시 없이 복원돼야 한다.
+      await tester.tap(find.text('실행취소'));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(container.read(compositionsProvider).first.isDeleted, isFalse);
+    },
+  );
 }

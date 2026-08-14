@@ -18,6 +18,7 @@ class CompositionGalleryTile extends StatelessWidget {
     this.onLongPress,
     this.multiSelectMode = false,
     this.selected = false,
+    this.hasDeletedItem = false,
   });
 
   final Composition composition;
@@ -25,6 +26,13 @@ class CompositionGalleryTile extends StatelessWidget {
   final VoidCallback? onLongPress;
   final bool multiSelectMode;
   final bool selected;
+
+  /// 이 코디가 참조하는 옷 중 하나 이상이 휴지통(소프트 삭제)로 이동됐는지 — 스펙("옷 삭제 시
+  /// 코디 캐스케이드 처리" §"코디 목록: 삭제된 옷 포함 코디는 타일에 작은 배지(연결끊김 아이콘,
+  /// 차분한 톤)") 표시용. 이 위젯은 순수 프레젠테이션이라 직접 provider를 조회하지 않고,
+  /// 호출부(`composition_main_screen.dart`)가 `closetItemsProvider`를 조회해 판정한 결과를
+  /// 그대로 넘겨받는다.
+  final bool hasDeletedItem;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +42,7 @@ class CompositionGalleryTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: (season == null ? composition.name : '${composition.name}, ${season.label}') +
+          (hasDeletedItem ? ', 연결 끊긴 옷 포함' : '') +
           (selected ? ', 선택됨' : ''),
       excludeSemantics: true,
       child: GestureDetector(
@@ -63,6 +72,23 @@ class CompositionGalleryTile extends StatelessWidget {
                   ),
                   if (season != null)
                     GalleryMetaLabel(label: season.label, maxWidth: constraints.maxWidth),
+                  // 스펙("옷 삭제 시 코디 캐스케이드 처리" §"코디 목록") "삭제된 옷 포함 코디는
+                  // 타일에 작은 배지(연결끊김 아이콘, 차분한 톤)" — 좌하단(계절 라벨)/우상단
+                  // (다중선택 체크)과 겹치지 않도록 좌상단에 배치, `TrashGalleryTile`의 유형
+                  // 아이콘 배지와 같은 원형 반투명 배경 패턴을 재사용한다.
+                  if (hasDeletedItem)
+                    Positioned(
+                      top: AppSpacing.xxs,
+                      left: AppSpacing.xxs,
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.xxs),
+                        decoration: BoxDecoration(
+                          color: semantic.gray50.withValues(alpha: 0.7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.link_off, size: 14, color: semantic.gray600),
+                      ),
+                    ),
                   if (multiSelectMode)
                     Positioned(
                       top: AppSpacing.xxs,

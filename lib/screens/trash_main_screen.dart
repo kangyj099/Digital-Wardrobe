@@ -12,6 +12,7 @@ import '../theme/app_typography.dart';
 import '../widgets/app_gallery_grid.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
+import '../widgets/gallery_meta_label.dart';
 import '../widgets/glass_pill.dart';
 import '../widgets/glass_toast.dart';
 import '../widgets/selection_entry_button.dart';
@@ -123,27 +124,72 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${entry.category.label} · 영구 삭제까지 ${entry.daysUntilPurge}일',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              // 스펙(`05_삭제 & 휴지통.md` 31-34행)이 요구하는 "헤더 아래: 이미지 배치" +
-              // "제작된 날짜/시간(삭제일이 아닌 생성일)" — Audit이 기존 스텁에 이 두 요소가
-              // 빠져 있음을 지적해 추가함.
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: entry.imagePath.isEmpty
-                      ? Container(color: Theme.of(sheetContext).extension<AppSemanticColors>()!.gray200)
-                      : Image.asset(entry.imagePath, fit: BoxFit.cover),
+              // 스펙(31-35행) "팝업 내용이 길어 스크롤이 생기더라도 [복원]/[영구 삭제] 버튼은
+              // 스크롤 위치와 무관하게 항상 화면 하단에 고정 노출" — 헤더+이미지+날짜를
+              // 스크롤 가능 영역(Flexible + SingleChildScrollView)으로 묶는다. `Flexible`이
+              // 자식에게 느슨한(loose) 제약(min:0, max:남은 공간)을 주므로 `SingleChildScrollView`
+              // 는 `ListView`와 달리 별도 `shrinkWrap` 없이도 자연스럽게 콘텐츠 실제 크기(남은
+              // 공간을 넘지 않는 한)만큼만 차지하고, 콘텐츠가 그 공간을 넘을 때만(예: 향후 메모
+              // 필드 추가) 내부 스크롤이 생긴다. 버튼 Row는 그 형제로 바깥에 둬 항상 보이게 함.
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.category.label,
+                              style: Theme.of(sheetContext).textTheme.titleMedium,
+                            ),
+                          ),
+                          // 공통 규칙(`_공통 규칙.md` "팝업은 반드시 가시적인 닫기 버튼 제공")
+                          // + 스펙 "우측 모서리 닫기 버튼" — 스와이프/바깥 탭 같은 암묵적
+                          // 닫기만으로는 불충분해 명시적 X 버튼을 추가한다.
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: '닫기',
+                            onPressed: () => Navigator.of(sheetContext).pop(),
+                          ),
+                        ],
+                      ),
+                      // 스펙 "헤더 아래: 이미지 배치" + "이미지 안쪽 중앙 하단: 'N일' 오버레이".
+                      // `TrashGalleryTile`이 이미 쓰는 `GalleryMetaLabel`("N일" 텍스트) 위젯을
+                      // 그대로 재사용해 시각적 일관성을 유지한다(신규 오버레이 위젯을 새로
+                      // 만들지 않음) — [GalleryMetaLabel]은 좌하단 고정 위치라 스펙 원문의
+                      // "중앙 하단"과 정확히 일치하진 않지만, 이 앱 전역에서 이미 통일된
+                      // "N일" 배지 패턴이라 재사용을 우선한다.
+                      LayoutBuilder(
+                        builder: (context, imageConstraints) => ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                entry.imagePath.isEmpty
+                                    ? Container(
+                                        color: Theme.of(sheetContext).extension<AppSemanticColors>()!.gray200)
+                                    : Image.asset(entry.imagePath, fit: BoxFit.cover),
+                                GalleryMetaLabel(
+                                  label: '${entry.daysUntilPurge}일',
+                                  maxWidth: imageConstraints.maxWidth,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '${entry.createdAt.year}.${entry.createdAt.month}.${entry.createdAt.day} 제작',
+                        style: Theme.of(sheetContext).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                '${entry.createdAt.year}.${entry.createdAt.month}.${entry.createdAt.day} 제작',
-                style: Theme.of(sheetContext).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.md),
               Row(

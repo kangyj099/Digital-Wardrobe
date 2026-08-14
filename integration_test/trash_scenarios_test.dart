@@ -135,7 +135,17 @@ void main() {
       // c07(옷장, 12일)이 첫 타일 — settings_trash_shell_test.dart와 동일 전제.
       await tester.tap(find.byType(TrashGalleryTile).first);
       await tester.pumpAndSettle();
-      expect(find.text('옷장 · 영구 삭제까지 12일'), findsOneWidget);
+
+      // [갱신, trash-cascade-ui-fixes] "N일"이 제목 문자열에서 분리되어 이미지 위 오버레이로
+      // 이동했다(`settings_trash_shell_test.dart`와 동일 갱신) — 예전 결합 문자열은 더 이상
+      // 없고, 제목엔 카테고리 라벨만 남는다(카테고리 필터칩 "옷장" + 팝업 제목 "옷장" 2곳).
+      expect(find.text('옷장 · 영구 삭제까지 12일'), findsNothing);
+      expect(find.text('옷장'), findsNWidgets(2), reason: '카테고리 필터칩("옷장") + 팝업 제목("옷장")');
+      expect(
+        find.text('12일'),
+        findsNWidgets(2),
+        reason: '배경 그리드의 c07 타일 오버레이 + 팝업 이미지 위 오버레이, 총 2곳',
+      );
 
       await tester.tap(find.text('복원'));
       await tester.pumpAndSettle();
