@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/clothing_item.dart';
 import '../models/composition.dart';
 import '../models/enums.dart';
 import '../mock/mock_data.dart';
+import '../services/composition_snapshot_service.dart';
 import '../theme/app_spacing.dart';
 import 'classification_models.dart';
 import 'closet_providers.dart';
@@ -26,8 +29,18 @@ class CompositionsNotifier extends StateNotifier<List<Composition>> {
     ];
   }
 
+  /// 영구삭제 — Record를 지우면서, 그 코디가 갖고 있던 스냅샷 PNG 파일도 함께 정리한다.
+  /// 안 그러면 purge된 코디의 스냅샷이 디스크에 영원히 남는다(§13.3은 "재생성 시 이전 파일
+  /// 정리"만 다뤘고 이 경로는 비어 있었다).
+  ///
+  /// 파일 삭제는 best-effort 비동기라 상태 갱신을 기다리게 하지 않는다(`unawaited`) —
+  /// 실패해도 purge 자체는 이미 확정이고, `deleteCompositionSnapshot`이 예외를 삼킨다.
   void purgeMany(Set<String> ids) {
+    final purged = [for (final c in state) if (ids.contains(c.id)) c];
     state = [for (final c in state) if (!ids.contains(c.id)) c];
+    for (final composition in purged) {
+      unawaited(deleteCompositionSnapshot(composition.coverImagePath));
+    }
   }
 
   /// [compositionId] 레코드의 `items`(및 선택적으로 `backgroundColor`/`coverImagePath`)를
@@ -298,31 +311,77 @@ final compositionCoverImageProvider = Provider.family<String?, String>((ref, com
   return null;
 });
 
+// ── §13.4 "삭제된 옷" 공유 판정 ───────────────────────────────────────────────
+//
+// 판정 로직 자체는 **provider가 아니라 아래 순수 함수들**이 단일 소스다(§13.4 "두 갈래로
+// 갈라진 정의를 만들지 말 것"). provider는 그 함수를 감싸는 얇은 래퍼일 뿐이며, 호출부는
+// 상황에 따라 둘 중 하나를 고른다:
+//
+// - **위젯이 리스트를 그리며 항목마다 판정해야 할 때**(`composition_gallery_grid.dart`)는
+//   provider를 쓰지 않고 순수 함수를 쓴다. `itemBuilder` 안에서 `.family` provider를 항목마다
+//   `ref.watch`하면, 그 provider들이 `compositionsProvider`/`closetItemsProvider`를 다시
+//   watch하는 provider-to-provider 구조가 되어 의존성이 dirty한 채로 그리드가 리빌드될 때
+//   `Ref._invalidateSelf()` → `scheduleProviderRefresh()` → 루트 `UncontrolledProviderScope`에
+//   **빌드 중 동기 `setState()`**가 걸려 크래시한다(`docs/history/TechnicalDebt.md`
+//   "[TechDebt] Riverpod provider-to-provider `ref.watch`가 build 중 ancestor `setState()`
+//   크래시를 유발할 수 있는 일반 패턴", 2026-07-28 `compositionsContainingItemProvider`
+//   수정과 같은 계열. Tester가 실기기에서 재현: 편집 커밋/다중선택 삭제 실행취소/상세 삭제
+//   등 평범한 경로 4개가 전부 이 크래시로 깨졌다). 위젯이 **base provider를 직접** 한 번만
+//   `ref.watch`하는 것은 자기 자신에게만 `markNeedsBuild()`를 걸어 안전하다.
+// - **빌드 밖 일회성 조회**(편집 진입 가드의 `ref.read`)나 향후 단일 항목 화면(코디 상세
+//   배너, §13.7)은 아래 provider를 쓴다. `.autoDispose`라 리스너 없이 `ref.read`만 하면
+//   즉시 폐기되어 dirty한 구독이 컨테이너에 남지 않는다(같은 TechDebt 항목의 알려진 해법).
+
 /// [placement]가 "정리 대상"인지 — `docs/reference/data/00_DataSchema.md` §13.4의 공유
 /// 판정: `clothingItemId`가 [closetItems]에 아예 없거나(완전 삭제/purge된 경우), 있어도
 /// 매칭된 [ClothingItem.isDeleted]가 true(휴지통 상태)면 정리 대상이다.
-bool _placementNeedsCleanup(CompositionItemPlacement placement, List<ClothingItem> closetItems) {
+bool compositionPlacementNeedsCleanup(
+  CompositionItemPlacement placement,
+  List<ClothingItem> closetItems,
+) {
   final match = closetItems.where((item) => item.id == placement.clothingItemId).firstOrNull;
   return match == null || match.isDeleted;
 }
 
-/// [compositionId] 코디의 placement 중 위 §13.4 판정에 걸리는 것들 — 편집 진입 가드의
-/// 확인 다이얼로그 `{N}`(`confirmAndCleanUpDeletedItemsBeforeEditing`,
-/// `composition_editor_providers.dart`)과 향후 코디 상세 "다음 편집 시 자동 정리" 배너가
-/// 공유하는 근거(§13.7, 배너 자체는 이번 스코프 밖).
+/// [composition]의 placement 중 [compositionPlacementNeedsCleanup] 판정에 걸리는 것들 —
+/// 편집 진입 가드의 확인 다이얼로그 `{N}` 근거.
+List<CompositionItemPlacement> compositionDeletedItemPlacements(
+  Composition composition,
+  List<ClothingItem> closetItems,
+) {
+  return composition.items
+      .where((p) => compositionPlacementNeedsCleanup(p, closetItems))
+      .toList();
+}
+
+/// [composition]에 정리 대상 옷이 하나라도 있는지 — Gallery Tile "연결끊김" 배지 판정.
+/// [compositionDeletedItemPlacements]와 동일 판정의 단축형(리스트를 만들지 않는다).
+bool compositionHasDeletedItems(Composition composition, List<ClothingItem> closetItems) {
+  return composition.items.any((p) => compositionPlacementNeedsCleanup(p, closetItems));
+}
+
+/// [compositionId] 코디의 정리 대상 placement 목록 — [compositionDeletedItemPlacements]의
+/// provider 래퍼. 편집 진입 가드(`confirmAndCleanUpDeletedItemsBeforeEditing`,
+/// `composition_editor_providers.dart`)가 `ref.read`로 쓰고, 향후 코디 상세 "다음 편집 시
+/// 자동 정리" 배너(§13.7, 이번 스코프 밖)도 같은 근거를 쓴다.
+///
+/// `.autoDispose`인 이유는 위 섹션 주석 참고(리스너 없는 `ref.read` 이후 인스턴스가 즉시
+/// 폐기되어야 dirty한 base provider 구독이 컨테이너에 남지 않는다 — `compositionsContainingItemProvider`가
+/// 같은 이유로 이미 `.autoDispose.family`다).
 final compositionDeletedItemPlacementsProvider =
-    Provider.family<List<CompositionItemPlacement>, String>((ref, compositionId) {
+    Provider.autoDispose.family<List<CompositionItemPlacement>, String>((ref, compositionId) {
   final composition = ref.watch(compositionsProvider).where((c) => c.id == compositionId).firstOrNull;
   if (composition == null) return const [];
-  final closetItems = ref.watch(closetItemsProvider);
-  return composition.items.where((p) => _placementNeedsCleanup(p, closetItems)).toList();
+  return compositionDeletedItemPlacements(composition, ref.watch(closetItemsProvider));
 });
 
-/// [compositionId] 코디에 §13.4 판정(완전 삭제 또는 휴지통 상태)에 걸리는 옷이 하나라도
-/// 있는지 — Gallery Tile "연결끊김" 배지(`composition_gallery_grid.dart`)와 편집 진입
-/// 가드가 공유하는 단일 소스. 이전에는 `composition_main_screen.dart`가 소프트 삭제된
-/// 옷만 보는 inline `Set<String>`으로 이 판정을 따로 계산했는데(완전 삭제/purge된 경우를
-/// 놓침) — 이 provider로 교체됐다(§13.4, `docs/history/Decision.md`).
-final compositionHasDeletedItemsProvider = Provider.family<bool, String>((ref, compositionId) {
-  return ref.watch(compositionDeletedItemPlacementsProvider(compositionId)).isNotEmpty;
+/// [compositionId] 코디에 정리 대상 옷이 있는지 — [compositionHasDeletedItems]의 provider
+/// 래퍼. **`compositionDeletedItemPlacementsProvider`를 watch하지 않는다**(파생 provider끼리
+/// 체인을 만들면 위 섹션 주석의 크래시 경로가 한 겹 더 깊어진다) — 같은 순수 함수를 base
+/// provider들에 직접 적용한다.
+final compositionHasDeletedItemsProvider =
+    Provider.autoDispose.family<bool, String>((ref, compositionId) {
+  final composition = ref.watch(compositionsProvider).where((c) => c.id == compositionId).firstOrNull;
+  if (composition == null) return false;
+  return compositionHasDeletedItems(composition, ref.watch(closetItemsProvider));
 });

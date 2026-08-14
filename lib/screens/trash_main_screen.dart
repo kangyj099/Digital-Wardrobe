@@ -12,6 +12,7 @@ import '../theme/app_typography.dart';
 import '../widgets/app_gallery_grid.dart';
 import '../widgets/app_main_scaffold.dart';
 import '../widgets/app_scroll_container.dart';
+import '../widgets/composition_cover_image.dart';
 import '../widgets/gallery_meta_label.dart';
 import '../widgets/glass_pill.dart';
 import '../widgets/glass_toast.dart';
@@ -169,10 +170,14 @@ class _TrashMainScreenState extends ConsumerState<TrashMainScreen> {
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
+                                // `TrashEntry.imagePath`는 코디의 경우 런타임 저장 스냅샷의
+                                // 로컬 파일 절대경로일 수 있어 `Image.asset`으로 읽으면 안 된다
+                                // (`TrashGalleryTile.imagePath` 독스트링,
+                                // `docs/reference/data/00_DataSchema.md` §13.3).
                                 entry.imagePath.isEmpty
                                     ? Container(
                                         color: Theme.of(sheetContext).extension<AppSemanticColors>()!.gray200)
-                                    : Image.asset(entry.imagePath, fit: BoxFit.cover),
+                                    : CompositionCoverImage(path: entry.imagePath),
                                 GalleryMetaLabel(
                                   label: '${entry.daysUntilPurge}일',
                                   maxWidth: imageConstraints.maxWidth,

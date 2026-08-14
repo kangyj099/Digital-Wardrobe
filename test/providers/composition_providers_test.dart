@@ -225,5 +225,68 @@ void main() {
       expect(container.read(compositionDeletedItemPlacementsProvider('comp-clean')), isEmpty);
       expect(container.read(compositionHasDeletedItemsProvider('comp-clean')), isFalse);
     });
+
+    // §13.4는 "판정 정의가 두 갈래로 갈라지면 안 된다"고 못박는다. 갤러리 그리드는 빌드 중
+    // setState 크래시(`docs/history/TechnicalDebt.md`) 때문에 provider가 아니라 순수 함수
+    // 경로를 쓰므로, 두 경로가 항상 같은 답을 내는지가 그 요구의 실질적 보증이다.
+    test('순수 함수 경로와 provider 경로가 같은 판정을 낸다(§13.4 단일 소스)', () {
+      final compositions = [
+        Composition(
+          id: 'comp-purged',
+          name: '완전삭제 참조',
+          createdAt: DateTime(2025, 1, 1),
+          items: const [CompositionItemPlacement(clothingItemId: 'purged', x: 0.1, y: 0.1)],
+        ),
+        Composition(
+          id: 'comp-soft',
+          name: '휴지통 참조',
+          createdAt: DateTime(2025, 1, 1),
+          items: const [CompositionItemPlacement(clothingItemId: 'soft-deleted', x: 0.1, y: 0.1)],
+        ),
+        Composition(
+          id: 'comp-clean',
+          name: '정상',
+          createdAt: DateTime(2025, 1, 1),
+          items: const [CompositionItemPlacement(clothingItemId: 'active', x: 0.1, y: 0.1)],
+        ),
+      ];
+      final closetItems = [activeItem, softDeletedItem];
+      final container = buildContainer(compositions: compositions, closetItems: closetItems);
+
+      for (final composition in compositions) {
+        expect(
+          compositionHasDeletedItems(composition, closetItems),
+          container.read(compositionHasDeletedItemsProvider(composition.id)),
+          reason: '${composition.id}: 순수 함수와 provider의 bool 판정이 어긋남',
+        );
+        expect(
+          compositionDeletedItemPlacements(composition, closetItems).map((p) => p.clothingItemId),
+          container
+              .read(compositionDeletedItemPlacementsProvider(composition.id))
+              .map((p) => p.clothingItemId),
+          reason: '${composition.id}: 순수 함수와 provider의 placement 목록이 어긋남',
+        );
+      }
+    });
+  });
+
+  test('CompositionsNotifier.purgeMany는 purge된 코디만 상태에서 제거한다', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(compositionsProvider.notifier);
+    final before = container.read(compositionsProvider).length;
+
+    // 스냅샷 파일 삭제(§13.3)는 best-effort 비동기 side effect라 여기선 검증 대상이 아니다
+    // — 존재하지 않는 경로를 넘겨도 purge 자체가 실패하면 안 된다는 것만 확인한다.
+    notifier.updateItems(
+      'comp01',
+      container.read(compositionsProvider).firstWhere((c) => c.id == 'comp01').items,
+      coverImagePath: '/nonexistent/composition_snapshots/comp01_1.png',
+    );
+    notifier.purgeMany({'comp01'});
+
+    final after = container.read(compositionsProvider);
+    expect(after.length, before - 1);
+    expect(after.any((c) => c.id == 'comp01'), isFalse);
   });
 }

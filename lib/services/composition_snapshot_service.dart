@@ -45,13 +45,23 @@ Future<String> saveCompositionSnapshot({
   final file = File('${snapshotDir.path}/$fileName');
   await file.writeAsBytes(pngBytes);
 
-  if (previousCoverImagePath != null && !isBundledAssetPath(previousCoverImagePath)) {
-    try {
-      await File(previousCoverImagePath).delete();
-    } on FileSystemException {
-      // best-effort — 실패해도(파일 잠금 등) 무시, 재시도하지 않는다(§13.3).
-    }
-  }
+  await deleteCompositionSnapshot(previousCoverImagePath);
 
   return file.path;
+}
+
+/// [coverImagePath]가 가리키는 스냅샷 파일을 best-effort로 지운다 — 실패해도(파일 잠금 등)
+/// 삼키고 재시도하지 않는다(§13.3). `null`이거나 번들 에셋 경로면 아무것도 하지 않는다
+/// (에셋은 앱 번들 리소스라 삭제 대상이 아니다).
+///
+/// 호출 지점 2곳: 재생성 시 이전 파일 정리([saveCompositionSnapshot] 내부), 그리고 코디
+/// 영구삭제(purge) 시 정리(`CompositionsNotifier.purgeMany`) — 후자가 없으면 purge된 코디의
+/// 스냅샷이 디스크에 영원히 남는다.
+Future<void> deleteCompositionSnapshot(String? coverImagePath) async {
+  if (coverImagePath == null || isBundledAssetPath(coverImagePath)) return;
+  try {
+    await File(coverImagePath).delete();
+  } on FileSystemException {
+    // best-effort — 실패해도 무시(§13.3).
+  }
 }

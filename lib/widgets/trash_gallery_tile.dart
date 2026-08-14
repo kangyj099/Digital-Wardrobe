@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'composition_cover_image.dart';
 import 'gallery_meta_label.dart';
 import 'multi_select_checkmark.dart';
 
@@ -31,7 +32,14 @@ class TrashGalleryTile extends StatelessWidget {
     this.selected = false,
   });
 
+  /// `TrashEntry.imagePath` — 세 도메인에서 오는 경로가 섞인다: 옷(`ClothingItem.imagePath`)/
+  /// 스타일일지(`StyleLog.coverImagePath`)는 번들 에셋(`assets/...`)이지만, 코디는
+  /// `Composition.coverImagePath`라 커밋된 적이 있으면 런타임 저장 스냅샷의 로컬 파일
+  /// 절대경로다(`lib/providers/trash_providers.dart`의 매핑 참고). 그래서 렌더링에
+  /// `Image.asset`을 직접 쓰지 않고 경로 종류를 분기하는 [CompositionCoverImage]를 쓴다
+  /// (`docs/reference/data/00_DataSchema.md` §13.3).
   final String imagePath;
+
   final AppCategory category;
 
   /// 영구 삭제까지 남은 일수.
@@ -66,7 +74,7 @@ class TrashGalleryTile extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: imagePath.isNotEmpty
-                        ? Image.asset(imagePath, fit: BoxFit.contain)
+                        ? CompositionCoverImage(path: imagePath, fit: BoxFit.contain)
                         : const SizedBox.shrink(),
                   ),
                   Positioned(
