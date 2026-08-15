@@ -16,7 +16,9 @@ import '../services/composition_snapshot_service.dart';
 /// 코디의 경로는 `assets/...`가 아니라 로컬 파일 절대경로이므로, `Image.asset`으로 읽으면
 /// "Unable to load asset"으로 그 화면이 깨진다(Tester가 실기기에서 그룹 카드/휴지통에서
 /// 실제로 재현). 현재 호출부: [CompositionGalleryTile], `classification_group_card.dart`의
-/// 그룹 요약 썸네일, `trash_gallery_tile.dart`/`trash_main_screen.dart`의 휴지통 표시.
+/// 그룹 요약 썸네일, `trash_gallery_tile.dart`/`trash_main_screen.dart`의 휴지통 표시,
+/// `composition_preview_card.dart`(옷 상세의 "연결된 코디" 캐러셀 + 스타일일지 열람의
+/// "연결된 코디" 단독 카드).
 ///
 /// 이름은 코디 스냅샷 용도로 붙었지만(§13.3이 지정한 이름) 실제로는 "에셋/로컬파일 경로를
 /// 분기해 그리는" 범용 위젯이라, 휴지통처럼 세 도메인 경로가 섞여 들어오는 호출부에서도

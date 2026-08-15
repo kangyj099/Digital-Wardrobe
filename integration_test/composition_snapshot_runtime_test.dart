@@ -52,11 +52,13 @@ import 'package:digittal_wardrobe/screens/closet_item_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_detail_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_editor_screen.dart';
 import 'package:digittal_wardrobe/screens/composition_main_screen.dart';
+import 'package:digittal_wardrobe/screens/style_log_viewer_screen.dart';
 import 'package:digittal_wardrobe/screens/trash_main_screen.dart';
 import 'package:digittal_wardrobe/widgets/category_toggle_dropdown.dart';
 import 'package:digittal_wardrobe/widgets/composition_cover_image.dart';
 import 'package:digittal_wardrobe/widgets/classification_group_card.dart';
 import 'package:digittal_wardrobe/widgets/composition_gallery_tile.dart';
+import 'package:digittal_wardrobe/widgets/composition_preview_card.dart';
 
 /// 그룹 1-A가 실제 편집 커밋으로 만들어낸 스냅샷 파일 경로 — 그룹 1-B가 "그 파일이 타일에서
 /// 실제로 렌더되는가"를 확인할 때 재사용한다(파일은 테스트 간에도 디스크에 남는다).
@@ -633,15 +635,30 @@ void main() {
     // 쓰도록 못박았다. 커밋 이후의 `coverImagePath`는 `assets/...`가 아니라 실제 로컬 파일
     // 절대경로이므로, 아직 `Image.asset`으로 읽는 화면이 남아 있으면 그 화면에서 이미지
     // 로드가 실패한다.
-    Future<void> seedRealSnapshot(WidgetTester tester, ProviderContainer container) async {
-      final comp03 = record(container, 'comp03');
+    Future<void> seedRealSnapshot(
+      WidgetTester tester,
+      ProviderContainer container, {
+      String compositionId = 'comp03',
+    }) async {
+      final composition = record(container, compositionId);
       container.read(compositionsProvider.notifier).updateItems(
-            'comp03',
-            comp03.items,
+            compositionId,
+            composition.items,
             coverImagePath: committedSnapshotPath,
           );
       await tester.pumpAndSettle();
       await drain(tester);
+    }
+
+    /// 저 카드가 실제로 **로컬 파일**을 그리고 있는지 확인한다 — 예외가 없다는 것만으로는
+    /// 부족하다(경로가 null이라 이미지를 아예 안 그려도 예외는 안 난다).
+    void expectRendersSnapshotFile(WidgetTester tester, Finder cardFinder) {
+      final image = tester.widget<Image>(
+        find.descendant(of: cardFinder, matching: find.byType(Image)),
+      );
+      expect(image.image, isA<FileImage>(),
+          reason: 'assets/... 폴백이 아니라 런타임 저장 스냅샷을 Image.file로 그려야 함');
+      expect((image.image as FileImage).file.path, committedSnapshotPath);
     }
 
     testWidgets('코디 메인 "계절/날씨" 그룹 개요의 썸네일이 저장된 스냅샷 파일을 읽는다', (tester) async {
@@ -678,6 +695,58 @@ void main() {
       expect(find.byKey(const ValueKey('comp03')), findsOneWidget, reason: '삭제한 코디가 휴지통에 보여야 함');
       expect(tester.takeException(), isNull,
           reason: '휴지통 타일이 저장된 스냅샷(로컬 파일 경로)을 읽지 못하면 안 됨');
+    });
+
+    // [Worker 추가] 위 두 시나리오(그룹 카드/휴지통)를 고치고도 `CompositionPreviewCard`가
+    // 같은 버그를 그대로 갖고 있는 게 뒤늦게 발견됐다 — 이 그룹이 그 화면들을 안 밟아서
+    // 스위트가 통과해버렸기 때문. 아래 두 테스트가 그 사각지대(`CompositionPreviewCard`를
+    // 쓰는 두 진입점)를 덮는다.
+    testWidgets('옷 상세의 "연결된 코디" 캐러셀이 저장된 스냅샷 파일을 읽는다', (tester) async {
+      await ensureSnapshotFile();
+      final container = await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      await seedRealSnapshot(tester, container); // comp03(= c04/c05를 포함)
+
+      // comp03을 포함하는 옷(c04)의 상세로 진입 — 그 화면의 "연결된 코디" 캐러셀이
+      // `CompositionPreviewCard`로 comp03의 커버(=방금 심은 로컬 파일 경로)를 그린다.
+      container.read(appRouterProvider).push(AppRoute.closetItemDetail.replaceFirst(':id', 'c04'));
+      await tester.pumpAndSettle();
+      await drain(tester);
+
+      expect(find.byType(ClosetItemDetailScreen), findsOneWidget);
+      final card = find.byType(CompositionPreviewCard);
+      expect(card, findsOneWidget, reason: 'c04를 쓰는 코디(comp03) 카드가 캐러셀에 보여야 함');
+      expectRendersSnapshotFile(tester, card);
+      expect(tester.takeException(), isNull,
+          reason: '옷 상세 캐러셀이 저장된 스냅샷(로컬 파일 경로)을 읽지 못하면 안 됨');
+    });
+
+    testWidgets('스타일일지 열람의 "연결된 코디" 카드가 저장된 스냅샷 파일을 읽는다', (tester) async {
+      await ensureSnapshotFile();
+      final container = await pumpApp(tester);
+      await goToCategory(tester, '코디');
+      // log01이 연결하고 있는 건 comp01이므로 그쪽에 스냅샷을 심는다.
+      await seedRealSnapshot(tester, container, compositionId: 'comp01');
+
+      container.read(appRouterProvider).push(AppRoute.styleLogViewer.replaceFirst(':id', 'log01'));
+      await tester.pumpAndSettle();
+      await drain(tester);
+
+      expect(find.byType(StyleLogViewerScreen), findsOneWidget);
+
+      // 연결된 코디 카드는 정사각형 `PageView`의 2페이지(1페이지는 대표이미지)에 있고,
+      // `PageView`는 지연 빌드라 스와이프 전에는 위젯 자체가 존재하지 않는다 — 좌로 스와이프해
+      // 2페이지를 실제로 띄운 뒤에 찾는다(이 스와이프 없이 단언하면 "Found 0 widgets"로 실패,
+      // 제품 결함이 아니라 이 순서 누락이 원인).
+      await tester.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+      await tester.pumpAndSettle();
+      await drain(tester);
+
+      final card = find.byType(CompositionPreviewCard);
+      expect(card, findsOneWidget, reason: 'log01에 연결된 코디(comp01) 카드가 보여야 함');
+      expectRendersSnapshotFile(tester, card);
+      expect(tester.takeException(), isNull,
+          reason: '스타일일지 열람의 연결된 코디 카드가 저장된 스냅샷을 읽지 못하면 안 됨');
     });
   });
 

@@ -4,12 +4,18 @@ import '../models/composition.dart';
 import '../providers/composition_providers.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'composition_cover_image.dart';
 import 'gallery_meta_label.dart';
 
 /// 코디 1개를 이미지+이름 카드로 보여주는 Detail 전용 프리뷰 — `CompositionPreviewCarousel`의
-/// 페이지 콘텐츠(여러 개)로도, 스타일일지 열람의 "연결된 코디"(항상 0~1개) 단독 카드로도
-/// 쓰인다. `CompositionGalleryTile`(코디 메인 그리드, 아직 텍스트 전용)과 달리 이 위젯은
-/// `compositionCoverImageProvider`(Task 5, null이면 첫 옷 이미지로 폴백)로 실제 썸네일을 그린다.
+/// 페이지 콘텐츠(여러 개, 옷 상세의 "연결된 코디")로도, 스타일일지 열람의 "연결된 코디"
+/// (항상 0~1개) 단독 카드로도 쓰인다. 썸네일 경로는 `compositionCoverImageProvider`
+/// (`coverImagePath`가 있으면 그대로, 없으면 첫 옷 이미지로 폴백)에서 온다.
+///
+/// 그 경로는 **번들 에셋일 수도, 런타임에 저장된 코디 스냅샷의 로컬 파일 절대경로일 수도**
+/// 있으므로(커밋된 적 있는 코디는 후자) 반드시 [CompositionCoverImage]로 그린다 —
+/// `Image.asset`으로 직접 읽으면 커밋 이후 이 카드가 "Unable to load asset"으로 깨진다
+/// (`docs/reference/data/00_DataSchema.md` §13.3).
 class CompositionPreviewCard extends ConsumerWidget {
   const CompositionPreviewCard({super.key, required this.composition, required this.onTap});
 
@@ -40,7 +46,7 @@ class CompositionPreviewCard extends ConsumerWidget {
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    if (imagePath != null) Image.asset(imagePath, fit: BoxFit.cover),
+                    if (imagePath != null) CompositionCoverImage(path: imagePath),
                     GalleryMetaLabel(label: composition.name, maxWidth: constraints.maxWidth),
                   ],
                 );
