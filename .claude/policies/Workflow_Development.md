@@ -23,6 +23,15 @@
 ## Source of Truth
 → `Workflow_Project.md` §1.3 (per §1.7, no development-specific elaboration needed here).
 
+## Scope of Design Deliverables
+
+Design (Decision) deliverables must specify not only components and data models, but also the following for interaction procedures:
+
+* The layer responsible for owning the procedure.
+* The boundary between aspects that may differ by screen and aspects that must remain consistent across all screens.
+
+The scope includes user actions that are invoked under the same name across multiple screens.
+
 ---
 
 # 2. Information Handoff Between Sessions

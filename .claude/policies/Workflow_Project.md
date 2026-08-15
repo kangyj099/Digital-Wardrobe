@@ -370,6 +370,8 @@ When a task step is completed, always verify the following — including for eac
 
 □ Technical debt has been recorded
 
+□ If the recorded technical debt describes a recurring pattern rather than a one-off defect, it has been promoted to a rule in the relevant domain conventions skill
+
 □ Change Impact has been reviewed
 
 □ `docs/work/BACKLOG.md`'s Current section reflects this step (not only "the next task has been added to the backlog" — the just-finished step's status too)

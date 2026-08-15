@@ -1,5 +1,25 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 중복 구현 방지를 Review 단계로 이관 + 재발 패턴 TechDebt의 규칙 승격 의무화 (Policy, Decision)
+
+결정:
+- `flutter-implementation-conventions`에 Review 체크 3종 신설 — 동작 시퀀스 Rule of Three / 같은 수정이 3곳 이상 필요하면 Worker가 중단하고 PM에 보고 / 공용 컴포넌트 도입 시 grep 기반 호출부 전수 확인. Review 체크리스트 표 Architecture 행에도 반영.
+- 같은 스킬 Riverpod 섹션에 "지연 빌드 콜백 안에서 `ref.watch` 금지" 규칙 신설(파생 provider `.autoDispose` 부여, 판정 로직은 순수 함수 + provider 얇은 래퍼 구성 포함).
+- `Workflow_Development.md` §1에 설계 산출물 요건 추가 — 동작 절차의 소유 계층과 "화면별로 달라도 되는 경계"를 명시할 것.
+- `Workflow_Project.md` §10 Definition of Done에 체크 항목 추가 — 기록한 TechDebt가 재발 가능한 패턴이면 해당 도메인 conventions 스킬에 규칙으로 승격했을 것.
+
+사유:
+세 종류의 실패가 각각 다른 지점에서 드러났고, 셋 다 기존 체크리스트가 구조적으로 못 잡는 자리였다.
+(a) 설계가 절차를 공용화 대상으로 보지 않음 — `2026-07-21-multi-select-and-trash-design.md`가 `GalleryMainScreen<T>`/`GlassToast`/`softDeleteMany`(명사)는 공용 설계했으나 "삭제 절차"의 소유자를 지정하지 않아 6개 진입점에 복제됨. 실행취소 크래시 P0가 상세화면 3곳에서 동일하게 발생해 3개 파일을 각각 수정했고, 구조 문제 자체는 사용자 질문으로만 드러남(2026-08-14). 코디 삭제에만 "사용 중" 경고가 빠진 기존 TechDebt도 같은 뿌리.
+(b) 설계는 맞았으나 구현이 호출부를 다 바꾸지 않음 — `Composition.coverImagePath` 소비자 4곳 중 `00_DataSchema.md` §13.3은 2곳만 열거. 1차 구현 1곳, Tester F2 수정으로 3곳, 4번째(`composition_preview_card.dart`)는 Review가 3라운드째에 발견. Tester 스위트도 스펙의 열거를 따라가 이 지점을 덮지 못함(2026-08-15).
+(c) 이미 문서화된 위험이 그대로 재발 — `TechnicalDebt.md`의 "Riverpod provider-to-provider `ref.watch`가 build 중 ancestor `setState()` 크래시를 유발할 수 있는 일반 패턴" 항목(상태: "구조적 가드 없음")이 있는 상태에서 동일 크래시가 코디 갤러리 그리드에서 재발(Tester F1). Worker의 Task Manifest에 `TechnicalDebt.md`가 포함돼 있었으나, 긴 이력 문서에서 "지금 쓰려는 코드가 위험 목록에 있는가"를 역으로 조회하는 일은 실제로 일어나지 않았다 — 지식이 history에는 있었고 rule 자리에는 없었다. 위 §10 체크 항목이 이 이관 단계를 강제한다.
+
+Impact:
+- `.claude/skills/flutter-implementation-conventions/SKILL.md`, `.claude/policies/Workflow_Development.md`, `.claude/policies/Workflow_Project.md` 수정.
+- 코드 변경 없음. 기존 6중복 삭제 흐름의 실제 통합은 `BACKLOG.md`에 P2로 별도 등록됨.
+
+---
+
 [Decision] 코디 스냅샷 캡처/로컬 저장 아키텍처 확정 (Data/Architecture, Decision)
 
 결정:

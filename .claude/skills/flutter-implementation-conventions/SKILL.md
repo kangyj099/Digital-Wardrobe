@@ -39,11 +39,20 @@ Layer=UI/Screen × Stage=Implementation(Frontend) 태스크의 Worker/Review가 
 - Provider끼리 순환 `watch`(A가 B를 watch, B가 A를 watch)를 만들지 않는다.
 - 로컬 위젯 상태(텍스트 컨트롤러, 폼 입력값 등)가 필요한 화면만 `ConsumerStatefulWidget`을 쓴다. 필요 없으면 `ConsumerWidget`으로 충분하다.
 
+### 지연 빌드 콜백 안에서 `ref.watch` 금지
+
+`itemBuilder`, `separatorBuilder`, `PageView`/`ListView`/`GridView`/`Sliver` 계열의 자식 빌더 등 프레임 도중 호출되는 지연 빌드 콜백 안에서는 `ref.watch`를 호출하지 않는다. 필요한 값은 그 콜백을 감싸는 `build()`에서 한 번 watch해 평범한 데이터로 전달한다.
+
+다른 provider를 `ref.watch`로 참조하는 파생 provider에는 `.autoDispose`를 부여한다.
+
+같은 판정 로직을 provider와 직접 호출 양쪽에서 써야 하면, 로직 본체를 순수 함수로 두고 provider를 그 함수의 얇은 래퍼로 만든다.
+
 ### AI Constraints
 
 - 화면 렌더링 로직에 `ref.read()`를 쓰지 않는다.
 - 버튼/제스처 콜백에 `ref.watch()`를 쓰지 않는다.
 - 컬렉션 상태를 in-place로 mutate하고 그대로 `state`에 재대입하지 않는다(새 리스트 생성 필수).
+- 지연 빌드 콜백 안에서 `ref.watch`/provider 접근을 하지 않는다.
 
 ---
 
@@ -86,10 +95,26 @@ Layer=UI/Screen × Stage=Implementation(Frontend) 태스크의 Worker/Review가 
 | --- | --- | --- |
 | Code quality | `const` 생성자 사용 여부, 색상/spacing/타이포 하드코딩 없이 토큰 참조 여부, 리스트 아이템 `key` 부여 여부 | `Workflow_Development.md` §4 |
 | Bugs | 컨트롤러 `dispose()` 여부, `async` 갭 이후 `mounted` 체크, `ref.watch`/`ref.read` 올바른 위치 | `Workflow_Development.md` §4 |
-| Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음 | `Workflow_Development.md` §4 |
+| Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음, 지연 빌드 콜백 내 `ref.watch` 없음, 동작 시퀀스 중복(아래 §), 공용 컴포넌트 도입 시 호출부 전수 확인(아래 §) | `Workflow_Development.md` §4 |
 | UX | 이 프로젝트 Design/Interaction Principles(P4/P7 등, `00_DesignPrinciples.md`)와 일치 여부 | `Workflow_Development.md` §4 |
 | Exception handling | 성공/로딩/빈 상태/실패 상태가 스펙대로 구현됐는지(`_공통 규칙.md`의 AI 처리 실패 상태: 지수 백오프 재시도, 실패 팝업 등), 실패 시 사용자에게 재시도 경로가 있는지 | `Workflow_Development.md` §4 |
 | Accessibility | Semantics label 존재 및 `excludeSemantics` 처리 여부, 터치 타겟 44×44 이상(A1/A10), 색상 단독으로 의미 전달하지 않는지(A2), 다크모드 대비비(A3) | `Workflow_Project.md` §12.1의 "Development Review **+ spec-compliance check**" — Design 단계(Decision)에서 이미 정해진 접근성 요구사항을 구현이 지켰는지 확인하는 것이며, §4의 기본 Review Areas 확장이 아니다 |
+
+### 동작 시퀀스 중복 (Rule of Three)
+
+동작 시퀀스는 확인·상태변경·화면전환·피드백·되돌리기 중 둘 이상이 정해진 순서로 묶인 절차를 말한다.
+
+- 이번 diff가 같은 동작 시퀀스를 3곳 이상에서 반복하면 공용 함수/핸들러 추출을 P2로 지적한다.
+- 이미 3곳 이상 존재하는 시퀀스에 4번째를 추가하면 추출 없는 추가를 P2로 지적한다.
+- 공용 셸이 동작의 진입점만 제공하고 절차는 콜백으로 호출부에 위임하면, 절차를 셸이 소유하도록 계약 확대를 P2로 지적한다.
+
+### 같은 수정을 3곳 이상에 복사하면 중단한다
+
+하나의 버그·요구사항에 대해 동일한 형태의 수정이 3개 이상 파일에 필요하면, Worker는 수정을 진행하기 전에 그 사실을 PM에게 보고한다. 통합 여부는 PM이 판단한다.
+
+### 공용 컴포넌트 도입 시 호출부 전수 확인
+
+공용 위젯/헬퍼로 기존 호출부를 대체하는 변경은, 대상 필드/값의 소비 지점을 직접 grep해 남은 호출부가 0인지 확인한 근거를 요구한다. 스펙에 열거된 호출부 목록은 완전하다고 전제하지 않는다. 해당 변경의 테스트 커버리지도 grep 결과를 기준으로 구성한다.
 
 ---
 
