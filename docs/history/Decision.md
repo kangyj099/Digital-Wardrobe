@@ -1,5 +1,33 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 소유권 맵 신설 + 크로스커팅 동작 시퀀스 도입 (Policy + Architecture, Decision)
+
+결정:
+- **`docs/reference/architecture/00_OwnershipMap.md` 신설** — 크로스커팅 동작·컴포넌트가 어느 파일 한 곳에 사는지 정하는 Living Document. 등재 규칙(등재 대상 2종, 모델·리프 프리미티브 제외, 소유 파일 정확히 1개, 미정 행 유지, 도메인 분할, 문서화된 예외, **grep으로만 확인**, 호출부 목록·개수 금지)을 문서 자신이 싣는다 — 규칙이 설계 스펙에만 있으면 그 스펙이 이력이 된 뒤 편집자에게 전달되지 않기 때문. 초기 18행은 전부 grep 검증.
+  - `docs/reference/architecture/`는 신설이 아니다 — 2026-08-02 결정(아래 "§12.1 Data/API/Architecture×Decision 행에…" 항목)이 이미 "모듈 경계 등 앱 상위 구조 문서용"으로 만들어 둔 빈 폴더이며, 소유권 맵이 그 범위의 첫 문서다.
+- **크로스커팅 동작 시퀀스** — 진입점 2개 이상인 동작 1개당 mermaid `sequenceDiagram` 1개를 해당 설계 문서 안에 둔다. 이미지 파일 금지(git diff·에이전트 판독·렌더 전부 필요). 갱신 의무 없는 시점 스냅샷 — 이후 구조가 바뀌면 소유권 맵이 정본.
+- **클래스·액티비티 다이어그램은 채택하지 않는다** — 이 코드베이스 모델은 상속 계층 없는 순수 데이터 클래스라 실질 구조가 레이어 소유권이고, 사용자 플로우는 화면별 UX 명세가 이미 산문으로 기술한다.
+- **게이트**: Task 크기 L/XL, 또는 명세가 한 동작에 대해 2개 이상의 화면·진입점을 명시한 경우(크기 무관) → Decision 단계 산출물로 위 둘이 필수. "명세"는 그 Task의 Layer×Stage §12.1 Required Materials를 가리키고, 복수형 집합 명사("모든 갤러리 화면")는 2개 이상으로 센다. **단 맵 전달은 이 게이트와 무관하게 모든 Implementation Task에 상시**(§12.1/§12.4) — S/M 작업이 기존 공유 동작에 호출부를 더하는 경로가 빈도 최고인데 게이트로도 DoD로도 안 걸리기 때문.
+- **판정 기준**: Decision 단계는 §5(세 Decision 행 전부, `writing-plans` Self-Review 대체 경로에도 적용). Implementation 단계는 `engineering-principles`에 규칙 본문, `flutter-implementation-conventions` Review 체크리스트는 포인터만(`Workflow_Frontend.md` §1이 UI/Screen에도 `engineering-principles`를 호출시켜 중복이 생기므로). 소유 파일이 **미정**인 행은 P1 대상이 아니며 PM 보고 대상 — 준수 가능한 경로가 없는데 P1을 매기면 면제되고, 면제되는 규칙은 규칙이 아니게 된다.
+- **검증자**: `flutter-implementation-conventions` Audit 체크리스트의 맵↔코드 대조 항목이 유일한 주기적 검증자다. Review 단계 점검은 변경 당사자의 자기 점검이라 맵의 노후화를 못 잡는다. `audit.md` 수령 자료에도 맵을 추가.
+
+**기존 결정 갱신**: 바로 아래 2026-08-15 항목이 `Workflow_Development.md` §1에 넣은 "동작 절차의 **소유 계층**을 명시할 것"은 이 결정으로 **소유 파일 1개**로 좁혀졌다(§1 문장 자체를 수정, 추가 아님). 아래 항목의 나머지 내용은 유효하다.
+
+사유:
+사용자가 "화면 구성을 상세히 썼고 동일 기능이 여러 곳에서 호출될 것도 예측 가능했는데 왜 페이지마다 독립 구현됐는가, 설계 단계에 클래스/시퀀스/액티비티 다이어그램 같은 구조 산출물이 있으면 줄지 않겠는가"라고 문제 제기. 조사 결과 **명세도 설계도 부재가 아니었다** — `05_삭제 & 휴지통...md`는 진입점 부류와 통일 동작을 규정했고, `2026-07-21-multi-select-and-trash-design.md` §6은 파일 단위 분해와 공용 위젯 신설까지 했다. 빠진 것은 "그 동작의 코드가 어디 한 곳에 사는가"뿐이었고, 실제로 `app_detail_scaffold.dart` 독스트링이 "호출부가 각자 책임진다"고 명시한 채 6곳에 복제됐다. 하류(Worker/Review)는 Minimal Handoff와 Task Manifest가 시야를 좁혀 구조적으로 볼 수 없으므로 상류에서 결정돼야 한다.
+
+파이프라인: Draft → Review 2회(P1 3건 → 전부 수정) → Audit 3회(1차 FAIL P1 4건 / 2차 FAIL P1 3건 / 3차 FAIL P1 2건 → PASS). Audit이 잡은 것 중 특히: (a) 맵이 §12.1/§12.4 어디에도 없어 아무 에이전트에게도 전달되지 않는 구조였음 — 이 제안 자신이 진단한 실패를 자신이 재현, (b) 판정 기준을 `Workflow_Development.md` §4에 뒀는데 그 문서를 받는 §12.1 행이 UI/Screen 하나뿐이라 정작 대상 Layer 둘에 도달하지 않음, (c) 초기 시딩 2행이 **grep이 아니라 스펙 열거를 믿어** 틀림 — 하루 전 커밋 `257601b`이 금지한 바로 그 패턴이라, 셀이 아니라 시딩 방법 자체를 규칙으로 고정, (d) 미정 소유자 행에서 판정 기준이 양방향 모두 작동 불가(이 제안의 동기가 된 삭제 절차가 정확히 그 행).
+
+Impact:
+- 신설: `docs/reference/architecture/00_OwnershipMap.md`.
+- `.claude/policies/Workflow_Development.md` §1(소유 계층→소유 파일)·§5(Reference 갱신 트리거에 소유권 변경 추가).
+- `.claude/policies/Workflow_Project.md` §5(소유권 판정)·§10(DoD 체크)·§12.1(표 아래 단서)·§12.4(Task Manifest 규정).
+- `.claude/skills/engineering-principles/SKILL.md`(규칙 본문+미정 행 처리), `.claude/skills/flutter-implementation-conventions/SKILL.md`(Review 체크리스트 포인터, Audit 대조 항목), `.claude/agents/audit.md`(수령 자료).
+- 설계 초안 전문과 4라운드 검토 근거: `docs/superpowers/specs/2026-08-15-structural-design-stage-artifacts-design.md`.
+- 코드 변경 없음. 기존 6중복 삭제 흐름의 실제 통합은 `BACKLOG.md` P2로 계속 대기.
+
+---
+
 [Decision] 중복 구현 방지를 Review 단계로 이관 + 재발 패턴 TechDebt의 규칙 승격 의무화 (Policy, Decision)
 
 결정:

@@ -32,6 +32,12 @@ description: Prevents magic-value hardcoding in implementation code. Invoke befo
 
 닫힌 어휘인지 판단이 애매하면(예: 사용자가 자유 입력하는 태그) 이는 (a)나 (b)에 해당할 가능성이 높다 — enum으로 강제하지 말 것.
 
+## 소유권 맵 준수
+
+`docs/reference/architecture/00_OwnershipMap.md`에 등재된 동작·컴포넌트를 그 소유 파일을 경유하지 않고 로컬로 재구현했으면 P1. 문서화된 의도적 예외(맵 비고에 근거 문서가 적힌 경우)는 제외한다.
+
+소유 파일이 **미정**인 행은 P1 대상이 아니다 — 경유할 파일이 아직 없어 준수 가능한 경로가 존재하지 않는다. 대신 그 행에 구현을 하나 더 추가한다는 사실을 PM에게 보고하고, PM이 통합 Task를 앞당길지 복제를 의식적으로 수용할지 판단한다.
+
 ## 이 코드베이스에서 이미 확인된 위반 (참고용, 지금 조치하지 말 것)
 
 `docs/work/BACKLOG.md` 기준, 다음 필드가 폐쇄형 어휘인데 bare `String`으로 타입돼 있어 이 원칙 위반으로 이미 식별됨: `ClothingItem.category`, `ClothingItem.season`, `Composition.season`, `ClothingItem.material` (모두 enum 전환 필요). 이 전환 자체는 별도 후속 태스크(Step 3)로 추적 중이며, 이 스킬 호출만으로 지금 손댈 대상은 아니다.

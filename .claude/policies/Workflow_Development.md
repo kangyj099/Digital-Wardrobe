@@ -27,7 +27,7 @@
 
 Design (Decision) deliverables must specify not only components and data models, but also the following for interaction procedures:
 
-* The layer responsible for owning the procedure.
+* The single file that owns the procedure. Listing the entry-point files is not sufficient.
 * The boundary between aspects that may differ by screen and aspects that must remain consistent across all screens.
 
 The scope includes user actions that are invoked under the same name across multiple screens.
@@ -233,6 +233,7 @@ Update the Reference documents whenever any of the following changes occur:
 * Database changes
 * Design System changes
 * Policy changes
+* Ownership of a shared behavior changes (the owning file moves, or a behavior becomes or ceases to be cross-screen)
 
 Implementation-only work that does not change the Reference content should **not** modify the Reference documents.
 

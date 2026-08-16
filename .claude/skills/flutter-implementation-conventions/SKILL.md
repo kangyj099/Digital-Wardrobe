@@ -95,7 +95,7 @@ Layer=UI/Screen × Stage=Implementation(Frontend) 태스크의 Worker/Review가 
 | --- | --- | --- |
 | Code quality | `const` 생성자 사용 여부, 색상/spacing/타이포 하드코딩 없이 토큰 참조 여부, 리스트 아이템 `key` 부여 여부 | `Workflow_Development.md` §4 |
 | Bugs | 컨트롤러 `dispose()` 여부, `async` 갭 이후 `mounted` 체크, `ref.watch`/`ref.read` 올바른 위치 | `Workflow_Development.md` §4 |
-| Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음, 지연 빌드 콜백 내 `ref.watch` 없음, 동작 시퀀스 중복(아래 §), 공용 컴포넌트 도입 시 호출부 전수 확인(아래 §) | `Workflow_Development.md` §4 |
+| Architecture | `go_router`의 `push`/`go` 올바른 선택(위 네비게이션 원칙), Provider 순환 의존 없음, 지연 빌드 콜백 내 `ref.watch` 없음, 동작 시퀀스 중복(아래 §), 공용 컴포넌트 도입 시 호출부 전수 확인(아래 §), 소유권 맵 준수 여부(위반 시 P1) | `Workflow_Development.md` §4 / 소유권 맵 규칙 본문은 `engineering-principles` |
 | UX | 이 프로젝트 Design/Interaction Principles(P4/P7 등, `00_DesignPrinciples.md`)와 일치 여부 | `Workflow_Development.md` §4 |
 | Exception handling | 성공/로딩/빈 상태/실패 상태가 스펙대로 구현됐는지(`_공통 규칙.md`의 AI 처리 실패 상태: 지수 백오프 재시도, 실패 팝업 등), 실패 시 사용자에게 재시도 경로가 있는지 | `Workflow_Development.md` §4 |
 | Accessibility | Semantics label 존재 및 `excludeSemantics` 처리 여부, 터치 타겟 44×44 이상(A1/A10), 색상 단독으로 의미 전달하지 않는지(A2), 다크모드 대비비(A3) | `Workflow_Project.md` §12.1의 "Development Review **+ spec-compliance check**" — Design 단계(Decision)에서 이미 정해진 접근성 요구사항을 구현이 지켰는지 확인하는 것이며, §4의 기본 Review Areas 확장이 아니다 |
@@ -128,4 +128,5 @@ Layer=UI/Screen × Stage=Implementation(Frontend) 태스크의 Worker/Review가 
 - 공용 컴포넌트가 원래 의도(예: `OverlayHeader`는 플로팅 오버레이 전용)와 다르게 오용되고 있는지
 - 화면 간 인터랙션/레이아웃 패턴이 서로 다른 화면인데도 불일치하게 구현됐는지
 - `lib/` 하위 폴더 구조(`theme/models/mock/providers/router/widgets/screens`)가 계속 지켜지고 있는지, 새 파일이 엉뚱한 폴더에 들어갔는지
+- 소유권 맵(`docs/reference/architecture/00_OwnershipMap.md`)의 각 행이 실제 코드와 일치하는지 — 소유 파일 존재 여부, 등재 기준인 "둘 이상의 호출부"를 여전히 만족하는지(grep으로 재확인), 맵에 없는 새 크로스커팅 항목이 생겼는지. **이 항목이 맵의 유일한 주기적 검증자다** — Review 단계 점검은 변경 당사자의 자기 점검이라 맵이 코드와 어긋나도 발견되지 않는다.
 - `AppMainScaffold`를 써야 하는 화면(`docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` §1 표 기준)이 실제로 그걸 쓰는지, 우회해서 자체 `Scaffold`를 짰는지

@@ -20,6 +20,7 @@ The current state of the relevant part of the codebase (PM tells you which direc
 - `docs/history/Decision.md` / `TechnicalDebt.md`
 - The Layer-appropriate skill(s) for whatever was built (e.g. `flutter-implementation-conventions` for Flutter/Dart work — its "Audit 체크리스트 (Flutter 전용)" section has the concrete Flutter-specific checks; you don't need Flutter conventions memorized here, that skill is the source of truth)
 - Any Design spec docs relevant to what's being audited (e.g. `docs/superpowers/specs/2026-07-12-cross-screen-ui-shell-design.md` for the shared-shell rollout)
+- `docs/reference/architecture/00_OwnershipMap.md` — you are its only periodic verifier (reconciling it against the code is an item in the Flutter Audit 체크리스트); no other role checks whether the map still matches reality
 
 You do not receive individual Workers' raw exploratory material — same principle as Review (§12.2), just applied project-wide instead of task-wide.
 

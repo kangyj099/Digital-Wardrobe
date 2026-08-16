@@ -241,7 +241,7 @@ Once work is completed, return it to the PM.
 
 ## S (Small)
 
-```text
+```
 Worker → Complete
 ```
 
@@ -251,25 +251,25 @@ Exception: if the single modification changes runtime-observable behavior (not j
 
 ## M (Medium)
 
-```text
-Worker → Review → (Fail) Worker(fix) → Review          [반복: Review 통과할 때까지]
+```
+Worker → Review → (Fail) Worker(fix) → Review          [Repeat until Review passes]
               → (Pass) Tester → (Pass) Complete
-                             → (Fail) Worker(fix) → Review   [처음 단계로 회귀, 전체 사이클 재수행]
+                             → (Fail) Worker(fix) → Review   [Return to the first stage and repeat the entire cycle]
 ```
 
-Review 실패 시엔 Worker가 고치고 Review로만 돌아간다(Tester는 아직 볼 필요 없는 코드니까). 하지만 **Tester가 실패하면 Worker가 수정한 뒤 처음 단계인 Review로 돌아가 Review→Tester 사이클을 처음부터 다시 밟는다** — 수정이 새 코드 결함을 만들지 않았는지, 그리고 실제로 동작이 고쳐졌는지 둘 다 다시 확인하기 위함. 이 재검증 루프는 Review와 Tester가 모두 통과할 때까지 반복된다. 반복 실행 비용은 아래 "재검증 루프의 에이전트 재사용" 원칙을 따른다.
+If Review fails, Worker fixes the issue and returns only to Review (Tester does not need to inspect code that has not yet passed Review). However, **if Tester fails, Worker fixes the issue and returns to the first stage, repeating the Review → Tester cycle from the beginning** — this is to verify both that the fix did not introduce new code defects and that the actual runtime behavior has been fixed. This re-validation loop repeats until both Review and Tester pass. The cost of repeated execution follows the "Agent Reuse in Re-validation Loops" principle below.
 
 ---
 
 ## L (Large)
 
-```text
+```
 PM → Worker → Review → (Fail) Worker(fix) → Review
                    → (Pass) Tester → (Pass) Integrator (or Human) → Worker → Feature Audit → Complete
                                   → (Fail) Worker(fix) → Review
 ```
 
-M과 동일한 분기 규칙: Review 실패 → Worker(fix) → Review; Tester 실패 → Worker(fix) → Review(처음부터 재수행); Tester 통과 → Integrator로 진행.
+The same branching rules as M apply: Review failure → Worker(fix) → Review; Tester failure → Worker(fix) → Review (restart from the beginning); Tester pass → proceed to Integrator.
 
 ---
 
@@ -277,7 +277,7 @@ M과 동일한 분기 규칙: Review 실패 → Worker(fix) → Review; Tester �
 
 Split the review into two independent reviews.
 
-```text
+```
 PM → Worker → Review ×2 → (Fail) Worker(fix) → Review ×2
                        → (Pass) Tester → (Pass) Integrator (or Human) → Worker → Feature Audit → Complete
                                       → (Fail) Worker(fix) → Review ×2
@@ -285,35 +285,40 @@ PM → Worker → Review ×2 → (Fail) Worker(fix) → Review ×2
 
 ---
 
-## 재검증 루프의 재검증 범위 (M/L/XL 공통)
+## Re-validation Scope in the Re-validation Loop (Common to M/L/XL)
 
-"처음 단계로 회귀"는 검증을 다시 한다는 뜻이지, 매번 원본 Task 전체를 처음부터 다시 본다는 뜻은 아니다. 이 재검증 라운드를 새 서브에이전트로 스폰할지 직전 라운드의 Review/Tester를 이어 쓸지는 이미 있는 CLAUDE.md "에이전트 인스턴스 수명" 원칙을 그대로 따른다(같은 Task를 다시 보는 라운드는 그 원칙이 말하는 "연속된 스텝, 같은 전문성"에 해당).
+"Returning to the first stage" means running the validation again; it does not mean reviewing the entire original Task from the beginning every time. Whether the re-validation round should spawn a new subagent or continue using the Review/Tester from the previous round follows the existing `CLAUDE.md` "Agent Instance Lifetime" principle (a round that re-examines the same Task falls under the "consecutive steps, same expertise" case described by that principle).
 
-재검증의 판정 대상은 **Worker의 fix로 바뀐 부분(diff) + 그 fix가 건드린 파일**로 좁힌다 — 직전 라운드에서 이미 통과한 부분을 매번 처음부터 다시 판정하지 않는다. fix가 원래 Task Manifest(§12.4) 밖의 파일까지 건드렸다면, 그 확장된 범위만 §12.3(Scope Escalation)에 따라 PM이 재평가해 추가한다.
+The scope of re-validation is narrowed to **the parts changed by the Worker's fix (diff) + the files touched by that fix** — portions that already passed in the previous round are not re-evaluated from scratch each time. If the fix touches files outside the original Task Manifest (§12.4), PM re-evaluates and adds only that expanded scope according to §12.3 (Scope Escalation).
 
-이 원칙은 "Review와 Tester가 모두 통과할 때까지 반복"하는 검증 강도를 낮추지 않는다 — 반복 실행의 **비용**만 줄인다.
+This principle does not reduce the validation rigor of "repeat until both Review and Tester pass" — it only reduces the **cost** of repeated execution.
 
 ---
 
 ## Decision-Stage (Design & Plan) Pipeline
 
-Design spec(UI/Screen × Decision)이든 구현 계획(Logic/Feature × Decision)이든, Task 크기와 무관하게 다음을 따른다:
+Whether it is a design spec (UI/Screen × Decision) or an implementation plan (Logic/Feature × Decision), the following applies regardless of Task size:
 
-```text
-Draft (작은 단위: 섹션/챕터 단위) → Review (그 단위) → 반복(모든 단위 통과할 때까지)
-  → 초안 전체 조립 → Audit (프로젝트 전체 맥락에서 완성된 초안을 홀리스틱하게 검토)
-      → (Pass) 확정
-      → (Fail) 지적된 단위 수정 → Review → ... → Audit 재수행
+```
+Draft (small units: section/chapter level) → Review (that unit) → Repeat (until all units pass)
+  → Assemble the full draft → Audit (holistic review of the completed draft in the context of the entire project)
+      → (Pass) Finalize
+      → (Fail) Revise the flagged units → Review → ... → Re-run Audit
 ```
 
-Design 단계의 "작은 단위 Review"는 기존 Design Review(`review` 서브에이전트, §12.1)로 이미 충족됨. Planning 단계(구현계획 작성)는 지금까지 "Usually none (PM scope)"였으나, 다음 조건을 모두 만족할 때만 사용자 승인 절차가 이 역할을 대체하는 것으로 인정한다 — 조건 미충족 시 `review` 서브에이전트를 별도로 호출해야 함:
+The "small-unit Review" in the Design stage is already satisfied by the existing Design Review (`review` subagent, §12.1). In the Planning stage (writing implementation plans), the policy previously stated "Usually none (PM scope)", but the user-approval process is considered a substitute for this role **only when all of the following conditions are met** — if the conditions are not met, the `review` subagent must be called separately:
 
-1. `writing-plans` 스킬의 Self-Review 3항목(Spec coverage / Placeholder scan / Type consistency)이 실제로 수행되고 결과가 남아있을 것(단순히 "사용자가 좋다고 했다"가 아니라, 구체적 판정 기준에 대한 체크가 있어야 함),
-2. 그 승인이 프로젝트의 관련 정책/레퍼런스 문서(해당 Layer×Stage의 §12.1 Required Materials)를 실제로 대조한 뒤 이뤄질 것 — PM이 승인 요청 시 어떤 문서를 기준으로 체크했는지 명시.
+1. The three Self-Review items from the `writing-plans` skill (Spec coverage / Placeholder scan / Type consistency) must actually be performed, and the results must be recorded (not merely "the user said it looks good"; there must be a check against concrete evaluation criteria).
+2. The approval must be given after actually cross-checking the relevant project policy/reference documents (`§12.1 Required Materials` for the applicable Layer × Stage) — PM must specify which documents were used as the basis for the approval request.
 
-이 두 조건을 충족하면 별도 `review` 서브에이전트 호출은 생략 가능. 신규로 요구되는 것은 **확정 직전의 Audit 1회**이며, 이건 크기 무관 항상 적용된다(위 조건 충족 여부와 무관하게 항상 돎).
+If these two conditions are met, the separate `review` subagent call may be skipped. The newly required step is **one Audit immediately before finalization**, and this always applies regardless of Task size (it always runs regardless of whether the above conditions are met).
 
-**알려진 트레이드오프(의도적으로 수용)**: 이 두 조건 통과는 결국 "작성자 본인의 Self-Review"이지 §1.1(Role Separation)이 요구하는 독립적 검증이 아니다. 그럼에도 예외를 허용하는 이유는 (a) Design 단계는 이미 독립 `review` 서브에이전트를 강제하고 있어 비대칭이 없고, (b) Planning 단계 아래에는 항상 걸리는 Audit이라는 두 번째 독립적 눈이 항상 있어 완전한 셀프체크로 끝나지 않으며, (c) 매 plan 섹션마다 `review` 서브에이전트를 부르면 계획 작성 자체의 오버헤드가 급증해 이 원칙이 실제로 안 지켜질 위험이 커진다는 실용적 판단. 상세 근거는 `docs/history/Decision.md` 참고.
+**Ownership Assessment (all three Decision rows — UI/Screen · Logic/Feature · Data/API/Architecture):** Small-unit Review at the Decision stage also assesses the following. The same requirement applies whether it is performed by the `review` subagent or replaced by the alternative conditions above; under the alternative path, it is performed as a fourth Self-Review item — none of the three Self-Review items (Spec coverage / Placeholder scan / Type consistency) checks ownership assignment, so without adding this assessment to the alternative path, the ownership check would be skipped entirely under the cheaper path recommended by the policy.
+
+- If the specification lists multiple entry points for a single action but the design does not designate the file that owns that action, assign P1.
+- If the Task meets the gate (Task size L/XL, or the specification explicitly identifies 2 or more screens/entry points for a single action) but the deliverable does not include an updated ownership map (`docs/reference/architecture/00_OwnershipMap.md`), assign P1.
+
+**Known Trade-off (intentionally accepted):** Passing these two conditions ultimately constitutes the author's own Self-Review, rather than the independent verification required by §1.1 (Role Separation). The exception is nevertheless allowed for practical reasons: (a) the Design stage already mandates an independent `review` subagent, so there is no asymmetry; (b) the Planning stage always has a second independent set of eyes in the form of the mandatory Audit, so it does not end with a purely self-checking process; and (c) requiring a `review` subagent for every plan section would significantly increase the overhead of plan writing, increasing the risk that this principle would not actually be followed. See `docs/history/Decision.md` for the detailed rationale.
 
 ---
 
@@ -372,6 +377,8 @@ When a task step is completed, always verify the following — including for eac
 
 □ If the recorded technical debt describes a recurring pattern rather than a one-off defect, it has been promoted to a rule in the relevant domain conventions skill
 
+□ If this step changed which file owns a shared behavior, the ownership map (`docs/reference/architecture/00_OwnershipMap.md`) has been updated
+
 □ Change Impact has been reviewed
 
 □ `docs/work/BACKLOG.md`'s Current section reflects this step (not only "the next task has been added to the backlog" — the just-finished step's status too)
@@ -414,7 +421,9 @@ Every task is tagged with the Layer(s) it touches and the Stage (Decision or Imp
 | Data/API/Architecture | Implementation | Development Review (architecture) | Related modules/schema, Finalized data model doc (`docs/reference/data/`), **Skill: `engineering-principles`** (invoke first) |
 | (any Layer with runtime behavior) | Implementation — Tester pass | Runs after Review passes | Same Reference docs as Review for that Layer/Stage, `Decision.md`/`TechnicalDebt.md`, Worker's handoff + modified files, and the runnable app itself (not the raw exploratory material behind a Decision-stage task) |
 
-(§5 "Decision-Stage (Design & Plan) Pipeline"의 확정-전-Audit 규칙이 위 Design/Planning/Data 세 행 모두에 반영되어 있음 — 본문 규칙과 이 표가 따로 갱신되며 어긋나는 걸 방지하기 위해 세 행을 함께 갱신함.)
+(§5's "Decision-Stage (Design & Plan) Pipeline" pre-finalization Audit rule is reflected in all three Design/Planning/Data rows above — the three rows are updated together to prevent the body rule and this table from becoming inconsistent when updated separately.)
+
+(**Ownership Map**: All Implementation-stage Tasks, as well as Decision-stage Tasks that meet the gate (Task size L/XL, or the specification explicitly identifies 2 or more screens/entry points for a single action), must include `docs/reference/architecture/00_OwnershipMap.md` in their Required Materials regardless of Layer/Stage. Since it is a single-table document, the per-dispatch cost is small.)
 
 ## 12.2 Worker vs. Review Materials
 
@@ -439,6 +448,8 @@ If Review needs material outside its granted scope to reach a judgment, Review d
 - **Write** — a new file the task expects the Worker to create.
 
 A `Skill: <name>` entry is always Read — invoking a skill never grants edit access to the skill file itself.
+
+PM includes `docs/reference/architecture/00_OwnershipMap.md` as **Read** in the Task Manifest for **all Implementation-stage Tasks**. For Tasks that require the map to be updated, it is included as **Edit**. For Decision-stage Tasks, it is included when the Task meets the gate (Task size L/XL, or the specification explicitly identifies 2 or more screens/entry points for a single action).
 
 **Example** (Worker dispatch for a UI/Screen × Implementation(Frontend) task):
 
