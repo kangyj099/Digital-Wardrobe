@@ -18,13 +18,20 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Last Completed
 
-**Track A — 삭제&휴지통 감사 발견 5건 UI 픽스 완료(2026-08-13)** — 정보팝업 닫기버튼/N일 오버레이/버튼고정, `CompositionGalleryTile` 연결끊김 배지, 상세화면 3곳 삭제 토스트 실행취소 배선. Worker→Review(P0 1건 발견·수정: 팝업 후 `ref.read`가 dispose된 위젯에서 크래시 — notifier 선캡처로 해결)→Tester(8개 신규 시나리오 전부 통과, 기존 테스트 2건 정정) 전체 통과. `feature/trash-cascade-ui-fixes` 브랜치, `dev` PR 대기.
+**소유권 맵 + 설계 단계 구조 산출물 정책 확정(2026-08-15)** — 크로스커팅 동작·컴포넌트의 소유 파일을 정하는 `docs/reference/architecture/00_OwnershipMap.md` 신설(18행, grep 검증, 규칙 블록을 문서 자신이 실음) + 전달 경로(`Workflow_Project.md` §12.1/§12.4)·판정 기준(`engineering-principles`, Flutter 체크리스트)·검증자(Audit 대조) 배선. Draft→Review 2회→Audit 3회(전부 FAIL 후 PASS). 근거·경위는 `Decision.md` 최상단, 초안 전문은 `docs/superpowers/specs/2026-08-15-structural-design-stage-artifacts-design.md`. 커밋 `ceace0e`.
+
+**Track A(삭제&휴지통 UI 픽스 5건) — PR #27로 `dev` 병합 완료(2026-08-14).**
 
 ---
 
 # Current
 
-**Track B(코디 스냅샷 아키텍처) — Decision 확정(2026-08-12) 후 L 구현 완료, Tester 대기 중(2026-08-13)**: Worker Draft→Review(P0 1건: 오프스크린 캡처 기법이 실제로는 항상 실패하는 구조였음, Flutter SDK 소스로 검증)→Audit(1차 FAIL, P1 4건 — Draft 재사용이 캐스케이드 정리를 무효화할 수 있는 취약점 등)로 아키텍처 확정(`Decision.md` §13 요약 참고) → `feature/trash-cascade-ui-fixes`(Track A) 위에서 L 구현(캡처/저장, 편집 커밋 연동, 삭제된 옷 자동정리+Draft invalidate, Track A의 불완전했던 "연결끊김" 배지 판정을 `compositionHasDeletedItemsProvider`로 교체) → Review 통과(P0/P1 없음, `feature/composition-snapshot-implementation` 브랜치, 커밋 `42ee7ba`). **`path_provider` 추가로 이 프로젝트 최초의 네이티브 플러그인이 생기며 Windows 빌드/테스트가 전부 막힘**("Developer Mode 필요" 에러) — 사용자가 Developer Mode 활성화하는 대로 Tester 착수.
+**Track B(코디 스냅샷 아키텍처) — 구현 완료·Review 통과, 다음 할 일은 Tester 재투입**: 브랜치 `feature/composition-snapshot-implementation`(Track A 병합본 위에 분기, 미푸시 커밋 다수). 아키텍처는 Draft→Review(P0: 오프스크린 캡처 기법이 항상 실패하는 구조 — Flutter SDK 소스로 검증)→Audit(1차 FAIL P1 4건)으로 확정(`00_DataSchema.md` §13, `Decision.md`) → L 구현(캡처/저장, 편집 커밋 연동, 삭제된 옷 자동정리+Draft invalidate, Track A의 불완전했던 배지 판정을 `compositionHasDeletedItemsProvider`로 교체) → **Tester 1차 FAIL(F1~F5)** → Worker 수정(`f84ce62`) → Review가 4번째 `coverImagePath` 미전환 지점 발견 → 수정 완료(`80f7e1a`, `flutter test` 130/130 + 스냅샷 런타임 스위트 14/14 통과).
+
+**→ 다음: Tester 재투입**(§5상 Tester 실패 후 사이클이라 Review는 이미 재통과함). 통과 시 L 태스크라 **Audit 게이트** 1회 후 `dev` PR. Tester가 확인할 것은 F1~F5 수정분의 런타임 재검증 + 회귀(특히 F1이 깨뜨렸던 4개 스위트).
+
+- 참고: `path_provider` 추가로 이 프로젝트 최초의 네이티브 플러그인이 생겼고, Windows 빌드에 **Developer Mode 활성화가 필수**가 됐다(2026-08-14 사용자가 활성화 완료, `flutter build windows` 성공 확인). 새 개발 환경에서는 이 설정이 선행돼야 `flutter test -d windows`가 돈다.
+- 참고: `/assets/fonts`가 `.gitignore`에 있어 **새 클론·새 worktree에서는 폰트 누락으로 빌드가 깨진다**(2026-08-14 확인). 현재 폰트는 사용자 로컬에만 존재 — 커밋할지 README 설치 안내로 갈지 미정(라이선스 확인 필요).
 
 **8페이지 레이아웃&데이터 완전성 감사 전체 완료(2026-08-12) — 발견분 중 미구현으로 남은 것 일람**: 옷장 메인→옷 상세→코디 메인→코디 상세→스타일일지 메인→스타일일지 열람→설정→삭제&휴지통 순으로 스펙(`03_화면별UX명세서/*.md`)↔구현 대조 완료. 설정은 발견 0건, 삭제&휴지통은 Track A/B로 처리됨(위 참고). **나머지 페이지의 미구현 잔여분은 아래 3개 항목(옷장 메인 / 스타일일지 열람 / 미픽업 P2·P3 목록)에 전부 분산 기록돼 있으며, 이 감사에서 나온 것 중 그 어디에도 없는 항목은 없다.** 감사 방법론과 역할 분담(레이아웃·기능·데이터는 PM, 시각 디자인 디테일은 사용자)은 `Decision.md` 참고.
 
@@ -94,7 +101,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Next
 
-- **[최우선] `Workflow_Project.md` §5/§12.1 정책 문서 자기모순 수정** — §12.1 표의 `Data/API/Architecture | Decision` 행에 "mandatory Audit before confirmation (크기 무관)" 문구가 누락돼 있음(`UI/Screen`·`Logic/Feature` 두 Decision 행엔 있음). §5 "Decision-Stage (Design & Plan) Pipeline" 본문 scope 문장도 Data/Architecture를 언급 안 함. DB 스키마 설계 확정 전 Audit(2026-08-02)이 발견(P1) — 이 Audit 자체가 그 누락된 규칙으로 트리거됐다는 자기모순이라 신뢰도 문제. `.claude/policies/**` 수정이라 실제 Edit 전 사용자 확인 필요(CLAUDE.md 체크포인트 2) — 사용자가 지금 당장은 보류, 백로그 최우선으로 등록만 해달라고 확정(2026-08-02).
+- **[최우선] `Workflow_Project.md` §5 본문 scope 문장이 Data/Architecture를 누락** — §5 "Decision-Stage (Design & Plan) Pipeline"의 도입 문장이 "Design spec(UI/Screen × Decision)이든 구현 계획(Logic/Feature × Decision)이든"으로 두 행만 열거하고 Data/API/Architecture × Decision을 언급하지 않는다. 그 행은 §12.1 표를 통해서만 이 파이프라인에 걸려 있어, 범위 논쟁이 반복될 여지가 남는다(2026-08-15 소유권 맵 Audit도 같은 지점을 지적). **원래 함께 묶여 있던 §12.1 표 쪽 누락은 2026-08-02에 이미 해소됨**(`Data/API/Architecture | Decision` 행에 "mandatory Audit before confirmation (크기 무관, §5 Decision-Stage Pipeline 적용)" 존재 확인, 2026-08-15 재확인) — 남은 건 §5 본문 한 문장뿐. 2026-08-15에 같은 §5 섹션에 소유권 판정 기준을 추가하며 그 문단은 "세 Decision 행 전부"로 명시했으나, 도입 문장 자체는 사용자가 2026-08-02에 보류시킨 항목이라 건드리지 않았다 — 착수 시 사용자 확인 필요(CLAUDE.md 체크포인트 2).
 - ~~`ui-ux-pro-max` 플러그인에서 Flutter 관련 내용만 추출해 프로젝트 로컬 스킬로 이식~~ **완료(2026-07-18)** — `feature/flutter-ui-reference-skill` 브랜치(저장소 바깥 sibling worktree)에 방치돼 있던 450줄 초안을 이어받아 검증 후 커밋. 검증 내용: (1) Flutter 52개 가이드라인·팔레트/폰트 표 샘플을 원본 플러그인 로컬 캐시(`~/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/data/*.csv`)와 대조해 추출 정확성 확인, (2) 라이선스 고지문이 원본 `LICENSE` 파일과 정확히 일치함을 재확인(MIT, Copyright Next Level Builder). 산출물: `.claude/skills/flutter-ui-reference/SKILL.md`. 후속 조치로 `.claude/settings.json`에 `"ui-ux-pro-max@ui-ux-pro-max-skill": false` 추가해 이 프로젝트에서만 원본 플러그인(7개 스킬: banner-design/brand/design/design-system/slides/ui-styling/ui-ux-pro-max) 비활성화 — 전역 설정은 그대로 둬서 다른 프로젝트는 영향 없음.
 
 ---
