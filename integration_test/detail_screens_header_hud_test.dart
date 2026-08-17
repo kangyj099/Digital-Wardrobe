@@ -104,7 +104,9 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(StyleLogViewerScreen), findsOneWidget);
       expect(
-        find.textContaining('${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'),
+        // mock 스타일일지는 둘 다 착용일이 있다 — nullable이 된 뒤에도 이 픽스처에선 non-null.
+        find.textContaining(
+            '${log.wornDate!.year}.${log.wornDate!.month}.${log.wornDate!.day}'),
         findsOneWidget,
       );
     });

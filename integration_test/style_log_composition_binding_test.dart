@@ -264,7 +264,7 @@ void main() {
         final unlinkedLog = StyleLog(
           id: 'test-unlinked-log',
           coverImagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png',
-          wornDate: DateTime(2026, 2, 1),
+          createdAt: DateTime(2026, 2, 1), wornDate: DateTime(2026, 2, 1),
         );
         container.read(styleLogsProvider.notifier).state = [
           ...container.read(styleLogsProvider),
@@ -315,7 +315,7 @@ void main() {
         final unlinkedLog = StyleLog(
           id: 'test-unlinked-log-2',
           coverImagePath: 'assets/images/mock/IMG_4260_preview_rev_1.png',
-          wornDate: DateTime(2026, 2, 2),
+          createdAt: DateTime(2026, 2, 2), wornDate: DateTime(2026, 2, 2),
         );
         container.read(styleLogsProvider.notifier).state = [
           ...container.read(styleLogsProvider),

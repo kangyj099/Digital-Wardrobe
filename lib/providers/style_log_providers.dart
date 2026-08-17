@@ -40,9 +40,21 @@ final styleLogsProvider =
     StateNotifierProvider<StyleLogsNotifier, List<StyleLog>>(
         (ref) => StyleLogsNotifier());
 
+/// 착용일 내림차순(최신 먼저) 정렬. **`wornDate`가 null인 항목은 항상 맨 뒤로 보낸다** —
+/// 날짜를 안 적은 스타일일지가 최신으로도 최고령으로도 오해되지 않게 하기 위함이다
+/// (사용자 확정 2026-08-17, `docs/reference/data/00_DataSchema.md` Open Question #17).
+///
+/// 이 정렬이 null 처리의 정본이다 — 다른 정렬 지점이 생기면 여기를 참조할 것.
 final filteredStyleLogsProvider = Provider<List<StyleLog>>((ref) {
   final logs = ref.watch(styleLogsProvider).where((l) => !l.isDeleted).toList();
-  logs.sort((a, b) => b.wornDate.compareTo(a.wornDate));
+  logs.sort((a, b) {
+    final aWorn = a.wornDate;
+    final bWorn = b.wornDate;
+    if (aWorn == null && bWorn == null) return 0;
+    if (aWorn == null) return 1;
+    if (bWorn == null) return -1;
+    return bWorn.compareTo(aWorn);
+  });
   return logs;
 });
 

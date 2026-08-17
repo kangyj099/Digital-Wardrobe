@@ -36,7 +36,7 @@ class _FixedClosetItemsNotifier extends ClosetItemsNotifier {
 /// 실제 mock 데이터로 검증할 수 없다(`docs/superpowers/plans/2026-07-15-step7-detail-binding.md`
 /// Task 7 주의 참고) — 이 화면만 `ProviderScope` override로 격리해 검증한다.
 void main() {
-  final unlinkedLog = StyleLog(id: 'test-log', coverImagePath: '', wornDate: DateTime(2026, 3, 1));
+  final unlinkedLog = StyleLog(id: 'test-log', coverImagePath: '', createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1));
 
   testWidgets('연결된 코디가 없으면 "코디 연결하기" 바인딩 항목이 보이고, 탭하면 선택 화면으로 이동한다',
       (tester) async {
@@ -88,7 +88,7 @@ void main() {
     final log = StyleLog(
       id: 'test-log',
       coverImagePath: '',
-      wornDate: DateTime(2026, 3, 1),
+      createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1),
       linkedCompositionId: 'test-comp',
     );
     final router = GoRouter(
@@ -140,7 +140,7 @@ void main() {
       final log = StyleLog(
         id: 'test-log',
         coverImagePath: '',
-        wornDate: DateTime(2026, 3, 1),
+        createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1),
         linkedCompositionId: 'deleted-comp',
       );
       final router = GoRouter(
@@ -210,7 +210,7 @@ void main() {
     final log = StyleLog(
       id: 'test-log',
       coverImagePath: '',
-      wornDate: DateTime(2026, 3, 1),
+      createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1),
       wornItemIds: const ['active-item', 'deleted-item'],
     );
     final router = GoRouter(
@@ -310,7 +310,7 @@ void main() {
     '(Review P0 회귀 방지: pop된 화면의 ref로 나중에 읽으면 release에서도 StateError가 나므로, '
     'pop 이전에 캡처해둔 notifier를 써야 함)',
     (tester) async {
-      final log = StyleLog(id: 'test-log', coverImagePath: '', wornDate: DateTime(2026, 3, 1));
+      final log = StyleLog(id: 'test-log', coverImagePath: '', createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1));
       final container = ProviderContainer(
         overrides: [
           compositionsProvider.overrideWith((ref) => _FixedCompositionsNotifier(const [])),

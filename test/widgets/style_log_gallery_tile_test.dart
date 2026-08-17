@@ -10,7 +10,7 @@ void main() {
     final styleLog = StyleLog(
       id: 'log01',
       coverImagePath: '',
-      wornDate: DateTime(2026, 1, 5),
+      createdAt: DateTime(2026, 1, 5), wornDate: DateTime(2026, 1, 5),
       location: '집',
     );
     await tester.pumpWidget(
@@ -30,7 +30,7 @@ void main() {
     final styleLog = StyleLog(
       id: 'log02',
       coverImagePath: '',
-      wornDate: DateTime(2026, 2, 10),
+      createdAt: DateTime(2026, 2, 10), wornDate: DateTime(2026, 2, 10),
     );
     await tester.pumpWidget(
       MaterialApp(
@@ -46,7 +46,7 @@ void main() {
 
   testWidgets('탭하면 onTap이 호출된다', (tester) async {
     var tapped = false;
-    final styleLog = StyleLog(id: 'log03', coverImagePath: '', wornDate: DateTime(2026, 3, 1));
+    final styleLog = StyleLog(id: 'log03', coverImagePath: '', createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1));
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,

@@ -44,7 +44,7 @@ final trashEntriesProvider = Provider.autoDispose<List<TrashEntry>>((ref) {
         id: log.id,
         category: AppCategory.styleLog,
         imagePath: log.coverImagePath,
-        createdAt: log.wornDate,
+        createdAt: log.createdAt,
         daysUntilPurge: _daysUntilPurge(log.deletedAt!),
       ),
   ];

@@ -177,7 +177,7 @@ void main() {
           StyleLog(
             id: 'test-comp03-log-square-unif',
             coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
-            wornDate: DateTime(2026, 1, 10),
+            createdAt: DateTime(2026, 1, 10), wornDate: DateTime(2026, 1, 10),
             linkedCompositionId: 'comp03',
           ),
         ];
@@ -304,7 +304,7 @@ void main() {
         final extraStyleLog = StyleLog(
           id: 'test-extra-log-for-comp01',
           coverImagePath: 'assets/images/mock/IMG_4262_preview_rev_1.png',
-          wornDate: DateTime(2026, 3, 1),
+          createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1),
           linkedCompositionId: 'comp01',
         );
         container.read(styleLogsProvider.notifier).state = [

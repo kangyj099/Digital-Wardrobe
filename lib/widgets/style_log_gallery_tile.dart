@@ -28,7 +28,10 @@ class StyleLogGalleryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final dateLabel = styleLog.wornDate.toIso8601String().substring(0, 10);
+    final wornDate = styleLog.wornDate;
+    // 착용일은 안 적을 수 있다 — 그 경우 빈칸 대신 명시적으로 없음을 밝힌다.
+    final dateLabel =
+        wornDate == null ? '날짜 없음' : wornDate.toIso8601String().substring(0, 10);
     final metaLabel = styleLog.location.isEmpty ? dateLabel : '$dateLabel · ${styleLog.location}';
     return Semantics(
       button: true,

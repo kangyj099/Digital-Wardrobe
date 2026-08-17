@@ -13,6 +13,12 @@ import '../widgets/glass_toast.dart';
 import '../widgets/status_badge.dart';
 import 'app_detail_scaffold.dart';
 
+/// 착용일 표기. 착용일은 안 적을 수 있어(`StyleLog.wornDate`가 nullable) 그 경우 빈칸
+/// 대신 명시적으로 없음을 밝힌다 — `StyleLogGalleryTile`과 같은 문구를 쓴다.
+String _formatWornDate(DateTime? wornDate) => wornDate == null
+    ? '날짜 없음'
+    : '${wornDate.year}.${wornDate.month}.${wornDate.day}';
+
 /// 스타일일지 열람 — 카드 구조를 스펙 원문(`03_스타일 일지.md` "대표이미지(1번, 고정) →
 /// 코디 슬롯(2번, 고정) → 추가 사진(3번~)") 그대로 따른다: 대표이미지/코디 슬롯을 하나의
 /// 정사각형 2페이지 `PageView`로 묶고(하단 별도 카드/칩 방식은 폐기 —
@@ -149,7 +155,7 @@ class _StyleLogViewerScreenState extends ConsumerState<StyleLogViewerScreen> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '${log.wornDate.year}.${log.wornDate.month}.${log.wornDate.day}'
+              '${_formatWornDate(log.wornDate)}'
               '${log.location.isEmpty ? '' : '  ${log.location}'}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),

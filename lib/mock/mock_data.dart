@@ -4,20 +4,23 @@ import '../models/enums.dart';
 import '../models/style_log.dart';
 
 final List<ClothingItem> mockClothingItems = [
-  ClothingItem(id: 'c01', name: '플로럴 원피스', category: ClothingCategory.onePiece, color: 'pink', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png', createdAt: DateTime(2024, 3, 12), location: '옷장 2단', wearCount: 3),
-  ClothingItem(id: 'c02', name: '데님 팬츠', category: ClothingCategory.bottom, color: 'black', season: Season.springFall, material: ClothingMaterial.denim, imagePath: 'assets/images/mock/IMG_4260_preview_rev_1.png', createdAt: DateTime(2025, 6, 1), wearCount: 9),
-  ClothingItem(id: 'c03', name: '그래픽 와이드팬츠', category: ClothingCategory.bottom, color: 'khaki', season: Season.springFall, material: ClothingMaterial.denim, imagePath: 'assets/images/mock/IMG_4261_preview_rev_1.png', createdAt: DateTime(2023, 11, 20), wearCount: 4),
-  ClothingItem(id: 'c04', name: '트렌치코트', category: ClothingCategory.outer, color: 'brown', season: Season.springFall, material: ClothingMaterial.leather, imagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png', createdAt: DateTime(2024, 9, 5), location: '옷장 1단', wearCount: 2),
-  ClothingItem(id: 'c05', name: '스트라이프 블라우스', category: ClothingCategory.top, color: 'burgundy', season: Season.springFall, material: ClothingMaterial.silkSatin, imagePath: 'assets/images/mock/IMG_4267_preview_rev_1.png', createdAt: DateTime(2025, 2, 14), wearCount: 5),
-  ClothingItem(id: 'c06', name: '코튼 반바지', category: ClothingCategory.bottom, color: 'sage', season: Season.summer, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4273.PNG', createdAt: DateTime(2026, 1, 8), isIncomplete: true),
-  ClothingItem(id: 'c07', name: '리넨 반바지', category: ClothingCategory.bottom, color: 'blue', season: Season.summer, material: ClothingMaterial.linen, imagePath: 'assets/images/mock/IMG_4275.PNG', createdAt: DateTime(2025, 7, 22), wearCount: 6, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 3))),
-  ClothingItem(id: 'c08', name: '슬립 드레스', category: ClothingCategory.onePiece, color: 'black', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4276.PNG', createdAt: DateTime(2024, 12, 30), wearCount: 1, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 20))),
-  ClothingItem(id: 'c09', name: '레더 재킷', category: ClothingCategory.outer, color: 'black', season: Season.springFall, material: ClothingMaterial.leather, imagePath: 'assets/images/mock/IMG_4277.PNG', createdAt: DateTime(2023, 5, 17), location: '옷장 1단', wearCount: 7),
-  ClothingItem(id: 'c10', name: '그래픽 반팔티', category: ClothingCategory.top, color: 'white', season: Season.summer, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4257_preview_rev_1.png', createdAt: DateTime(2025, 4, 3), wearCount: 12),
-  ClothingItem(id: 'c11', name: '그래픽 맨투맨', category: ClothingCategory.top, color: 'pink', season: Season.springFall, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4262_preview_rev_1.png', createdAt: DateTime(2024, 8, 19), wearCount: 8),
+  ClothingItem(id: 'c01', name: '플로럴 원피스', category: ClothingCategory.onePiece, color: ClothingColor.pink, season: Season.springFall, material: ClothingMaterial.cotton, hasGraphic: true, hasPattern: false, imagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png', createdAt: DateTime(2024, 3, 12), acquiredAt: DateTime(2024, 3, 2), location: '옷장 2단', wearCount: 3),
+  ClothingItem(id: 'c02', name: '데님 팬츠', category: ClothingCategory.bottom, color: ClothingColor.black, season: Season.springFall, material: ClothingMaterial.denim, hasGraphic: false, hasPattern: false, imagePath: 'assets/images/mock/IMG_4260_preview_rev_1.png', createdAt: DateTime(2025, 6, 1), wearCount: 9),
+  ClothingItem(id: 'c03', name: '그래픽 와이드팬츠', category: ClothingCategory.bottom, color: ClothingColor.khaki, season: Season.springFall, material: ClothingMaterial.denim, hasGraphic: true, hasPattern: false, imagePath: 'assets/images/mock/IMG_4261_preview_rev_1.png', createdAt: DateTime(2023, 11, 20), wearCount: 4),
+  ClothingItem(id: 'c04', name: '트렌치코트', category: ClothingCategory.outer, color: ClothingColor.brown, season: Season.springFall, material: ClothingMaterial.leather, hasGraphic: false, hasPattern: false, imagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png', createdAt: DateTime(2024, 9, 5), location: '옷장 1단', wearCount: 2),
+  // 원래 색 태그는 'burgundy'였다 — 폐쇄 어휘 16값 확정(2026-08-17)에 없는 값이라 red로 흡수했다.
+  ClothingItem(id: 'c05', name: '스트라이프 블라우스', category: ClothingCategory.top, color: ClothingColor.red, season: Season.springFall, material: ClothingMaterial.silkSatin, hasGraphic: false, hasPattern: true, imagePath: 'assets/images/mock/IMG_4267_preview_rev_1.png', createdAt: DateTime(2025, 2, 14), wearCount: 5),
+  // 원래 색 태그는 'sage'였다 — 같은 이유로 green으로 흡수했다.
+  // hasGraphic/hasPattern이 둘 다 null — AI 자동 태깅 전(미태깅) 상태 데모용이다.
+  ClothingItem(id: 'c06', name: '코튼 반바지', category: ClothingCategory.bottom, color: ClothingColor.green, season: Season.summer, material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4273.PNG', createdAt: DateTime(2026, 1, 8), isIncomplete: true),
+  ClothingItem(id: 'c07', name: '리넨 반바지', category: ClothingCategory.bottom, color: ClothingColor.blue, season: Season.summer, material: ClothingMaterial.linen, hasGraphic: false, hasPattern: false, imagePath: 'assets/images/mock/IMG_4275.PNG', createdAt: DateTime(2025, 7, 22), wearCount: 6, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 3))),
+  ClothingItem(id: 'c08', name: '슬립 드레스', category: ClothingCategory.onePiece, color: ClothingColor.black, season: Season.springFall, material: ClothingMaterial.cotton, hasGraphic: false, hasPattern: false, imagePath: 'assets/images/mock/IMG_4276.PNG', createdAt: DateTime(2024, 12, 30), wearCount: 1, isDeleted: true, deletedAt: DateTime.now().subtract(const Duration(days: 20))),
+  ClothingItem(id: 'c09', name: '레더 재킷', category: ClothingCategory.outer, color: ClothingColor.black, season: Season.springFall, material: ClothingMaterial.leather, hasGraphic: false, hasPattern: false, imagePath: 'assets/images/mock/IMG_4277.PNG', createdAt: DateTime(2023, 5, 17), acquiredAt: DateTime(2022, 11, 9), location: '옷장 1단', wearCount: 7),
+  ClothingItem(id: 'c10', name: '그래픽 반팔티', category: ClothingCategory.top, color: ClothingColor.white, season: Season.summer, material: ClothingMaterial.cotton, hasGraphic: true, hasPattern: false, imagePath: 'assets/images/mock/IMG_4257_preview_rev_1.png', createdAt: DateTime(2025, 4, 3), wearCount: 12),
+  ClothingItem(id: 'c11', name: '그래픽 맨투맨', category: ClothingCategory.top, color: ClothingColor.pink, season: Season.springFall, material: ClothingMaterial.cotton, hasGraphic: true, hasPattern: false, imagePath: 'assets/images/mock/IMG_4262_preview_rev_1.png', createdAt: DateTime(2024, 8, 19), wearCount: 8),
   // category/season 둘 다 null — 옷장 "옷 종류"/"계절" 분류의 미분류 카드 데모용
   // (`docs/history/Decision.md`의 nullable화 결정, 2026-07-19).
-  ClothingItem(id: 'c12', name: '플로럴 스커트', color: 'multi', material: ClothingMaterial.cotton, imagePath: 'assets/images/mock/IMG_4268-removebg-preview.png', createdAt: DateTime(2026, 2, 25), wearCount: 2),
+  ClothingItem(id: 'c12', name: '플로럴 스커트', color: ClothingColor.multi, material: ClothingMaterial.cotton, hasGraphic: false, hasPattern: true, imagePath: 'assets/images/mock/IMG_4268-removebg-preview.png', createdAt: DateTime(2026, 2, 25), wearCount: 2),
 ];
 
 final List<Composition> mockCompositions = [
@@ -69,6 +72,9 @@ final List<StyleLog> mockStyleLogs = [
   StyleLog(
     id: 'log01',
     coverImagePath: 'assets/images/mock/IMG_4259_preview_rev_1.png',
+    // createdAt(등록일)이 wornDate(착용일)보다 하루 늦다 — 두 필드가 실제로 다른 값을
+    // 가질 수 있음을 보여주는 데모다(`00_DataSchema.md` §5).
+    createdAt: DateTime(2026, 1, 6),
     wornDate: DateTime(2026, 1, 5),
     linkedCompositionId: 'comp01',
     // c11(그래픽 맨투맨)/c07(리넨 반바지) — 각각 이전 additionalImagePaths 경로와
@@ -82,6 +88,7 @@ final List<StyleLog> mockStyleLogs = [
   StyleLog(
     id: 'log02',
     coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
+    createdAt: DateTime(2026, 1, 10),
     wornDate: DateTime(2026, 1, 10),
     linkedCompositionId: 'comp02',
     // log01과 다른 season/weather 조합 — 필터 기능 테스트용 다양성 확보.

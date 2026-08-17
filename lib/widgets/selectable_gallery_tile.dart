@@ -41,7 +41,7 @@ class SelectableGalleryTile extends StatelessWidget {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     return Semantics(
       button: true,
-      label: '${item.name}, ${item.color ?? '미분류'}, 착용 ${item.wearCount}회'
+      label: '${item.name}, ${item.color?.label ?? '미분류'}, 착용 ${item.wearCount}회'
           '${item.isIncomplete ? ", 미완성" : ""}'
           '${selected ? ", 선택됨" : ""}',
       excludeSemantics: true,

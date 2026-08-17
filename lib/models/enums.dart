@@ -52,6 +52,52 @@ enum Season {
 }
 
 // TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
+/// [ClothingItem.color]에 허용되는 값 — `category`/`season`/`material`과 같은 폐쇄
+/// 어휘이며 자유 텍스트가 아니다. 무채색 → 유채색 → 포괄값 순으로 나열한다.
+///
+/// [multi]는 지배적인 색이 없는 진짜 다색 아이템용이다 — 표면 디자인을 서술하는
+/// `hasPattern`/`hasGraphic`과는 다른 축이다(색의 개수 vs. 무늬의 유무).
+///
+/// 값 집합 확정 근거는 `docs/reference/data/00_DataSchema.md` Open Question #11.
+enum ClothingColor {
+  white,
+  ivory,
+  beige,
+  gray,
+  black,
+  brown,
+  red,
+  orange,
+  yellow,
+  green,
+  blue,
+  navy,
+  purple,
+  pink,
+  khaki,
+  multi;
+
+  String get label => switch (this) {
+        ClothingColor.white => '화이트',
+        ClothingColor.ivory => '아이보리',
+        ClothingColor.beige => '베이지',
+        ClothingColor.gray => '그레이',
+        ClothingColor.black => '블랙',
+        ClothingColor.brown => '브라운',
+        ClothingColor.red => '레드',
+        ClothingColor.orange => '오렌지',
+        ClothingColor.yellow => '옐로우',
+        ClothingColor.green => '그린',
+        ClothingColor.blue => '블루',
+        ClothingColor.navy => '네이비',
+        ClothingColor.purple => '퍼플',
+        ClothingColor.pink => '핑크',
+        ClothingColor.khaki => '카키',
+        ClothingColor.multi => '멀티컬러',
+      };
+}
+
+// TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
 /// [ClothingItem.material]에 허용되는 값 — 지각 기반(perception-based) 폐쇄
 /// 어휘(원단을 얼핏 보고 사람이 표현하는 방식)이며, 섬유 조성 분류가 아니다.
 /// 분류 결정 근거는 Decision.md 참고.
@@ -94,6 +140,26 @@ enum ClothingMaterial {
         ClothingMaterial.canvasFabric => '캔버스·패브릭',
         ClothingMaterial.suede => '스웨이드',
         ClothingMaterial.rubber => '고무·러버',
+      };
+}
+
+// TODO: 향후 이 폐쇄형 어휘를 JSON 리소스로 외부화할 예정
+/// [User.authProvider]에 허용되는 값 — 계정 연동에 쓴 소셜 제공자.
+///
+/// **값 집합이 잠정이다**: 후보 4개로 시작하되 최종 확정 전에 줄어들 수 있다
+/// (`docs/reference/data/00_DataSchema.md` Open Question #15). 이메일·비밀번호 방식은
+/// 후보에 없다. 폐쇄 어휘라 raw String 대신 이 타입으로 다룬다.
+enum AuthProvider {
+  google,
+  naver,
+  kakao,
+  github;
+
+  String get label => switch (this) {
+        AuthProvider.google => '구글',
+        AuthProvider.naver => '네이버',
+        AuthProvider.kakao => '카카오',
+        AuthProvider.github => '깃허브',
       };
 }
 

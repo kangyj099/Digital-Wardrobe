@@ -73,7 +73,7 @@ void main() {
   });
 
   group('StyleLogGalleryTile', () {
-    final styleLog = StyleLog(id: 'log-t1', coverImagePath: '', wornDate: DateTime(2026, 1, 1));
+    final styleLog = StyleLog(id: 'log-t1', coverImagePath: '', createdAt: DateTime(2026, 1, 1), wornDate: DateTime(2026, 1, 1));
 
     testWidgets('multiSelectMode=false면 selected=true여도 체크서클이 안 보인다', (tester) async {
       await tester.pumpWidget(
@@ -248,8 +248,8 @@ void main() {
 
   group('StyleLogGalleryGrid 어댑터 매핑', () {
     final logs = [
-      StyleLog(id: 'sl1', coverImagePath: '', wornDate: DateTime(2026, 1, 1)),
-      StyleLog(id: 'sl2', coverImagePath: '', wornDate: DateTime(2026, 1, 2)),
+      StyleLog(id: 'sl1', coverImagePath: '', createdAt: DateTime(2026, 1, 1), wornDate: DateTime(2026, 1, 1)),
+      StyleLog(id: 'sl2', coverImagePath: '', createdAt: DateTime(2026, 1, 2), wornDate: DateTime(2026, 1, 2)),
     ];
 
     testWidgets(

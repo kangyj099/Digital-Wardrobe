@@ -184,7 +184,7 @@ void main() {
           StyleLog(
             id: 'test-comp03-log-square',
             coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
-            wornDate: DateTime(2026, 1, 10),
+            createdAt: DateTime(2026, 1, 10), wornDate: DateTime(2026, 1, 10),
             linkedCompositionId: 'comp03',
           ),
         ];

@@ -17,8 +17,8 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final logs = [
-      StyleLog(id: 'log01', coverImagePath: '', wornDate: DateTime(2026, 1, 5)),
-      StyleLog(id: 'log02', coverImagePath: '', wornDate: DateTime(2026, 1, 10)),
+      StyleLog(id: 'log01', coverImagePath: '', createdAt: DateTime(2026, 1, 5), wornDate: DateTime(2026, 1, 5)),
+      StyleLog(id: 'log02', coverImagePath: '', createdAt: DateTime(2026, 1, 10), wornDate: DateTime(2026, 1, 10)),
     ];
 
     await tester.pumpWidget(
@@ -37,7 +37,7 @@ void main() {
 
   testWidgets('타일 탭 시 해당 styleLog로 onItemTap이 호출된다', (tester) async {
     StyleLog? tapped;
-    final logs = [StyleLog(id: 'log01', coverImagePath: '', wornDate: DateTime(2026, 1, 5))];
+    final logs = [StyleLog(id: 'log01', coverImagePath: '', createdAt: DateTime(2026, 1, 5), wornDate: DateTime(2026, 1, 5))];
 
     await tester.pumpWidget(
       MaterialApp(

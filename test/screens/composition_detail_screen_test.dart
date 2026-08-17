@@ -81,7 +81,7 @@ void main() {
     final linkedLog = StyleLog(
       id: 'test-log',
       coverImagePath: '',
-      wornDate: DateTime(2026, 3, 1),
+      createdAt: DateTime(2026, 3, 1), wornDate: DateTime(2026, 3, 1),
       linkedCompositionId: 'test-comp',
     );
     final router = GoRouter(

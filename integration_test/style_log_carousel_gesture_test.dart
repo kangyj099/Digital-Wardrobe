@@ -200,7 +200,7 @@ void main() {
         final wornItemsLog = StyleLog(
           id: 'test-worn-items-log',
           coverImagePath: 'assets/images/mock/IMG_4264_preview_rev_1.png',
-          wornDate: DateTime(2026, 4, 1),
+          createdAt: DateTime(2026, 4, 1), wornDate: DateTime(2026, 4, 1),
           wornItemIds: const [
             'c02', // 데님 팬츠 — 첫 번째, 비삭제
             'c03', // 그래픽 와이드팬츠 — 두 번째, 비삭제
@@ -244,7 +244,7 @@ void main() {
         final unlinkedLog = StyleLog(
           id: 'test-unlinked-log-gesture',
           coverImagePath: 'assets/images/mock/IMG_4260_preview_rev_1.png',
-          wornDate: DateTime(2026, 2, 5),
+          createdAt: DateTime(2026, 2, 5), wornDate: DateTime(2026, 2, 5),
         );
         container.read(styleLogsProvider.notifier).state = [
           ...container.read(styleLogsProvider),

@@ -41,12 +41,12 @@ Justification against this app's actual constraints (§11 has the full auth/offl
 |---|---|---|---|
 | *(doc ID)* | — | — | Real Firebase Auth `uid` **once linked** — before that, this doc doesn't exist on the server at all, see §11 |
 | `email` | string | yes | sourced from the linked social provider's profile (not manually typed) — `null` until linked, see §11 for the auth model |
-| `authProvider` | string | yes | which social provider was used to link — candidate value list not finalized, see Open Question #15. **Not yet in code** (no `User` Dart model exists yet at all) |
+| `authProvider` | string | yes | which social provider was used to link. enum-name string → `AuthProvider` (`lib/models/enums.dart`). **The value set is provisional** until Open Question #15 closes |
 | `createdAt` | Timestamp | no | account creation time — for a linked user, this is link time, not local-first-use time (that's `acquiredAt`-equivalent for the whole account, tracked locally, not in this doc since it's pre-link and never reaches Firestore) |
 | `lastActiveAt` | Timestamp | no | 최근 접속 시각 — 앱 실행/재개(또는 재로그인)마다 갱신, **오프라인이어도 갱신됨**(로컬 이벤트). `createdAt`과 별개 필드(계정 생성 시각 vs 최근 사용 시각) |
 | `lastSyncedAt` | Timestamp | yes | 마지막으로 서버와 동기화가 실제로 완료된 시각 — `lastActiveAt`과 달리 **온라인 상태에서만 갱신됨**(§11 링크 이후, `enableNetwork()` 상태에서 pending write가 전부 서버에 반영된 시점). 링크 직후 최초 동기화 전까지 `null`. 클라이언트가 `waitForPendingWrites()` 완료 시점에 이 필드를 갱신하는 방식 제안. 멀티기기 사용 시 기기마다 각자 이 값을 덮어써서 마지막으로 동기화한 기기 기준이 됨(현재 단일기기 전제라 더 설계하지 않음) |
 
-Kept minimal, mirroring `00_MVP.md` §5's own draft (`id`/`email`/`created_at`) plus `lastActiveAt`/`lastSyncedAt`/`authProvider`. No dedicated `User` Dart model exists in `lib/models/` yet, so nothing beyond this is invented. **This entire document (`users/{uid}`) only exists once a user has linked an account** — see §11 for what happens before that point.
+Kept minimal, mirroring `00_MVP.md` §5's own draft (`id`/`email`/`created_at`) plus `lastActiveAt`/`lastSyncedAt`/`authProvider`. `lib/models/user.dart` carries exactly these fields and nothing more. **This entire document (`users/{uid}`) only exists once a user has linked an account** — see §11 for what happens before that point.
 
 **Deliberately not included yet** (see Open Question #10): fields tied to a not-yet-defined monetization/billing model — e.g. `closetSlotLimit`(이용 가능한 최대 옷장 칸 수) or `bgRemovalCreditsRemaining`(이미지 배경 자동 제거 잔여 시도 횟수) — likely needed once a billing tier structure exists, but not added now since that structure isn't decided yet.
 
@@ -60,14 +60,14 @@ Source of truth for shape: `lib/models/clothing_item.dart`.
 |---|---|---|---|
 | `name` | string | no | |
 | `category` | string | yes | enum-name string → `ClothingCategory` (`lib/models/enums.dart`) |
-| `color` | string | yes | enum-name string → `ClothingColor` — **proposed enum, not yet in `enums.dart`**, see Open Question #11. Closed like `category`/`season`/`material`, not free text |
+| `color` | string | yes | enum-name string → `ClothingColor` (`lib/models/enums.dart`, 16 values — see Open Question #11). Closed like `category`/`season`/`material`, not free text |
 | `season` | string | yes | → `Season` enum |
 | `material` | string | yes | → `ClothingMaterial` enum (~18 perception-based values; rationale in `docs/history/Decision.md`) |
-| `hasGraphic` | boolean | yes | 그래픽(그림·로고·프린트) 유무 — AI 자동 태깅 대상이라 미태깅 상태를 표현하려 nullable. **Not yet in `lib/models/clothing_item.dart`**, see Open Question #12 |
-| `hasPattern` | boolean | yes | 패턴(줄무늬·체크 등 반복 텍스타일 패턴) 유무 — `hasGraphic`과 독립(한 옷에 둘 다 있을 수 있음). **Not yet in `lib/models/clothing_item.dart`**, see Open Question #12 |
+| `hasGraphic` | boolean | yes | 그래픽(그림·로고·프린트) 유무 — AI 자동 태깅 대상이라 미태깅 상태를 표현하려 nullable. see Open Question #12 |
+| `hasPattern` | boolean | yes | 패턴(줄무늬·체크 등 반복 텍스타일 패턴) 유무 — `hasGraphic`과 독립(한 옷에 둘 다 있을 수 있음). see Open Question #12 |
 | `imagePath` | string | no | Cloud Storage path — background-removed image, see §8 |
 | `createdAt` | Timestamp | no | 앱에 등록(입력)한 시각 — 실제 구매/획득 시각과 다를 수 있음, 그 구분은 `acquiredAt` 참고 |
-| `acquiredAt` | Timestamp | yes | 실제 습득(구매 등)일 — 오래된 옷을 나중에 등록하는 경우 `createdAt`과 달라질 수 있어 별도 필드. 모르거나 안 적을 수 있어 nullable. **Not yet in `lib/models/clothing_item.dart`** |
+| `acquiredAt` | Timestamp | yes | 실제 습득(구매 등)일 — 오래된 옷을 나중에 등록하는 경우 `createdAt`과 달라질 수 있어 별도 필드. 모르거나 안 적을 수 있어 nullable |
 | `location` | string | no (default `''`) | free-text location memo |
 | `memo` | string | no (default `''`) | |
 | `wearCount` | number (int) | no (default `0`) | auto-aggregated, see §6 |
@@ -122,11 +122,11 @@ Source of truth for shape: `lib/models/style_log.dart`.
 | Field | Firestore type | Nullable | Notes |
 |---|---|---|---|
 | `coverImagePath` | string | no | Cloud Storage path, see §8 |
-| `createdAt` | Timestamp | no | 이 스타일일지를 앱에 등록(작성)한 시각 — 실제 착용일과 다를 수 있어 별도 필드. `wornDate`와의 구분은 `ClothingItem.createdAt`/`acquiredAt` 패턴과 동일. **Not yet in `lib/models/style_log.dart`** |
-| `wornDate` | Timestamp | yes | 실제로 착용한 날짜 — nullable(오래된 사진을 등록하며 정확한 날짜를 모르거나 비워둘 수 있는 경우 지원). **UI 영향**: 스타일일지 메인 화면은 날짜순 정렬/그룹핑을 전제하므로(`00_MVP.md` §4.3 "Sorted by date", 진행 중인 필터 UI 스펙), `wornDate`가 null인 항목의 정렬 위치(맨 끝? 별도 그룹?)는 구현 단계에서 정해야 함 — see Open Question #17 |
+| `createdAt` | Timestamp | no | 이 스타일일지를 앱에 등록(작성)한 시각 — 실제 착용일과 다를 수 있어 별도 필드. `wornDate`와의 구분은 `ClothingItem.createdAt`/`acquiredAt` 패턴과 동일 |
+| `wornDate` | Timestamp | yes | 실제로 착용한 날짜 — nullable(오래된 사진을 등록하며 정확한 날짜를 모르거나 비워둘 수 있는 경우 지원). **UI 영향**: 스타일일지 메인 화면은 날짜순 정렬/그룹핑을 전제한다(`00_MVP.md` §4.3 "Sorted by date").<br>`wornDate`가 null인 항목은 맨 뒤로 보낸다. 정본은 `filteredStyleLogsProvider`(`lib/providers/style_log_providers.dart`)다 — see Open Question #17 |
 | `linkedCompositionId` | string | yes | references `compositions/{id}` within the same user scope |
 | `wornItemIds` | array&lt;string&gt; | no (default `[]`) | list of `clothingItems/{id}` references — replaced an earlier, fragile image-path-string-matching approach (`docs/history/TechnicalDebt.md`, 2026-07-29 entry) |
-| `additionalImagePaths` | array&lt;string&gt; | no (default `[]`) | Cloud Storage paths, see §8. 카드 슬롯 3~10번(대표사진=1번/코디=2번은 고정, 나머지 최대 8장)에 들어가는 실제 업로드 사진 — `wornItemIds`(착용 옷 참조)와는 별개 필드. 슬롯 상한(10) 근거: `03_스타일 일지.md`. **Not yet in `lib/models/style_log.dart`** |
+| `additionalImagePaths` | array&lt;string&gt; | no (default `[]`) | Cloud Storage paths, see §8. 카드 슬롯 3~10번(대표사진=1번/코디=2번은 고정, 나머지 최대 8장)에 들어가는 실제 업로드 사진 — `wornItemIds`(착용 옷 참조)와는 별개 필드. 슬롯 상한(10) 근거: `03_스타일 일지.md` |
 | `season` | string | yes | → `Season` enum |
 | `weather` | string | yes | → `Weather` enum |
 | `location` | string | no (default `''`) | |
@@ -138,7 +138,9 @@ Note: `wornItemIds`(착용 옷 참조, `ClothingItem` 대상)와 `additionalImag
 
 No separate `StyleLogItem` join collection: `wornItemIds` is a simple embedded array of ID strings, which fully replaces the N:N join table in `00_MVP.md` §5's stale draft.
 
-**`TrashEntry.createdAt` must use `StyleLog.createdAt`, not `wornDate`.** Trash displays both "제작일"(creation date) and "삭제까지 남은 날짜"(days until purge) per item. `lib/models/trash_entry.dart`'s doc comment shows `TrashEntry.createdAt` currently maps from `StyleLog.wornDate` (StyleLog had no `createdAt` of its own before this document added one) — that mapping must switch to `StyleLog.createdAt`, otherwise a StyleLog with no recorded worn date would show a blank "제작일" in Trash. The actual `trash_providers.dart` code change is Implementation-stage, tracked in `docs/work/BACKLOG.md`.
+**`TrashEntry.createdAt` maps from `StyleLog.createdAt`, not `wornDate`.** Trash displays both "제작일"(creation date) and "삭제까지 남은 날짜"(days until purge) per item.
+
+`wornDate`를 매핑하면 착용일을 안 적은 스타일일지의 "제작일"이 빈칸이 된다. `trash_providers.dart`가 `createdAt`을 쓴다.
 
 ---
 
@@ -267,16 +269,20 @@ Cloud Storage (images) does not get the same automatic offline queue that Firest
 8. `Composition.coverImagePath` semantics (§8): currently assumed to always duplicate an existing composition-item's `ClothingItem.imagePath` Storage path (no independent upload), since the picker UI that would let a user upload a genuinely distinct cover image doesn't exist yet (`docs/history/Decision.md` notes the "field만 먼저" pattern — value-picking UI not built). Revisit if that Editor UI ships with real upload capability.
 9. `Composition.backgroundColor` (§4) — the artboard background-color swatch control is real, current MVP scope (`docs/reference/plan/03_화면별UX명세서/02_코디 (가상 조합).md:36`), implemented as a closed-vocabulary enum, `ArtboardBackgroundColor` (`lib/widgets/interactive_artboard/artboard_background_color.dart`). `lib/models/composition.dart` now has a persisted field for it: `ArtboardBackgroundColor? backgroundColor`, nullable, using the same `_unset`-sentinel `copyWith` pattern as `season`/`weather`/`coverImagePath`. The Firestore field shape proposed here (string, nullable, mapping to that enum) still applies as the serialization target.
 10. **User billing/quota fields (§2)** — once a monetization model is defined, `users/{uid}` will likely need fields such as a max-closet-slot limit and/or a remaining-background-removal-attempts counter. Neither is added now since the billing tier structure itself doesn't exist yet — this is a placeholder for future work, not a design decision to make today. When a billing model is defined, revisit this doc to add the concrete field(s) (naming, type, and whether it's a hard quota enforced by security rules or a soft client-side-checked counter).
-11. **`ClothingItem.color` closed-vocabulary list (§3)** — `color` is closed like `category`/`season`/`material`, not free text. No such list exists in the codebase yet, so this document proposes one (pending user sign-off on the exact set):
+11. ~~**`ClothingItem.color` closed-vocabulary list (§3)** — 값 집합 사인오프 필요.~~ **Resolved: 아래 16개로 확정, `lib/models/enums.dart`의 `ClothingColor`가 정본이다.** `ClothingItem.color`의 Dart 타입도 `ClothingColor?`로 바뀌었다. `color` is closed like `category`/`season`/`material`, not free text:
 
-   `white`(화이트) · `ivory`(아이보리) · `beige`(베이지) · `gray`(그레이) · `black`(블랙) · `brown`(브라운) · `red`(레드) · `orange`(오렌지) · `yellow`(옐로우) · `green`(그린) · `blue`(블루) · `navy`(네이비) · `purple`(퍼플) · `pink`(핑크) · `khaki`(카키) · `multi`(멀티/혼합)
+   `white`(화이트) · `ivory`(아이보리) · `beige`(베이지) · `gray`(그레이) · `black`(블랙) · `brown`(브라운) · `red`(레드) · `orange`(오렌지) · `yellow`(옐로우) · `green`(그린) · `blue`(블루) · `navy`(네이비) · `purple`(퍼플) · `pink`(핑크) · `khaki`(카키) · `multi`(멀티컬러)
 
-   16 values — comparable in size to `ClothingMaterial`'s 18, ordered neutrals → chromatic → catch-all, `multi` covering genuinely multi-colored items with no dominant color (distinct from `hasPattern`/`hasGraphic`, which describe surface design, not color count). **This is a code-level change, not just a doc update**: it requires adding a `ClothingColor` enum to `lib/models/enums.dart` and changing `ClothingItem.color`'s Dart type from `String?` to `ClothingColor?` (Logic/Feature × Implementation, per `Workflow_Project.md` §12.1 — needs its own Worker/Development Review pass, separate from this Decision-stage document, plus a follow-up to re-tag any existing mock data). Track as a BACKLOG.md item once this doc round is done.
-12. **`ClothingItem.hasGraphic`/`hasPattern` (§3)** — splits `00_MVP.md` §4.1's single 3-way "graphic presence (plain/pattern/print)" auto-tag field into two independent booleans: `hasGraphic`(그래픽/프린트 유무) and `hasPattern`(패턴 유무). This is a real MVP-spec change (not just a schema addition) since the original spec's field was a mutually-exclusive 3-state choice — an item can now be flagged with both, which the original 3-way field couldn't represent. `00_MVP.md` §4.1 has been updated to match. Like `color` above, adding the actual `hasGraphic`/`hasPattern` fields to `lib/models/clothing_item.dart` is Implementation-stage code work outside this document's scope — track as a BACKLOG.md item.
+   16 values — comparable in size to `ClothingMaterial`'s 18, ordered neutrals → chromatic → catch-all, `multi` covering genuinely multi-colored items with no dominant color (distinct from `hasPattern`/`hasGraphic`, which describe surface design, not color count).
+
+   괄호 안 한글은 UI 표기(`ClothingColor.label`)이며 이 목록이 그 정본이다.
+12. **`ClothingItem.hasGraphic`/`hasPattern` (§3)** — splits `00_MVP.md` §4.1's single 3-way "graphic presence (plain/pattern/print)" auto-tag field into two independent booleans: `hasGraphic`(그래픽/프린트 유무) and `hasPattern`(패턴 유무). This is a real MVP-spec change (not just a schema addition) since the original spec's field was a mutually-exclusive 3-state choice — an item can now be flagged with both, which the original 3-way field couldn't represent. `00_MVP.md` §4.1 has been updated to match. 두 필드 다 `lib/models/clothing_item.dart`에 들어가 있다. `false`(없음)와 `null`(아직 태깅 안 됨)은 다른 상태다.
 13. **Cloud Storage offline upload queue (§11)** — unlike Firestore documents, image uploads (`imagePath`/`coverImagePath`/etc., §8) have no automatic offline queue in the Firebase SDK; an upload attempted offline simply fails rather than queuing for retry. Needs its own client-side pending-upload handling at implementation time (e.g. save locally + retry on reconnect). Not designed further in this Decision-stage document — flagged so it isn't assumed to be free just because Firestore's offline behavior is.
 14. ~~Does "usable without server connection" need to cover a device's very first launch?~~ **Resolved: yes** — architecture is zero-network-ever pre-link, using a fixed local placeholder scope (`users/unlinked_local/...`) with `disableNetwork()`, migrated to a real `uid` only when the user explicitly links a social account. No Anonymous Auth phase at all — see §11 for the full design. This does not need a separate local-DB engine: Firestore's own local persistence cache serves as the local database, pointed at the placeholder path instead of a real `uid`.
 15. **Social login provider set (§2 `authProvider`)** — candidates are Google / Naver / Kakao / GitHub, not finalized (list may shrink). No email/password option under consideration. This document proposes the field now (nullable string, candidate enum values above) so §11's linking flow has somewhere to record which provider was used, but the exact final provider set is Implementation-stage work to confirm before `authProvider` is added as a real Dart enum.
 16. **`ClothingItem.analysisMetadata` internal shape (§12)** — deliberately undesigned. The versioning envelope (`analysisMetadata`/`analysisModelVersion`/`analyzedAt`) is confirmed, but what actually goes inside `analysisMetadata` depends entirely on the not-yet-designed clothing-recommendation algorithm. Revisit when that algorithm's input requirements are known — do not pre-populate sub-fields speculatively.
-17. **StyleLog list sorting/grouping with a nullable `wornDate` (§5)** — the Style Log main screen sorts/groups by date (`00_MVP.md` §4.3, in-progress filter UI spec). Now that `wornDate` can be `null`, the UI needs an explicit rule for where those items land (sort to the end? a separate "날짜 없음" group?). Not designed here — Implementation-stage UI decision, needs an answer before the sort/filter UI work in `docs/work/BACKLOG.md`'s "Current" section lands.
+17. ~~**StyleLog list sorting/grouping with a nullable `wornDate` (§5)** — null 항목이 어디에 놓이는지 규칙 필요.~~ **Resolved(정렬): `wornDate`가 null인 항목은 맨 뒤로 보낸다.** 정본은 `filteredStyleLogsProvider`(`lib/providers/style_log_providers.dart`)다.
+
+   **그룹핑은 아직 열려 있다.** 날짜 그룹 헤더가 구현되면 null 항목을 별도 "날짜 없음" 그룹으로 뺄지 정해야 한다. 정렬 규칙과 달리 이건 표시할 그룹 UI 자체가 없어 지금 정할 근거가 없다.
 18. ~~`TrashEntry.createdAt` mapping needs to move off `StyleLog.wornDate`?~~ **Resolved: yes.** `TrashEntry.createdAt` (Trash popup's "제작일" display, alongside "삭제까지 남은 날짜") must switch from `StyleLog.wornDate` to the new `StyleLog.createdAt` — see §5. Actual `trash_providers.dart` code change is Implementation-stage, tracked in `docs/work/BACKLOG.md`.
 19. **Migration-time image reconciliation (§11.2 step 3)** — linking's document migration can't be a pure field-for-field bulk copy for image-path fields specifically: pre-link they point at local file paths (§11.3), post-link they must point at real Cloud Storage paths (§8) with the actual bytes uploaded. §11.2 acknowledges this needs its own step, but the mechanism itself (upload ordering, failure/retry handling mid-migration, what the field should read while an image is uploading) is not designed here — Implementation-stage, distinct from Open Question #13's steady-state (post-migration, ongoing) version of the offline-upload-queue problem.
