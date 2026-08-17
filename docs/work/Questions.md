@@ -22,4 +22,34 @@ Group B(다중선택+휴지통) 계획의 Task 13이 "그룹 B 완료 → PM이 
 
 ---
 
+## 3. 직렬화 매퍼를 어디에 둘지 (Phase 2 착수 전 필수)
+
+`toFirestore()`/`fromFirestore()`를 모델 파일 안에 넣을지, 별도 매퍼 파일로 뺄지 정해야 한다.
+
+**별도 파일이 유력하다.** `lib/models/`가 Flutter UI 레이어에 의존하지 않는다는 규칙이 이미 있고(`enums.dart`의 `ArtboardBackgroundColor` 주석, 2026-08-07 Audit이 레이어 위반으로 지적해 확립됨), `cloud_firestore`의 `Timestamp`를 모델에 직접 import하면 같은 종류의 위반이 된다.
+
+**다만 확정 전 Audit이 필수다** — Data/Architecture × Decision이라 `Workflow_Project.md` §5가 크기 무관 Audit 게이트를 건다. 사용자 부재 중 혼자 확정하지 않고 멈춰둔 이유다. `00_OwnershipMap.md` 등재 여부도 함께 판단해야 한다.
+
+---
+
+## 4. Firebase 의존성을 언제 추가할지 (Phase 3, Windows 빌드 리스크)
+
+`firebase_core`/`cloud_firestore`를 `pubspec.yaml`에 넣는 것이 Windows 빌드를 깨뜨릴 수 있다.
+
+이 프로젝트는 Windows가 `integration_test`를 돌릴 수 있는 사실상 유일한 non-web 디바이스다(`BACKLOG.md` Known Issues). FlutterFire의 Windows 지원은 `path_provider` 같은 1st-party 플러그인보다 성숙도가 낮아, 추가 직후 통합테스트 실행 자체가 막히면 검증 수단을 잃는다. `path_provider` 추가 때도 Developer Mode 활성화가 새로 필요해졌던 전례가 있다.
+
+**착수 전 확인할 것**: 별도 브랜치에서 의존성만 추가해 `flutter build windows`와 `flutter test -d windows`가 도는지 먼저 확인하고, 깨지면 Firestore 전환 자체를 Windows 검증이 필요 없는 범위로 다시 잘라야 한다.
+
+`flutterfire configure`가 대화형 로그인을 요구해 사용자가 직접 실행해야 하는 것도 함께 걸려 있다(세션에서 `! flutterfire configure`).
+
+---
+
+## 5. 착용일 없는 스타일일지의 "그룹" 처리 (Open Question #17 잔여분)
+
+정렬은 "맨 뒤"로 확정됐다. 그룹핑은 안 정했다.
+
+스타일일지 메인에 날짜 그룹 헤더가 생기면 `wornDate`가 null인 항목을 별도 "날짜 없음" 그룹으로 뺄지 정해야 한다. 지금은 표시할 그룹 UI 자체가 없어 정할 근거가 없어 보류했다.
+
+---
+
 (추가 질문 생기면 아래에 이어서 기록)

@@ -1,5 +1,29 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Firestore 스키마 확장분 코드화 — 색상 폐쇄 어휘 확정, `wornDate` nullable 전환, 제작일 분리 (Data, Decision + Logic/Feature, Implementation)
+
+결정:
+- **`ClothingColor` 16값 확정** (`00_DataSchema.md` Open Question #11의 제안 목록 그대로). `ClothingItem.color`의 Dart 타입을 `String?` → `ClothingColor?`로 전환. 폐쇄 어휘는 annotated String이 아니라 enum이라는 프로젝트 원칙 적용.
+- **`multi`의 UI 표기는 '멀티컬러'**. 문서 원안은 "멀티/혼합"이었고 후보로 '다색'/'혼합색'도 검토했다. '혼합색'은 "여러 색이 섞여 있다"가 아니라 "섞어서 만든 색 하나"로 읽혀 뜻이 어긋나고(카키·베이지도 그 뜻으론 혼합색), '다색'은 나머지 15개가 전부 외래어인 목록에서 혼자 한자어라 결이 안 맞는다. '멀티컬러'는 패션 쪽 표준 표기이고 형제 값들과 같은 외래어 계열이다.
+- **mock의 `burgundy`(c05)/`sage`(c06)는 `red`/`green`으로 흡수**. 16값을 늘리지 않는 쪽을 택했다 — 어휘가 커지면 AI 자동 태깅이 구분하기 어려워지고 필터 UI도 복잡해진다.
+- **`StyleLog.wornDate`를 nullable로 전환하고, null인 항목은 정렬 맨 뒤로** (Open Question #17의 정렬 부분 해소). "별도 '날짜 없음' 그룹"안은 표시할 그룹 UI 자체가 아직 없어 보류. 정본은 `filteredStyleLogsProvider`.
+- **`StyleLog.createdAt`(등록일)을 `wornDate`(착용일)와 별도 필드로 신설**하고, `TrashEntry.createdAt` 매핑을 `wornDate` → `createdAt`으로 이관 (Open Question #18 확정분 구현).
+- **`Composition.tags`는 이번 스코프에서 제외**. `lib/models/composition.dart`는 병렬 진행 중인 `feature/composition-snapshot-implementation`이 `coverImagePath`로 소유 중이라 충돌을 피했다. 그 브랜치 병합 후 별건으로 처리.
+
+사유:
+메인 작업 브랜치(코디 스냅샷)와 파일이 겹치지 않는 병렬 작업으로 "데이터 계층 착수"를 선정한 결과다. `lib/` 전체에 `toJson`/`fromJson`이 0건이라 앱이 mock 하드코딩 위에서만 돌고 있었고, 백엔드를 붙이려면 스키마 코드화가 선행돼야 했다. 설계는 `00_DataSchema.md`가 Review 2라운드 + Audit 2라운드로 이미 확정해둔 상태라 Decision 단계를 새로 밟을 필요가 거의 없었다.
+
+`createdAt`을 required로 넣어 테스트 픽스처 26곳이 컴파일 에러로 드러나게 했다. 기본값을 주면 조용히 잘못된 값이 퍼지므로 컴파일러가 전수를 잡게 하는 쪽을 택했다.
+
+Impact:
+- 브랜치 `feature/firestore-data-layer`(worktree `../Digital-Wardrobe-sub`, `origin/dev`에서 분기), 커밋 `fcc28d6`.
+- **접근성 회귀 아님, 의도된 변경**: 색상이 enum이 되며 스크린리더가 읽는 값이 영문 enum명(`navy`)에서 한글 라벨(`네이비`)로 바뀌었다. category/season/material이 이미 `.label`을 읽고 있어 통일한 것이다. `gallery_semantics_test.dart` 단언 2건을 이에 맞춰 갱신.
+- `AuthProvider` enum + `lib/models/user.dart` 신설. 값 집합(구글/네이버/카카오/깃허브)은 Open Question #15가 닫힐 때까지 잠정.
+- providers의 읽기/쓰기 경로는 안 건드렸다 — Firestore 실제 전환(Repository 계층)은 메인 병합 후 별도 태스크.
+- `flutter test` 143/143(기준선 121 + 신규 22), `flutter analyze` 신규 경고 0.
+
+---
+
 [Decision] 코디↔스타일일지 "자동 매칭" 동작 세부 확정 (Logic/Feature, Decision)
 
 결정:
