@@ -22,25 +22,25 @@ Group B(다중선택+휴지통) 계획의 Task 13이 "그룹 B 완료 → PM이 
 
 ---
 
-## 3. 직렬화 매퍼를 어디에 둘지 (Phase 2 착수 전 필수)
+## 3. 직렬화 매퍼 배치 — 구현됨, **Audit 게이트만 남음**
 
-`toFirestore()`/`fromFirestore()`를 모델 파일 안에 넣을지, 별도 매퍼 파일로 뺄지 정해야 한다.
+`lib/data/`의 별도 매퍼로 갔다. 근거와 세부 규칙은 `Decision.md` 최상단 항목 참고.
 
-**별도 파일이 유력하다.** `lib/models/`가 Flutter UI 레이어에 의존하지 않는다는 규칙이 이미 있고(`enums.dart`의 `ArtboardBackgroundColor` 주석, 2026-08-07 Audit이 레이어 위반으로 지적해 확립됨), `cloud_firestore`의 `Timestamp`를 모델에 직접 import하면 같은 종류의 위반이 된다.
+**아직 확정이 아니다.** Data/Architecture × Decision이라 `Workflow_Project.md` §5가 크기 무관 Audit 게이트를 건다. 코드는 들어갔지만 그 게이트를 안 거쳤으므로 잠정이다.
 
-**다만 확정 전 Audit이 필수다** — Data/Architecture × Decision이라 `Workflow_Project.md` §5가 크기 무관 Audit 게이트를 건다. 사용자 부재 중 혼자 확정하지 않고 멈춰둔 이유다. `00_OwnershipMap.md` 등재 여부도 함께 판단해야 한다.
+**Audit이 볼 것**: `lib/data/`와 `lib/services/`의 경계가 실제로 갈라지는지, `00_OwnershipMap.md`에 `lib/data/` 행을 올릴지, `CompositionMapper`가 `tags` 없이 나간 것이 허용 가능한 미완성인지.
 
 ---
 
-## 4. Firebase 의존성을 언제 추가할지 (Phase 3, Windows 빌드 리스크)
+## 4. ~~Firebase 의존성의 Windows 빌드 리스크~~ — **해소(2026-08-17), 실측함**
 
-`firebase_core`/`cloud_firestore`를 `pubspec.yaml`에 넣는 것이 Windows 빌드를 깨뜨릴 수 있다.
+`firebase_core` 4.13.0 / `cloud_firestore` 6.8.0을 추가하고 직접 확인했다. **깨지지 않는다.**
 
-이 프로젝트는 Windows가 `integration_test`를 돌릴 수 있는 사실상 유일한 non-web 디바이스다(`BACKLOG.md` Known Issues). FlutterFire의 Windows 지원은 `path_provider` 같은 1st-party 플러그인보다 성숙도가 낮아, 추가 직후 통합테스트 실행 자체가 막히면 검증 수단을 잃는다. `path_provider` 추가 때도 Developer Mode 활성화가 새로 필요해졌던 전례가 있다.
+- `flutter build windows --debug` 성공(300.6초, 첫 빌드라 Firebase C++ SDK 컴파일 포함). 경고는 LNK4099(SDK 내부 libcurl의 PDB 없음)뿐이고 무해하다.
+- `flutter test -d windows`도 정상 작동. `trash_execution_test.dart` 5/5 통과.
+- `flutter analyze` 기준선 유지, 유닛테스트 전량 통과. Firebase 초기화 코드를 안 넣었으므로 유닛테스트는 Firebase 앱 없이 돈다.
 
-**착수 전 확인할 것**: 별도 브랜치에서 의존성만 추가해 `flutter build windows`와 `flutter test -d windows`가 도는지 먼저 확인하고, 깨지면 Firestore 전환 자체를 Windows 검증이 필요 없는 범위로 다시 잘라야 한다.
-
-`flutterfire configure`가 대화형 로그인을 요구해 사용자가 직접 실행해야 하는 것도 함께 걸려 있다(세션에서 `! flutterfire configure`).
+**남은 것은 `flutterfire configure`뿐이다.** 대화형 로그인을 요구해 사용자가 직접 실행해야 한다(세션에서 `! flutterfire configure`). 이게 `lib/firebase_options.dart`를 만들고, 그게 있어야 `Firebase.initializeApp()`을 붙일 수 있다. 그 전까지 §11(오프라인 로컬퍼스트 초기화)은 착수 불가다.
 
 ---
 

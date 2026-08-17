@@ -1,5 +1,32 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] Firestore 직렬화 계층을 `lib/data/`로 분리 (Data/Architecture, Decision + Implementation) — **Audit 게이트 미통과, 잠정**
+
+결정:
+- **직렬화는 모델 파일이 아니라 `lib/data/`의 별도 매퍼가 맡는다.** 도메인당 `XxxMapper` 클래스에 `toFirestore(model)` / `fromFirestore(id, data)` 정적 메서드 2개를 둔다.
+- **`lib/models/`는 `cloud_firestore`를 import하지 않는다.** `Timestamp`를 모델에 들이면 2026-08-07 Audit이 `ArtboardBackgroundColor`에서 지적한 레이어 위반과 같은 종류가 된다. 그때는 Flutter UI 의존이었고 이번은 Firebase SDK 의존이지만 판정 기준은 같다.
+- **`lib/data/`의 경계 정의**: 직렬화·매핑 전용. Riverpod 상태를 건드리지 않고 Flutter UI에도 의존하지 않는다. `lib/services/`가 "Riverpod 없는 순수 async I/O"로 갈라진 것(`00_DataSchema.md` §13.3)과 같은 기준의 두 번째 적용 사례다.
+- **문서 ID는 본문에 중복 저장하지 않는다.** `fromFirestore(id, data)`가 ID를 따로 받는다.
+- **모르는 enum 이름은 던지지 않고 null로 흡수한다.** 서버에서 오는 데이터라 폐기된 값이나 앱보다 새 버전이 쓴 값 하나 때문에 문서 전체를 못 읽는 편이 더 나쁘다. 이 프로젝트의 폐쇄 어휘 필드는 전부 nullable이라 null이 "미분류"로 자연스럽게 흡수된다.
+- **nullable 필드도 키를 생략하지 않고 명시적 null을 쓴다.** 필드 부재와 null이 갈라지면 부분 업데이트에서 의미가 흔들린다.
+- **필수 날짜(`createdAt` 등)가 없거나 타입이 다르면 던진다.** 어느 문서의 어느 필드인지 메시지에 싣는다. 조용한 기본값은 잘못된 데이터를 퍼뜨린다.
+
+사유:
+스키마 코드화(바로 아래 항목) 다음 단계다. Firestore를 붙이려면 모델↔문서 변환이 있어야 하는데, 그 코드를 어디에 두느냐가 레이어 규칙과 직접 부딪혔다.
+
+`firebase_core`/`cloud_firestore`를 실제로 추가해 Dart 레벨이 깨지지 않는지 먼저 확인했다(analyze 기준선 유지, 유닛테스트 전량 통과). Firebase 초기화 코드는 넣지 않았으므로 유닛테스트는 Firebase 앱 없이도 돈다.
+
+Impact:
+- 신규 파일 5개: `lib/data/firestore_codec.dart`(공통 규칙), `clothing_item_mapper.dart`, `style_log_mapper.dart`, `user_mapper.dart`, `composition_mapper.dart`.
+- `pubspec.yaml`에 `firebase_core` 4.13.0 / `cloud_firestore` 6.8.0 추가.
+- **`CompositionMapper`는 미완성이다** — `00_DataSchema.md` §4의 `tags` 필드가 모델에 없어 키를 뺐다. 임의로 채우면 실제 쓰기에서 서버의 기존 값을 지운다. 모델에 `tags`가 추가될 때까지 이 매퍼로 문서 전체를 덮어쓰면 안 된다.
+- **providers는 여전히 mock 기반이다.** 이 매퍼들을 실제로 호출하는 코드는 아직 없다 — Repository 계층 태스크에서 배선한다.
+
+**미해결 — Audit 게이트**:
+Data/Architecture × Decision이라 `Workflow_Project.md` §5상 확정 전 Audit이 필수인데 아직 안 거쳤다. 위 결정들은 그때까지 잠정으로 취급할 것. `00_OwnershipMap.md`에 `lib/data/` 관련 행을 올릴지도 그 시점에 함께 판단한다.
+
+---
+
 [Decision] Firestore 스키마 확장분 코드화 — 색상 폐쇄 어휘 확정, `wornDate` nullable 전환, 제작일 분리 (Data, Decision + Logic/Feature, Implementation)
 
 결정:

@@ -76,7 +76,15 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 **providers의 읽기/쓰기 경로는 안 건드렸다** — 앱은 여전히 mock 기반으로 돈다. Firestore 실제 전환(Repository 계층)은 providers 6개를 전부 건드려 메인과 충돌하므로 병합 후로 미뤘다.
 
-**다음 두 단계는 판단 대기 중**(둘 다 `Questions.md` 3·4번): 직렬화 매퍼 배치는 Data/Architecture × Decision이라 §5상 확정 전 Audit이 필수고, Firebase 의존성 추가는 Windows 통합테스트를 깨뜨릴 수 있어 선검증이 필요하다.
+**직렬화 계층도 들어갔다(2026-08-17)**: `lib/data/`에 도메인별 매퍼 4개 + 공통 규칙 파일(`firestore_codec.dart`). `pubspec.yaml`에 `firebase_core` 4.13.0 / `cloud_firestore` 6.8.0 추가. 왕복 테스트 21개 신설. 근거와 규칙은 `Decision.md` 최상단 항목 참고.
+
+**Firebase의 Windows 리스크는 실측으로 해소됐다** — `flutter build windows` 성공, `flutter test -d windows`도 정상(`Questions.md` 4번).
+
+**남은 게이트 2개**:
+- **직렬화 계층 Audit 미통과** — Data/Architecture × Decision이라 §5상 확정 전 Audit이 필수인데 안 거쳤다. 코드는 들어갔지만 설계는 잠정이다. `Questions.md` 3번에 Audit이 볼 것을 적어뒀다.
+- **`flutterfire configure`는 사용자만 실행 가능** — 대화형 로그인을 요구한다. `lib/firebase_options.dart`가 없어 §11(오프라인 로컬퍼스트 초기화)은 착수 불가다.
+
+**`CompositionMapper`는 의도적 미완성이다** — `00_DataSchema.md` §4의 `tags`가 모델에 없어 키를 뺐다. 임의로 채우면 실제 쓰기에서 서버 값을 지운다. **모델에 `tags`가 추가될 때까지 이 매퍼로 문서 전체를 덮어쓰지 말 것.**
 
 ---
 
