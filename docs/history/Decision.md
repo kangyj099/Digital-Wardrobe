@@ -1,5 +1,39 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
+[Decision] 밀린 Visual Review는 사용자가 직접 수행 (Design, Decision)
+
+결정:
+- 그룹 B 완료로 트리거 조건이 충족된 Visual Review를 **사용자가 직접 화면을 보고 판정한다.** PM(Claude)이 스크린샷을 찍어 체크리스트로 셀프 통과 판정하는 경로(`docs/work/Questions.md` Q1의 선택지 (a))는 채택하지 않는다.
+- 따라서 Claude는 Visual Review 게이트를 자체 판정으로 통과 처리하지 않는다. Design Tokens는 사용자 판정 전까지 provisional 유지(`Workflow_Design.md` §2.1).
+
+사유:
+2026-07-29 자율 진행 세션이 사용자 부재를 이유로 미뤄둔 질문이고, 2026-08-17 사용자가 (b) 직접 수행을 택했다. 시각 디자인 디테일(색·크기·간격·블러·타이포)의 소유권이 사용자에게 있고 레이아웃 구조·데이터 완전성만 Claude가 맡는 기존 분담과 일치한다. 과거 Design 마일스톤이 항상 사용자 확인을 거쳤다는 관례와도 어긋나지 않는다.
+
+Impact:
+- `docs/work/Questions.md` Q1 종료(해당 절 삭제, 남은 질문 번호 재정렬).
+- `docs/work/BACKLOG.md` "판단 보류 — Visual Review 트리거 시점" 항목이 사용자 실행 대기 항목으로 바뀜.
+- 대상 범위는 Typography Pass 3 이후 누적된 신규 화면·컴포넌트 전부(Detail 3화면, 분류 드릴다운 캡슐, `GlassToast`/`MultiSelectCheckmark`/휴지통 필터칩 등).
+- 코드 변경 없음.
+
+---
+
+[Decision] `Workflow_Project.md` §5 도입 문장에 Data/API/Architecture × Decision 명시 (Policy, Decision)
+
+결정:
+- §5 "Decision-Stage (Design & Plan) Pipeline"의 도입 문장이 열거하던 두 행(UI/Screen × Decision, Logic/Feature × Decision)에 **Data/API/Architecture × Decision을 더해 §12.1의 세 Decision 행 전부를 명시**하도록 고쳤다.
+
+사유:
+Data/API/Architecture × Decision 행은 §12.1 표를 통해서만 이 파이프라인에 걸려 있었다. 본문이 두 행만 열거하는 한 범위 논쟁이 반복될 여지가 남고, 2026-08-15 소유권 맵 Audit도 같은 지점을 지적했다.
+
+**실질 범위 변경이 아니다.** §12.1의 `Data/API/Architecture | Decision` 행은 2026-08-02부터 "mandatory Audit before confirmation (크기 무관, §5 Decision-Stage Pipeline 적용)"을 이미 싣고 있었다. 이 수정은 본문 산문을 이미 확정된 표에 맞추는 정합성 작업이다. 2026-08-02에 사용자가 보류시킨 항목이라 2026-08-15 소유권 맵 작업이 같은 §5 섹션을 건드릴 때도 도입 문장은 손대지 않았고, 2026-08-17 사용자 승인으로 착수했다.
+
+Impact:
+- `.claude/policies/Workflow_Project.md` §5 도입 문장 1개.
+- `docs/work/BACKLOG.md` `Next` [최우선] 항목 해소.
+- 코드 변경 없음.
+
+---
+
 [Decision] Reference 문서 작성 규칙에 "훑을 수 있게 쓰기" 5원칙 추가 + 소유권 맵 재작성 (Policy + Architecture, Decision)
 
 결정:

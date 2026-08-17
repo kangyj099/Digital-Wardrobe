@@ -297,7 +297,7 @@ This principle does not reduce the validation rigor of "repeat until both Review
 
 ## Decision-Stage (Design & Plan) Pipeline
 
-Whether it is a design spec (UI/Screen × Decision) or an implementation plan (Logic/Feature × Decision), the following applies regardless of Task size:
+This pipeline covers all three Decision rows of §12.1: a design spec (UI/Screen × Decision), an implementation plan (Logic/Feature × Decision), or a data/architecture design (Data/API/Architecture × Decision). Regardless of Task size, the following applies:
 
 ```
 Draft (small units: section/chapter level) → Review (that unit) → Repeat (until all units pass)

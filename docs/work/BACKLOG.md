@@ -62,7 +62,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 **미확인 — `GlassToast` 히트박스 수정이 사용자가 원래 보고한 증상과 완전히 같은 것인지 사용자 직접 재검증 예정.**
 
-**판단 보류 — Visual Review 트리거 시점**: Group B 완료 시점에 트리거하기로 사용자 확정된 밀린 Visual Review(`Decision.md`/`Workflow_Design.md` §2.1)를 PM이 혼자 스크린샷 보고 판정할지, 사용자가 직접 볼지 미정 — 사용자 부재 중이라 보류, 상세는 `docs/work/Questions.md` 참고. **그룹 B가 이제 완전히 끝났으니 다음 세션 시작 시 최우선으로 재검토할 것.**
+**밀린 Visual Review — 사용자 직접 수행 대기**: 그룹 B 완료로 트리거 조건은 이미 충족됐다(`Workflow_Design.md` §2.1). 수행 주체는 사용자로 확정 — Claude는 이 게이트를 스크린샷 셀프 판정으로 통과 처리하지 않는다(`Decision.md` 참고). 대상은 Typography Pass 3 이후 누적된 신규 화면·컴포넌트 전부(Detail 3화면, 분류 드릴다운 캡슐, `GlassToast`/`MultiSelectCheckmark`/휴지통 필터칩 등). 사용자 판정 전까지 Design Tokens는 provisional 유지.
 
 ---
 
@@ -101,7 +101,6 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 # Next
 
-- **[최우선] `Workflow_Project.md` §5 본문 scope 문장이 Data/Architecture를 누락** — §5 "Decision-Stage (Design & Plan) Pipeline"의 도입 문장이 "Design spec(UI/Screen × Decision)이든 구현 계획(Logic/Feature × Decision)이든"으로 두 행만 열거하고 Data/API/Architecture × Decision을 언급하지 않는다. 그 행은 §12.1 표를 통해서만 이 파이프라인에 걸려 있어, 범위 논쟁이 반복될 여지가 남는다(2026-08-15 소유권 맵 Audit도 같은 지점을 지적). **원래 함께 묶여 있던 §12.1 표 쪽 누락은 2026-08-02에 이미 해소됨**(`Data/API/Architecture | Decision` 행에 "mandatory Audit before confirmation (크기 무관, §5 Decision-Stage Pipeline 적용)" 존재 확인, 2026-08-15 재확인) — 남은 건 §5 본문 한 문장뿐. 2026-08-15에 같은 §5 섹션에 소유권 판정 기준을 추가하며 그 문단은 "세 Decision 행 전부"로 명시했으나, 도입 문장 자체는 사용자가 2026-08-02에 보류시킨 항목이라 건드리지 않았다 — 착수 시 사용자 확인 필요(CLAUDE.md 체크포인트 2).
 - ~~`ui-ux-pro-max` 플러그인에서 Flutter 관련 내용만 추출해 프로젝트 로컬 스킬로 이식~~ **완료(2026-07-18)** — `feature/flutter-ui-reference-skill` 브랜치(저장소 바깥 sibling worktree)에 방치돼 있던 450줄 초안을 이어받아 검증 후 커밋. 검증 내용: (1) Flutter 52개 가이드라인·팔레트/폰트 표 샘플을 원본 플러그인 로컬 캐시(`~/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/data/*.csv`)와 대조해 추출 정확성 확인, (2) 라이선스 고지문이 원본 `LICENSE` 파일과 정확히 일치함을 재확인(MIT, Copyright Next Level Builder). 산출물: `.claude/skills/flutter-ui-reference/SKILL.md`. 후속 조치로 `.claude/settings.json`에 `"ui-ux-pro-max@ui-ux-pro-max-skill": false` 추가해 이 프로젝트에서만 원본 플러그인(7개 스킬: banner-design/brand/design/design-system/slides/ui-styling/ui-ux-pro-max) 비활성화 — 전역 설정은 그대로 둬서 다른 프로젝트는 영향 없음.
 
 ---
