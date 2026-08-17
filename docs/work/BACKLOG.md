@@ -32,6 +32,8 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 **Tester 2차는 두 번 중단됐고 아직 보고서를 반환한 적이 없다**(1차 2026-08-17 02:40경 머신 재부팅, 2차 12:33경 머신 종료). 작업물은 워킹트리에 미커밋 상태로 남아 있다 — `composition_snapshot_runtime_test.dart`(수정: group 5/6/7의 `[실패 중]` 라벨 제거), `composition_snapshot_followup_test.dart`(신규, 그룹 A/C/D/E), `composition_snapshot_followup_b_test.dart`(신규), `composition_snapshot_repeated_commit_cold_asset_test.dart`(신규). **이 파일들의 실행 결과는 확정된 바 없다** — 파일 안 주석의 "14/14 통과" 서술은 중단된 인스턴스의 자기 주장이므로 사실로 취급하지 말고 재실행으로 확인할 것. 재개 시 Tester를 새로 스폰해 "3개 이상 파일 각각을 실제로 실행했는지 + 파일별 통과/실패 개수"를 보고에 명시하도록 요구한다.
 
+**Tester 2차가 중단 직전 남긴 미확인 단서(2026-08-17 12:30경)**: 실패 2건이 같은 증상을 공유한다고 봤다 — 코디 상세의 컨트롤 하나가 844px 뷰포트 **아래로** 내려가 화면 밖에 있다. 원인 후보로 `42ee7ba`(코디 상세를 건드린 커밋)를 지목했으나 확인에 들어가기 전에 멈췄다. **미검증 단서다** — 제품 결함인지 테스트 뷰포트 설정 문제인지 판정된 바 없고, "실패 2건"이 어느 파일의 어느 테스트인지도 확인되지 않았다. 재개 시 이 지점부터 보면 시간을 아낄 수 있다.
+
 - 참고: `path_provider` 추가로 이 프로젝트 최초의 네이티브 플러그인이 생겼고, Windows 빌드에 **Developer Mode 활성화가 필수**가 됐다(2026-08-14 사용자가 활성화 완료, `flutter build windows` 성공 확인). 새 개발 환경에서는 이 설정이 선행돼야 `flutter test -d windows`가 돈다.
 - 참고: `/assets/fonts`가 `.gitignore`에 있어 **새 클론·새 worktree에서는 폰트 누락으로 빌드가 깨진다**(2026-08-14 확인). 현재 폰트는 사용자 로컬에만 존재 — 커밋할지 README 설치 안내로 갈지 미정(라이선스 확인 필요).
 
