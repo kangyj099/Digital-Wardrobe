@@ -59,6 +59,8 @@ The representative High-Fidelity Sample (3–5 screens) is sometimes built as Fr
 
 When that happens, passing Development Review and Tester does **not** substitute for Visual Review — Development Review checks code/functionality, not typography/color/spacing/visual hierarchy. Once the representative sample screens are done on the Development track, PM must explicitly trigger Visual Review before treating that Design Process milestone as complete, and Design Tokens stay provisional (not frozen per §5) until that review happens.
 
+**Who judges**: the user, not PM. PM triggers the review and puts the screens in front of the user; PM does not pass this gate by reading screenshots itself. This is distinct from Design Review, which the `review` subagent performs on Decision-stage design deliverables (`Workflow_Project.md` §12.1) — no subagent stands between the rendered screens and the user's Visual Review judgment.
+
 # 3. Unit of Work
 
 Each session performs only one design task.

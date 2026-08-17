@@ -62,7 +62,7 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 **미확인 — `GlassToast` 히트박스 수정이 사용자가 원래 보고한 증상과 완전히 같은 것인지 사용자 직접 재검증 예정.**
 
-**밀린 Visual Review — 사용자 직접 수행 대기**: 그룹 B 완료로 트리거 조건은 이미 충족됐다(`Workflow_Design.md` §2.1). 수행 주체는 사용자로 확정 — Claude는 이 게이트를 스크린샷 셀프 판정으로 통과 처리하지 않는다(`Decision.md` 참고). 대상은 Typography Pass 3 이후 누적된 신규 화면·컴포넌트 전부(Detail 3화면, 분류 드릴다운 캡슐, `GlassToast`/`MultiSelectCheckmark`/휴지통 필터칩 등). 사용자 판정 전까지 Design Tokens는 provisional 유지.
+**밀린 Visual Review — 사용자 직접 수행 대기**: 그룹 B 완료로 트리거 조건은 이미 충족됐다(`Workflow_Design.md` §2.1). 수행 주체는 사용자다(`Workflow_Design.md` §2.1 "Who judges"). Claude는 이 게이트를 스크린샷 셀프 판정으로 통과 처리하지 않는다. 대상은 Typography Pass 3 이후 누적된 신규 화면·컴포넌트 전부(Detail 3화면, 분류 드릴다운 캡슐, `GlassToast`/`MultiSelectCheckmark`/휴지통 필터칩 등). 사용자 판정 전까지 Design Tokens는 provisional 유지.
 
 ---
 

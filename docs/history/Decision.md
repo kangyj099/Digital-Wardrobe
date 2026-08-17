@@ -1,22 +1,5 @@
 <!--> 최신 Decision이 위로, 오래된 것이 아래로 가게 작성함<-->
 
-[Decision] 밀린 Visual Review는 사용자가 직접 수행 (Design, Decision)
-
-결정:
-- 그룹 B 완료로 트리거 조건이 충족된 Visual Review를 **사용자가 직접 화면을 보고 판정한다.** PM(Claude)이 스크린샷을 찍어 체크리스트로 셀프 통과 판정하는 경로(`docs/work/Questions.md` Q1의 선택지 (a))는 채택하지 않는다.
-- 따라서 Claude는 Visual Review 게이트를 자체 판정으로 통과 처리하지 않는다. Design Tokens는 사용자 판정 전까지 provisional 유지(`Workflow_Design.md` §2.1).
-
-사유:
-2026-07-29 자율 진행 세션이 사용자 부재를 이유로 미뤄둔 질문이고, 2026-08-17 사용자가 (b) 직접 수행을 택했다. 시각 디자인 디테일(색·크기·간격·블러·타이포)의 소유권이 사용자에게 있고 레이아웃 구조·데이터 완전성만 Claude가 맡는 기존 분담과 일치한다. 과거 Design 마일스톤이 항상 사용자 확인을 거쳤다는 관례와도 어긋나지 않는다.
-
-Impact:
-- `docs/work/Questions.md` Q1 종료(해당 절 삭제, 남은 질문 번호 재정렬).
-- `docs/work/BACKLOG.md` "판단 보류 — Visual Review 트리거 시점" 항목이 사용자 실행 대기 항목으로 바뀜.
-- 대상 범위는 Typography Pass 3 이후 누적된 신규 화면·컴포넌트 전부(Detail 3화면, 분류 드릴다운 캡슐, `GlassToast`/`MultiSelectCheckmark`/휴지통 필터칩 등).
-- 코드 변경 없음.
-
----
-
 [Decision] `Workflow_Project.md` §5 도입 문장에 Data/API/Architecture × Decision 명시 (Policy, Decision)
 
 결정:
