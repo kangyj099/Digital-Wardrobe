@@ -28,7 +28,9 @@ Status: 🟡 Hi-Fi UI 구현 단계 (mock 데이터 기반, 실제 Firebase/AI �
 
 **Track B(코디 스냅샷 아키텍처) — 구현 완료·Review 통과, 다음 할 일은 Tester 재투입**: 브랜치 `feature/composition-snapshot-implementation`(Track A 병합본 위에 분기, 미푸시 커밋 다수). 아키텍처는 Draft→Review(P0: 오프스크린 캡처 기법이 항상 실패하는 구조 — Flutter SDK 소스로 검증)→Audit(1차 FAIL P1 4건)으로 확정(`00_DataSchema.md` §13, `Decision.md`) → L 구현(캡처/저장, 편집 커밋 연동, 삭제된 옷 자동정리+Draft invalidate, Track A의 불완전했던 배지 판정을 `compositionHasDeletedItemsProvider`로 교체) → **Tester 1차 FAIL(F1~F5)** → Worker 수정(`f84ce62`) → Review가 4번째 `coverImagePath` 미전환 지점 발견 → 수정 완료(`80f7e1a`, `flutter test` 130/130 + 스냅샷 런타임 스위트 14/14 통과).
 
-**→ 다음: Tester 재투입**(§5상 Tester 실패 후 사이클이라 Review는 이미 재통과함). 통과 시 L 태스크라 **Audit 게이트** 1회 후 `dev` PR. Tester가 확인할 것은 F1~F5 수정분의 런타임 재검증 + 회귀(특히 F1이 깨뜨렸던 4개 스위트).
+**→ 다음: Tester 2차를 매듭지을 것**(§5상 Tester 실패 후 사이클이라 Review는 이미 재통과함). 통과 시 L 태스크라 **Audit 게이트** 1회 후 `dev` PR. Tester가 확인할 것은 F1~F5 수정분의 런타임 재검증 + 회귀(특히 F1이 깨뜨렸던 `CompositionGalleryGrid`/provider 계층).
+
+**Tester 2차는 두 번 중단됐고 아직 보고서를 반환한 적이 없다**(1차 2026-08-17 02:40경 머신 재부팅, 2차 12:33경 머신 종료). 작업물은 워킹트리에 미커밋 상태로 남아 있다 — `composition_snapshot_runtime_test.dart`(수정: group 5/6/7의 `[실패 중]` 라벨 제거), `composition_snapshot_followup_test.dart`(신규, 그룹 A/C/D/E), `composition_snapshot_followup_b_test.dart`(신규), `composition_snapshot_repeated_commit_cold_asset_test.dart`(신규). **이 파일들의 실행 결과는 확정된 바 없다** — 파일 안 주석의 "14/14 통과" 서술은 중단된 인스턴스의 자기 주장이므로 사실로 취급하지 말고 재실행으로 확인할 것. 재개 시 Tester를 새로 스폰해 "3개 이상 파일 각각을 실제로 실행했는지 + 파일별 통과/실패 개수"를 보고에 명시하도록 요구한다.
 
 - 참고: `path_provider` 추가로 이 프로젝트 최초의 네이티브 플러그인이 생겼고, Windows 빌드에 **Developer Mode 활성화가 필수**가 됐다(2026-08-14 사용자가 활성화 완료, `flutter build windows` 성공 확인). 새 개발 환경에서는 이 설정이 선행돼야 `flutter test -d windows`가 돈다.
 - 참고: `/assets/fonts`가 `.gitignore`에 있어 **새 클론·새 worktree에서는 폰트 누락으로 빌드가 깨진다**(2026-08-14 확인). 현재 폰트는 사용자 로컬에만 존재 — 커밋할지 README 설치 안내로 갈지 미정(라이선스 확인 필요).
