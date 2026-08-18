@@ -25,9 +25,15 @@
 //     메인으로 되돌아가면 빌드 중 setState 예외) 때문에, 그룹 1~4는 그 복귀 경로를 검증
 //     동선에 넣지 않는다 — 각 그룹이 보려는 축을 그 회귀와 분리하기 위함이다.
 //
-// 그룹 순서: 현재 통과하는 1~4를 앞에, **현재 실패하는 5~7**을
-// 뒤에 둔다 — 실기기(`-d windows`) 실행에서 테스트 하나가 예외로 실패하면 그 뒤 테스트들이
-// 바인딩 오염(`!inTest`)으로 연쇄 실패하기 때문. 5/6이 고쳐지면 순서 제약도 사라진다.
+// 그룹 순서: 원래 "통과하는 1~4를 앞에, 실패하는 5~7을 뒤에" 두려고 정한 순서다 — 실기기
+// (`-d windows`) 실행에서 테스트 하나가 예외로 실패하면 그 뒤 테스트들이 바인딩
+// 오염(`!inTest`)으로 연쇄 실패하기 때문. 5/6/7의 실패는 `f84ce62`(F1/F3)와
+// `80f7e1a`(coverImagePath 4번째 소비자)로 수정됐다. 3차 Tester가 이 파일을 통째로
+// 실행해 14개 전부 통과하는 것을 확인했다 — 단, 그 전에 이 파일 자체의 결함 하나를
+// 먼저 고쳐야 했다: `_analyzePng`가 디코드한 `ui.Image`/`ui.Codec`을 dispose하지
+// 않아서, 그 뒤 프로세스에서 처음 디코드되는 에셋(그룹 4/5가 여는 휴지통의
+// c07/c08 썸네일)이 `Unable to load asset ... Asset not found`로 깨졌다(상세는
+// 그 헬퍼 주석). 앱 코드 문제가 아니었다. 순서 제약 자체는 이제 없다(순서는 그대로 둔다).
 // 개별 실행: `flutter test integration_test/composition_snapshot_runtime_test.dart -d windows
 // --plain-name "<테스트 이름 일부>"`.
 import 'dart:io';
@@ -111,7 +117,17 @@ Future<_PngStats> _analyzePng(File file) async {
   final frame = await codec.getNextFrame();
   final image = frame.image;
   final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-  return _PngStats(image.width, image.height, data!.buffer.asUint8List());
+  // `image`/`codec`은 GC 대상이 아닌 네이티브 리소스라 반드시 직접 해제해야 한다. 1024x1024
+  // RGBA 한 장이 4MB이고, 이걸 흘리면 **이 프로세스에서 그 뒤에 처음 디코드되는 에셋**이
+  // `Unable to load asset ... Asset not found`로 실패한다(2차 Tester가 실기기에서 확인:
+  // 그룹 1만 돌고 그룹 4로 넘어가도 휴지통의 c07/c08 썸네일이 그 오류로 깨졌고, 아래 dispose를
+  // 넣자 그대로 통과했다 — 앱 코드가 아니라 이 헬퍼가 원인이었다).
+  // `toByteData`가 준 버퍼는 `image`에 딸린 것이라, dispose 전에 복사해 둔다.
+  final stats = _PngStats(
+      image.width, image.height, Uint8List.fromList(data!.buffer.asUint8List()));
+  image.dispose();
+  codec.dispose();
+  return stats;
 }
 
 void main() {
@@ -630,7 +646,7 @@ void main() {
   });
 
   // ────────────────────────────────────────────────────────────────────────────
-  group('5) [실패 중] 저장된 스냅샷 경로를 소비하는 다른 화면들', () {
+  group('5) 저장된 스냅샷 경로를 소비하는 다른 화면들', () {
     // §13.3은 `coverImagePath`를 읽는 호출부가 `CompositionCoverImage`(에셋/파일 분기)를
     // 쓰도록 못박았다. 커밋 이후의 `coverImagePath`는 `assets/...`가 아니라 실제 로컬 파일
     // 절대경로이므로, 아직 `Image.asset`으로 읽는 화면이 남아 있으면 그 화면에서 이미지
@@ -751,7 +767,7 @@ void main() {
   });
 
   // ────────────────────────────────────────────────────────────────────────────
-  group('6) [실패 중] 캡처 타이밍 — 이미지 캐시가 비워진 직후 커밋해도 빈 스냅샷이 저장되지 않는다', () {
+  group('6) 캡처 타이밍 — 이미지 캐시가 비워진 직후 커밋해도 빈 스냅샷이 저장되지 않는다', () {
     testWidgets(
         '편집 중 이미지 캐시가 비워진(=OS 메모리 압박 시 Flutter가 실제로 하는 동작) 직후 완료해도 '
         '옷이 그려진 스냅샷이 저장된다', (tester) async {
@@ -794,11 +810,12 @@ void main() {
   });
 
   // ────────────────────────────────────────────────────────────────────────────
-  // [Tester 발견] 현재 브랜치에서 재현되는 회귀 — 코디 메인이 화면에서 가려진 사이 코디
-  // Record가 바뀌고, 그 뒤 이미 스택에 있던 코디 메인으로 되돌아가면 빌드 중 setState 예외가
-  // 난다. 같은 스크립트가 구현 직전 커밋(ad2b5a7)에서는 통과한다(A/B 확인). 예외가 나면
-  // 뒤이은 테스트들도 바인딩이 오염돼 연쇄 실패하므로 이 그룹은 파일 맨 뒤에 둔다.
-  group('7) [실패 중, 회귀] Record 변경 후 코디 메인 복귀 시 빌드 중 setState 예외', () {
+  // [Tester 발견 → 수정됨] 1차 Tester가 이 브랜치에서 재현한 P0 회귀 — 코디 메인이 화면에서
+  // 가려진 사이 코디 Record가 바뀌고, 그 뒤 이미 스택에 있던 코디 메인으로 되돌아가면 빌드 중
+  // setState 예외가 났다(구현 직전 커밋 ad2b5a7에서는 통과, A/B 확인). 원인은
+  // `CompositionGalleryGrid`가 `itemBuilder` 안에서 family provider를 `ref.watch`한 것이고
+  // `f84ce62`에서 순수 함수 판정으로 수정됐다. 이 그룹은 그 회귀를 고정하는 가드로 남는다.
+  group('7) [회귀] Record 변경 후 코디 메인 복귀 시 빌드 중 setState 예외', () {
     testWidgets('편집 완료(✔) 후 뒤로가기로 코디 메인에 복귀해도 예외가 없어야 한다', (tester) async {
       final container = await pumpApp(tester);
       await goToCategory(tester, '코디');
