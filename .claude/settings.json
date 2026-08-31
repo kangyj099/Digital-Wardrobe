@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "deny":[
+    "deny": [
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./.secrets/**)",
@@ -8,7 +8,6 @@
       "Bash(rm -rf)"
     ]
   },
-
   "hooks": {
     "PreToolUse": [
       {
@@ -16,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/guard_git_actions.py"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_git_actions.py\""
           }
         ]
       }
@@ -26,12 +25,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/check_backlog_freshness.py 2>/dev/null || true",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_backlog_freshness.py\" 2>/dev/null || true",
             "statusMessage": "Checking BACKLOG.md freshness..."
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/check_task_boundary.py 2>/dev/null || true",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_task_boundary.py\" 2>/dev/null || true",
             "statusMessage": "Checking task boundary..."
           }
         ]
@@ -39,7 +38,7 @@
     ]
   },
   "enabledPlugins": {
-    "figma@claude-plugins-official": true,
-    "ui-ux-pro-max@ui-ux-pro-max-skill": false
+    "ui-ux-pro-max@ui-ux-pro-max-skill": false,
+    "caveman@caveman": true
   }
 }

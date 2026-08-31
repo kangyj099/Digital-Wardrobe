@@ -1,0 +1,292 @@
+<!-- =========================================================
+     SLIDE 6 — AI PIPELINE / MULTI-AGENT HARNESS
+     The diagram is the page. Two corner annotations only —
+     the loop's own labels already say what the caption said.
+     ========================================================= -->
+<section class="slide" data-cat="2">
+    <header class="hd">
+        <div class="eyb">{{NO}} — CLAUDE CODE AI PIPELINE · MULTI-AGENT HARNESS</div>
+        <h2><span class="mk">에이전트 작업 루프</span>와 크기별 검수 확장</h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+
+    <!-- THE PAGE: one ring. Thick chevron sectors carry the loop, and the
+         radius each sector reaches is the task-size information. -->
+    <svg class="p4-ring rv d2" viewBox="0 0 720 720" aria-label="Worker Review Tester Audit Integrator 반복 루프. 부채꼴 반지름이 짧아질수록 뒤 공정이며, 층이 지는 지점이 작업 크기 경계다">
+        <path d="M 161.4,96.5 A 330,330 0 0 1 558.6,96.5 L 534.6,202.8 L 444.3,248.2 A 140.0,140.0 0 0 0 275.7,248.2 Z" fill="#C5D3C7"></path>
+        <path d="M 590.0,186.7 A 288,288 0 0 1 590.0,533.3 L 503.2,519.0 L 471.8,444.3 A 140.0,140.0 0 0 0 471.8,275.7 Z" fill="#C5D3C7"></path>
+        <path d="M 518.9,570.8 A 264,264 0 0 1 201.1,570.8 L 209.9,495.2 L 275.7,471.8 A 140.0,140.0 0 0 0 444.3,471.8 Z" fill="#C5D3C7"></path>
+        <path d="M 177.9,497.2 A 228,228 0 0 1 134.2,328.3 L 221.4,340.5 A 140.0,140.0 0 0 0 248.2,444.3 Z" fill="#C5D3C7"></path>
+        <!-- the arrowhead of the Audit sector, split off by colour: the human gate -->
+        <path d="M 134.2,328.3 A 228,228 0 0 1 177.9,222.8 L 236.9,223.3 L 248.2,275.7 A 140.0,140.0 0 0 0 221.4,340.5 Z" fill="#394550"></path>
+
+        <!-- loop-back: a solid counter-arc, not a dotted line -->
+        <path d="M 431.0,473.6 A 134.0,134.0 0 0 1 246.4,289.0 L 268.4,302.8 A 108.0,108.0 0 0 0 417.2,451.6 Z" fill="#9DB4A2"></path>
+        <path d="M 448.5,442.5 L 434.7,479.6 L 413.5,445.7 Z" fill="#9DB4A2"></path>
+
+        <!-- PM sits at the centre because it spawns every one of them -->
+        <circle cx="360" cy="360" r="100" fill="#394550"></circle>
+        <g font-family="Pretendard, sans-serif" text-anchor="middle">
+            <text x="360" y="354" font-size="52" font-weight="900" fill="#F7F6F3">PM</text>
+            <text x="360" y="386" font-size="18.9" font-weight="800" letter-spacing="3.4" fill="#C5D3C7">ROOT SESSION</text>
+        </g>
+
+        <!-- agent names sit inside their own sector -->
+        <g font-family="Pretendard, sans-serif" text-anchor="middle" font-weight="800" fill="#394550">
+            <text x="360" y="134" font-size="30">Worker</text>
+            <text x="574" y="370" font-size="27">Review</text>
+            <text x="360" y="572" font-size="26">Tester</text>
+            <text x="181" y="414" font-size="24">Audit</text>
+        </g>
+
+        <!-- size marks sit ON the step where that size's pipeline ends -->
+        <g font-family="Pretendard, sans-serif" text-anchor="middle" font-weight="900" fill="#F7F6F3">
+            <rect x="574" y="145" width="46" height="34" rx="8" fill="#394550"></rect>
+            <text x="597" y="169" font-size="20">S</text>
+            <rect x="149" y="502" width="46" height="34" rx="8" fill="#394550"></rect>
+            <text x="172" y="526" font-size="20">M</text>
+            <rect x="192" y="176" width="92" height="34" rx="8" fill="#394550"></rect>
+            <text x="238" y="200" font-size="19">L / XL</text>
+        </g>
+        <g font-family="Pretendard, sans-serif" text-anchor="middle" font-weight="800" fill="#394550">
+            <text x="104" y="252" font-size="17">Integrator</text>
+            <text x="104" y="274" font-size="15" fill="#7C93A6">사람 검토</text>
+        </g>
+    </svg>
+
+    <!-- the outer waterfall, folded into a corner as context -->
+    <div class="p4-note p4-tl rv d1">
+        <div class="l">SDLC — 전체 흐름</div>
+        <div class="sd">
+            <div class="step s1">기획</div>
+            <div class="step s2">개발<small>이 구간</small></div>
+            <div class="step s3">테스트</div>
+            <div class="step s4">릴리즈</div>
+        </div>
+        <div class="zoomwedge"></div>
+        <div class="zl">ZOOM IN</div>
+    </div>
+
+    <div class="p4-note p4-tr rv d1">
+        <div class="l">WATERFALL + AGILE, ORCHESTRATED BY PM</div>
+        <div class="p4-lines">
+            <p>기획 · 디자인 · 프론트엔드 · 백엔드는 <b>Waterfall</b>,<br>서브에이전트 핸드오프는 <b>Agile</b></p>
+            <p>각 작업은 PM이 스폰한 <b>개별 서브에이전트</b>가 담당한다</p>
+            <div class="why">역할 분리<span>&rarr;</span>AI 결과물 품질 향상</div>
+            <div class="why" style="margin-top:8px">AI를 협업 도구로 활용<span>&rarr;</span>오케스트레이션 가능성 검증</div>
+        </div>
+    </div>
+
+    <div class="p4-note p4-bl rv d3">
+        <div class="l">TASK SIZE — 층이 지는 지점이 크기 경계</div>
+        <div class="tsz">
+            <div class="row"><span class="n">S</span><span class="t">Worker 까지</span></div>
+            <div class="row"><span class="n">M</span><span class="t">+ Review · Tester <em>— 실패 시 재순환</em></span></div>
+            <div class="row"><span class="n">L / XL</span><span class="t">+ Audit · Integrator (사람 검토)</span></div>
+            <p class="foot">부채꼴이 짧아질수록 뒤쪽 공정이고, 그 공정까지 도달하는 작업은 줄어든다.</p>
+        </div>
+    </div>
+
+    {{IND}}
+</section>
+
+<!-- =========================================================
+     SLIDE 7 — BRANCH STRATEGY
+     One diagram, full width. AI works on feature/*, humans own
+     every integration decision above it.
+     ========================================================= -->
+<section class="slide" data-cat="2">
+    <header class="hd">
+        <div class="eyb">{{NO}} — GIT-FLOW · BRANCH STRATEGY</div>
+        <h2>브랜치 전략 — 작업은 AI, <span class="mk">검수ㆍ통합은 사람</span></h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+
+    <p class="git-lead rv d1">dev · main 직접 커밋과 PR 병합은 훅으로 차단되어 있다 — AI는 요청만 하고, 병합 버튼은 사람이 누른다.</p>
+
+    <svg class="git rv d2" viewBox="0 0 980 372" aria-label="main에서 dev를 따고, dev에서 딴 feature 브랜치가 작업 후 dev로 머지되고 삭제되는 흐름">
+        <defs>
+            <!-- one head per source branch — a merge arrow carries the colour of
+                 the branch it comes from, so the heads have to match -->
+            <marker id="up-feature" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="18" refX="7" refY="8" orient="auto">
+                <path d="M0,1 L15,8 L0,15 z" fill="#9DB4A2"></path>
+            </marker>
+            <marker id="up-dev" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="18" refX="7" refY="8" orient="auto">
+                <path d="M0,1 L15,8 L0,15 z" fill="#6F8291"></path>
+            </marker>
+        </defs>
+        <text x="0" y="26" font-size="11.5" font-weight="800" letter-spacing="2.3" fill="#7C93A6" font-family="Pretendard, sans-serif">BRANCH STRATEGY</text>
+
+        <!-- every lane keeps a full-width ghost rail: the row exists even when the
+             branch does not. Colour is painted only where the branch is alive. -->
+        <g stroke="#D9D4C9" stroke-width="5">
+            <line x1="170" y1="86" x2="937" y2="86"></line>
+            <line x1="170" y1="196" x2="937" y2="196"></line>
+            <line x1="170" y1="306" x2="937" y2="306"></line>
+        </g>
+
+        <!-- live spans. main always exists; dev starts when it is cut from main;
+             each feature lives for exactly one task and then stops. -->
+        <line x1="170" y1="86" x2="937" y2="86" stroke="#394550" stroke-width="5"></line>
+        <line x1="260" y1="196" x2="937" y2="196" stroke="#6F8291" stroke-width="5"></line>
+        <line x1="380" y1="306" x2="520" y2="306" stroke="#9DB4A2" stroke-width="5"></line>
+        <line x1="760" y1="306" x2="830" y2="306" stroke="#9DB4A2" stroke-width="5"></line>
+
+        <!-- rail labels, right-aligned against the rail heads -->
+        <g font-family="Pretendard, sans-serif" text-anchor="end">
+            <text x="142" y="80" font-size="28" font-weight="900" fill="#2B2D30">main</text>
+            <text x="142" y="106" font-size="16" font-weight="700" fill="#7C93A6">Release</text>
+            <text x="142" y="190" font-size="28" font-weight="900" fill="#2B2D30">dev</text>
+            <text x="142" y="216" font-size="16" font-weight="700" fill="#7C93A6">Development</text>
+            <text x="142" y="300" font-size="28" font-weight="900" fill="#2B2D30">feature/*</text>
+            <text x="142" y="326" font-size="16" font-weight="700" fill="#7C93A6">Individual Task</text>
+        </g>
+
+        <!-- one straight diagonal per hand-off, no elbow. Every line runs commit
+             to commit: it starts at a node centre (hidden under that circle) and
+             stops 17 short of the target centre, which is the marker tip length
+             plus the circle radius — so the head lands tangent to the node instead
+             of overlapping it. Colour follows the branch the line belongs to. -->
+        <g fill="none" stroke-width="4">
+            <path d="M 200,86 L 252,181" stroke="#6F8291" marker-end="url(#up-dev)"></path>
+            <path d="M 320,196 L 372,291" stroke="#9DB4A2" marker-end="url(#up-feature)"></path>
+            <path d="M 700,196 L 752,291" stroke="#9DB4A2" marker-end="url(#up-feature)"></path>
+            <path d="M 520,306 L 572,211" stroke="#9DB4A2" marker-end="url(#up-feature)"></path>
+            <path d="M 640,196 L 692,101" stroke="#6F8291" marker-end="url(#up-dev)"></path>
+            <path d="M 830,306 L 882,211" stroke="#9DB4A2" marker-end="url(#up-feature)"></path>
+        </g>
+
+        <!-- nodes: one at every hand-off endpoint. The feature commits were not
+             added to, only spaced so the first and last of each run are the two
+             points its branch-off and merge attach to. -->
+        <g fill="#394550">
+            <circle cx="200" cy="86" r="9"></circle>
+            <circle cx="700" cy="86" r="9"></circle>
+            <circle cx="260" cy="196" r="9"></circle>
+            <circle cx="320" cy="196" r="9"></circle>
+            <circle cx="580" cy="196" r="9"></circle>
+            <circle cx="640" cy="196" r="9"></circle>
+            <circle cx="700" cy="196" r="9"></circle>
+            <circle cx="890" cy="196" r="9"></circle>
+            <circle cx="380" cy="306" r="9"></circle>
+            <circle cx="427" cy="306" r="9"></circle>
+            <circle cx="474" cy="306" r="9"></circle>
+            <circle cx="520" cy="306" r="9"></circle>
+            <circle cx="760" cy="306" r="9"></circle>
+            <circle cx="830" cy="306" r="9"></circle>
+        </g>
+
+        <!-- human gates -->
+        <g font-family="Pretendard, sans-serif">
+            <rect x="574" y="226" width="132" height="38" rx="19" fill="#394550"></rect>
+            <text x="640" y="251" text-anchor="middle" font-size="16" font-weight="800" fill="#F7F6F3">PR 병합 = 사람</text>
+            <rect x="749" y="116" width="188" height="38" rx="19" fill="#C5D3C7"></rect>
+            <text x="843" y="142" text-anchor="middle" font-size="17" font-weight="800" fill="#394550">Release 판단 = 사람</text>
+        </g>
+
+        <g font-family="Pretendard, sans-serif" font-size="18" font-weight="600" fill="#54606b">
+            <text x="370" y="340">AI가 작업하는 브랜치. 머지하면 삭제 — 다음 작업은 새 브랜치</text>
+        </g>
+    </svg>
+
+    {{IND}}
+</section>
+
+<!-- =========================================================
+     SLIDE 8 — SESSION CONTEXT MANAGEMENT
+     ========================================================= -->
+<section class="slide" data-cat="2">
+    <header class="hd">
+        <div class="eyb">{{NO}} — SESSION CONTEXT MANAGEMENT</div>
+        <h2><span class="mk">Git과 문서</span>가 Source of Truth</h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+    <div class="hd-rule" style="top:200px"></div>
+
+    <div class="sot rv d1">
+        <div class="head">Source of Truth<span>SESSION 밖에 남기는 기억</span></div>
+        <div class="row"><code>docs/reference/</code><p>기획 / 디자인 레퍼런스</p></div>
+        <div class="row"><code>docs/history/</code><p>Decision · TechnicalDebt 누적 기록</p></div>
+        <div class="row"><code>docs/work/BACKLOG.md</code><p>현재 진행 상태 Snapshot</p></div>
+    </div>
+
+    <div class="p5-stmt rv d2">
+        <h3>AI 세션은 프로젝트의<br><span>저장소가 아니다.</span></h3>
+        <p>세션은 언제든 끊기고 컨텍스트는 언제든 날아간다. 다음 세션이 이어받을 수 있는 상태를 코드 밖 문서로 남긴다.</p>
+    </div>
+
+    <div class="p5-cycle rv d3">
+        <div class="l">AI 작업 기억을 세션이 아니라 프로젝트 구조에 저장한다</div>
+        <div class="cyc">
+            <div class="ch k1">AI 작업<small>feature branch</small></div>
+            <div class="ch k2">Git / Documentation<small>기록으로 남김</small></div>
+            <div class="ch k3">Human Review<small>사람이 검수</small></div>
+            <div class="ch k4">Next Task<small>다음 작업으로 인계</small></div>
+        </div>
+        <div class="p5-notes">
+            <div>사람은 PR을 직접 읽고 확인한다</div>
+            <div>중요한 방향과 의사결정은 사람이 직접 결정한다</div>
+            <div>문제가 반복되면 개별 코드가 아니라 파이프라인 자체를 검토한다</div>
+        </div>
+    </div>
+
+    {{IND}}
+</section>
+
+<!-- =========================================================
+     SLIDE 9 — QUALITY ASSURANCE
+     Policy inheritance -> Task manifest. The review pipeline
+     block that used to sit here is the ring on slide 6.
+     ========================================================= -->
+<section class="slide" data-cat="2">
+    <header class="hd">
+        <div class="eyb">{{NO}} — QUALITY ASSURANCE</div>
+        <h2>정책 계층과 <span class="mk">Task Context</span></h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+    <div class="hd-rule" style="top:200px"></div>
+
+    <div class="qa-pol rv d1">
+        <div class="lbl" style="margin-bottom:16px">Policy Inheritance</div>
+        <div class="lvl l1">project<small>WORKFLOW</small></div>
+        <div class="down">&darr;</div>
+        <div class="lvl l2">design / development<small>도메인별 구체화</small></div>
+        <div class="down">&darr;</div>
+        <div class="lvl l3">db<small>가장 좁은 범위</small></div>
+        <p>상위 정책을 하위 정책이 계승하고, 필요한 부분만 구체화한다. 하위에서 상위 원칙을 다시 쓰지 않는다.</p>
+    </div>
+
+    <div class="qa-mx rv d2">
+        <div class="lbl" style="margin-bottom:14px">Task Manifest — Layer &times; Stage</div>
+        <table>
+            <thead>
+                <tr><th>Layer</th><th>Stage · Decision</th><th>Stage · Implementation</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>UI / Screen</th>
+                    <td><b>Design Review</b>확정 전 <span class="aud">Audit 필수</span> (크기 무관)</td>
+                    <td><b>Development Review</b>스펙 준수 검사</td>
+                </tr>
+                <tr>
+                    <th>Logic / Feature</th>
+                    <td><b>Self-Review 3항목 + 정책 대조</b>미충족 시 review 에이전트 · 확정 전 <span class="aud">Audit 필수</span></td>
+                    <td><b>Development Review</b>기능 관점</td>
+                </tr>
+                <tr>
+                    <th>Data / API / Architecture</th>
+                    <td><b>Development Review</b>아키텍처 관점 · 확정 전 <span class="aud">Audit 필수</span></td>
+                    <td><b>Development Review</b>관련 모듈 · 스키마 기준</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="cap"><span>태깅 결과에 해당하는 자료만 Worker / Review에게 전달 &rarr; 전체 컨텍스트를 매번 넘기지 않아 토큰과 노이즈를 줄인다.</span></div>
+    </div>
+
+    <div class="qa-stmt rv d4">
+        <h3><span>AI틱하지 않은,</span><br>유지보수 가능한 산출물</h3>
+        <p>어설퍼도 된다.<br>다만 유지보수와 디벨롭이 불가능한 상태는 불허한다.</p>
+    </div>
+
+    {{IND}}
+</section>

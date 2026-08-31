@@ -1,0 +1,123 @@
+/* ===========================================
+   SLIDE 6 — AI PIPELINE (hero diagram)
+   =========================================== */
+/* The ring owns the page. Everything else is annotation pushed into the corners
+   the circle leaves empty — no side panels, no cards, no leader lines. */
+.p4-ring { position: absolute; left: 580px; top: 190px; width: 760px; height: 760px; }
+
+.p4-note { position: absolute; width: 500px; }
+.p4-note .l { font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--muted); }
+.p4-tl { left: 80px; top: 254px; }
+.p4-bl { left: 80px; top: 636px; width: 500px; }
+/* one annotation on the right, not two — "전체 제어는 PM" and the old
+   PM ORCHESTRATION block were the same sentence twice */
+.p4-tr { right: 80px; top: 358px; text-align: right; }
+
+/* SDLC — the outer waterfall, rendered as a descending stack of solid blocks */
+.sd { margin-top: 18px; }
+.sd .step { display: flex; align-items: center; height: 48px; padding: 0 18px; width: 236px;
+    font-size: 20px; font-weight: 800; letter-spacing: -.01em; margin-bottom: 7px; }
+.sd .s1 { background: #DCD8CE; color: var(--slate); }
+.sd .s2 { background: var(--sage); color: var(--slate); margin-left: 46px; }
+.sd .s3 { background: #7E909D; color: #fff; margin-left: 92px; }
+.sd .s4 { background: var(--slate); color: #fff; margin-left: 138px; }
+.sd .step small { margin-left: auto; font-size: 20px; font-weight: 800; letter-spacing: .12em; opacity: .72; }
+.zoomwedge { position: absolute; left: 306px; top: 268px; width: 118px; height: 92px;
+    background: var(--sage); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.zoomwedge + .zl { position: absolute; left: 434px; top: 304px; font-size: 20px; font-weight: 800;
+    letter-spacing: .2em; color: var(--muted); }
+
+/* Task size = how far around the ring the work travels, and how heavy that band is */
+/* The ring already carries the sizes — this is just the key to its step marks */
+.tsz { margin-top: 14px; }
+.tsz .row { display: flex; align-items: center; gap: 18px; padding: 9px 0; }
+.tsz .n { flex: none; display: flex; align-items: center; justify-content: center; min-width: 62px; height: 34px;
+    padding: 0 12px; border-radius: 8px; background: var(--slate); color: var(--paper);
+    font-size: 19px; font-weight: 900; letter-spacing: -.02em; }
+.tsz .t { font-size: 19px; font-weight: 800; color: var(--slate); line-height: 1.4; }
+.tsz .t em { font-style: normal; color: var(--muted); font-weight: 700; }
+.tsz .foot { margin-top: 14px; font-size: 17px; font-weight: 700; line-height: 1.5; color: var(--slate-soft); }
+
+.p4-lines { margin-top: 16px; }
+.p4-lines p { margin: 0 0 10px; font-size: 21px; font-weight: 700; line-height: 1.45; color: var(--slate); }
+.p4-lines p:last-child { margin-bottom: 0; }
+.p4-lines p b { color: var(--ink); font-weight: 900; }
+.p4-lines .why { margin-top: 20px; font-size: 18px; font-weight: 700; color: var(--slate-soft); }
+.p4-lines .why span { color: var(--sage-deep); font-weight: 900; margin: 0 8px; }
+
+/* ===========================================
+   SLIDE 7 — BRANCH STRATEGY (the diagram is the whole page)
+   =========================================== */
+/* The sentence is the headline's subtitle, so it sits right under it — not
+   floated into the middle. Only the diagram gets centred in what is left, by
+   its drawn bounds rather than its box (the SVG carries its own padding). */
+.git-lead { position: absolute; left: 80px; right: 80px; top: 198px;
+    font-size: 30px; font-weight: 500; line-height: 1.55; color: var(--slate-soft); }
+.git { position: absolute; left: 110px; top: 300px; width: 1700px; height: 645px; }
+
+/* ===========================================
+   SLIDE 8 — SESSION CONTEXT MANAGEMENT
+   =========================================== */
+.sot { position: absolute; left: 80px; top: 268px; width: 1020px; }
+.sot .head { padding: 20px 26px; background: var(--slate); color: var(--paper); border-radius: 10px 10px 0 0;
+    font-size: 30px; font-weight: 900; letter-spacing: -.01em; display: flex; align-items: center; gap: 14px; }
+.sot .head span { margin-left: auto; font-size: 20px; font-weight: 700; letter-spacing: .14em; color: var(--sage); }
+.sot .row { display: flex; gap: 24px; padding: 24px 26px; border: 1px solid var(--hair); border-top: 0; background: rgba(247, 246, 243, .5); }
+.sot .row:last-of-type { border-radius: 0 0 10px 10px; }
+.sot .row code { font-family: 'Pretendard Variable', monospace; font-size: 21px; font-weight: 800; color: var(--slate); min-width: 288px; }
+.sot .row p { margin: 2px 0 0; font-size: 20px; font-weight: 600; color: var(--slate-soft); line-height: 1.45; }
+
+/* the point of the slide, sized like it */
+.p5-stmt { position: absolute; right: 80px; top: 286px; width: 680px; }
+.p5-stmt h3 { margin: 0; font-size: 58px; font-weight: 900; letter-spacing: -.045em; line-height: 1.16; color: var(--ink); }
+.p5-stmt h3 span { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); }
+.p5-stmt p { margin: 28px 0 0; font-size: 20px; font-weight: 600; line-height: 1.62; color: var(--slate-soft); }
+
+.p5-cycle { position: absolute; left: 80px; right: 80px; top: 704px; }
+.p5-cycle .l { font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--muted); }
+.cyc { display: flex; margin-top: 16px; height: 104px; }
+.cyc .ch { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 0 100%, 30px 50%);
+    margin-right: -16px; font-size: 24px; font-weight: 900; letter-spacing: -.015em; }
+.cyc .ch:first-child { clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 50%, calc(100% - 30px) 100%, 0 100%); }
+.cyc .ch:last-child { margin-right: 0; }
+.cyc .k1 { background: #DCD8CE; color: var(--slate); }
+.cyc .k2 { background: #C3CBC5; color: var(--slate); }
+.cyc .k3 { background: var(--slate); color: #fff; }
+.cyc .k4 { background: #6F8291; color: #fff; }
+.cyc .ch small { font-size: 20px; font-weight: 700; opacity: .74; margin-top: 4px; }
+.p5-notes { display: flex; gap: 44px; margin-top: 18px; }
+.p5-notes div { font-size: 18px; font-weight: 700; color: var(--slate-soft); display: flex; align-items: center; gap: 10px; }
+.p5-notes div::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--sage-deep); }
+
+/* ===========================================
+   SLIDE 9 — QUALITY ASSURANCE
+   =========================================== */
+.qa-pol { position: absolute; left: 80px; top: 262px; width: 600px; }
+.qa-pol .lvl { box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: center; height: 74px; border-radius: 8px;
+    font-size: 23px; font-weight: 900; letter-spacing: -.01em; margin-bottom: 14px; position: relative;
+    padding: 0 108px 0 22px; }
+.qa-pol .lvl small { position: absolute; right: 18px; font-size: 20px; font-weight: 700; letter-spacing: .08em; opacity: .72; }
+.qa-pol .l1 { background: var(--slate); color: var(--paper); }
+.qa-pol .l2 { background: #7E909D; color: #fff; width: 512px; margin-left: 44px; padding-right: 130px; }
+.qa-pol .l3 { background: var(--sage); color: var(--slate); width: 400px; margin-left: 100px; padding-right: 118px; }
+.qa-pol .down { text-align: center; color: var(--sage-deep); font-size: 22px; font-weight: 800; margin: -6px 0 6px; }
+.qa-pol p { margin: 24px 0 0; font-size: 20px; font-weight: 600; line-height: 1.55; color: var(--slate-soft); }
+
+.qa-mx { position: absolute; left: 780px; right: 80px; top: 262px; }
+.qa-mx table { width: 100%; border-collapse: collapse; }
+.qa-mx th, .qa-mx td { text-align: left; vertical-align: top; padding: 18px 18px; border-bottom: 1px solid var(--hair); }
+.qa-mx thead th { font-size: 20px; font-weight: 800; letter-spacing: .16em; color: var(--muted);
+    border-bottom: 2px solid var(--rule); text-transform: uppercase; }
+.qa-mx tbody th { font-size: 22px; font-weight: 900; color: var(--slate); width: 280px; letter-spacing: -.01em; }
+.qa-mx td { font-size: 18px; font-weight: 600; line-height: 1.5; color: var(--slate-soft); }
+.qa-mx td b { display: block; color: var(--ink); font-weight: 800; font-size: 19px; }
+.qa-mx .aud { color: var(--gold); font-weight: 800; }
+.qa-mx .cap { margin-top: 24px; font-size: 21px; font-weight: 800; color: var(--slate); }
+.qa-mx .cap span { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); }
+
+.qa-stmt { position: absolute; left: 80px; right: 80px; top: 772px; padding-top: 30px; border-top: 2px solid var(--rule);
+    display: flex; align-items: flex-end; gap: 40px; }
+.qa-stmt h3 { margin: 0; font-size: 66px; font-weight: 900; letter-spacing: -.04em; color: var(--ink); line-height: 1.1; }
+.qa-stmt h3 span { color: var(--slate); }
+.qa-stmt p { margin: 0 0 10px auto; max-width: 460px; font-size: 18px; font-weight: 600; line-height: 1.55; color: var(--slate-soft); text-align: right; }

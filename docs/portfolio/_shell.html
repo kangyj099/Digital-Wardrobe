@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Wardrobe — Portfolio</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
+<style>
+/* ===========================================
+   FIXED 16:9 STAGE — MANDATORY BASE STYLES
+   Slides are authored at 1920x1080 and scaled as a whole.
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+@media print {
+    html,
+    body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide {
+        position: relative; display: block !important; visibility: visible !important;
+        opacity: 1 !important; pointer-events: auto !important;
+        width: 1920px; height: 1080px; break-after: page; page-break-after: always;
+    }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls, #editHint { display: none !important; }
+    /* entrance animations only run on the active slide — reveal everything for print */
+    .rv { opacity: 1 !important; transform: none !important; animation: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   DESIGN TOKENS — pulled from the app's own hi-fi mockups
+   (docs/design-tokens-for-figma-handoff.md)
+   =========================================== */
+:root {
+    --stage-bg: #26221c;
+
+    --paper: #F7F6F3;
+    --ink: #2B2D30;
+    --slate: #394550;
+    --slate-2: #303b45;
+    --slate-soft: #54606b;
+    --muted: #7C93A6;
+    --sage: #C5D3C7;
+    --sage-deep: #9DB4A2;
+    --gold: #B98A3D;
+
+    /* wardrobe category swatches — used as compositional tone blocks */
+    --sw1: #DDD4C8;
+    --sw2: #CBC0B0;
+    --sw3: #EDE9E1;
+    --sw4: #B3A99A;
+
+    --rule: rgba(43, 45, 48, .2);
+    --hair: rgba(43, 45, 48, .12);
+    --hair-dark: rgba(247, 246, 243, .18);
+
+    --shadow: rgba(43, 45, 48, .06);
+    --font: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+.slide {
+    font-family: var(--font);
+    color: var(--ink);
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    background: linear-gradient(180deg, #EEEAE1 0%, #E6E0D3 100%);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Dark surface — used only where diagram contrast or a closing beat needs it */
+.slide.dark {
+    background: var(--slate);
+    color: var(--paper);
+}
+
+.slide.dark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(247, 246, 243, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(247, 246, 243, .05) 1px, transparent 1px);
+    background-size: 80px 80px;
+}
+
+/* === SLIDE HEADER ==================================================== */
+.hd { position: absolute; left: 80px; right: 80px; top: 62px; }
+.eyb {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--muted);
+}
+.eyb::before { content: ""; width: 46px; height: 2px; background: var(--slate); }
+.dark .eyb { color: var(--sage); }
+.dark .eyb::before { background: var(--sage); }
+
+.hd h2 {
+    margin: 20px 0 0;
+    font-size: 46px; font-weight: 900; letter-spacing: -.032em; line-height: 1.28;
+    max-width: 1480px; color: var(--slate);
+}
+.dark .hd h2 { color: var(--paper); }
+.hd h2 .mk { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); }
+
+.pgno {
+    position: absolute; right: 80px; top: 68px;
+    font-size: 20px; font-weight: 800; letter-spacing: .18em; color: rgba(43, 45, 48, .34);
+}
+.dark .pgno { color: rgba(247, 246, 243, .45); }
+
+.hd-rule { position: absolute; left: 80px; right: 80px; height: 1.5px; background: var(--rule); }
+
+/* === PART INDICATOR (frosted glass, mirrors the app's floating chrome) === */
+.ind {
+    position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 20;
+    display: flex; align-items: center;
+    padding: 13px 34px; border-radius: 19px;
+    background: rgba(247, 246, 243, .38);
+    border: 1px solid rgba(247, 246, 243, .2);
+    -webkit-backdrop-filter: blur(3px) saturate(180%);
+    backdrop-filter: blur(3px) saturate(180%);
+    box-shadow: 0 2px 10px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.ind .cat { display: flex; align-items: center; gap: 11px; font-size: 20px; font-weight: 600; color: rgba(43, 45, 48, .4); }
+.ind .cat i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid rgba(43, 45, 48, .32); }
+.ind .cat.on { font-size: 20px; font-weight: 800; color: var(--ink); }
+.ind .cat.on i { width: 13px; height: 13px; background: var(--slate); border-color: var(--slate); }
+.ind .ln { width: 86px; height: 1px; background: rgba(43, 45, 48, .28); margin: 0 22px; }
+
+/* === PLACEHOLDERS =================================================== */
+.ph {
+    display: inline-block; padding: 5px 14px 7px;
+    border: 2px dashed rgba(57, 69, 80, .42); border-radius: 5px;
+    color: rgba(57, 69, 80, .55); font-weight: 700; background: rgba(247, 246, 243, .45);
+}
+.dark .ph { border-color: rgba(240, 236, 227, .38); color: rgba(240, 236, 227, .6); background: rgba(247, 246, 243, .06); }
+.ph-tag {
+    display: inline-block; margin-left: 10px; padding: 3px 9px 4px; border-radius: 5px;
+    background: rgba(185, 138, 61, .16); color: var(--gold);
+    font-size: 20px; font-weight: 800; letter-spacing: .04em; vertical-align: middle;
+}
+.imgph {
+    display: flex; flex-direction: column; justify-content: center; gap: 9px;
+    padding: 20px 22px; border: 2px dashed rgba(57, 69, 80, .4); border-radius: 8px;
+    background: rgba(247, 246, 243, .4);
+}
+.imgph b { font-size: 20px; font-weight: 800; color: rgba(57, 69, 80, .6); }
+.imgph span { font-size: 20px; font-weight: 600; line-height: 1.5; color: rgba(57, 69, 80, .48); }
+
+/* === SHARED PRIMITIVES ============================================= */
+.lbl { font-size: 20px; font-weight: 800; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+.rail { border-left: 3px solid var(--sage-deep); padding-left: 24px; }
+.pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 9px 18px; border-radius: 19px; font-weight: 800; white-space: nowrap;
+}
+.arrow-r { color: var(--muted); font-weight: 800; }
+
+/* === ENTRANCE ANIMATION ============================================ */
+.rv { opacity: 0; transform: translateY(22px); }
+.slide.active .rv { animation: rise .8s cubic-bezier(.2, .7, .2, 1) forwards; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+.slide.active .d1 { animation-delay: .05s } .slide.active .d2 { animation-delay: .16s }
+.slide.active .d3 { animation-delay: .27s } .slide.active .d4 { animation-delay: .38s }
+.slide.active .d5 { animation-delay: .49s } .slide.active .d6 { animation-delay: .60s }
+
+
+/* === DECK CHROME (outside the slide design system) === */
+.deck-controls { display: flex; align-items: center; gap: 14px; padding: 9px 18px; border-radius: 19px;
+    background: rgba(247, 246, 243, .5); border: 1px solid rgba(247, 246, 243, .3);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--slate);
+    opacity: .28; transition: opacity .25s; }
+.deck-controls:hover { opacity: 1; }
+.deck-controls button { border: 0; background: var(--slate); color: var(--paper); width: 30px; height: 30px;
+    border-radius: 50%; font-size: 15px; cursor: pointer; }
+#editHint { position: fixed; left: 14px; top: 12px; z-index: 1000; font-family: var(--font); font-size: 12px;
+    font-weight: 700; color: rgba(43, 45, 48, .4); background: rgba(247, 246, 243, .6); padding: 6px 12px;
+    border-radius: 19px; opacity: 0; transition: opacity .2s; }
+#editHint.show { opacity: 1; }
+body.editing [contenteditable="true"]:hover { outline: 2px dashed var(--sage-deep); outline-offset: 3px; }
+body.editing [contenteditable="true"]:focus { outline: 2px solid var(--slate); outline-offset: 3px; }
+{{PART_CSS}}
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<div class="deck-stage">
+
+{{SLIDES}}
+
+</div><!-- /deck-stage -->
+</div><!-- /deck-viewport -->
+
+<div class="deck-controls">
+    <button id="prev" aria-label="이전 슬라이드">&larr;</button>
+    <span id="counter">1 / 8</span>
+    <button id="next" aria-label="다음 슬라이드">&rarr;</button>
+</div>
+<div id="editHint">편집 모드 — 텍스트를 클릭해 수정, Ctrl+S로 저장, E로 종료</div>
+
+<script>
+/* === STAGE SCALING: fit 1920x1080 into any viewport, letterboxed === */
+const stage = document.querySelector('.deck-stage');
+function fitStage() {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform =
+        `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+}
+addEventListener('resize', fitStage);
+fitStage();
+
+/* === NAVIGATION === */
+const slides = [...document.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+let current = 0;
+
+function show(index) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((el, i) => el.classList.toggle('active', i === current));
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    location.hash = String(current + 1);
+}
+
+document.getElementById('prev').onclick = () => show(current - 1);
+document.getElementById('next').onclick = () => show(current + 1);
+
+addEventListener('keydown', (e) => {
+    if (document.body.classList.contains('editing') && e.key !== 'Escape' && !(e.ctrlKey || e.metaKey)) return;
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(current + 1); }
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+    if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.metaKey) toggleEdit();
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveCopy(); }
+});
+
+/* swipe on touch devices */
+let touchX = null;
+addEventListener('touchstart', (e) => { touchX = e.changedTouches[0].clientX; }, { passive: true });
+addEventListener('touchend', (e) => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 60) show(current + (dx < 0 ? 1 : -1));
+    touchX = null;
+}, { passive: true });
+
+if (location.hash) show(parseInt(location.hash.slice(1), 10) - 1 || 0);
+
+/* === INLINE TEXT EDITING (press E) === */
+const EDITABLE = 'h1,h2,h3,h4,p,li,dt,dd,td,th,b,em,small,span,div.lbl,code';
+function toggleEdit() {
+    const on = document.body.classList.toggle('editing');
+    document.getElementById('editHint').classList.toggle('show', on);
+    slides.forEach((s) => s.querySelectorAll(EDITABLE).forEach((el) => {
+        if (el.children.length === 0) el.contentEditable = on ? 'true' : 'false';
+    }));
+}
+function saveCopy() {
+    document.body.classList.remove('editing');
+    document.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+    const blob = new Blob(['<!DOCTYPE html>\n' + document.documentElement.outerHTML], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'portfolio-slides.html';
+    a.click();
+}
+</script>
+</body>
+</html>

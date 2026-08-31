@@ -1,0 +1,218 @@
+<!-- =========================================================
+     SLIDE 2 — PROBLEM & MVP
+     Two columns, not three: the persona is the author, so it
+     rides above the needs as one line instead of a panel.
+     ========================================================= -->
+<section class="slide" data-cat="1">
+    <header class="hd">
+        <div class="eyb">{{NO}} — PROBLEM &amp; MVP</div>
+        <h2>문제 정의와 <span class="mk">MVP</span></h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+    <div class="hd-rule" style="top:224px"></div>
+
+    <div class="ov-who rv d1">
+        <b>제작자 본인</b>
+        <span>옷과 신발이 지나치게 많고 정리에 취약하다 &mdash; <em>기억이 아닌 기록</em>으로 남기고 싶다</span>
+    </div>
+
+    <div class="ov">
+        <div class="ov-flowmark rv d3">&rarr;</div>
+
+        <div class="ov-col ov-needs rv d1">
+            <div class="lbl">Needs</div>
+            <h3>왜 만들었나</h3>
+            <div class="need">
+                <span class="n">1</span>
+                <div class="h">옷 파악 / 관리</div>
+                <p>옷과 신발이 너무 많아 무엇을 가지고 있는지 기억하기 어렵고, 어디에 보관했는지 찾기 어렵다.</p>
+                <div class="to">MVP · 옷장</div>
+            </div>
+            <div class="need" style="margin-top:64px">
+                <span class="n">2</span>
+                <div class="h">코디 기억 / 취향 파악</div>
+                <p>매번 비슷한 옷을 입게 되고, 과거에 어떤 스타일링을 했는지 기록이 남지 않는다.</p>
+                <div class="to">MVP · 스타일 일지</div>
+            </div>
+        </div>
+
+        <div class="ov-col ov-mvp rv d2">
+            <div class="lbl">MVP</div>
+            <h3>무엇을 만들었나</h3>
+            <div style="margin-top:20px">
+                <div class="mvp-row">
+                    <div class="k">옷장</div>
+                    <div class="v">사진 1장으로 등록<small>AI 배경제거 &rarr; 자동 태깅 &rarr; 보관 위치 메모</small></div>
+                    <div class="tagx">필수 기능</div>
+                </div>
+                <div class="mvp-row">
+                    <div class="k">코디 조합</div>
+                    <div class="v">레이어 보존형 가상 코디<small>배치한 코디를 언제든 다시 편집할 수 있다</small></div>
+                </div>
+                <div class="mvp-row hero">
+                    <div class="k">스타일 일지</div>
+                    <div class="v">실제 착장 기록 &rarr; 옷장 아이템 연결<small>&quot;무엇을 가지고 있는가&quot;뿐 아니라 &quot;무엇을 실제로 입었는가&quot;를 기록한다</small></div>
+                    <div class="tagx">리텐션 핵심</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{IND}}
+</section>
+
+<!-- =========================================================
+     SLIDE 3 — WARDROBE · REGISTRATION FLOW
+     Four solid blocks rising left to right; the growing height
+     is the progress, so no arrows are drawn between them.
+     ========================================================= -->
+<section class="slide" data-cat="1">
+    <header class="hd">
+        <div class="eyb">{{NO}} — WARDROBE · REGISTRATION FLOW</div>
+        <h2>옷장 — <span class="mk">사진 한 장으로 끝나는 등록</span></h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+    <div class="hd-rule" style="top:200px"></div>
+
+    <div class="wf-shot rv d1"><img src="{{IMG:wardrobe-main.png}}" alt="옷장 메인 화면 — 등록된 아이템 목록"></div>
+    <div class="wf-shotcap rv d2">등록된 아이템이 카테고리별로 쌓인다</div>
+
+    <div class="wf">
+        <div class="st n1 rv d1">
+            <i>STEP 01</i>
+            <b>사진 촬영</b>
+            <p>옷 한 장을 찍는다. 입력 폼을 먼저 채우지 않는다.</p>
+        </div>
+        <div class="st n2 rv d2">
+            <i>STEP 02</i>
+            <b>AI 배경 제거</b>
+            <p>피사체만 남겨 옷장 안에서 아이템이 균일하게 보이도록 한다.</p>
+        </div>
+        <div class="st n3 rv d3">
+            <i>STEP 03</i>
+            <b>자동 태깅</b>
+            <p>카테고리 · 색상 등 속성을 자동으로 채운다.</p>
+            <em>사용자는 확인만</em>
+        </div>
+        <div class="st n4 rv d4">
+            <i>STEP 04</i>
+            <b>보관 위치 메모</b>
+            <p>어느 서랍, 어느 행거에 두었는지 함께 남긴다.</p>
+            <em>&ldquo;어디 뒀더라&rdquo;를 해결</em>
+        </div>
+    </div>
+
+    <div class="wf-out rv d4">
+        <h3>등록이 번거로우면 옷장은 비어 있게 된다. <span>입력 부담을 줄여야 기록이 쌓인다.</span></h3>
+        <div class="imgph">
+            <b>PLACEHOLDER: 등록 플로우 화면 이미지</b>
+            <span>촬영 &rarr; 배경제거 결과 &rarr; 자동 태깅 확인 3컷 (앱 완성 후 교체)</span>
+        </div>
+    </div>
+
+    {{IND}}
+</section>
+
+<!-- =========================================================
+     SLIDE 4 — STYLE JOURNAL & OUTFIT COMPOSER
+     The two features that make the wardrobe worth reopening.
+     ========================================================= -->
+<section class="slide" data-cat="1">
+    <header class="hd">
+        <div class="eyb">{{NO}} — STYLE JOURNAL &amp; OUTFIT COMPOSER</div>
+        <h2><span class="mk">스타일 일지</span>와 코디 조합</h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+    <div class="hd-rule" style="top:200px"></div>
+
+    <div class="jr-shot rv d1"><img src="{{IMG:journal-detail.png}}" alt="스타일 일지 상세 — 착장 아이템이 옷장으로 연결"></div>
+    <div class="jr-call rv d3"><em>착장 아이템 &rarr; 옷장</em></div>
+
+    <div class="jr-a rv d2">
+        <div class="l">RETENTION CORE</div>
+        <h3>스타일 일지</h3>
+        <p>그날 입은 착장을 사진으로 남기고, 그 안의 아이템을 옷장 데이터와 연결한다. 일지는 사진첩이 아니라 옷장의 사용 기록이 된다.</p>
+        <div class="jr-link">
+            <div class="t">일지 기록<s>&rarr;</s>옷장 아이템 연결<s>&rarr;</s>착용 이력 자동 집계</div>
+            <p>어떤 옷을 자주 입고 어떤 옷을 안 입는지가 별도 입력 없이 쌓인다. 취향과 사용 빈도를 실제 데이터로 확인할 수 있다.</p>
+        </div>
+        <div class="jr-fields">
+            <div class="l2">한 건의 일지에 남는 것</div>
+            <div class="set">
+                <span>날짜</span><span>장소</span><span>착장 사진</span><span>착용한 코디 아이템</span><span>메모</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="jr-b rv d3">
+        <div class="l">COMPOSER</div>
+        <h3>코디 조합</h3>
+        <p>옷장 아이템을 화면 위에 배치해 가상 코디를 만든다. 배치를 이미지로 굽지 않고 레이어 상태로 보존한다.</p>
+        <div class="jr-layers">
+            <span>상의</span><span>하의</span><span>아우터</span>
+        </div>
+        <div class="jr-tag">언제든 다시 편집 가능</div>
+        <div class="imgph">
+            <b>PLACEHOLDER: 코디 조합 화면 이미지</b>
+            <span>레이어를 보존한 채 재편집 중인 가상 코디 편집 화면 1컷 (앱 완성 후 교체)</span>
+        </div>
+    </div>
+
+    <div class="jr-foot rv d4">기록이 쌓일수록 <span>옷장은 목록이 아니라 사용 데이터가 된다.</span></div>
+
+    {{IND}}
+</section>
+
+<!-- =========================================================
+     SLIDE 5 — NATIVE APP UX PRINCIPLES
+     The screenshot is the argument; text works as caption.
+     ========================================================= -->
+<section class="slide" data-cat="1">
+    <header class="hd">
+        <div class="eyb">{{NO}} — NATIVE APP UX PRINCIPLES</div>
+        <h2><span class="mk">모바일 네이티브</span> UX 원칙</h2>
+    </header>
+    <div class="pgno">{{PGNO}}</div>
+    <div class="hd-rule" style="top:186px"></div>
+
+    <div class="ux-shot rv d1"><img src="{{IMG:wardrobe-main.png}}" alt="옷장 메인 화면"></div>
+    <div class="ux-call ux-c1 rv d3"><em>반투명 Glass 헤더</em><span class="lead-line"></span></div>
+    <div class="ux-call ux-c2 rv d4"><em>플로팅 버튼</em><span class="lead-line"></span></div>
+    <div class="ux-cap rv d4">고정 바 대신 콘텐츠 위에 떠 있는 UI</div>
+
+    <div class="ux-col">
+        <div class="ux-p rv d2" style="top:246px">
+            <div class="no">01</div>
+            <h3>화면 여백을 지키는 가벼운 UI</h3>
+            <p>작은 모바일 화면에서 콘텐츠 영역을 최대한 확보하기 위해 불투명한 고정 바를 최소화하고, 반투명 Glass UI와 플로팅 버튼을 선택했다.</p>
+            <div class="key"><span>UI가 콘텐츠를 차지하지 않고 콘텐츠 위에 가볍게 존재하도록 설계</span></div>
+        </div>
+        <div class="ux-sep" style="top:462px"></div>
+
+        <div class="ux-p rv d3" style="top:502px">
+            <div class="no">02</div>
+            <h3>탭을 통한 유기적인 연결</h3>
+            <p style="max-width:600px">보이는 값과 이미지가 곧 다음 정보로 연결된다. 사용자가 궁금한 것을 발견하면 그대로 다음 행동으로 이어진다.</p>
+            <div class="chain">
+                <span class="st">탭</span><span class="ar">&rarr;</span>
+                <span class="st">정보 확인</span><span class="ar">&rarr;</span>
+                <span class="st fill">관련 화면 이동</span>
+            </div>
+            <div class="key" style="margin-top:18px"><span>화면은 읽고 끝나는 것이 아니라, 항상 다음 행동으로 연결될 수 있어야 한다</span></div>
+            <div class="ux-thumb"><img src="{{IMG:journal-detail.png}}" alt="스타일 일지 상세 — 착장 아이템이 옷장으로 연결"></div>
+        </div>
+        <div class="ux-sep" style="top:756px"></div>
+
+        <div class="ux-p rv d4" style="top:796px">
+            <div class="no">03</div>
+            <h3>모바일 네이티브 제스처 지원</h3>
+            <p>swipe · long-press를 기본 조작으로 두되, 같은 동작을 수행하는 버튼을 항상 함께 노출한다.</p>
+            <div class="gest">
+                <span class="bar"></span>
+                <span class="t">제스처 중심이지만, <em>제스처를 강요하지 않는다</em></span>
+            </div>
+        </div>
+    </div>
+
+    {{IND}}
+</section>

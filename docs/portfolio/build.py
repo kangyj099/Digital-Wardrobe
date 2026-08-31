@@ -1,58 +1,160 @@
-"""_slides.template.html의 이미지 토큰을 base64로 치환해 portfolio-slides.html을 만든다.
+#!/usr/bin/env python3
+"""Assemble the slide deck from `_shell.html` + `parts/*` and inline the images.
 
-사용법:  python docs/portfolio/build.py
+Usage:
+    python docs/portfolio/build.py                        # full deck
+    python docs/portfolio/build.py --parts 10-ai-workflow # one section, for fast iteration
+    python docs/portfolio/build.py --out some/path.html
 
-이미지는 아래 순서로 찾는다. 앞쪽이 있으면 그걸 쓴다.
-  1) docs/portfolio/assets/<이름>.png   ← 실제 앱 스크린샷 (출시 후 여기에 넣는다)
-  2) 참고자료/... 아래의 목업 PNG        ← 지금 쓰는 것. .gitignore 대상
+`parts/manifest.json` is the running order. Each entry names a part, which is a
+pair of files: `parts/<name>.html` (its <section> blocks) and `parts/<name>.css`
+(styles used only by those slides). A part with a `label` becomes one stop on the
+bottom indicator; parts without one (cover, closing) carry no indicator.
 
-즉 assets/에 같은 이름으로 파일을 넣기만 하면 목업이 실제 스크린샷으로 교체된다.
-템플릿은 건드릴 필요 없다.
+Slides are numbered from the FULL manifest, never from the subset being written —
+so a section built on its own shows the same page numbers it will have in the
+final deck, and partial renders stay comparable to the complete one. Parts without
+a label are always included so that any build still opens and closes properly.
+
+Three tokens are filled per slide:
+    {{PGNO}}  ->  "07 / 14"
+    {{NO}}    ->  "07"          (the eyebrow prefix)
+    {{IND}}   ->  the indicator, with this slide's part marked active
+plus `{{IMG:file.png}}` anywhere, which becomes a base64 data URI so the output
+is a single self-contained file.
 """
+from __future__ import annotations
+
+import argparse
 import base64
-import io
-import os
+import json
+import mimetypes
+import re
+import sys
+from pathlib import Path
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
-ASSETS = os.path.join(HERE, "assets")
+# part names and labels are Korean; the default Windows console codepage is not
+if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-# 토큰 -> (assets/ 안에서 찾을 이름, 목업 폴백 경로)
-IMAGES = {
-    "__IMG_WARDROBE__": (
-        "wardrobe-home.png",
-        "참고자료/목업/옷장 메인/옷장-메인.png",
-    ),
-    "__IMG_STYLELOG__": (
-        "style-log-detail.png",
-        "참고자료/목업/스타일 일지 상세/스타일 일지-상세.png",
-    ),
-    "__IMG_GLASS__": (
-        "frosted-glass-header.png",
-        "참고자료/목업/옷장 메인/"
-        "옷장-메인-상단 버튼 프로스티드 글래스, 스크롤중엔 갤러리 경계 영역 헤더위치까지 올라오기.png",
-    ),
-}
+ROOT = Path(__file__).resolve().parent
+ASSETS = ROOT / "assets"
+PARTS = ROOT / "parts"
+IMG_TOKEN = re.compile(r"\{\{IMG:([^}]+)\}\}")
+SECTION = re.compile(r"(?=<!-- =+\n     SLIDE )")
 
 
-def resolve(name, fallback_rel):
-    real = os.path.join(ASSETS, name)
-    if os.path.exists(real):
-        return real, "assets"
-    mock = os.path.join(ROOT, fallback_rel)
-    if os.path.exists(mock):
-        return mock, "목업"
-    raise SystemExit("이미지 없음: %s / %s" % (real, mock))
+def data_uri(name: str) -> str:
+    path = ASSETS / name
+    if not path.exists():
+        raise SystemExit(f"missing asset: {path}")
+    mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+    return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode('ascii')}"
 
 
-src = io.open(os.path.join(HERE, "_slides.template.html"), encoding="utf-8").read()
+def indicator(labels: list[str], active: str | None) -> str:
+    """The frosted category strip. Empty for parts that declare no label."""
+    if not labels or active is None:
+        return ""
+    cells = [
+        f'<span class="cat{" on" if l == active else ""}"><i></i>{l}</span>'
+        for l in labels
+    ]
+    inner = '<span class="ln"></span>\n        '.join(cells)
+    return f'<div class="ind">\n        {inner}\n    </div>'
 
-for token, (name, fallback) in IMAGES.items():
-    path, kind = resolve(name, fallback)
-    data = base64.b64encode(open(path, "rb").read()).decode()
-    src = src.replace(token, "data:image/png;base64," + data)
-    print("  %-18s <- %s (%s)" % (token, os.path.basename(path), kind))
 
-out = os.path.join(HERE, "portfolio-slides.html")
-io.open(out, "w", encoding="utf-8").write(src)
-print("built %s (%.1f KB)" % (out, len(src.encode("utf-8")) / 1024))
+def toc(sections: list[dict]) -> str:
+    """The cover's contents list. Generated so reordering parts can't leave it
+    disagreeing with the deck it introduces."""
+    rows = [
+        f'<div><i>{i:02d}</i><b>{e["label"]}</b><s>{e.get("summary", "")}</s></div>'
+        for i, e in enumerate(sections, start=1)
+    ]
+    return "\n            ".join(rows)
+
+
+def categories(labels: list[str]) -> str:
+    """The closing slide's part list — same source as the indicator."""
+    return "\n            ".join(f"<span>{l}</span>" for l in labels)
+
+
+def load_manifest() -> list[dict]:
+    entries = json.loads((PARTS / "manifest.json").read_text(encoding="utf-8"))
+    for e in entries:
+        for ext in ("html", "css"):
+            if not (PARTS / f"{e['file']}.{ext}").exists():
+                raise SystemExit(f"missing part file: parts/{e['file']}.{ext}")
+    return entries
+
+
+def split_sections(html: str) -> list[str]:
+    return [c.rstrip() + "\n" for c in SECTION.split(html) if c.strip()]
+
+
+def build(selected: set[str] | None, dest: Path) -> None:
+    manifest = load_manifest()
+    sections = [e for e in manifest if e.get("label")]
+    labels = [e["label"] for e in sections]
+
+    # number every slide against the whole deck, then keep only what was asked for
+    numbered: list[tuple[dict, str]] = []
+    for entry in manifest:
+        for sec in split_sections((PARTS / f"{entry['file']}.html").read_text(encoding="utf-8")):
+            numbered.append((entry, sec))
+    total = len(numbered)
+
+    keep = [e["file"] for e in manifest
+            if selected is None or e["file"] in selected or not e.get("label")]
+
+    out_sections: list[str] = []
+    for i, (entry, sec) in enumerate(numbered, start=1):
+        if entry["file"] not in keep:
+            continue
+        sec = (sec.replace("{{PGNO}}", f"{i:02d} / {total:02d}")
+                  .replace("{{NO}}", f"{i:02d}")
+                  .replace("{{IND}}", indicator(labels, entry.get("label")))
+                  .replace("{{TOC}}", toc(sections))
+                  .replace("{{CATS}}", categories(labels)))
+        if not out_sections:
+            sec = sec.replace('<section class="slide"', '<section class="slide active"', 1)
+        out_sections.append(sec)
+
+    part_css = "\n".join(
+        (PARTS / f"{e['file']}.css").read_text(encoding="utf-8")
+        for e in manifest if e["file"] in keep
+    )
+
+    used: list[str] = []
+
+    def sub(match: re.Match[str]) -> str:
+        used.append(match.group(1).strip())
+        return data_uri(used[-1])
+
+    html = (ROOT / "_shell.html").read_text(encoding="utf-8")
+    html = html.replace("{{PART_CSS}}", part_css).replace("{{SLIDES}}", "\n".join(out_sections))
+    dest.write_text(IMG_TOKEN.sub(sub, html), encoding="utf-8")
+
+    scope = "full deck" if selected is None else f"parts: {', '.join(sorted(selected))}"
+    print(f"built {dest}  ({dest.stat().st_size / 1024:.0f} KB)")
+    print(f"  {len(out_sections)} of {total} slides — {scope}")
+    for name in sorted(set(used)):
+        print(f"  inlined {name} x{used.count(name)}")
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--parts", help="comma-separated part names to output")
+    ap.add_argument("--out", type=Path, help="destination html")
+    args = ap.parse_args()
+
+    picked = set(args.parts.split(",")) if args.parts else None
+    if picked:
+        known = {e["file"] for e in load_manifest()}
+        unknown = picked - known
+        if unknown:
+            raise SystemExit(f"unknown part(s): {', '.join(sorted(unknown))}\nknown: {', '.join(sorted(known))}")
+
+    default = ROOT / (f"portfolio-slides.{'-'.join(sorted(picked))}.html" if picked
+                      else "portfolio-slides.html")
+    build(picked, args.out or default)

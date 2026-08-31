@@ -1,61 +1,120 @@
-# 포트폴리오 덱 (HTML)
+# 포트폴리오 덱
 
-IT 기업 지원용 포트폴리오 8슬라이드. 스펙은 [`../figma-slide-prompt-final.md`](../figma-slide-prompt-final.md),
-디자인 토큰은 [`../design-tokens-for-figma-handoff.md`](../design-tokens-for-figma-handoff.md)를 따른다.
+입사 지원 서류 첨부용 11슬라이드 HTML 덱. 내용 기준은 `docs/figma-slide-prompt-final.md`,
+색/폰트/글래스 토큰 기준은 `docs/design-tokens-for-figma-handoff.md`.
+
+원본 기획은 8슬라이드였지만 "한 장에 담긴 내용이 너무 많다"는 피드백을 받아 11장으로 재편했다.
+장당 병렬 블록을 2~3개로 줄이는 것이 기준이다.
+
+| # | 슬라이드 | 비고 |
+| --- | --- | --- |
+| 1 | 표지 | QR·문서 링크는 마지막 장에만 둔다 |
+| 2 | 문제 · 니즈 · MVP | 페르소나는 별도 칸이 아니라 니즈 위 한 줄 |
+| 3 | 옷장 — 등록 플로우 | 높이가 커지는 블록 4개가 진행을 표현 |
+| 4 | 스타일 일지 · 코디 조합 | 리텐션 핵심 |
+| 5 | 네이티브 UX 원칙 | |
+| 6 | AI 파이프라인 (에이전트 링) | 도표가 페이지의 주인공 |
+| 7 | Git-flow 브랜치 전략 | 도표 한 장이 페이지 전체 |
+| 8 | 세션 컨텍스트 관리 | |
+| 9 | 품질 관리 | 검수 파이프라인은 6번 링과 중복이라 뺐다 |
+| 10 | 회고 | |
+| 11 | 마무리 | |
+
+- **캔버스**: 1920×1080 고정 스테이지(16:9). 뷰포트 크기에 맞춰 통째로 스케일되고 레터박스된다 — 모바일에서도 리플로우하지 않는다.
+- **폰트**: Pretendard 단일(dynamic subset CDN). 웨이트·자간·크기 대비로만 위계를 만든다.
+- **표면**: 웜페이퍼 그라디언트가 기본이고, 어두운 슬레이트 면은 Slide 4의 에이전트 루프 필드와 Slide 8(마무리)에만 쓴다.
 
 ## 파일
 
+덱은 **파트 단위로 나눠 관리하고 빌드할 때 합친다.** 파트 하나만 고쳤을 때 전체를
+다시 렌더해서 확인하지 않아도 되게 하려는 것이고, 나중에 다른 프로젝트를 뒤에 이어붙이기
+위한 구조이기도 하다.
+
 | 파일 | 역할 |
-|---|---|
-| `_slides.template.html` | **소스.** 여기만 수정한다. 이미지는 `__IMG_*__` 토큰으로 들어있다 |
-| `build.py` | 토큰을 base64로 치환해 `portfolio-slides.html` 생성 |
-| `portfolio-slides.html` | **배포용 산출물.** 자체 완결형(이미지 인라인), 브라우저로 바로 열림 |
-| `preview.py` | 슬라이드 8장을 개별 PNG로 렌더 — 레이아웃 검증용 |
-| `export-pdf.mjs` | A4 가로 8페이지 PDF 생성 |
-| `assets/` | 실제 앱 스크린샷을 넣는 곳 (지금은 비어 있고 목업을 쓴다) |
+| --- | --- |
+| `_shell.html` | `<head>`, viewport-base.css, 디자인 토큰, 공용 프리미티브(`.hd` `.ind` `.ph` …), 하단 JS |
+| `parts/manifest.json` | 파트 실행 순서. `label`이 있는 파트가 하단 인디케이터의 한 칸이 된다 |
+| `parts/<이름>.html` | 그 파트의 `<section>` 블록들 |
+| `parts/<이름>.css` | 그 슬라이드들에서만 쓰는 스타일 |
+| `build.py` | 조립 + 페이지 자동 채번 + 인디케이터 생성 + 이미지 base64 인라인 |
+| `portfolio-slides.html` | 배포용 자체 완결형 파일 (직접 수정 금지 — 다음 빌드에서 날아간다) |
+| `preview.mjs` | 슬라이드 전체를 1920×1080 PNG로 렌더 |
+| `export-pdf.mjs` | 슬라이드당 1페이지짜리 16:9 PDF 출력 |
+| `export-pptx.mjs` | 16:9 PPTX 출력. 렌더된 DOM의 계산된 좌표·색·폰트를 읽어 **네이티브 도형/텍스트로 이식**한다 (스크린샷 아님) |
+| `preview-pptx.py` | 만들어진 PPTX를 되읽어 PNG로 렌더. 파워포인트 없이 결과를 눈으로 검증하는 용도 |
+| `assets/` | 앱 목업 원본. 실제 스크린샷이 나오면 같은 파일명으로 교체하면 된다 |
 
-원본 스크린샷은 `.gitignore`된 `참고자료/` 아래에 있어서, 배포용 HTML은 이미지를
-base64로 인라인해 자체 완결형으로 만든다. 그래서 산출물 HTML도 함께 커밋한다.
+슬라이드 안에서 빌드가 채우는 토큰은 넷이다.
 
-## 빌드
+| 토큰 | 결과 |
+| --- | --- |
+| `{{PGNO}}` | `07 / 14` |
+| `{{NO}}` | `07` (eyebrow 앞의 번호) |
+| `{{IND}}` | 하단 인디케이터. 그 슬라이드가 속한 파트가 활성 표시된다 |
+| `{{IMG:파일명}}` | `assets/`의 이미지를 base64 data URI로 |
+
+**채번은 항상 manifest 전체 기준이다.** 파트 하나만 빌드해도 그 슬라이드는 최종 덱에서
+가질 번호를 그대로 달고 나온다 — 그래야 부분 렌더와 합본 렌더를 그대로 비교할 수 있다.
+`label`이 없는 파트(표지·마무리)는 어떤 빌드에도 항상 포함된다.
+
+## 작업 순서
 
 ```bash
-python docs/portfolio/build.py          # 소스 → portfolio-slides.html
-python docs/portfolio/preview.py        # → .preview/s1~s8.png (레이아웃 확인)
-node   docs/portfolio/export-pdf.mjs    # → portfolio-slides.pdf (A4 가로 8p)
+# 한 파트만 손볼 때 — 그 파트만 빌드하고 그 파트만 렌더한다
+python docs/portfolio/build.py --parts 10-ai-workflow
+node docs/portfolio/preview.mjs \
+  docs/portfolio/portfolio-slides.10-ai-workflow.html docs/portfolio/preview/ai
+
+# 합본
+python docs/portfolio/build.py
+node docs/portfolio/preview.mjs        # 렌더한 PNG를 눈으로 확인한다
+node docs/portfolio/export-pdf.mjs
+node docs/portfolio/export-pptx.mjs
 ```
 
-## 스크린샷 교체 (앱 출시 후)
+CSS만 읽고 판단하면 겹침·잘림을 놓친다. 항상 렌더된 PNG를 본다.
 
-지금 쓰는 이미지는 **목업**이다. 실제 앱 스크린샷이 나오면 `assets/`에 아래 이름으로
-넣기만 하면 된다 — `build.py`가 `assets/`를 먼저 보고, 없을 때만 목업으로 폴백한다.
-템플릿은 건드릴 필요 없다.
+`_shell.html`의 공용 CSS를 고쳤다면 전체를 다시 렌더해야 한다 — 모든 파트에 걸리기 때문이다.
+파트 CSS만 고쳤으면 그 파트만 보면 된다. 파트끼리 클래스 이름이 겹치지 않도록 파트별
+접두어를 쓴다(`.wf-` `.jr-` `.p4-` 처럼).
 
-| 파일명 | 쓰이는 곳 |
-|---|---|
-| `assets/wardrobe-home.png` | S1 표지 왼쪽 기기, S2 우측 목업 |
-| `assets/style-log-detail.png` | S1 표지 오른쪽 기기 |
-| `assets/frosted-glass-header.png` | S3 타일 1의 근거 캡처 (글래스 헤더가 보여야 함) |
+`preview.mjs`는 기본적으로 출력 폴더를 비우고 다시 만든다. 여러 덱을 한 폴더에 모으려면 `--keep`을 붙인다.
 
-세로로 긴 기기 화면 비율(9:19.5 안팎)로 찍으면 지금 레이아웃에 그대로 맞는다.
-교체 후 `build.py` → `preview.py` 순으로 돌려 잘림이 없는지 확인한다.
+## 순서 바꾸기 / 프로젝트 추가하기
 
-## 규격
+`parts/manifest.json`의 줄 순서가 곧 덱 순서다. 파트를 추가하려면 `parts/`에 `.html`/`.css`
+두 파일을 두고 manifest에 한 줄 넣으면 된다 — 페이지 번호와 인디케이터는 빌드가 다시 만든다.
 
-- 슬라이드: A4 가로 297×210mm, 덱 전체 가로 통일
-- 본문 영역: `--content-h: 552px` = inner(706) − 헤더(102) − 인디케이터 여유(52)
-  - 슬라이드 본문 블록 높이는 이 변수를 쓴다. 안 지키면 하단 인디케이터와 겹친다
-- 좌표계: `.inner` 1035×706px를 슬라이드 중앙에 배치. mm 반올림과 분리하려는 의도
+## 조작
 
-## 브라우저에서 직접 인쇄할 때
-
-`export-pdf.mjs` 대신 Ctrl+P를 쓴다면 **용지 A4 / 방향 가로 / 여백 없음 / 배경 그래픽 켜기**를
-직접 골라야 한다. Chrome의 `--print-to-pdf` CLI는 CSS `@page { size: A4 landscape }`를
-무시하고 US Letter 세로로 찍어 내용을 잘라먹는다 — `export-pdf.mjs`가 DevTools Protocol로
-용지 크기를 직접 넘기는 이유다.
+화살표 / Space / PageUp·PageDown / Home·End, 터치 스와이프. `E`를 누르면 인라인 편집 모드가 켜지고,
+텍스트를 클릭해 고친 뒤 `Ctrl+S`로 수정본 HTML을 내려받을 수 있다 — 다만 정식 수정은 템플릿에서 한다.
 
 ## 플레이스홀더
 
-확정되지 않은 값은 `[PLACEHOLDER: 항목명]` 형태로, 점선 테두리 + 회색 텍스트 + `TBD` 뱃지로
-표시했다. `.ph`(인라인) / `.ph-box`(박스) 두 가지 클래스를 쓴다.
-실제 값을 넣을 때는 `_slides.template.html`에서 `PLACEHOLDER:`로 검색하면 전부 찾을 수 있다.
+확정되지 않은 값은 점선 테두리 + 옅은 회색 텍스트(`.ph`)로 표시하고, 이미지 자리는 무엇을 넣을지
+메모까지 붙인 `.imgph` 블록으로 남긴다. 실제 값이 정해지면 `_slides.template.html`에서
+`PLACEHOLDER:` 문자열을 검색해 교체한 뒤 다시 빌드한다.
+
+PPTX도 모든 텍스트가 편집 가능하므로 파워포인트에서 직접 채울 수 있다. 다만 그렇게 채운 값은
+템플릿에 반영되지 않아 다음 빌드에서 사라지므로, 최종본은 템플릿 쪽을 고치는 편이 안전하다.
+
+## PPTX 이식 방식
+
+`export-pptx.mjs`는 슬라이드를 이미지로 굽지 않는다. 헤드리스 브라우저로 덱을 띄운 뒤 요소마다
+`getBoundingClientRect()` + `getComputedStyle()`을 읽어 파워포인트 기본 도형으로 옮긴다.
+
+- 배경/패널/칩/구분선 → 사각형 · 둥근 사각형 · 원 (채우기 색과 투명도, 점선 테두리까지 반영)
+- 본문 → 텍스트 프레임. `<b>`나 하이라이트 `<span>`은 같은 문단 안의 런으로 유지되고, 세이지 마커는
+  글자 뒤 사각형으로 따로 그린다
+- 앱 목업 → 사진
+- Slide 4의 링, Slide 5의 브랜치 다이어그램 → SVG 벡터로 삽입 (파워포인트에서 "도형으로 변환" 가능).
+  구버전 호환을 위해 3배 해상도 PNG 폴백을 같이 넣는다
+- 웜페이퍼 그라디언트는 pptxgenjs가 지원하지 않아 저장 후 `p:bg`를 `gradFill`로 직접 패치한다
+
+주의할 점:
+
+- 폰트가 Pretendard로 지정된다. 없는 PC에서는 대체 폰트로 열리고 줄바꿈이 달라질 수 있어,
+  텍스트 상자마다 자동 축소(autofit)를 켜 뒀다.
+- 화면 좌표를 그대로 옮기므로 자간·행간이 브라우저와 미세하게 다르다. 최종 제출본이 PDF라면
+  `export-pdf.mjs` 쪽이 원본에 더 충실하다.

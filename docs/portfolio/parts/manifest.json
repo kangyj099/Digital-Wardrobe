@@ -1,0 +1,23 @@
+[
+  {
+    "file": "00-cover"
+  },
+  {
+    "file": "10-ai-workflow",
+    "label": "Claude Code 활용 방식",
+    "summary": "Harness · Git-flow · 세션 관리 · QA"
+  },
+  {
+    "file": "20-wardrobe",
+    "label": "프로젝트 · 디지털 옷장",
+    "summary": "Needs · MVP · 핵심 기능 · UX 원칙"
+  },
+  {
+    "file": "30-retrospective",
+    "label": "회고",
+    "summary": "Insight"
+  },
+  {
+    "file": "90-closing"
+  }
+]

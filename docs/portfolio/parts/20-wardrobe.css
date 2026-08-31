@@ -1,0 +1,158 @@
+/* ===========================================
+   SLIDE 2 — PROBLEM & MVP  (Needs -> MVP, two columns only)
+   The persona is the author, so it rides along as a single line
+   above the needs instead of claiming a column of its own.
+   =========================================== */
+.ov { position: absolute; left: 80px; right: 80px; top: 330px; height: 600px; }
+.ov-col { position: absolute; top: 0; }
+.ov-needs { left: 0; width: 700px; }
+.ov-mvp { left: 860px; width: 900px; }
+
+.ov h3 { margin: 20px 0 0; font-size: 34px; font-weight: 900; color: var(--slate); letter-spacing: -.02em; }
+.ov-who { position: absolute; left: 80px; top: 248px; display: flex; align-items: center; gap: 18px;
+    font-size: 21px; font-weight: 700; color: var(--slate-soft); }
+.ov-who b { padding: 7px 16px 8px; border-radius: 19px; background: var(--slate); color: var(--paper);
+    font-size: 18px; font-weight: 800; }
+.ov-who em { font-style: normal; color: var(--ink); font-weight: 800; }
+
+.need { margin-top: 42px; padding-left: 60px; position: relative; }
+.need .n { position: absolute; left: 0; top: -2px; width: 38px; height: 38px; border-radius: 50%;
+    background: var(--slate); color: var(--paper); font-size: 19px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; }
+.need .h { font-size: 28px; font-weight: 900; color: var(--ink); letter-spacing: -.02em; }
+.need p { margin: 16px 0 0; font-size: 22px; font-weight: 600; line-height: 1.62; color: var(--slate-soft); }
+.need .to { display: flex; align-items: center; gap: 12px; margin-top: 18px; font-size: 20px; font-weight: 800; color: var(--slate); }
+.need .to::before { content: "\2193"; color: var(--sage-deep); font-size: 22px; }
+
+.mvp-row { display: flex; align-items: flex-start; gap: 24px; padding: 34px 0; border-bottom: 1px solid var(--hair); }
+.mvp-row:first-of-type { border-top: 1px solid var(--hair); }
+.mvp-row .k { min-width: 190px; font-size: 31px; font-weight: 900; color: var(--slate); letter-spacing: -.02em; }
+.mvp-row .v { font-size: 23px; font-weight: 700; line-height: 1.5; color: var(--ink); }
+.mvp-row .v small { display: block; margin-top: 10px; font-size: 19px; font-weight: 600; color: var(--slate-soft); }
+.mvp-row .tagx { margin-left: auto; padding: 6px 13px 7px; border-radius: 5px; font-size: 15px; font-weight: 800;
+    background: rgba(57, 69, 80, .1); color: var(--slate); white-space: nowrap; }
+.mvp-row.hero { background: var(--slate); color: var(--paper); border: 0; margin: 8px 0;
+    padding: 36px 24px; border-radius: 10px; }
+.mvp-row.hero .k, .mvp-row.hero .v { color: var(--paper); }
+.mvp-row.hero .v small { color: rgba(247, 246, 243, .72); }
+.mvp-row.hero .tagx { background: var(--sage); color: var(--slate); }
+
+.ov-flowmark { position: absolute; top: 30px; left: 776px; font-size: 40px; color: var(--sage-deep); font-weight: 800; }
+
+/* ===========================================
+   SLIDE 3 — WARDROBE REGISTRATION FLOW
+   A rising staircase of solid blocks: the increasing height IS the
+   progress, so no connector lines or arrowheads are needed.
+   =========================================== */
+.wf-shot { position: absolute; left: 80px; top: 262px; width: 330px; border-radius: 26px; overflow: hidden;
+    background: #fff; box-shadow: 0 34px 74px rgba(43, 45, 48, .24), 0 4px 12px rgba(43, 45, 48, .12); }
+.wf-shot img { display: block; width: 100%; }
+.wf-shotcap { position: absolute; left: 80px; top: 952px; width: 330px; text-align: center;
+    font-size: 16px; font-weight: 700; color: var(--muted); }
+
+.wf { position: absolute; left: 532px; right: 80px; top: 296px; height: 452px; display: flex; align-items: flex-end; }
+.wf .st { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 0 26px 26px; }
+.wf .st i { position: absolute; left: 26px; top: 22px; font-style: normal;
+    font-size: 20px; font-weight: 800; letter-spacing: .2em; opacity: .62; }
+.wf .st b { font-size: 30px; font-weight: 900; letter-spacing: -.03em; line-height: 1.14; }
+.wf .st p { margin: 14px 0 0; font-size: 18px; font-weight: 600; line-height: 1.5; opacity: .82; }
+.wf .st em { font-style: normal; align-self: flex-start; margin-top: 14px; padding: 5px 12px 6px; border-radius: 5px;
+    font-size: 15px; font-weight: 800; background: rgba(247, 246, 243, .3); }
+.wf .n1 { height: 58%; background: #DCD8CE; color: var(--slate); }
+.wf .n2 { height: 72%; background: var(--sage); color: var(--slate); }
+.wf .n3 { height: 86%; background: #7E909D; color: #fff; }
+.wf .n4 { height: 100%; background: var(--slate); color: #fff; }
+.wf .n1 em, .wf .n2 em { background: rgba(57, 69, 80, .12); }
+
+.wf-out { position: absolute; left: 532px; right: 80px; top: 786px; padding-top: 26px;
+    border-top: 2px solid var(--rule); display: flex; align-items: flex-start; gap: 48px; }
+.wf-out h3 { margin: 0; max-width: 640px; font-size: 34px; font-weight: 900; letter-spacing: -.032em;
+    line-height: 1.3; color: var(--ink); }
+.wf-out h3 span { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); }
+.wf-out .imgph { margin-left: auto; width: 500px; }
+
+/* ===========================================
+   SLIDE 4 — STYLE JOURNAL & OUTFIT COMPOSER
+   =========================================== */
+.jr-shot { position: absolute; left: 80px; top: 250px; width: 330px; border-radius: 26px; overflow: hidden;
+    background: #fff; box-shadow: 0 34px 74px rgba(43, 45, 48, .24), 0 4px 12px rgba(43, 45, 48, .12); }
+.jr-shot img { display: block; width: 100%; }
+.jr-call { position: absolute; left: 132px; top: 706px; z-index: 5; display: flex; align-items: center; gap: 10px; }
+.jr-call em { font-style: normal; padding: 6px 13px 7px; border-radius: 19px; background: var(--slate);
+    color: var(--paper); font-size: 14px; font-weight: 800; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(43, 45, 48, .28); }
+
+.jr-a { position: absolute; left: 536px; top: 262px; width: 660px; }
+.jr-b { position: absolute; left: 1256px; top: 262px; width: 584px; }
+.jr-a .l, .jr-b .l { font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--muted); }
+.jr-a h3, .jr-b h3 { margin: 14px 0 0; font-size: 40px; font-weight: 900; letter-spacing: -.035em; color: var(--slate); }
+.jr-a > p, .jr-b > p { margin: 18px 0 0; font-size: 20px; font-weight: 600; line-height: 1.6; color: var(--slate-soft); }
+.jr-tag { display: inline-block; margin-top: 16px; padding: 6px 14px 7px; border-radius: 5px;
+    font-size: 15px; font-weight: 800; background: var(--sage); color: var(--slate); }
+
+/* the link that makes the journal more than a photo album */
+.jr-link { margin-top: 30px; padding: 24px 26px; border-radius: 10px; background: var(--slate); color: var(--paper); }
+.jr-link .t { display: flex; align-items: center; gap: 16px; font-size: 22px; font-weight: 900; letter-spacing: -.02em; }
+.jr-link .t s { text-decoration: none; color: var(--sage); font-size: 26px; font-weight: 900; }
+.jr-link p { margin: 14px 0 0; font-size: 17px; font-weight: 600; line-height: 1.55; color: rgba(247, 246, 243, .78); }
+.jr-b .imgph { margin-top: 24px; height: 210px; }
+.jr-fields { margin-top: 28px; }
+.jr-fields .l2 { font-size: 20px; font-weight: 800; letter-spacing: .18em; color: var(--muted); }
+.jr-fields .set { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.jr-fields .set span { padding: 9px 16px 10px; border-radius: 19px; border: 1.5px solid rgba(43, 45, 48, .22);
+    font-size: 17px; font-weight: 700; color: var(--slate); }
+.jr-layers { display: flex; gap: 12px; margin-top: 24px; }
+.jr-layers span { flex: 1; height: 62px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: var(--slate); }
+.jr-layers span:nth-child(1) { background: var(--sw1); }
+.jr-layers span:nth-child(2) { background: var(--sw2); }
+.jr-layers span:nth-child(3) { background: var(--sage); }
+.jr-foot { position: absolute; left: 536px; right: 80px; bottom: 148px; padding-top: 24px;
+    border-top: 2px solid var(--rule); font-size: 27px; font-weight: 900; letter-spacing: -.028em; color: var(--ink); }
+.jr-foot span { background: linear-gradient(transparent 60%, var(--sage) 60% 94%, transparent 94%); }
+
+/* ===========================================
+   SLIDE 5 — NATIVE APP UX PRINCIPLES
+   =========================================== */
+.ux-shot { position: absolute; left: 80px; top: 246px; width: 350px; border-radius: 26px; overflow: hidden;
+    background: #fff; box-shadow: 0 34px 74px rgba(43, 45, 48, .24), 0 4px 12px rgba(43, 45, 48, .12); }
+.ux-shot img { display: block; width: 100%; }
+/* Annotation chips sit on the screenshot itself — no gutter is wide enough for leader lines */
+.ux-call { position: absolute; display: flex; align-items: center; gap: 10px; z-index: 5; }
+.ux-call em { font-style: normal; padding: 6px 13px 7px; border-radius: 19px; background: var(--slate);
+    color: var(--paper); font-size: 14px; font-weight: 800; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(43, 45, 48, .28); }
+.ux-call .lead-line { width: 40px; height: 1.5px; background: var(--slate); position: relative; }
+.ux-call .lead-line::after { content: ""; position: absolute; right: -4px; top: -3.5px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--slate); }
+.ux-c1 { left: 100px; top: 288px; }
+.ux-c2 { left: 190px; top: 886px; }
+.ux-cap { position: absolute; left: 80px; top: 972px; width: 350px; text-align: center;
+    font-size: 15px; font-weight: 700; color: var(--muted); }
+
+.ux-col { position: absolute; left: 500px; right: 80px; }
+.ux-p { position: absolute; left: 0; right: 0; }
+.ux-p .no { font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--muted); }
+.ux-p h3 { margin: 10px 0 0; font-size: 34px; font-weight: 900; letter-spacing: -.028em; color: var(--slate); }
+.ux-p p { margin: 14px 0 0; font-size: 20px; font-weight: 600; line-height: 1.6; color: var(--slate-soft); max-width: 800px; }
+.ux-p .key { margin-top: 16px; font-size: 21px; font-weight: 800; color: var(--ink); }
+.ux-p .key span { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); }
+.ux-sep { position: absolute; left: 0; right: 0; height: 1px; background: var(--hair); }
+
+.chain { display: flex; align-items: center; gap: 14px; margin-top: 18px; }
+.chain .st { padding: 11px 20px; border: 2px solid var(--slate); border-radius: 19px; font-size: 18px; font-weight: 800; color: var(--slate); }
+.chain .st.fill { background: var(--slate); color: var(--paper); }
+.chain .ar { color: var(--sage-deep); font-size: 24px; font-weight: 900; }
+
+.ux-thumb { position: absolute; right: 0; top: 0; width: 186px; border-radius: 18px; overflow: hidden; background: #fff;
+    box-shadow: 0 18px 40px rgba(43, 45, 48, .2); }
+.ux-thumb img { display: block; width: 100%; }
+
+/* One line carries the whole principle — the two-column table it replaced
+   said the same thing twice. */
+.gest { display: flex; align-items: center; gap: 24px; margin-top: 20px; }
+.gest .bar { flex: none; width: 86px; height: 8px; border-radius: 4px;
+    background: linear-gradient(90deg, rgba(57, 69, 80, .1), var(--slate)); }
+.gest .t { font-size: 25px; font-weight: 900; letter-spacing: -.024em; color: var(--slate); }
+.gest .t em { font-style: normal; color: var(--sage-deep); }

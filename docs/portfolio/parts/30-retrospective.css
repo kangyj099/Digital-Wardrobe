@@ -1,0 +1,39 @@
+/* ===========================================
+   SLIDE 10 — RETROSPECTIVE
+   =========================================== */
+/* Sits on the headline's row, right-aligned — the title carries the topic and
+   this carries the conclusion, so they read as one line across the page. */
+.rt-lead { position: absolute; left: 25%; top: 116px; max-width: 1240px; text-align: center;
+    font-size: 32px; font-weight: 600; line-height: 1.35; color: var(--slate); }
+/* .rt-lead span { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); } */
+
+.rt-got { position: absolute; left: 80px; top: 250px; width: 800px; }
+.rt-got .l, .rt-ch .l { font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--muted); }
+.rt-got .k { display: flex; align-items: baseline; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--hair); }
+.rt-got .k:first-of-type { margin-top: 8px; border-top: 1.5px solid var(--rule); }
+.rt-got .k b { font-size: 42px; font-weight: 900; letter-spacing: -.035em; color: var(--slate); }
+/* fixed width, not shrink-to-fit — otherwise each row's text starts at a
+   different x once it is left-aligned */
+.rt-got .k span { margin-left: auto; flex: none; width: 460px; text-align: left;
+    font-size: 30px; font-weight: 600; color: var(--slate-soft); line-height: 1.4; }
+
+.rt-ch { position: absolute; left: 960px; top: 250px; width: 880px; }
+.rt-ch .c { margin-top: 20px; padding: 22px 0 22px 74px; position: relative; border-top: 1px solid var(--hair); }
+.rt-ch .c:first-of-type { border-top: 1.5px solid var(--rule); margin-top: 8px; }
+.rt-ch .c i { position: absolute; left: 0; top: 22px; font-style: normal; font-size: 30px; font-weight: 900;
+    color: rgba(57, 69, 80, .3); letter-spacing: -.02em; }
+.rt-ch .c h4 { margin: 0; font-size: 38px; font-weight: 900; color: var(--slate); letter-spacing: -.02em; }
+.rt-ch .c p { margin: 14px 0 0; font-size: 30px; font-weight: 500; line-height: 1.45; color: var(--slate-soft); }
+.rt-ch .c .to { display: flex; gap: 14px; margin-top: 14px; font-size: 30px; font-weight: 600; color: var(--slate); }
+.rt-ch .c .to::before { content: "\2192"; color: var(--sage-deep); font-weight: 900; }
+
+.rt-fin { position: absolute; left: 80px; right: 80px; top: 704px; padding-top: 28px; border-top: 2px solid var(--rule); }
+.rt-fin h3 { margin: 0; font-size: 44px; font-weight: 900; letter-spacing: -.035em; line-height: 1.24; color: var(--ink); max-width: 880px; }
+.rt-fin h3 span { background: linear-gradient(transparent 62%, var(--sage) 62% 94%, transparent 94%); }
+.rt-fin ul { position: absolute; right: 0; top: 30px; width: 760px; margin: 0; padding: 0; list-style: none; }
+.rt-fin li { font-size: 30px; font-weight: 500; line-height: 1.4; color: var(--slate-soft); padding: 10px 0 10px 26px; position: relative; }
+.rt-fin li::before { content: ""; position: absolute; left: 0; top: 22px; width: 7px; height: 7px; border-radius: 50%; background: var(--sage-deep); }
+.rt-metrics { position: absolute; left: 80px; bottom: 58px; display: flex; gap: 34px; }
+.rt-metrics dt { font-size: 20px; font-weight: 800; letter-spacing: .16em; color: var(--muted); }
+.rt-metrics dd { margin: 8px 0 0; }
+.rt-metrics dd .ph { font-size: 30px; }

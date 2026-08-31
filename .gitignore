@@ -114,3 +114,16 @@ localTestbed/
 /assets/fonts
 # 워크트리
 .claude/worktrees
+# 포트폴리오 덱 빌드 산출물 (portfolio-slides.html은 자체 완결형이라 커밋한다)
+docs/portfolio/portfolio-slides.pdf
+docs/portfolio/portfolio-slides.pptx
+docs/portfolio/.chrome-profile/
+docs/portfolio/.preview/
+docs/portfolio/preview/
+# 부분 빌드 산출물 (portfolio-slides.html 합본만 커밋한다)
+docs/portfolio/portfolio-slides.*.html
+# Office 임시 잠금 파일
+~$*
+
+# 작업 중 임시 사본·브라우저 프로파일 (48MB, 대부분 git 이력에 있는 파일의 복사본)
+docs/tmp/
