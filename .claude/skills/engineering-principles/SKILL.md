@@ -9,7 +9,7 @@ description: Prevents magic-value hardcoding in implementation code. Invoke befo
 
 구현 코드(프론트엔드/백엔드/데이터 불문)를 작성하거나 리뷰하기 **전/도중**에 호출한다. 코드에 리터럴 값을 넣기 직전이 가장 흔한 호출 시점이다.
 
-## 핵심 원칙 (원문, 2026-07-09 확정본 — 재논의 금지)
+## 핵심 원칙
 
 코드에서 사용되는 모든 값은 반드시 다음 중 하나를 Source of Truth로 가져야 한다.
 
