@@ -1,0 +1,26 @@
+Applied Composition horizontal carousel
+
+Remove the horizontal scrollbar completely.
+Instead of a scrollbar, indicsate scrollability using semi-transparent chevron indicators.
+Place the indicators vertically centered within the carousel content area.
+Display a left chevron (‹) near the left edge when additional content exists to the left.
+Display a right chevron (›) near the right edge when additional content exists to the right.
+When the user reaches either end, hide the chevron for that direction.
+The chevrons should be subtle and non-interactive visual hints (low opacity, no button styling, no background), not navigation buttons.
+Keep the carousel itself swipeable as before.
+
+The chevrons should feel lightweight and unobtrusive, similar to gallery scroll affordances in modern photo apps. They should hint at additional content without drawing attention away from the composition thumbnails.
+
+Vertical Scroll Indicator
+Hide the vertical scrollbar by default.
+Show it only while the user is actively scrolling.
+Fade it in quickly when scrolling begins.
+Fade it out smoothly after scrolling stops (approximately 0.8–1.2 seconds).
+Use a thin, low-contrast scrollbar that does not compete with the content.
+Keep it aligned to the right edge as a passive position indicator only.
+Do not reserve layout space for the scrollbar.
+
+When additional content exists above the current viewport, display a subtle top gradient fade.
+When additional content exists below the current viewport, display a subtle bottom gradient fade.
+Hide the corresponding gradient when the user reaches the beginning or end of the page.
+The gradients should be very subtle and use the page background color, serving only as a visual cue that more content is available.
